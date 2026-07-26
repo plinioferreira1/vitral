@@ -1,0 +1,294 @@
+import { createClient } from "@/lib/supabase/server";
+import { notFound } from "next/navigation";
+import { anexarUrgencia, URGENCIA_COR, formatarPrazo } from "@/lib/alertas";
+import { format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import {
+  concluirEtapa,
+  reabrirEtapa,
+  alterarDataPrevista,
+  alternarChecklistItem,
+  adicionarComentario,
+} from "./actions";
+
+export default async function ProcessoDetalhePage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  const supabase = await createClient();
+
+  const { data: processo } = await supabase
+    .from("processos")
+    .select(
+      `id, numero_processo, status, valor_total, data_criacao,
+       clientes ( nome, telefone ), imoveis ( endereco ), bancos ( nome ),
+       corretores ( nome ), usuarios ( nome ), modelos_processo ( nome )`
+    )
+    .eq("id", id)
+    .single();
+
+  if (!processo) notFound();
+
+  const { data: etapasRaw } = await supabase
+    .from("etapas")
+    .select("*, usuarios ( nome )")
+    .eq("processo_id", id)
+    .order("ordem", { ascending: true });
+
+  const etapas = anexarUrgencia(etapasRaw ?? []);
+
+  const etapaIds = (etapasRaw ?? []).map((e) => e.id);
+  const { data: checklistItens } = etapaIds.length
+    ? await supabase.from("checklist_itens").select("*").in("etapa_id", etapaIds).order("ordem")
+    : { data: [] };
+
+  const { data: comentarios } = await supabase
+    .from("comentarios")
+    .select("*, usuarios ( nome )")
+    .eq("processo_id", id)
+    .order("criado_em", { ascending: false });
+
+  const { data: historico } = await supabase
+    .from("historico")
+    .select("*, usuarios ( nome )")
+    .eq("processo_id", id)
+    .order("criado_em", { ascending: false })
+    .limit(20);
+
+  type P = typeof processo & {
+    clientes: { nome: string; telefone: string | null } | null;
+    imoveis: { endereco: string } | null;
+    bancos: { nome: string } | null;
+    corretores: { nome: string } | null;
+    usuarios: { nome: string } | null;
+    modelos_processo: { nome: string } | null;
+  };
+  const p = processo as unknown as P;
+
+  return (
+    <div className="max-w-3xl space-y-8">
+      <div>
+        <p className="font-mono text-xs text-ink-muted">{p.numero_processo}</p>
+        <h1 className="mt-1 text-xl font-semibold text-ink">
+          {p.modelos_processo?.nome} — {p.clientes?.nome ?? "Sem cliente"}
+        </h1>
+        <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-ink-muted sm:grid-cols-3">
+          <Info label="Imóvel" value={p.imoveis?.endereco} />
+          <Info label="Banco" value={p.bancos?.nome} />
+          <Info label="Corretor" value={p.corretores?.nome} />
+          <Info label="Responsável" value={p.usuarios?.nome} />
+          <Info
+            label="Valor"
+            value={p.valor_total ? `R$ ${Number(p.valor_total).toLocaleString("pt-BR")}` : undefined}
+          />
+          <Info
+            label="Criado em"
+            value={format(parseISO(p.data_criacao), "dd/MM/yyyy", { locale: ptBR })}
+          />
+        </div>
+      </div>
+
+      {/* Timeline */}
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-ink">Linha do tempo</h2>
+        <div className="flex flex-wrap items-center gap-1">
+          {etapas.map((e, i) => (
+            <div key={e.id} className="flex items-center gap-1">
+              <span
+                className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
+                  e.status === "concluida"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : URGENCIA_COR[e.urgencia]
+                }`}
+                title={e.data_prevista ?? undefined}
+              >
+                {e.nome}
+              </span>
+              {i < etapas.length - 1 && <span className="text-ink-muted">→</span>}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* Etapas */}
+      <section className="space-y-3">
+        <h2 className="text-sm font-semibold text-ink">Etapas</h2>
+        {etapas.map((etapa) => {
+          const itensChecklist = (checklistItens ?? []).filter((c) => c.etapa_id === etapa.id);
+          const nome = (etapa as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
+
+          return (
+            <div key={etapa.id} className="rounded-xl border border-border bg-surface p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-ink">{etapa.nome}</p>
+                  <p className="mt-0.5 text-xs text-ink-muted">
+                    Responsável: {nome ?? "—"}
+                    {etapa.data_prevista && (
+                      <>
+                        {" · "}
+                        Previsto: {format(parseISO(etapa.data_prevista), "dd/MM/yyyy")}
+                      </>
+                    )}
+                    {etapa.data_realizada && (
+                      <>
+                        {" · "}
+                        Realizado: {format(parseISO(etapa.data_realizada), "dd/MM/yyyy")}
+                      </>
+                    )}
+                  </p>
+                </div>
+                <span
+                  className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${
+                    etapa.status === "concluida"
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                      : URGENCIA_COR[etapa.urgencia]
+                  }`}
+                >
+                  {etapa.status === "concluida"
+                    ? "Concluída"
+                    : formatarPrazo(etapa.dias_para_vencer) || "Sem data"}
+                </span>
+              </div>
+
+              {itensChecklist.length > 0 && (
+                <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
+                  {itensChecklist.map((item) => (
+                    <li key={item.id} className="flex items-center gap-2 text-sm">
+                      <form action={alternarChecklistItem}>
+                        <input type="hidden" name="item_id" value={item.id} />
+                        <input type="hidden" name="processo_id" value={p.id} />
+                        <input
+                          type="hidden"
+                          name="concluido_atual"
+                          value={String(item.concluido)}
+                        />
+                        <button type="submit" className="flex items-center gap-2 text-left">
+                          <span
+                            className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${
+                              item.concluido
+                                ? "border-brand bg-brand text-white"
+                                : "border-border bg-surface"
+                            }`}
+                          >
+                            {item.concluido ? "✓" : ""}
+                          </span>
+                          <span className={item.concluido ? "text-ink-muted line-through" : "text-ink"}>
+                            {item.descricao}
+                          </span>
+                        </button>
+                      </form>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+                {etapa.status !== "concluida" ? (
+                  <form action={concluirEtapa} className="flex items-center gap-2">
+                    <input type="hidden" name="etapa_id" value={etapa.id} />
+                    <input type="hidden" name="processo_id" value={p.id} />
+                    <button
+                      type="submit"
+                      className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                    >
+                      Marcar como concluída
+                    </button>
+                  </form>
+                ) : (
+                  <form action={reabrirEtapa}>
+                    <input type="hidden" name="etapa_id" value={etapa.id} />
+                    <input type="hidden" name="processo_id" value={p.id} />
+                    <button
+                      type="submit"
+                      className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background"
+                    >
+                      Reabrir
+                    </button>
+                  </form>
+                )}
+
+                <form action={alterarDataPrevista} className="flex items-center gap-1.5">
+                  <input type="hidden" name="etapa_id" value={etapa.id} />
+                  <input type="hidden" name="processo_id" value={p.id} />
+                  <input
+                    type="date"
+                    name="data_prevista"
+                    defaultValue={etapa.data_prevista ?? ""}
+                    className="rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
+                  />
+                  <button
+                    type="submit"
+                    className="rounded-md border border-border px-2 py-1 text-xs text-ink-muted hover:bg-background"
+                  >
+                    Ajustar prazo
+                  </button>
+                </form>
+              </div>
+            </div>
+          );
+        })}
+      </section>
+
+      {/* Comentários */}
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-ink">Comentários</h2>
+        <form action={adicionarComentario} className="mb-4 flex gap-2">
+          <input type="hidden" name="processo_id" value={p.id} />
+          <input
+            name="texto"
+            placeholder="Escreva uma observação..."
+            className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          />
+          <button
+            type="submit"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          >
+            Enviar
+          </button>
+        </form>
+        <ul className="space-y-2">
+          {(comentarios ?? []).map((c) => {
+            const nomeUsuario = (c as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
+            return (
+              <li key={c.id} className="rounded-lg border border-border bg-surface p-3 text-sm">
+                <p className="text-ink">{c.texto}</p>
+                <p className="mt-1 text-xs text-ink-muted">
+                  {nomeUsuario ?? "—"} · {format(parseISO(c.criado_em), "dd/MM HH:mm")}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+
+      {/* Histórico */}
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-ink">Histórico</h2>
+        <ul className="space-y-1.5 text-xs text-ink-muted">
+          {(historico ?? []).map((h) => {
+            const nomeUsuario = (h as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
+            return (
+              <li key={h.id}>
+                {format(parseISO(h.criado_em), "dd/MM HH:mm")} — {nomeUsuario ?? "Sistema"}{" "}
+                {h.acao}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    </div>
+  );
+}
+
+function Info({ label, value }: { label: string; value?: string | null }) {
+  if (!value) return null;
+  return (
+    <p>
+      <span className="text-ink-muted">{label}: </span>
+      <span className="text-ink">{value}</span>
+    </p>
+  );
+}
