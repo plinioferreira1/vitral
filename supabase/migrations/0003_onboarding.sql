@@ -9,9 +9,10 @@ create or replace function handle_new_auth_user()
 returns trigger
 language plpgsql
 security definer
+set search_path = public
 as $$
 begin
-  insert into usuarios (id, tenant_id, nome, email, perfil, ativo)
+  insert into public.usuarios (id, tenant_id, nome, email, perfil, ativo)
   values (
     new.id,
     null,
@@ -40,19 +41,20 @@ create or replace function bootstrap_tenant(p_nome_empresa text)
 returns uuid
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   v_tenant_id uuid;
   v_ja_tem_tenant uuid;
 begin
-  select tenant_id into v_ja_tem_tenant from usuarios where id = auth.uid();
+  select tenant_id into v_ja_tem_tenant from public.usuarios where id = auth.uid();
   if v_ja_tem_tenant is not null then
     raise exception 'Este usuário já pertence a uma organização.';
   end if;
 
-  insert into tenants (nome) values (p_nome_empresa) returning id into v_tenant_id;
+  insert into public.tenants (nome) values (p_nome_empresa) returning id into v_tenant_id;
 
-  update usuarios
+  update public.usuarios
      set tenant_id = v_tenant_id,
          perfil = 'admin'
    where id = auth.uid();
@@ -71,13 +73,14 @@ create or replace function add_member(p_email text, p_perfil perfil_usuario)
 returns void
 language plpgsql
 security definer
+set search_path = public
 as $$
 declare
   v_meu_tenant uuid;
   v_meu_perfil perfil_usuario;
   v_alvo_id uuid;
 begin
-  select tenant_id, perfil into v_meu_tenant, v_meu_perfil from usuarios where id = auth.uid();
+  select tenant_id, perfil into v_meu_tenant, v_meu_perfil from public.usuarios where id = auth.uid();
 
   if v_meu_tenant is null then
     raise exception 'Você ainda não pertence a uma organização.';
@@ -87,13 +90,13 @@ begin
     raise exception 'Apenas admin, diretora ou gerente podem adicionar membros.';
   end if;
 
-  select id into v_alvo_id from usuarios where email = p_email;
+  select id into v_alvo_id from public.usuarios where email = p_email;
 
   if v_alvo_id is null then
     raise exception 'Essa pessoa ainda não criou uma conta. Peça para ela se cadastrar primeiro em /login.';
   end if;
 
-  update usuarios
+  update public.usuarios
      set tenant_id = v_meu_tenant,
          perfil = p_perfil
    where id = v_alvo_id;

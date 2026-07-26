@@ -200,8 +200,9 @@ returns uuid
 language sql
 security definer
 stable
+set search_path = public
 as $$
-  select tenant_id from usuarios where id = auth.uid()
+  select tenant_id from public.usuarios where id = auth.uid()
 $$;
 
 -- ---------------------------------------------------------

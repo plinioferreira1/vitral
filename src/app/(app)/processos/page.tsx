@@ -24,7 +24,9 @@ export default async function ProcessosPage() {
     .from("processos")
     .select(
       `id, numero_processo, tipo, status, data_criacao,
-       clientes ( nome ), corretores ( nome ), bancos ( nome ),
+       comprador:clientes!processos_comprador_id_fkey ( nome ),
+       vendedor:clientes!processos_vendedor_id_fkey ( nome ),
+       corretores ( nome ), bancos ( nome ),
        modelos_processo ( nome )`
     )
     .order("criado_em", { ascending: false });
@@ -39,7 +41,8 @@ export default async function ProcessosPage() {
     tipo: string | null;
     status: string;
     data_criacao: string;
-    clientes: { nome: string } | null;
+    comprador: { nome: string } | null;
+    vendedor: { nome: string } | null;
     corretores: { nome: string } | null;
     bancos: { nome: string } | null;
     modelos_processo: { nome: string } | null;
@@ -75,7 +78,8 @@ export default async function ProcessosPage() {
             <thead>
               <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
                 <th className="px-4 py-2.5 font-medium">Nº</th>
-                <th className="px-4 py-2.5 font-medium">Cliente</th>
+                <th className="px-4 py-2.5 font-medium">Comprador</th>
+                <th className="px-4 py-2.5 font-medium">Vendedor</th>
                 <th className="px-4 py-2.5 font-medium">Modelo</th>
                 <th className="px-4 py-2.5 font-medium">Corretor</th>
                 <th className="px-4 py-2.5 font-medium">Banco</th>
@@ -92,9 +96,10 @@ export default async function ProcessosPage() {
                   </td>
                   <td className="px-4 py-2.5">
                     <Link href={`/processos/${p.id}`} className="font-medium text-ink hover:underline">
-                      {p.clientes?.nome ?? "—"}
+                      {p.comprador?.nome ?? "—"}
                     </Link>
                   </td>
+                  <td className="px-4 py-2.5 text-ink-muted">{p.vendedor?.nome ?? "—"}</td>
                   <td className="px-4 py-2.5 text-ink-muted">{p.modelos_processo?.nome ?? "—"}</td>
                   <td className="px-4 py-2.5 text-ink-muted">{p.corretores?.nome ?? "—"}</td>
                   <td className="px-4 py-2.5 text-ink-muted">{p.bancos?.nome ?? "—"}</td>

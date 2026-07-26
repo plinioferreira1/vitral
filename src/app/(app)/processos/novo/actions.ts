@@ -14,7 +14,8 @@ export async function criarProcesso(formData: FormData) {
   if (!user) redirect("/login");
 
   const modeloProcessoId = String(formData.get("modelo_processo_id") ?? "");
-  const clienteId = String(formData.get("cliente_id") ?? "") || null;
+  const compradorId = String(formData.get("comprador_id") ?? "") || null;
+  const vendedorId = String(formData.get("vendedor_id") ?? "") || null;
   const imovelId = String(formData.get("imovel_id") ?? "") || null;
   const bancoId = String(formData.get("banco_id") ?? "") || null;
   const corretorId = String(formData.get("corretor_id") ?? "") || null;
@@ -60,7 +61,8 @@ export async function criarProcesso(formData: FormData) {
       tenant_id: tenantId,
       modelo_processo_id: modeloProcessoId,
       numero_processo: numeroProcesso,
-      cliente_id: clienteId,
+      comprador_id: compradorId,
+      vendedor_id: vendedorId,
       imovel_id: imovelId,
       banco_id: bancoId,
       corretor_id: corretorId,

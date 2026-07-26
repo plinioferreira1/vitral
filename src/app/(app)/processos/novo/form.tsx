@@ -61,7 +61,8 @@ export function NovoProcessoForm({ modelos, clientes, imoveis, bancos, corretore
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Select label="Cliente" name="cliente_id" options={clientes.map((c) => [c.id, c.nome])} />
+        <Select label="Comprador" name="comprador_id" options={clientes.map((c) => [c.id, c.nome])} />
+        <Select label="Vendedor" name="vendedor_id" options={clientes.map((c) => [c.id, c.nome])} />
         <Select label="Imóvel" name="imovel_id" options={imoveis.map((i) => [i.id, i.endereco])} />
         <Select label="Banco" name="banco_id" options={bancos.map((b) => [b.id, b.nome])} />
         <Select label="Corretor" name="corretor_id" options={corretores.map((c) => [c.id, c.nome])} />

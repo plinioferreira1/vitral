@@ -87,12 +87,15 @@ export interface ModeloChecklistItem {
   ordem: number;
 }
 
+export type StatusComissao = "0% pago" | "50% pago" | "100% pago" | "cancelada";
+
 export interface Processo {
   id: string;
   tenant_id: string;
   modelo_processo_id: string | null;
   numero_processo: string;
-  cliente_id: string | null;
+  comprador_id: string | null;
+  vendedor_id: string | null;
   imovel_id: string | null;
   banco_id: string | null;
   corretor_id: string | null;
@@ -103,6 +106,17 @@ export interface Processo {
   data_criacao: string;
   data_conclusao: string | null;
   criado_em: string;
+}
+
+export interface Comissao {
+  id: string;
+  processo_id: string;
+  beneficiario_id: string | null;
+  valor_previsto: number | null;
+  valor_recebido: number | null;
+  data_prevista: string | null;
+  data_recebida: string | null;
+  status: StatusComissao;
 }
 
 export interface Etapa {

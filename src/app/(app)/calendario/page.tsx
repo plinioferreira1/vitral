@@ -37,7 +37,7 @@ export default async function CalendarioPage({
     .select(
       `id, nome, data_prevista, status, responsavel_id,
        usuarios ( nome ),
-       processos!inner ( id, numero_processo, clientes ( nome ) )`
+       processos!inner ( id, numero_processo, comprador:clientes!processos_comprador_id_fkey ( nome ) )`
     )
     .gte("data_prevista", format(inicioGrade, "yyyy-MM-dd"))
     .lte("data_prevista", format(fimGrade, "yyyy-MM-dd"));
@@ -53,7 +53,7 @@ export default async function CalendarioPage({
     status: string;
     responsavel_id: string | null;
     usuarios: { nome: string } | null;
-    processos: { id: string; numero_processo: string; clientes: { nome: string } | null };
+    processos: { id: string; numero_processo: string; comprador: { nome: string } | null };
   };
   const rows = (etapasRaw ?? []) as unknown as Row[];
   const comUrgencia = anexarUrgencia(rows as unknown as Parameters<typeof anexarUrgencia>[0]);
@@ -193,7 +193,7 @@ export default async function CalendarioPage({
                       {e.nome}
                     </Link>
                     <p className="text-[11px] text-ink-muted">
-                      {original.processos.clientes?.nome ?? "—"} · {original.usuarios?.nome ?? "sem responsável"}
+                      {original.processos.comprador?.nome ?? "—"} · {original.usuarios?.nome ?? "sem responsável"}
                     </p>
                     <span
                       className={`mt-1 inline-block rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${URGENCIA_COR[e.urgencia]}`}

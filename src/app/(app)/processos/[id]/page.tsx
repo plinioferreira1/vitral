@@ -23,13 +23,21 @@ export default async function ProcessoDetalhePage({
     .from("processos")
     .select(
       `id, numero_processo, status, valor_total, data_criacao,
-       clientes ( nome, telefone ), imoveis ( endereco ), bancos ( nome ),
+       comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
+       vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
+       imoveis ( endereco ), bancos ( nome ),
        corretores ( nome ), usuarios ( nome ), modelos_processo ( nome )`
     )
     .eq("id", id)
     .single();
 
   if (!processo) notFound();
+
+  const { data: comissoes } = await supabase
+    .from("comissoes")
+    .select("*, corretores ( nome )")
+    .eq("processo_id", id)
+    .order("criado_em", { ascending: true });
 
   const { data: etapasRaw } = await supabase
     .from("etapas")
@@ -58,7 +66,8 @@ export default async function ProcessoDetalhePage({
     .limit(20);
 
   type P = typeof processo & {
-    clientes: { nome: string; telefone: string | null } | null;
+    comprador: { nome: string; telefone: string | null } | null;
+    vendedor: { nome: string; telefone: string | null } | null;
     imoveis: { endereco: string } | null;
     bancos: { nome: string } | null;
     corretores: { nome: string } | null;
@@ -72,9 +81,10 @@ export default async function ProcessoDetalhePage({
       <div>
         <p className="font-mono text-xs text-ink-muted">{p.numero_processo}</p>
         <h1 className="mt-1 text-xl font-semibold text-ink">
-          {p.modelos_processo?.nome} — {p.clientes?.nome ?? "Sem cliente"}
+          {p.modelos_processo?.nome} — {p.comprador?.nome ?? "Sem comprador"}
         </h1>
         <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-ink-muted sm:grid-cols-3">
+          <Info label="Vendedor" value={p.vendedor?.nome} />
           <Info label="Imóvel" value={p.imoveis?.endereco} />
           <Info label="Banco" value={p.bancos?.nome} />
           <Info label="Corretor" value={p.corretores?.nome} />
@@ -231,6 +241,44 @@ export default async function ProcessoDetalhePage({
           );
         })}
       </section>
+
+      {/* Comissões */}
+      {(comissoes ?? []).length > 0 && (
+        <section>
+          <h2 className="mb-3 text-sm font-semibold text-ink">Comissões</h2>
+          <div className="space-y-2">
+            {(comissoes ?? []).map((c) => {
+              const nomeCorretor = (c as unknown as { corretores: { nome: string } | null }).corretores
+                ?.nome;
+              const corCom =
+                c.status === "100% pago"
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                  : c.status === "50% pago"
+                    ? "border-amber-200 bg-amber-50 text-amber-800"
+                    : c.status === "cancelada"
+                      ? "border-stone-200 bg-stone-100 text-stone-500"
+                      : "border-rose-200 bg-rose-50 text-rose-700";
+              return (
+                <div
+                  key={c.id}
+                  className="flex items-center justify-between rounded-lg border border-border bg-surface p-3 text-sm"
+                >
+                  <div>
+                    <p className="font-medium text-ink">{nomeCorretor ?? "Sem corretor vinculado"}</p>
+                    <p className="text-xs text-ink-muted">
+                      Previsto: R$ {Number(c.valor_previsto ?? 0).toLocaleString("pt-BR")}
+                      {c.valor_recebido ? ` · Recebido: R$ ${Number(c.valor_recebido).toLocaleString("pt-BR")}` : ""}
+                    </p>
+                  </div>
+                  <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${corCom}`}>
+                    {c.status}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {/* Comentários */}
       <section>

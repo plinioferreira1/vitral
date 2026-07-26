@@ -49,7 +49,7 @@ export default async function DashboardPage() {
                     href={`/processos/${e.processo_id}`}
                     className="truncate text-sm font-medium text-ink hover:underline"
                   >
-                    {e.nome} — {e.processo?.clientes?.nome ?? "Sem cliente"}
+                    {e.nome} — {e.processo?.comprador?.nome ?? "Sem comprador"}
                   </Link>
                   <p className="text-xs text-ink-muted">
                     {e.processo?.numero_processo} · {e.responsavel_nome ?? "sem responsável"}
