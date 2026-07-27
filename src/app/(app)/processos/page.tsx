@@ -50,10 +50,10 @@ export default async function ProcessosPage() {
   const rows = (processos ?? []) as unknown as Row[];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Processos</h1>
+          <h1 className="text-xl font-serif font-semibold text-ink">Processos</h1>
           <p className="mt-1 text-sm text-ink-muted">{rows.length} processos no total</p>
         </div>
         <Link
@@ -77,33 +77,33 @@ export default async function ProcessosPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
-                <th className="px-4 py-2.5 font-medium">Nº</th>
-                <th className="px-4 py-2.5 font-medium">Comprador</th>
-                <th className="px-4 py-2.5 font-medium">Vendedor</th>
-                <th className="px-4 py-2.5 font-medium">Modelo</th>
-                <th className="px-4 py-2.5 font-medium">Corretor</th>
-                <th className="px-4 py-2.5 font-medium">Banco</th>
-                <th className="px-4 py-2.5 font-medium">Status</th>
+                <th className="px-5 py-3 font-medium">Nº</th>
+                <th className="px-5 py-3 font-medium">Comprador</th>
+                <th className="px-5 py-3 font-medium">Vendedor</th>
+                <th className="px-5 py-3 font-medium">Modelo</th>
+                <th className="px-5 py-3 font-medium">Corretor</th>
+                <th className="px-5 py-3 font-medium">Banco</th>
+                <th className="px-5 py-3 font-medium">Status</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border">
               {rows.map((p) => (
                 <tr key={p.id} className="transition hover:bg-background">
-                  <td className="px-4 py-2.5 font-mono text-xs text-ink-muted">
+                  <td className="px-5 py-3 font-mono text-xs text-ink-muted">
                     <Link href={`/processos/${p.id}`} className="hover:underline">
                       {p.numero_processo}
                     </Link>
                   </td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-5 py-3">
                     <Link href={`/processos/${p.id}`} className="font-medium text-ink hover:underline">
                       {p.comprador?.nome ?? "—"}
                     </Link>
                   </td>
-                  <td className="px-4 py-2.5 text-ink-muted">{p.vendedor?.nome ?? "—"}</td>
-                  <td className="px-4 py-2.5 text-ink-muted">{p.modelos_processo?.nome ?? "—"}</td>
-                  <td className="px-4 py-2.5 text-ink-muted">{p.corretores?.nome ?? "—"}</td>
-                  <td className="px-4 py-2.5 text-ink-muted">{p.bancos?.nome ?? "—"}</td>
-                  <td className="px-4 py-2.5">
+                  <td className="px-5 py-3 text-ink-muted">{p.vendedor?.nome ?? "—"}</td>
+                  <td className="px-5 py-3 text-ink-muted">{p.modelos_processo?.nome ?? "—"}</td>
+                  <td className="px-5 py-3 text-ink-muted">{p.corretores?.nome ?? "—"}</td>
+                  <td className="px-5 py-3 text-ink-muted">{p.bancos?.nome ?? "—"}</td>
+                  <td className="px-5 py-3">
                     <span
                       className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COR[p.status]}`}
                     >

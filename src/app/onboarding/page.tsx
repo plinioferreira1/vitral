@@ -28,7 +28,7 @@ export default async function OnboardingPage({
     <div className="flex min-h-screen flex-1 items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="mb-6">
-          <h1 className="text-lg font-semibold text-ink">Bem-vindo(a) ao Vitral</h1>
+          <h1 className="text-lg font-serif font-semibold text-ink">Bem-vindo(a) ao Vitral</h1>
           <p className="mt-1 text-sm text-ink-muted">
             Antes de começar, crie a organização da sua imobiliária. Depois disso você
             poderá convidar a diretora e os demais gerentes para o mesmo espaço de

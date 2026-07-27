@@ -6,12 +6,14 @@
   --ink: #241512;
   --ink-muted: #6b5d57;
   --border: #e9ded0;
+  --border-strong: #d8cab3;
   --brand: #731515;
   --brand-ink: #ffffff;
-  --gold: #c9902f;
+  --gold: #b9822c;
+  --gold-soft: #f3e6cc;
   --gold-ink: #241512;
-  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial,
-    sans-serif;
+  --font-sans: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-serif: var(--font-sans);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
@@ -21,9 +23,12 @@
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-brand: var(--brand);
   --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
   --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
   --font-mono: var(--font-mono);
 }
 

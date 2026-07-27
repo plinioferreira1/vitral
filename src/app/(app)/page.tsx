@@ -15,20 +15,20 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold text-ink">Início</h1>
+        <h1 className="text-xl font-serif font-semibold text-ink">Início</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Resumo de prazos em aberto em todos os processos.
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
         <StatCard label="Etapas em aberto" value={pendentes.length} />
         <StatCard label="Atrasadas" value={atrasadas.length} tone="rose" />
         <StatCard label="Vencendo hoje" value={venceHoje.length} tone="amber" />
         <StatCard label="Vencendo em 7 dias" value={venceEmBreve.length} tone="amber" />
       </div>
 
-      <div className="rounded-xl border border-border bg-surface p-5">
+      <div className="rounded-xl border border-border bg-surface p-6">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-ink">Prazos críticos</h2>
           <Link href="/calendario" className="text-xs text-brand hover:underline">
@@ -43,16 +43,17 @@ export default async function DashboardPage() {
         ) : (
           <ul className="divide-y divide-border">
             {criticas.map((e) => (
-              <li key={e.id} className="flex items-center justify-between gap-3 py-2.5">
+              <li key={e.id} className="flex items-center justify-between gap-3 py-3.5">
                 <div className="min-w-0">
                   <Link
                     href={`/processos/${e.processo_id}`}
                     className="truncate text-sm font-medium text-ink hover:underline"
                   >
-                    {e.nome} — {e.processo?.comprador?.nome ?? "Sem comprador"}
+                    {e.processo?.imoveis?.endereco ? `${e.processo.imoveis.endereco} — ${e.nome}` : e.nome}
                   </Link>
                   <p className="text-xs text-ink-muted">
-                    {e.processo?.numero_processo} · {e.responsavel_nome ?? "sem responsável"}
+                    {e.processo?.numero_processo} · {e.processo?.comprador?.nome ?? "sem comprador"} ·{" "}
+                    {e.responsavel_nome ?? "sem responsável"}
                   </p>
                 </div>
                 <span
@@ -101,7 +102,7 @@ function StatCard({
         : "text-ink";
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-4">
+    <div className="rounded-xl border border-border bg-surface p-6">
       <p className={`font-mono text-2xl font-semibold ${toneClass}`}>{value}</p>
       <p className="mt-1 text-xs text-ink-muted">{label}</p>
     </div>

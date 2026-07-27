@@ -21,6 +21,8 @@ export interface Usuario {
   nome: string;
   email: string;
   perfil: PerfilUsuario;
+  cargo: string | null;
+  foto_url: string | null;
   ativo: boolean;
 }
 
@@ -106,6 +108,13 @@ export interface Processo {
   data_criacao: string;
   data_conclusao: string | null;
   criado_em: string;
+}
+
+export interface EtapaPadrao {
+  id: string;
+  tenant_id: string;
+  nome: string;
+  ordem: number;
 }
 
 export interface Comissao {

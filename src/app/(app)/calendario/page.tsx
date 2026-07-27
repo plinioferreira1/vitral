@@ -37,7 +37,7 @@ export default async function CalendarioPage({
     .select(
       `id, nome, data_prevista, status, responsavel_id,
        usuarios ( nome ),
-       processos!inner ( id, numero_processo, comprador:clientes!processos_comprador_id_fkey ( nome ) )`
+       processos!inner ( id, numero_processo, imoveis ( endereco ), comprador:clientes!processos_comprador_id_fkey ( nome ) )`
     )
     .gte("data_prevista", format(inicioGrade, "yyyy-MM-dd"))
     .lte("data_prevista", format(fimGrade, "yyyy-MM-dd"));
@@ -53,7 +53,12 @@ export default async function CalendarioPage({
     status: string;
     responsavel_id: string | null;
     usuarios: { nome: string } | null;
-    processos: { id: string; numero_processo: string; comprador: { nome: string } | null };
+    processos: {
+      id: string;
+      numero_processo: string;
+      imoveis: { endereco: string } | null;
+      comprador: { nome: string } | null;
+    };
   };
   const rows = (etapasRaw ?? []) as unknown as Row[];
   const comUrgencia = anexarUrgencia(rows as unknown as Parameters<typeof anexarUrgencia>[0]);
@@ -73,10 +78,10 @@ export default async function CalendarioPage({
     .sort((a, b) => (a.dias_para_vencer ?? 0) - (b.dias_para_vencer ?? 0));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold text-ink">Calendário</h1>
+          <h1 className="text-xl font-serif font-semibold text-ink">Calendário</h1>
           <p className="mt-1 text-sm text-ink-muted">
             {format(referencia, "MMMM yyyy", { locale: ptBR })}
           </p>
@@ -152,20 +157,26 @@ export default async function CalendarioPage({
                     {format(dia, "d")}
                   </p>
                   <div className="space-y-1">
-                    {eventosDoDia.slice(0, 3).map((e) => (
-                      <Link
-                        key={e.id}
-                        href={`/processos/${rows.find((r) => r.id === e.id)?.processos.id}`}
-                        className={`block truncate rounded border px-1 py-0.5 text-[10px] leading-tight ${
-                          e.status === "concluida"
-                            ? "border-stone-200 bg-stone-100 text-stone-500"
-                            : URGENCIA_COR[e.urgencia]
-                        }`}
-                        title={e.nome}
-                      >
-                        {e.nome}
-                      </Link>
-                    ))}
+                    {eventosDoDia.slice(0, 3).map((e) => {
+                      const orig = rows.find((r) => r.id === e.id);
+                      const label = orig?.processos.imoveis?.endereco
+                        ? `${orig.processos.imoveis.endereco} — ${e.nome}`
+                        : e.nome;
+                      return (
+                        <Link
+                          key={e.id}
+                          href={`/processos/${orig?.processos.id}`}
+                          className={`block truncate rounded border px-1 py-0.5 text-[10px] leading-tight ${
+                            e.status === "concluida"
+                              ? "border-stone-200 bg-stone-100 text-stone-500"
+                              : URGENCIA_COR[e.urgencia]
+                          }`}
+                          title={label}
+                        >
+                          {label}
+                        </Link>
+                      );
+                    })}
                     {eventosDoDia.length > 3 && (
                       <p className="text-[10px] text-ink-muted">+{eventosDoDia.length - 3} mais</p>
                     )}
@@ -190,7 +201,9 @@ export default async function CalendarioPage({
                       href={`/processos/${original.processos.id}`}
                       className="text-xs font-medium text-ink hover:underline"
                     >
-                      {e.nome}
+                      {original.processos.imoveis?.endereco
+                        ? `${original.processos.imoveis.endereco} — ${e.nome}`
+                        : e.nome}
                     </Link>
                     <p className="text-[11px] text-ink-muted">
                       {original.processos.comprador?.nome ?? "—"} · {original.usuarios?.nome ?? "sem responsável"}

@@ -20,13 +20,13 @@ export default async function MembrosPage({
 
   const { data: membros } = await supabase
     .from("usuarios")
-    .select("id, nome, email, perfil, ativo")
+    .select("id, nome, email, perfil, cargo, ativo")
     .order("nome");
 
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <h1 className="text-xl font-semibold text-ink">Membros</h1>
+        <h1 className="text-xl font-serif font-semibold text-ink">Membros</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Adicione a diretora e os outros gerentes ao mesmo espaço de trabalho. A pessoa
           precisa primeiro criar uma conta em <code className="text-xs">/login</code> — depois
@@ -40,7 +40,7 @@ export default async function MembrosPage({
         </p>
       )}
 
-      <form action={adicionarMembro} className="flex flex-wrap items-end gap-2 rounded-xl border border-border bg-surface p-4">
+      <form action={adicionarMembro} className="flex flex-wrap items-end gap-2 rounded-xl border border-border bg-surface p-5">
         <div className="flex-1 min-w-[200px]">
           <label className="mb-1 block text-xs font-medium text-ink-muted">E-mail</label>
           <input
@@ -78,6 +78,7 @@ export default async function MembrosPage({
           <thead>
             <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
               <th className="px-4 py-2.5 font-medium">Nome</th>
+              <th className="px-4 py-2.5 font-medium">Cargo</th>
               <th className="px-4 py-2.5 font-medium">E-mail</th>
               <th className="px-4 py-2.5 font-medium">Perfil</th>
             </tr>
@@ -86,6 +87,7 @@ export default async function MembrosPage({
             {(membros ?? []).map((m) => (
               <tr key={m.id}>
                 <td className="px-4 py-2.5 text-ink">{m.nome}</td>
+                <td className="px-4 py-2.5 text-ink-muted">{m.cargo || "—"}</td>
                 <td className="px-4 py-2.5 text-ink-muted">{m.email}</td>
                 <td className="px-4 py-2.5 capitalize text-ink-muted">{m.perfil}</td>
               </tr>

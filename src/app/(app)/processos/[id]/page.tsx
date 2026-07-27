@@ -8,6 +8,7 @@ import {
   reabrirEtapa,
   alterarDataPrevista,
   alternarChecklistItem,
+  alternarEtapaPadrao,
   adicionarComentario,
 } from "./actions";
 
@@ -38,6 +39,11 @@ export default async function ProcessoDetalhePage({
     .select("*, corretores ( nome )")
     .eq("processo_id", id)
     .order("criado_em", { ascending: true });
+
+  const { data: etapasPadrao } = await supabase
+    .from("etapas_padrao")
+    .select("id, nome, ordem")
+    .order("ordem", { ascending: true });
 
   const { data: etapasRaw } = await supabase
     .from("etapas")
@@ -80,7 +86,7 @@ export default async function ProcessoDetalhePage({
     <div className="max-w-3xl space-y-8">
       <div>
         <p className="font-mono text-xs text-ink-muted">{p.numero_processo}</p>
-        <h1 className="mt-1 text-xl font-semibold text-ink">
+        <h1 className="mt-1 text-xl font-serif font-semibold text-ink">
           {p.modelos_processo?.nome} — {p.comprador?.nome ?? "Sem comprador"}
         </h1>
         <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-ink-muted sm:grid-cols-3">
@@ -125,12 +131,53 @@ export default async function ProcessoDetalhePage({
       {/* Etapas */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-ink">Etapas</h2>
+
+        {(etapasPadrao ?? []).length > 0 && (
+          <div className="rounded-xl border border-border bg-background p-3">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-muted">
+              Adicionar etapa
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {(etapasPadrao ?? []).map((ep) => {
+                const etapaExistente = etapas.find((e) => e.nome === ep.nome);
+                const aplicada = Boolean(etapaExistente);
+                return (
+                  <form key={ep.id} action={alternarEtapaPadrao}>
+                    <input type="hidden" name="processo_id" value={p.id} />
+                    <input type="hidden" name="nome" value={ep.nome} />
+                    <input type="hidden" name="aplicada" value={String(aplicada)} />
+                    {etapaExistente && (
+                      <input type="hidden" name="etapa_id" value={etapaExistente.id} />
+                    )}
+                    <button
+                      type="submit"
+                      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
+                        aplicada
+                          ? "border-brand bg-brand/10 font-medium text-brand"
+                          : "border-border bg-surface text-ink-muted hover:bg-background"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[9px] ${
+                          aplicada ? "border-brand bg-brand text-white" : "border-border"
+                        }`}
+                      >
+                        {aplicada ? "✓" : ""}
+                      </span>
+                      {ep.nome}
+                    </button>
+                  </form>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {etapas.map((etapa) => {
           const itensChecklist = (checklistItens ?? []).filter((c) => c.etapa_id === etapa.id);
           const nome = (etapa as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
 
           return (
-            <div key={etapa.id} className="rounded-xl border border-border bg-surface p-4">
+            <div key={etapa.id} className="rounded-xl border border-border bg-surface p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium text-ink">{etapa.nome}</p>
