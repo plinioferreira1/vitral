@@ -25,9 +25,31 @@ export default async function ProcessosPage({
   searchParams: Promise<{ categoria?: string }>;
 }) {
   const { categoria: categoriaParam } = await searchParams;
-  const categoria = (categoriaParam as CategoriaProcesso) || "venda";
-
   const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const { data: meuUsuario } = await supabase
+    .from("usuarios")
+    .select("perfil")
+    .eq("id", user?.id ?? "")
+    .single();
+
+  const vejoTudo = meuUsuario?.perfil === "admin" || meuUsuario?.perfil === "diretora";
+
+  let abasPermitidas: CategoriaProcesso[] = ["venda", "financiamento"];
+  if (!vejoTudo) {
+    const { data: categoriasRaw } = await supabase
+      .from("usuario_categorias")
+      .select("categoria")
+      .eq("usuario_id", user?.id ?? "");
+    const minhas = new Set((categoriasRaw ?? []).map((c) => c.categoria));
+    abasPermitidas = abasPermitidas.filter((c) => minhas.has(c));
+  }
+
+  const categoria = (categoriaParam as CategoriaProcesso) || abasPermitidas[0] || "venda";
 
   const { data: processos, error } = await supabase
     .from("processos")
@@ -65,7 +87,7 @@ export default async function ProcessosPage({
   const rows = (processos ?? []) as unknown as Row[];
   const ehFinanciamento = categoria === "financiamento";
 
-  const abas: CategoriaProcesso[] = ["venda", "financiamento"];
+  const abas = abasPermitidas;
 
   return (
     <div className="space-y-8">

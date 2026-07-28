@@ -1,160 +1,82 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
-import { getEtapasComContexto } from "@/lib/queries";
-import { URGENCIA_COR, URGENCIA_LABEL, formatarPrazo } from "@/lib/alertas";
-import { CATEGORIA_LABEL, TIPO_CONTA_LABEL, type CategoriaProcesso, type TipoContaLocacao } from "@/lib/types";
-
-const CATEGORIA_COR: Record<CategoriaProcesso, string> = {
-  venda: "bg-brand/10 text-brand border-brand/20",
-  financiamento: "bg-gold-soft text-gold border-gold/30",
-  locacao: "bg-stone-100 text-stone-600 border-stone-200",
-};
+import { getEventosCalendario } from "@/lib/queries";
+import { URGENCIA_COR, formatarPrazo } from "@/lib/alertas";
+import { CATEGORIA_LABEL } from "@/lib/types";
+import { CalendarioGrid } from "@/components/calendario-grid";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default async function DashboardPage() {
-  const supabase = await createClient();
+  const eventos = await getEventosCalendario();
+  const pendentes = eventos.filter((e) => !e.concluida);
 
-  const etapas = await getEtapasComContexto();
-  const pendentes = etapas.filter((e) => e.status !== "concluida");
-
-  const atrasadas = pendentes.filter((e) => e.urgencia === "atrasada");
+  const atrasados = pendentes.filter((e) => e.urgencia === "atrasada");
   const venceHoje = pendentes.filter((e) => e.urgencia === "vence_hoje");
   const venceEmBreve = pendentes.filter((e) => e.urgencia === "vence_em_breve");
 
-  const criticas = [...atrasadas, ...venceHoje, ...venceEmBreve].slice(0, 8);
+  const criticos = [...atrasados, ...venceHoje, ...venceEmBreve]
+    .sort((a, b) => (a.diasParaVencer ?? 0) - (b.diasParaVencer ?? 0))
+    .slice(0, 10);
 
-  const { data: contasPendentesRaw } = await supabase
-    .from("contas_locacao")
-    .select(
-      `id, tipo, competencia, vencimento, contrato_id,
-       contratos_locacao ( numero, imoveis ( endereco ) )`
-    )
-    .eq("status", "pendente")
-    .order("vencimento", { ascending: true, nullsFirst: true })
-    .limit(6);
-
-  type ContaPendente = {
-    id: string;
-    tipo: TipoContaLocacao;
-    competencia: string;
-    vencimento: string | null;
-    contrato_id: string;
-    contratos_locacao: { numero: string; imoveis: { endereco: string } | null } | null;
-  };
-  const contasLocacaoPendentes = (contasPendentesRaw ?? []) as unknown as ContaPendente[];
+  const referencia = new Date();
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-xl font-serif font-semibold text-ink">Início</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Resumo de prazos em aberto em todos os processos.
+          {format(referencia, "MMMM yyyy", { locale: ptBR })} · prazos de vendas, financiamento e
+          locação, tudo num só lugar.
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Etapas em aberto" value={pendentes.length} />
-        <StatCard label="Atrasadas" value={atrasadas.length} tone="rose" />
+        <StatCard label="Em aberto" value={pendentes.length} />
+        <StatCard label="Atrasados" value={atrasados.length} tone="rose" />
         <StatCard label="Vencendo hoje" value={venceHoje.length} tone="amber" />
         <StatCard label="Vencendo em 7 dias" value={venceEmBreve.length} tone="amber" />
       </div>
 
-      <div className="rounded-xl border border-border bg-surface p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink">Prazos críticos</h2>
-          <Link href="/calendario" className="text-xs text-gold hover:underline">
-            Ver calendário completo →
-          </Link>
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_300px]">
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-ink">Calendário</h2>
+            <Link href="/calendario" className="text-xs text-gold hover:underline">
+              Abrir calendário completo →
+            </Link>
+          </div>
+          <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={2} />
         </div>
 
-        {criticas.length === 0 ? (
-          <p className="py-6 text-center text-sm text-ink-muted">
-            Nenhum prazo atrasado ou vencendo nos próximos dias. 🎉
-          </p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {criticas.map((e) => {
-              const categoria = (e.processo?.categoria ?? "venda") as CategoriaProcesso;
-              return (
-                <li key={e.id} className="flex items-center justify-between gap-3 py-3.5">
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${CATEGORIA_COR[categoria]}`}
-                      >
-                        {CATEGORIA_LABEL[categoria]}
-                      </span>
-                      <Link
-                        href={`/processos/${e.processo_id}`}
-                        className="truncate text-sm font-medium text-ink hover:underline"
-                      >
-                        {e.processo?.imoveis?.endereco
-                          ? `${e.processo.imoveis.endereco} — ${e.nome}`
-                          : e.nome}
-                      </Link>
-                    </div>
-                    <p className="mt-0.5 pl-[3.1rem] text-xs text-ink-muted">
-                      {e.processo?.numero_processo} · {e.processo?.comprador?.nome ?? "sem comprador"} ·{" "}
-                      {e.responsavel_nome ?? "sem responsável"}
-                    </p>
+        <aside className="space-y-3">
+          <h2 className="text-sm font-semibold text-ink">Prazos críticos</h2>
+          {criticos.length === 0 ? (
+            <p className="rounded-xl border border-border bg-surface p-5 text-center text-sm text-ink-muted">
+              Nenhum prazo atrasado ou vencendo nos próximos dias. 🎉
+            </p>
+          ) : (
+            <ul className="space-y-2">
+              {criticos.map((e) => (
+                <li key={e.id} className="rounded-lg border border-border bg-surface p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <Link href={e.href} className="text-xs font-medium text-ink hover:underline">
+                      {e.titulo}
+                    </Link>
                   </div>
+                  <p className="mt-1 text-[11px] text-ink-muted">
+                    {CATEGORIA_LABEL[e.categoria]}
+                    {e.responsavelNome ? ` · ${e.responsavelNome}` : ""}
+                  </p>
                   <span
-                    className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${URGENCIA_COR[e.urgencia]}`}
+                    className={`mt-1.5 inline-block rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${URGENCIA_COR[e.urgencia]}`}
                   >
-                    {formatarPrazo(e.dias_para_vencer) || URGENCIA_LABEL[e.urgencia]}
+                    {formatarPrazo(e.diasParaVencer)}
                   </span>
                 </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
-
-      <div className="rounded-xl border border-border bg-surface p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink">
-            <span
-              className={`mr-2 rounded border px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide ${CATEGORIA_COR.locacao}`}
-            >
-              Locação
-            </span>
-            Contas pendentes
-          </h2>
-          <Link href="/locacao" className="text-xs text-gold hover:underline">
-            Ver locação completo →
-          </Link>
-        </div>
-
-        {contasLocacaoPendentes.length === 0 ? (
-          <p className="py-6 text-center text-sm text-ink-muted">
-            Nenhuma conta de locação pendente. 🎉
-          </p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {contasLocacaoPendentes.map((c) => (
-              <li key={c.id} className="flex items-center justify-between gap-3 py-3.5">
-                <div className="min-w-0">
-                  <Link
-                    href={`/locacao/${c.contrato_id}`}
-                    className="truncate text-sm font-medium text-ink hover:underline"
-                  >
-                    {c.contratos_locacao?.imoveis?.endereco ?? c.contratos_locacao?.numero} —{" "}
-                    {TIPO_CONTA_LABEL[c.tipo]}
-                  </Link>
-                  <p className="text-xs text-ink-muted">
-                    Competência:{" "}
-                    {new Date(c.competencia + "T00:00:00").toLocaleDateString("pt-BR", {
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </p>
-                </div>
-                <span className="shrink-0 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
-                  Pendente
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+              ))}
+            </ul>
+          )}
+        </aside>
       </div>
 
       <div className="flex gap-3">

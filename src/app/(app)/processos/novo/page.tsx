@@ -1,5 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
 import { NovoProcessoForm } from "./form";
+import type { CategoriaProcesso } from "@/lib/types";
 
 export default async function NovoProcessoPage({
   searchParams,
@@ -8,6 +10,28 @@ export default async function NovoProcessoPage({
 }) {
   const supabase = await createClient();
   const { erro } = await searchParams;
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const { data: meuUsuario } = await supabase
+    .from("usuarios")
+    .select("perfil")
+    .eq("id", user.id)
+    .single();
+
+  const vejoTudo = meuUsuario?.perfil === "admin" || meuUsuario?.perfil === "diretora";
+
+  let minhasCategorias: CategoriaProcesso[] = ["venda", "financiamento", "locacao"];
+  if (!vejoTudo) {
+    const { data: categoriasRaw } = await supabase
+      .from("usuario_categorias")
+      .select("categoria")
+      .eq("usuario_id", user.id);
+    minhasCategorias = (categoriasRaw ?? []).map((c) => c.categoria as CategoriaProcesso);
+  }
 
   const [modelos, clientes, imoveis, bancos, corretores, usuarios] = await Promise.all([
     supabase.from("modelos_processo").select("id, nome, descricao, categoria").eq("ativo", true).order("nome"),
@@ -18,8 +42,12 @@ export default async function NovoProcessoPage({
     supabase.from("usuarios").select("id, nome").order("nome"),
   ]);
 
+  const modelosPermitidos = (modelos.data ?? []).filter((m) =>
+    minhasCategorias.includes(m.categoria as CategoriaProcesso)
+  );
+
   const modelosComEtapas = await Promise.all(
-    (modelos.data ?? []).map(async (m) => {
+    modelosPermitidos.map(async (m) => {
       const { data: etapas } = await supabase
         .from("modelos_etapa")
         .select("*")
@@ -44,14 +72,21 @@ export default async function NovoProcessoPage({
         </p>
       )}
 
-      <NovoProcessoForm
-        modelos={modelosComEtapas}
-        clientes={clientes.data ?? []}
-        imoveis={imoveis.data ?? []}
-        bancos={bancos.data ?? []}
-        corretores={corretores.data ?? []}
-        usuarios={usuarios.data ?? []}
-      />
+      {modelosComEtapas.length === 0 ? (
+        <p className="rounded-md border border-border bg-surface p-5 text-sm text-ink-muted">
+          Você não tem permissão pra criar processos em nenhuma categoria. Fale com um
+          administrador.
+        </p>
+      ) : (
+        <NovoProcessoForm
+          modelos={modelosComEtapas}
+          clientes={clientes.data ?? []}
+          imoveis={imoveis.data ?? []}
+          bancos={bancos.data ?? []}
+          corretores={corretores.data ?? []}
+          usuarios={usuarios.data ?? []}
+        />
+      )}
     </div>
   );
 }
