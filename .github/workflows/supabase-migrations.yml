@@ -26,24 +26,8 @@ jobs:
         with:
           version: latest
 
-      - name: "Diagnóstico (não revela os valores, só confirma se existem)"
-        run: |
-          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
-            echo "::error::SUPABASE_ACCESS_TOKEN está vazio ou não foi encontrado"
-          else
-            echo "::notice::SUPABASE_ACCESS_TOKEN presente, tamanho: ${#SUPABASE_ACCESS_TOKEN} caracteres"
-          fi
-          if [ -z "$SUPABASE_DB_PASSWORD" ]; then
-            echo "::error::SUPABASE_DB_PASSWORD está vazio ou não foi encontrado"
-          else
-            echo "::notice::SUPABASE_DB_PASSWORD presente, tamanho: ${#SUPABASE_DB_PASSWORD} caracteres"
-          fi
-        env:
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
-
       - name: Conectar ao projeto Supabase
-        run: supabase link --project-ref udarzsleyxcafttkkgbv --password "$SUPABASE_DB_PASSWORD" --yes --debug
+        run: supabase link --project-ref udarzsleyxcafttkkgbv --password "$SUPABASE_DB_PASSWORD" --yes
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
@@ -64,6 +48,8 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
+      # Se der erro, mostra a mensagem real como "annotation" (aparece
+      # resumida na aba Actions, sem precisar abrir o log completo).
       - name: Aplicar migrations pendentes
         run: |
           set +e
