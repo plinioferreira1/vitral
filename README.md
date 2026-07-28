@@ -7,6 +7,13 @@ diretora), cada uma com login próprio.
 
 Stack: **Next.js + Supabase (Postgres + Auth) + Vercel**.
 
+> **A partir de agora, as migrations novas rodam sozinhas.** Toda vez que uma
+> migration é enviada pra pasta `supabase/migrations/`, uma GitHub Action aplica
+> ela automaticamente no banco — ninguém precisa mais colar SQL manualmente no
+> Supabase. Ver seção **"Migrations automáticas"** mais abaixo. Os passos de
+> `SQL Editor` abaixo só valem pra quem estiver configurando o projeto do zero,
+> antes dessa automação existir.
+
 ---
 
 ## 1. Criar o projeto no Supabase
@@ -98,5 +105,23 @@ nos formulários de "Novo processo".
 - Permissões finas por perfil (hoje todo mundo do mesmo tenant vê tudo)
 
 ---
+
+## Migrations automáticas
+
+A pasta `supabase/migrations/` é aplicada sozinha no banco toda vez que alguém
+(o Claude, no caso) envia uma migration nova pra branch `main`. Isso é feito por
+uma GitHub Action (`.github/workflows/supabase-migrations.yml`).
+
+**Configuração necessária (só uma vez):** em
+`Settings → Secrets and variables → Actions` no repositório, precisam existir
+dois segredos:
+- `SUPABASE_ACCESS_TOKEN` — gerado em supabase.com/dashboard/account/tokens
+- `SUPABASE_DB_PASSWORD` — a senha do banco (Project Settings → Database no Supabase)
+
+**Importante:** os scripts dentro de `supabase/import/` (importação de planilhas,
+scripts de limpeza) **não** rodam automaticamente — são de uso único, sob
+demanda, e continuam sendo colados manualmente no SQL Editor quando fizer
+sentido rodá-los.
+
 
 Qualquer dúvida no passo a passo, me chame por aqui.

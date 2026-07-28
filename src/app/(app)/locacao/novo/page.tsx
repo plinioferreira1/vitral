@@ -1,0 +1,90 @@
+import { createClient } from "@/lib/supabase/server";
+import { criarContratoLocacao } from "./actions";
+
+export default async function NovoContratoLocacaoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ erro?: string }>;
+}) {
+  const supabase = await createClient();
+  const { erro } = await searchParams;
+
+  const [imoveis, clientes] = await Promise.all([
+    supabase.from("imoveis").select("id, endereco").order("endereco"),
+    supabase.from("clientes").select("id, nome").order("nome"),
+  ]);
+
+  return (
+    <div className="max-w-lg space-y-6">
+      <div>
+        <h1 className="text-xl font-serif font-semibold text-ink">Novo contrato de locação</h1>
+        <p className="mt-1 text-sm text-ink-muted">
+          Depois de criar, você vai poder marcar o status de cada conta (IPTU, condomínio, água,
+          luz, gás) mês a mês.
+        </p>
+      </div>
+
+      {erro && (
+        <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          {erro}
+        </p>
+      )}
+
+      <form
+        action={criarContratoLocacao}
+        className="space-y-4 rounded-xl border border-border bg-surface p-6"
+      >
+        <Select label="Imóvel" name="imovel_id" options={(imoveis.data ?? []).map((i) => [i.id, i.endereco])} />
+        <Select
+          label="Locador"
+          name="locador_id"
+          options={(clientes.data ?? []).map((c) => [c.id, c.nome])}
+        />
+        <Select
+          label="Locatário"
+          name="locatario_id"
+          options={(clientes.data ?? []).map((c) => [c.id, c.nome])}
+        />
+        <label className="flex items-center gap-2 text-sm text-ink">
+          <input type="checkbox" name="emite_nf" defaultChecked className="accent-brand" />
+          Emite nota fiscal
+        </label>
+
+        <button
+          type="submit"
+          className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white hover:opacity-90"
+        >
+          Criar contrato
+        </button>
+      </form>
+    </div>
+  );
+}
+
+function Select({
+  label,
+  name,
+  options,
+}: {
+  label: string;
+  name: string;
+  options: [string, string][];
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-medium text-ink-muted">{label}</label>
+      <select
+        name={name}
+        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+        defaultValue=""
+      >
+        <option value="">—</option>
+        {options.map(([id, nome]) => (
+          <option key={id} value={id}>
+            {nome}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}

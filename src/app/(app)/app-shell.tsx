@@ -48,7 +48,7 @@ export function AppShell({
           className="h-8 w-8 object-contain"
         />
       </div>
-      <p className="truncate text-sm font-serif font-semibold leading-tight text-ink">{tenantName}</p>
+      <p className="line-clamp-2 text-sm font-serif font-semibold leading-tight text-ink">{tenantName}</p>
     </div>
   );
 

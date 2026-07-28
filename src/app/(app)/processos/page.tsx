@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import type { CategoriaProcesso } from "@/lib/types";
+import { CATEGORIA_LABEL } from "@/lib/types";
 
 const STATUS_LABEL: Record<string, string> = {
   ativo: "Ativo",
@@ -17,18 +19,27 @@ const STATUS_COR: Record<string, string> = {
   cancelado: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
-export default async function ProcessosPage() {
+export default async function ProcessosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ categoria?: string }>;
+}) {
+  const { categoria: categoriaParam } = await searchParams;
+  const categoria = (categoriaParam as CategoriaProcesso) || "venda";
+
   const supabase = await createClient();
 
   const { data: processos, error } = await supabase
     .from("processos")
     .select(
-      `id, numero_processo, tipo, status, data_criacao,
+      `id, numero_processo, tipo, status, data_criacao, valor_total, valor_financiado, origem,
        comprador:clientes!processos_comprador_id_fkey ( nome ),
        vendedor:clientes!processos_vendedor_id_fkey ( nome ),
        corretores ( nome ), bancos ( nome ),
+       indicacao:corretores!processos_indicacao_id_fkey ( nome ),
        modelos_processo ( nome )`
     )
+    .eq("categoria", categoria)
     .order("criado_em", { ascending: false });
 
   if (error) {
@@ -41,20 +52,27 @@ export default async function ProcessosPage() {
     tipo: string | null;
     status: string;
     data_criacao: string;
+    valor_total: number | null;
+    valor_financiado: number | null;
+    origem: string | null;
     comprador: { nome: string } | null;
     vendedor: { nome: string } | null;
     corretores: { nome: string } | null;
     bancos: { nome: string } | null;
+    indicacao: { nome: string } | null;
     modelos_processo: { nome: string } | null;
   };
   const rows = (processos ?? []) as unknown as Row[];
+  const ehFinanciamento = categoria === "financiamento";
+
+  const abas: CategoriaProcesso[] = ["venda", "financiamento"];
 
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-serif font-semibold text-ink">Processos</h1>
-          <p className="mt-1 text-sm text-ink-muted">{rows.length} processos no total</p>
+          <p className="mt-1 text-sm text-ink-muted">{rows.length} processos nessa categoria</p>
         </div>
         <Link
           href="/processos/novo"
@@ -64,10 +82,24 @@ export default async function ProcessosPage() {
         </Link>
       </div>
 
+      <div className="flex gap-1 rounded-lg bg-background p-1 text-sm w-fit">
+        {abas.map((c) => (
+          <Link
+            key={c}
+            href={`/processos?categoria=${c}`}
+            className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
+              categoria === c ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
+            }`}
+          >
+            {CATEGORIA_LABEL[c]}
+          </Link>
+        ))}
+      </div>
+
       <div className="overflow-hidden rounded-xl border border-border bg-surface">
         {rows.length === 0 ? (
           <p className="p-8 text-center text-sm text-ink-muted">
-            Nenhum processo ainda.{" "}
+            Nenhum processo nessa categoria ainda.{" "}
             <Link href="/processos/novo" className="text-brand hover:underline">
               Criar o primeiro
             </Link>
@@ -78,10 +110,19 @@ export default async function ProcessosPage() {
             <thead>
               <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
                 <th className="px-5 py-3 font-medium">Nº</th>
-                <th className="px-5 py-3 font-medium">Comprador</th>
-                <th className="px-5 py-3 font-medium">Vendedor</th>
+                {ehFinanciamento ? (
+                  <>
+                    <th className="px-5 py-3 font-medium">Cliente</th>
+                    <th className="px-5 py-3 font-medium">Valor financiado</th>
+                    <th className="px-5 py-3 font-medium">Indicação</th>
+                  </>
+                ) : (
+                  <>
+                    <th className="px-5 py-3 font-medium">Comprador</th>
+                    <th className="px-5 py-3 font-medium">Vendedor</th>
+                  </>
+                )}
                 <th className="px-5 py-3 font-medium">Modelo</th>
-                <th className="px-5 py-3 font-medium">Corretor</th>
                 <th className="px-5 py-3 font-medium">Banco</th>
                 <th className="px-5 py-3 font-medium">Status</th>
               </tr>
@@ -94,14 +135,37 @@ export default async function ProcessosPage() {
                       {p.numero_processo}
                     </Link>
                   </td>
-                  <td className="px-5 py-3">
-                    <Link href={`/processos/${p.id}`} className="font-medium text-ink hover:underline">
-                      {p.comprador?.nome ?? "—"}
-                    </Link>
-                  </td>
-                  <td className="px-5 py-3 text-ink-muted">{p.vendedor?.nome ?? "—"}</td>
+                  {ehFinanciamento ? (
+                    <>
+                      <td className="px-5 py-3">
+                        <Link
+                          href={`/processos/${p.id}`}
+                          className="font-medium text-ink hover:underline"
+                        >
+                          {p.comprador?.nome ?? "—"}
+                        </Link>
+                      </td>
+                      <td className="px-5 py-3 text-ink-muted">
+                        {p.valor_financiado
+                          ? `R$ ${Number(p.valor_financiado).toLocaleString("pt-BR")}`
+                          : "—"}
+                      </td>
+                      <td className="px-5 py-3 text-ink-muted">{p.indicacao?.nome ?? "—"}</td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-5 py-3">
+                        <Link
+                          href={`/processos/${p.id}`}
+                          className="font-medium text-ink hover:underline"
+                        >
+                          {p.comprador?.nome ?? "—"}
+                        </Link>
+                      </td>
+                      <td className="px-5 py-3 text-ink-muted">{p.vendedor?.nome ?? "—"}</td>
+                    </>
+                  )}
                   <td className="px-5 py-3 text-ink-muted">{p.modelos_processo?.nome ?? "—"}</td>
-                  <td className="px-5 py-3 text-ink-muted">{p.corretores?.nome ?? "—"}</td>
                   <td className="px-5 py-3 text-ink-muted">{p.bancos?.nome ?? "—"}</td>
                   <td className="px-5 py-3">
                     <span

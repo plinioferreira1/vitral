@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { atualizarPerfil } from "./actions";
+import { SeletorFoto } from "./photo-picker";
 
 const PERFIL_LABEL: Record<string, string> = {
   admin: "Administrador",
@@ -65,30 +66,7 @@ export default async function PerfilPage({
       )}
 
       <form action={atualizarPerfil} className="space-y-5 rounded-xl border border-border bg-surface p-6">
-        <div className="flex items-center gap-4">
-          {usuario.foto_url ? (
-            <img
-              src={usuario.foto_url}
-              alt=""
-              className="h-16 w-16 rounded-full border border-border object-cover"
-            />
-          ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-brand text-lg font-serif font-semibold text-white">
-              {iniciais || "?"}
-            </div>
-          )}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">
-              Foto de perfil
-            </label>
-            <input
-              type="file"
-              name="foto"
-              accept="image/*"
-              className="block text-xs text-ink-muted file:mr-3 file:rounded-md file:border file:border-border file:bg-background file:px-3 file:py-1.5 file:text-xs file:text-ink hover:file:bg-border"
-            />
-          </div>
-        </div>
+        <SeletorFoto fotoAtual={usuario.foto_url} iniciais={iniciais} />
 
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">Nome</label>

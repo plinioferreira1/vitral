@@ -23,11 +23,12 @@ export default async function ProcessoDetalhePage({
   const { data: processo } = await supabase
     .from("processos")
     .select(
-      `id, numero_processo, status, valor_total, data_criacao,
+      `id, numero_processo, status, valor_total, valor_financiado, origem, categoria, data_criacao,
        comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
        vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
        imoveis ( endereco ), bancos ( nome ),
-       corretores ( nome ), usuarios ( nome ), modelos_processo ( nome )`
+       corretores ( nome ), usuarios ( nome ), modelos_processo ( nome ),
+       indicacao:corretores!processos_indicacao_id_fkey ( nome )`
     )
     .eq("id", id)
     .single();
@@ -42,7 +43,8 @@ export default async function ProcessoDetalhePage({
 
   const { data: etapasPadrao } = await supabase
     .from("etapas_padrao")
-    .select("id, nome, ordem")
+    .select("id, nome, ordem, categoria")
+    .eq("categoria", (processo as unknown as { categoria: string }).categoria)
     .order("ordem", { ascending: true });
 
   const { data: etapasRaw } = await supabase
@@ -79,8 +81,13 @@ export default async function ProcessoDetalhePage({
     corretores: { nome: string } | null;
     usuarios: { nome: string } | null;
     modelos_processo: { nome: string } | null;
+    indicacao: { nome: string } | null;
+    categoria: string;
+    valor_financiado: number | null;
+    origem: string | null;
   };
   const p = processo as unknown as P;
+  const ehFinanciamento = p.categoria === "financiamento";
 
   return (
     <div className="max-w-3xl space-y-8">
@@ -90,13 +97,27 @@ export default async function ProcessoDetalhePage({
           {p.modelos_processo?.nome} — {p.comprador?.nome ?? "Sem comprador"}
         </h1>
         <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-ink-muted sm:grid-cols-3">
-          <Info label="Vendedor" value={p.vendedor?.nome} />
+          {!ehFinanciamento && <Info label="Vendedor" value={p.vendedor?.nome} />}
           <Info label="Imóvel" value={p.imoveis?.endereco} />
           <Info label="Banco" value={p.bancos?.nome} />
           <Info label="Corretor" value={p.corretores?.nome} />
           <Info label="Responsável" value={p.usuarios?.nome} />
+          {ehFinanciamento && (
+            <>
+              <Info
+                label="Valor financiado"
+                value={
+                  p.valor_financiado
+                    ? `R$ ${Number(p.valor_financiado).toLocaleString("pt-BR")}`
+                    : undefined
+                }
+              />
+              <Info label="Origem" value={p.origem} />
+              <Info label="Indicação" value={p.indicacao?.nome} />
+            </>
+          )}
           <Info
-            label="Valor"
+            label={ehFinanciamento ? "Valor do imóvel" : "Valor"}
             value={p.valor_total ? `R$ ${Number(p.valor_total).toLocaleString("pt-BR")}` : undefined}
           />
           <Info

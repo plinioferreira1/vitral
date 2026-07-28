@@ -10,7 +10,7 @@ export default async function NovoProcessoPage({
   const { erro } = await searchParams;
 
   const [modelos, clientes, imoveis, bancos, corretores, usuarios] = await Promise.all([
-    supabase.from("modelos_processo").select("id, nome, descricao").eq("ativo", true).order("nome"),
+    supabase.from("modelos_processo").select("id, nome, descricao, categoria").eq("ativo", true).order("nome"),
     supabase.from("clientes").select("id, nome").order("nome"),
     supabase.from("imoveis").select("id, endereco").order("endereco"),
     supabase.from("bancos").select("id, nome").order("nome"),

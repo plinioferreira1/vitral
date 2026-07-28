@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { criarProcesso } from "./actions";
 import { gerarEtapas } from "@/lib/motor-processos";
-import type { ModeloEtapa } from "@/lib/types";
+import type { ModeloEtapa, CategoriaProcesso } from "@/lib/types";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -11,6 +11,7 @@ interface ModeloComEtapas {
   id: string;
   nome: string;
   descricao: string | null;
+  categoria: CategoriaProcesso;
   etapas: ModeloEtapa[];
 }
 
@@ -28,6 +29,7 @@ export function NovoProcessoForm({ modelos, clientes, imoveis, bancos, corretore
   const [dataBase, setDataBase] = useState(() => new Date().toISOString().slice(0, 10));
 
   const modeloSelecionado = modelos.find((m) => m.id === modeloId);
+  const ehFinanciamento = modeloSelecionado?.categoria === "financiamento";
 
   const preview = useMemo(() => {
     if (!modeloSelecionado || !dataBase) return [];
@@ -40,6 +42,8 @@ export function NovoProcessoForm({ modelos, clientes, imoveis, bancos, corretore
 
   return (
     <form action={criarProcesso} className="space-y-5">
+      <input type="hidden" name="categoria" value={modeloSelecionado?.categoria ?? "venda"} />
+
       <div>
         <label className="mb-1 block text-xs font-medium text-ink-muted">Modelo</label>
         <select
@@ -61,14 +65,22 @@ export function NovoProcessoForm({ modelos, clientes, imoveis, bancos, corretore
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Select label="Comprador" name="comprador_id" options={clientes.map((c) => [c.id, c.nome])} />
-        <Select label="Vendedor" name="vendedor_id" options={clientes.map((c) => [c.id, c.nome])} />
+        <Select
+          label={ehFinanciamento ? "Cliente" : "Comprador"}
+          name="comprador_id"
+          options={clientes.map((c) => [c.id, c.nome])}
+        />
+        {!ehFinanciamento && (
+          <Select label="Vendedor" name="vendedor_id" options={clientes.map((c) => [c.id, c.nome])} />
+        )}
         <Select label="Imóvel" name="imovel_id" options={imoveis.map((i) => [i.id, i.endereco])} />
         <Select label="Banco" name="banco_id" options={bancos.map((b) => [b.id, b.nome])} />
         <Select label="Corretor" name="corretor_id" options={corretores.map((c) => [c.id, c.nome])} />
         <Select label="Responsável" name="responsavel_id" options={usuarios.map((u) => [u.id, u.nome])} />
         <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">Valor (R$)</label>
+          <label className="mb-1 block text-xs font-medium text-ink-muted">
+            {ehFinanciamento ? "Valor do imóvel (R$)" : "Valor (R$)"}
+          </label>
           <input
             name="valor_total"
             type="number"
@@ -77,6 +89,36 @@ export function NovoProcessoForm({ modelos, clientes, imoveis, bancos, corretore
             placeholder="420000.00"
           />
         </div>
+
+        {ehFinanciamento && (
+          <>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ink-muted">
+                Valor financiado (R$)
+              </label>
+              <input
+                name="valor_financiado"
+                type="number"
+                step="0.01"
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                placeholder="220000.00"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ink-muted">Origem</label>
+              <input
+                name="origem"
+                placeholder="Indicação, SACRA, Elevare..."
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </div>
+            <Select
+              label="Indicação"
+              name="indicacao_id"
+              options={corretores.map((c) => [c.id, c.nome])}
+            />
+          </>
+        )}
       </div>
 
       <div>

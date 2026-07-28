@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import type { CategoriaProcesso } from "@/lib/types";
 
 export async function adicionarEtapaPadrao(formData: FormData) {
   const supabase = await createClient();
@@ -11,6 +12,7 @@ export async function adicionarEtapaPadrao(formData: FormData) {
   if (!user) return;
 
   const nome = String(formData.get("nome") ?? "").trim();
+  const categoria = (String(formData.get("categoria") ?? "venda")) as CategoriaProcesso;
   if (!nome) return;
 
   const { data: usuario } = await supabase
@@ -24,6 +26,7 @@ export async function adicionarEtapaPadrao(formData: FormData) {
     .from("etapas_padrao")
     .select("ordem")
     .eq("tenant_id", usuario.tenant_id)
+    .eq("categoria", categoria)
     .order("ordem", { ascending: false })
     .limit(1);
 
@@ -31,7 +34,7 @@ export async function adicionarEtapaPadrao(formData: FormData) {
 
   await supabase
     .from("etapas_padrao")
-    .insert({ tenant_id: usuario.tenant_id, nome, ordem: proximaOrdem });
+    .insert({ tenant_id: usuario.tenant_id, nome, ordem: proximaOrdem, categoria });
 
   revalidatePath("/etapas-padrao");
 }

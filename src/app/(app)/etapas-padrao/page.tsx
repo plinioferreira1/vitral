@@ -1,13 +1,26 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { adicionarEtapaPadrao, removerEtapaPadrao } from "./actions";
+import type { CategoriaProcesso } from "@/lib/types";
+import { CATEGORIA_LABEL } from "@/lib/types";
 
-export default async function EtapasPadraoPage() {
+export default async function EtapasPadraoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ categoria?: string }>;
+}) {
+  const { categoria: categoriaParam } = await searchParams;
+  const categoria = (categoriaParam as CategoriaProcesso) || "venda";
+
   const supabase = await createClient();
 
   const { data: etapas } = await supabase
     .from("etapas_padrao")
-    .select("id, nome, ordem")
+    .select("id, nome, ordem, categoria")
+    .eq("categoria", categoria)
     .order("ordem", { ascending: true });
+
+  const abas: CategoriaProcesso[] = ["venda", "financiamento"];
 
   return (
     <div className="max-w-xl space-y-6">
@@ -15,15 +28,30 @@ export default async function EtapasPadraoPage() {
         <h1 className="text-xl font-serif font-semibold text-ink">Etapas padrão</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Essa é a lista de etapas que aparece pra escolher em cada processo (na tela do
-          processo, em &quot;Adicionar etapa&quot;). Adicione, remova ou reordene conforme o
-          jeito que vocês trabalham.
+          processo, em &quot;Adicionar etapa&quot;), separada por categoria. Adicione ou remova
+          conforme o jeito que vocês trabalham.
         </p>
+      </div>
+
+      <div className="flex gap-1 rounded-lg bg-background p-1 text-sm w-fit">
+        {abas.map((c) => (
+          <Link
+            key={c}
+            href={`/etapas-padrao?categoria=${c}`}
+            className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
+              categoria === c ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
+            }`}
+          >
+            {CATEGORIA_LABEL[c]}
+          </Link>
+        ))}
       </div>
 
       <form
         action={adicionarEtapaPadrao}
         className="flex items-center gap-2 rounded-xl border border-border bg-surface p-3"
       >
+        <input type="hidden" name="categoria" value={categoria} />
         <input
           name="nome"
           required
@@ -40,7 +68,9 @@ export default async function EtapasPadraoPage() {
 
       <div className="rounded-xl border border-border bg-surface">
         {(etapas ?? []).length === 0 ? (
-          <p className="p-6 text-center text-sm text-ink-muted">Nenhuma etapa cadastrada ainda.</p>
+          <p className="p-6 text-center text-sm text-ink-muted">
+            Nenhuma etapa cadastrada nessa categoria ainda.
+          </p>
         ) : (
           <ul className="divide-y divide-border">
             {(etapas ?? []).map((e) => (
@@ -51,6 +81,7 @@ export default async function EtapasPadraoPage() {
                 </span>
                 <form action={removerEtapaPadrao}>
                   <input type="hidden" name="id" value={e.id} />
+                  <input type="hidden" name="categoria" value={categoria} />
                   <button
                     type="submit"
                     aria-label={`Remover ${e.nome}`}

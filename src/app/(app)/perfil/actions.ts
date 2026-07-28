@@ -13,27 +13,27 @@ export async function atualizarPerfil(formData: FormData) {
 
   const nome = String(formData.get("nome") ?? "").trim();
   const cargo = String(formData.get("cargo") ?? "").trim();
-  const foto = formData.get("foto") as File | null;
+  const fotoBase64 = String(formData.get("foto_base64") ?? "");
 
   const updates: Record<string, string | null> = {
     nome,
     cargo: cargo || null,
   };
 
-  if (foto && foto.size > 0) {
-    const extensao = foto.name.split(".").pop() || "jpg";
-    const caminho = `${user.id}/foto.${extensao}`;
+  if (fotoBase64 && fotoBase64.startsWith("data:image")) {
+    const [, base64Data] = fotoBase64.split(",");
+    const buffer = Buffer.from(base64Data, "base64");
+    const caminho = `${user.id}/foto.jpg`;
 
     const { error: erroUpload } = await supabase.storage
       .from("avatars")
-      .upload(caminho, foto, { upsert: true, contentType: foto.type });
+      .upload(caminho, buffer, { upsert: true, contentType: "image/jpeg" });
 
     if (erroUpload) {
       redirect(`/perfil?erro=${encodeURIComponent(erroUpload.message)}`);
     }
 
     const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(caminho);
-    // adiciona timestamp pra invalidar cache do navegador quando a foto é trocada
     updates.foto_url = `${publicUrlData.publicUrl}?t=${Date.now()}`;
   }
 

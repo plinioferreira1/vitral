@@ -10,7 +10,7 @@ export async function getEtapasComContexto() {
     .select(
       `id, processo_id, modelo_etapa_id, nome, responsavel_id, data_prevista,
        data_realizada, status, ordem, etapa_dependencia_id,
-       processos!inner ( id, numero_processo, tipo, status, imoveis ( endereco ),
+       processos!inner ( id, numero_processo, tipo, status, categoria, imoveis ( endereco ),
          comprador:clientes!processos_comprador_id_fkey ( nome ), corretores ( nome ), bancos ( nome ) ),
        usuarios ( nome )`
     )
@@ -26,6 +26,7 @@ export async function getEtapasComContexto() {
       numero_processo: string;
       tipo: string | null;
       status: string;
+      categoria: string;
       imoveis: { endereco: string } | null;
       comprador: { nome: string } | null;
       corretores: { nome: string } | null;

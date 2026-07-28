@@ -91,6 +91,14 @@ export interface ModeloChecklistItem {
 
 export type StatusComissao = "0% pago" | "50% pago" | "100% pago" | "cancelada";
 
+export type CategoriaProcesso = "venda" | "financiamento" | "locacao";
+
+export const CATEGORIA_LABEL: Record<CategoriaProcesso, string> = {
+  venda: "Venda",
+  financiamento: "Financiamento",
+  locacao: "Locação",
+};
+
 export interface Processo {
   id: string;
   tenant_id: string;
@@ -105,6 +113,10 @@ export interface Processo {
   tipo: string | null;
   status: StatusProcesso;
   valor_total: number | null;
+  categoria: CategoriaProcesso;
+  valor_financiado: number | null;
+  origem: string | null;
+  indicacao_id: string | null;
   data_criacao: string;
   data_conclusao: string | null;
   criado_em: string;
@@ -114,6 +126,67 @@ export interface EtapaPadrao {
   id: string;
   tenant_id: string;
   nome: string;
+  ordem: number;
+  categoria: CategoriaProcesso;
+}
+
+export type TipoContaLocacao = "iptu" | "condominio" | "agua" | "luz" | "gas";
+export type StatusContaLocacao = "pago" | "pendente" | "nao_aplicavel";
+export type TipoIptuLocacao = "parcelado" | "cota_unica";
+export type ResponsavelPagamentoLocacao = "locador" | "locatario";
+
+export const RESPONSAVEL_PAGAMENTO_LABEL: Record<ResponsavelPagamentoLocacao, string> = {
+  locador: "Locador",
+  locatario: "Locatário",
+};
+
+export const TIPO_CONTA_LABEL: Record<TipoContaLocacao, string> = {
+  iptu: "IPTU / TLP",
+  condominio: "Condomínio",
+  agua: "Água",
+  luz: "Luz",
+  gas: "Gás",
+};
+
+export interface ContratoLocacao {
+  id: string;
+  tenant_id: string;
+  numero: string;
+  imovel_id: string | null;
+  locador_id: string | null;
+  locatario_id: string | null;
+  emite_nf: boolean;
+  iptu_inscricao: string | null;
+  iptu_tipo: TipoIptuLocacao | null;
+  condominio_administradora: string | null;
+  condominio_contato: string | null;
+  agua_inscricao: string | null;
+  agua_codigo_cliente: string | null;
+  responsavel_iptu: ResponsavelPagamentoLocacao | null;
+  responsavel_condominio: ResponsavelPagamentoLocacao | null;
+  responsavel_agua: ResponsavelPagamentoLocacao | null;
+  responsavel_luz: ResponsavelPagamentoLocacao | null;
+  responsavel_gas: ResponsavelPagamentoLocacao | null;
+  ativo: boolean;
+  responsavel_id: string | null;
+  observacoes: string | null;
+}
+
+export interface ContaLocacao {
+  id: string;
+  contrato_id: string;
+  tipo: TipoContaLocacao;
+  competencia: string;
+  status: StatusContaLocacao;
+  valor: number | null;
+  vencimento: string | null;
+}
+
+export interface TarefaMensal {
+  id: string;
+  tenant_id: string;
+  nome: string;
+  regra: string | null;
   ordem: number;
 }
 

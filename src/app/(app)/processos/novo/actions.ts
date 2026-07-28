@@ -14,6 +14,7 @@ export async function criarProcesso(formData: FormData) {
   if (!user) redirect("/login");
 
   const modeloProcessoId = String(formData.get("modelo_processo_id") ?? "");
+  const categoria = String(formData.get("categoria") ?? "venda");
   const compradorId = String(formData.get("comprador_id") ?? "") || null;
   const vendedorId = String(formData.get("vendedor_id") ?? "") || null;
   const imovelId = String(formData.get("imovel_id") ?? "") || null;
@@ -22,6 +23,9 @@ export async function criarProcesso(formData: FormData) {
   const responsavelId = String(formData.get("responsavel_id") ?? "") || user.id;
   const dataBase = String(formData.get("data_base") ?? "");
   const valorTotal = String(formData.get("valor_total") ?? "");
+  const valorFinanciado = String(formData.get("valor_financiado") ?? "");
+  const origem = String(formData.get("origem") ?? "").trim() || null;
+  const indicacaoId = String(formData.get("indicacao_id") ?? "") || null;
 
   if (!modeloProcessoId || !dataBase) {
     redirect(`/processos/novo?erro=${encodeURIComponent("Modelo e data base são obrigatórios.")}`);
@@ -69,7 +73,11 @@ export async function criarProcesso(formData: FormData) {
       responsavel_id: responsavelId,
       tipo: modeloProcesso?.nome ?? null,
       status: "ativo",
+      categoria: categoria,
       valor_total: valorTotal ? Number(valorTotal) : null,
+      valor_financiado: valorFinanciado ? Number(valorFinanciado) : null,
+      origem,
+      indicacao_id: indicacaoId,
       data_criacao: dataBase,
     })
     .select("id")
