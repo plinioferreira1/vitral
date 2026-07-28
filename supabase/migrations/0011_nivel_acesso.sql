@@ -14,11 +14,11 @@ alter table usuarios add column nivel_acesso nivel_acesso_usuario;
 
 -- Grandfathering: mapeia o perfil de quem já existe pro nível
 -- de acesso equivalente, pra ninguém perder acesso de surpresa.
-update usuarios set nivel_acesso = case
+update usuarios set nivel_acesso = (case
   when perfil in ('admin', 'diretora') then 'diretor'
   when perfil = 'gerente' then 'gerente'
   else 'supervisor'
-end
+end)::nivel_acesso_usuario
 where nivel_acesso is null;
 
 alter table usuarios alter column nivel_acesso set default 'supervisor';
