@@ -53,7 +53,7 @@ jobs:
       - name: Aplicar migrations pendentes
         run: |
           set +e
-          supabase db push --password "$SUPABASE_DB_PASSWORD" --yes > /tmp/db_push_output.txt 2>&1
+          supabase db push --password "$SUPABASE_DB_PASSWORD" --yes --debug > /tmp/db_push_output.txt 2>&1
           STATUS=$?
           if [ $STATUS -ne 0 ]; then
             echo "::error::$(tail -c 3000 /tmp/db_push_output.txt | tr '\n' ' ')"
