@@ -18,11 +18,11 @@ export default async function NovoProcessoPage({
 
   const { data: meuUsuario } = await supabase
     .from("usuarios")
-    .select("perfil")
+    .select("nivel_acesso")
     .eq("id", user.id)
     .single();
 
-  const vejoTudo = meuUsuario?.perfil === "admin" || meuUsuario?.perfil === "diretora";
+  const vejoTudo = meuUsuario?.nivel_acesso === "diretor" || meuUsuario?.nivel_acesso === "gerente";
 
   let minhasCategorias: CategoriaProcesso[] = ["venda", "financiamento", "locacao"];
   if (!vejoTudo) {

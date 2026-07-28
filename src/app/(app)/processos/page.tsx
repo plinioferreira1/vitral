@@ -33,11 +33,11 @@ export default async function ProcessosPage({
 
   const { data: meuUsuario } = await supabase
     .from("usuarios")
-    .select("perfil")
+    .select("nivel_acesso")
     .eq("id", user?.id ?? "")
     .single();
 
-  const vejoTudo = meuUsuario?.perfil === "admin" || meuUsuario?.perfil === "diretora";
+  const vejoTudo = meuUsuario?.nivel_acesso === "diretor" || meuUsuario?.nivel_acesso === "gerente" || meuUsuario?.nivel_acesso === "auxiliar";
 
   let abasPermitidas: CategoriaProcesso[] = ["venda", "financiamento"];
   if (!vejoTudo) {

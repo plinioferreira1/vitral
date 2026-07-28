@@ -15,12 +15,22 @@ export type TipoRegraData =
 export type StatusProcesso = "ativo" | "pendente" | "concluido" | "arquivado" | "cancelado";
 export type StatusEtapa = "pendente" | "em_andamento" | "concluida" | "bloqueada";
 
+export type NivelAcesso = "diretor" | "gerente" | "supervisor" | "auxiliar";
+
+export const NIVEL_ACESSO_LABEL: Record<NivelAcesso, string> = {
+  diretor: "Diretor",
+  gerente: "Gerente",
+  supervisor: "Supervisor",
+  auxiliar: "Auxiliar",
+};
+
 export interface Usuario {
   id: string;
   tenant_id: string | null;
   nome: string;
   email: string;
   perfil: PerfilUsuario;
+  nivel_acesso: NivelAcesso;
   cargo: string | null;
   foto_url: string | null;
   ativo: boolean;
