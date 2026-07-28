@@ -85,13 +85,43 @@ where modelo_processo_id in (select id from modelos_processo where nome = 'Corre
 -- =========================================================
 -- Evita duplicar corretor/banco se um script de importação
 -- rodar mais de uma vez (mesmo problema que já tivemos com
--- a importação de Vendas). Remove duplicatas que possam
--- existir antes de travar com a constraint.
+-- a importação de Vendas). Antes de remover a duplicata,
+-- repassa qualquer processo/comissão que apontava pra ela
+-- pro registro que vamos manter — senão a remoção quebra por
+-- violação de chave estrangeira.
 -- =========================================================
+
+update processos p
+set corretor_id = manter.id
+from corretores dup
+join corretores manter
+  on manter.nome = dup.nome and manter.tenant_id = dup.tenant_id and manter.id < dup.id
+where p.corretor_id = dup.id;
+
+update processos p
+set indicacao_id = manter.id
+from corretores dup
+join corretores manter
+  on manter.nome = dup.nome and manter.tenant_id = dup.tenant_id and manter.id < dup.id
+where p.indicacao_id = dup.id;
+
+update comissoes c
+set beneficiario_id = manter.id
+from corretores dup
+join corretores manter
+  on manter.nome = dup.nome and manter.tenant_id = dup.tenant_id and manter.id < dup.id
+where c.beneficiario_id = dup.id;
 
 delete from corretores a
 using corretores b
 where a.nome = b.nome and a.tenant_id = b.tenant_id and a.id > b.id;
+
+update processos p
+set banco_id = manter.id
+from bancos dup
+join bancos manter
+  on manter.nome = dup.nome and manter.tenant_id = dup.tenant_id and manter.id < dup.id
+where p.banco_id = dup.id;
 
 delete from bancos a
 using bancos b
