@@ -27,7 +27,7 @@ export default async function ProcessoDetalhePage({
        comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
        vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
        imoveis ( endereco ), bancos ( nome ),
-       corretores ( nome ), usuarios ( nome ), modelos_processo ( nome ),
+       corretores!processos_corretor_id_fkey ( nome ), usuarios ( nome ), modelos_processo ( nome ),
        indicacao:corretores!processos_indicacao_id_fkey ( nome )`
     )
     .eq("id", id)
@@ -37,7 +37,7 @@ export default async function ProcessoDetalhePage({
 
   const { data: comissoes } = await supabase
     .from("comissoes")
-    .select("*, corretores ( nome )")
+    .select("*, corretores!comissoes_beneficiario_id_fkey ( nome )")
     .eq("processo_id", id)
     .order("criado_em", { ascending: true });
 

@@ -11,7 +11,7 @@ export async function getEtapasComContexto() {
       `id, processo_id, modelo_etapa_id, nome, responsavel_id, data_prevista,
        data_realizada, status, ordem, etapa_dependencia_id,
        processos!inner ( id, numero_processo, tipo, status, categoria, imoveis ( endereco ),
-         comprador:clientes!processos_comprador_id_fkey ( nome ), corretores ( nome ), bancos ( nome ) ),
+         comprador:clientes!processos_comprador_id_fkey ( nome ), corretores!processos_corretor_id_fkey ( nome ), bancos ( nome ) ),
        usuarios ( nome )`
     )
     .neq("processos.status", "cancelado")

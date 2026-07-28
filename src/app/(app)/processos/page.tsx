@@ -35,7 +35,7 @@ export default async function ProcessosPage({
       `id, numero_processo, tipo, status, data_criacao, valor_total, valor_financiado, origem,
        comprador:clientes!processos_comprador_id_fkey ( nome ),
        vendedor:clientes!processos_vendedor_id_fkey ( nome ),
-       corretores ( nome ), bancos ( nome ),
+       corretores!processos_corretor_id_fkey ( nome ), bancos ( nome ),
        indicacao:corretores!processos_indicacao_id_fkey ( nome ),
        modelos_processo ( nome )`
     )
