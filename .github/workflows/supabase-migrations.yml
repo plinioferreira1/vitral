@@ -1,0 +1,62 @@
+name: Aplicar migrations no Supabase
+
+# Roda sozinho toda vez que uma migration nova é enviada pra main.
+# Também pode ser disparado manualmente pela aba "Actions" no GitHub.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "supabase/migrations/**"
+  workflow_dispatch:
+    inputs:
+      bootstrap:
+        description: "Marcar migrations 0001-0007 como já aplicadas (rodar só uma vez, na primeira configuração)"
+        type: boolean
+        default: false
+
+jobs:
+  migrar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Instalar Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Conectar ao projeto Supabase
+        run: supabase link --project-ref udarzsleyxcafttkkgbv
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      # Passo único de configuração inicial: as migrations 0001 a 0007
+      # já tinham sido aplicadas manualmente (colando no SQL Editor)
+      # antes dessa automação existir. Esse passo só marca elas como
+      # "já aplicadas" no histórico do Supabase, sem executar de novo
+      # (o que quebraria, já que as tabelas já existem). Só roda se
+      # a pessoa marcar a opção "bootstrap" ao disparar manualmente.
+      - name: "Configuração inicial (só na primeira vez)"
+        if: github.event.inputs.bootstrap == 'true'
+        run: |
+          for v in 0001 0002 0003 0004 0005 0006 0007; do
+            supabase migration repair --status applied "$v" || true
+          done
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      - name: Aplicar migrations pendentes
+        run: supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+      - name: Conferir estado das migrations
+        if: always()
+        run: supabase migration list
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
