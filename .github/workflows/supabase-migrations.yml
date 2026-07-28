@@ -65,7 +65,15 @@ jobs:
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
 
       - name: Aplicar migrations pendentes
-        run: supabase db push --password "$SUPABASE_DB_PASSWORD"
+        run: |
+          set +e
+          supabase db push --password "$SUPABASE_DB_PASSWORD" > /tmp/db_push_output.txt 2>&1
+          STATUS=$?
+          if [ $STATUS -ne 0 ]; then
+            echo "::error::$(tail -c 1200 /tmp/db_push_output.txt | tr '\n' ' ')"
+          fi
+          cat /tmp/db_push_output.txt
+          exit $STATUS
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
