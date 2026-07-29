@@ -127,6 +127,7 @@ export async function alternarEtapaPadrao(formData: FormData) {
 
   const processoId = String(formData.get("processo_id") ?? "");
   const nome = String(formData.get("nome") ?? "");
+  const ordemCatalogo = Number(formData.get("ordem") ?? "0");
   const aplicada = formData.get("aplicada") === "true";
   const etapaId = String(formData.get("etapa_id") ?? "") || null;
 
@@ -134,20 +135,12 @@ export async function alternarEtapaPadrao(formData: FormData) {
     // já existe -> remove (destrava a etapa desse processo)
     await supabase.from("etapas").delete().eq("id", etapaId);
   } else if (!aplicada) {
-    const { data: existentes } = await supabase
-      .from("etapas")
-      .select("ordem")
-      .eq("processo_id", processoId)
-      .order("ordem", { ascending: false })
-      .limit(1);
-    const proximaOrdem = (existentes?.[0]?.ordem ?? 0) + 1;
-
     await supabase.from("etapas").insert({
       processo_id: processoId,
       nome,
       responsavel_id: user?.id ?? null,
       status: "pendente",
-      ordem: proximaOrdem,
+      ordem: ordemCatalogo,
     });
   }
 

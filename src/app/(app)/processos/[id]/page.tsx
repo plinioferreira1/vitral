@@ -200,6 +200,7 @@ export default async function ProcessoDetalhePage({
                   <form key={ep.id} action={alternarEtapaPadrao}>
                     <input type="hidden" name="processo_id" value={p.id} />
                     <input type="hidden" name="nome" value={ep.nome} />
+                    <input type="hidden" name="ordem" value={ep.ordem} />
                     <input type="hidden" name="aplicada" value={String(aplicada)} />
                     {etapaExistente && (
                       <input type="hidden" name="etapa_id" value={etapaExistente.id} />
