@@ -181,6 +181,7 @@ export default function CalculadoraPage() {
 
       {aba === "venda" ? (
         <PainelCalculo
+          key="venda"
           tipo="venda"
           grupos={GRUPOS_VENDA}
           permiteItensPersonalizados
@@ -189,6 +190,7 @@ export default function CalculadoraPage() {
         />
       ) : (
         <PainelCalculo
+          key="locacao"
           tipo="locacao"
           grupos={GRUPOS_LOCACAO}
           permiteItensPersonalizados={false}
