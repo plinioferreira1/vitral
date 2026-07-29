@@ -4,9 +4,15 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-interface NavItem {
+interface SubNavItem {
   href: string;
   label: string;
+}
+
+interface NavItem {
+  href?: string;
+  label: string;
+  children?: SubNavItem[];
 }
 
 interface Props {
@@ -17,6 +23,12 @@ interface Props {
   userCargo: string | null;
   userFoto: string | null;
   sairAction: () => Promise<void>;
+}
+
+function ehAtivo(pathname: string, href: string) {
+  if (href === "/") return pathname === "/";
+  const [caminho] = href.split("?");
+  return pathname === caminho || pathname.startsWith(`${caminho}/`);
 }
 
 export function AppShell({
@@ -31,6 +43,23 @@ export function AppShell({
   const [menuAberto, setMenuAberto] = useState(false);
   const pathname = usePathname();
 
+  const [gruposAbertos, setGruposAbertos] = useState<Set<string>>(() => {
+    const abertos = new Set<string>();
+    navItems.forEach((item) => {
+      if (item.children?.some((c) => ehAtivo(pathname, c.href))) abertos.add(item.label);
+    });
+    return abertos;
+  });
+
+  const alternarGrupo = (label: string) => {
+    setGruposAbertos((prev) => {
+      const novo = new Set(prev);
+      if (novo.has(label)) novo.delete(label);
+      else novo.add(label);
+      return novo;
+    });
+  };
+
   const iniciais = userName
     .split(" ")
     .filter(Boolean)
@@ -39,7 +68,11 @@ export function AppShell({
     .join("");
 
   const logo = (
-    <div className="flex items-center gap-2 px-2">
+    <Link
+      href="/"
+      onClick={() => setMenuAberto(false)}
+      className="flex items-center gap-2 rounded-md px-2 py-1 transition hover:bg-background"
+    >
       <div className="flex h-8 w-8 shrink-0 items-center justify-center">
         <img
           src="/brand/vitral-icone.png"
@@ -49,26 +82,74 @@ export function AppShell({
         />
       </div>
       <p className="line-clamp-2 text-sm font-serif font-semibold leading-tight text-ink">{tenantName}</p>
-    </div>
+    </Link>
   );
 
   const nav = (
     <nav className="flex-1 space-y-0.5">
       {navItems.map((item) => {
-        const ativo = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+        if (!item.children) {
+          const ativo = ehAtivo(pathname, item.href!);
+          return (
+            <Link
+              key={item.label}
+              href={item.href!}
+              onClick={() => setMenuAberto(false)}
+              className={`block rounded-md px-2.5 py-2 text-sm transition ${
+                ativo
+                  ? "bg-background font-medium text-ink"
+                  : "text-ink-muted hover:bg-background hover:text-ink"
+              }`}
+            >
+              {item.label}
+            </Link>
+          );
+        }
+
+        const aberto = gruposAbertos.has(item.label);
+        const algumFilhoAtivo = item.children.some((c) => ehAtivo(pathname, c.href));
+
         return (
-          <Link
-            key={item.href}
-            href={item.href}
-            onClick={() => setMenuAberto(false)}
-            className={`block rounded-md px-2.5 py-2 text-sm transition ${
-              ativo
-                ? "bg-background font-medium text-ink"
-                : "text-ink-muted hover:bg-background hover:text-ink"
-            }`}
-          >
-            {item.label}
-          </Link>
+          <div key={item.label}>
+            <button
+              type="button"
+              onClick={() => alternarGrupo(item.label)}
+              className={`flex w-full items-center justify-between rounded-md px-2.5 py-2 text-sm transition ${
+                algumFilhoAtivo ? "font-medium text-ink" : "text-ink-muted hover:bg-background hover:text-ink"
+              }`}
+            >
+              {item.label}
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 12 12"
+                className={`transition-transform ${aberto ? "rotate-90" : ""}`}
+              >
+                <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            {aberto && (
+              <div className="ml-2 space-y-0.5 border-l border-border pl-2">
+                {item.children.map((child) => {
+                  const ativo = ehAtivo(pathname, child.href);
+                  return (
+                    <Link
+                      key={child.href}
+                      href={child.href}
+                      onClick={() => setMenuAberto(false)}
+                      className={`block rounded-md px-2.5 py-1.5 text-sm transition ${
+                        ativo
+                          ? "bg-background font-medium text-ink"
+                          : "text-ink-muted hover:bg-background hover:text-ink"
+                      }`}
+                    >
+                      {child.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         );
       })}
     </nav>

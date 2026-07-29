@@ -93,7 +93,7 @@ export default async function ProcessosPage({
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-serif font-semibold text-ink">Processos</h1>
+          <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">Processos</h1>
           <p className="mt-1 text-sm text-ink-muted">{rows.length} processos nessa categoria</p>
         </div>
         <Link

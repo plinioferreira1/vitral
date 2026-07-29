@@ -23,7 +23,7 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-serif font-semibold text-ink">Início</h1>
+        <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">Início</h1>
         <p className="mt-1 text-sm text-ink-muted">
           {format(referencia, "MMMM yyyy", { locale: ptBR })} · prazos de vendas, financiamento e
           locação, tudo num só lugar.

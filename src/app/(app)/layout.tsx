@@ -27,12 +27,26 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const navItems = [
     { href: "/", label: "Início" },
-    { href: "/processos", label: "Processos" },
-    { href: "/locacao", label: "Locação" },
+    {
+      label: "Processos",
+      children: [
+        { href: "/processos?categoria=venda", label: "Vendas" },
+        { href: "/processos?categoria=financiamento", label: "Financiamentos" },
+      ],
+    },
+    {
+      label: "Locação",
+      children: [{ href: "/locacao", label: "Inadimplências" }],
+    },
     { href: "/calendario", label: "Calendário" },
     { href: "/calculadora", label: "Calculadora" },
-    { href: "/etapas-padrao", label: "Etapas padrão" },
-    { href: "/membros", label: "Membros" },
+    {
+      label: "Configurações",
+      children: [
+        { href: "/etapas-padrao", label: "Etapas padrão" },
+        { href: "/membros", label: "Membros/Permissões" },
+      ],
+    },
   ];
 
   return (

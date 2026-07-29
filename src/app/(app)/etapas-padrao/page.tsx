@@ -1,6 +1,11 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { adicionarEtapaPadrao, removerEtapaPadrao } from "./actions";
+import {
+  adicionarEtapaPadrao,
+  removerEtapaPadrao,
+  editarEtapaPadrao,
+  moverEtapaPadrao,
+} from "./actions";
 import type { CategoriaProcesso } from "@/lib/types";
 import { CATEGORIA_LABEL } from "@/lib/types";
 
@@ -21,15 +26,18 @@ export default async function EtapasPadraoPage({
     .order("ordem", { ascending: true });
 
   const abas: CategoriaProcesso[] = ["venda", "financiamento"];
+  const lista = etapas ?? [];
 
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <h1 className="text-xl font-serif font-semibold text-ink">Etapas padrão</h1>
+        <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">
+          Etapas padrão
+        </h1>
         <p className="mt-1 text-sm text-ink-muted">
           Essa é a lista de etapas que aparece pra escolher em cada processo (na tela do
-          processo, em &quot;Adicionar etapa&quot;), separada por categoria. Adicione ou remova
-          conforme o jeito que vocês trabalham.
+          processo, em &quot;Adicionar etapa&quot;), separada por categoria. Adicione, edite,
+          remova ou reordene conforme o jeito que vocês trabalham.
         </p>
       </div>
 
@@ -67,29 +75,84 @@ export default async function EtapasPadraoPage({
       </form>
 
       <div className="rounded-xl border border-border bg-surface">
-        {(etapas ?? []).length === 0 ? (
-          <p className="p-6 text-center text-sm text-ink-muted">
-            Nenhuma etapa cadastrada nessa categoria ainda.
-          </p>
+        {lista.length === 0 ? (
+          <p className="p-6 text-center text-sm text-ink-muted">Nenhuma etapa cadastrada nessa categoria ainda.</p>
         ) : (
           <ul className="divide-y divide-border">
-            {(etapas ?? []).map((e) => (
-              <li key={e.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
-                <span className="flex items-center gap-2 text-sm text-ink">
-                  <span className="text-ink-muted">⠿</span>
-                  {e.nome}
-                </span>
-                <form action={removerEtapaPadrao}>
-                  <input type="hidden" name="id" value={e.id} />
-                  <input type="hidden" name="categoria" value={categoria} />
-                  <button
-                    type="submit"
-                    aria-label={`Remover ${e.nome}`}
-                    className="rounded-md p-1.5 text-ink-muted hover:bg-background hover:text-rose-600"
-                  >
-                    🗑
-                  </button>
-                </form>
+            {lista.map((e, i) => (
+              <li key={e.id} className="px-4 py-2.5">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <div className="flex flex-col">
+                      <form action={moverEtapaPadrao}>
+                        <input type="hidden" name="id" value={e.id} />
+                        <input type="hidden" name="categoria" value={categoria} />
+                        <input type="hidden" name="direcao" value="cima" />
+                        <button
+                          type="submit"
+                          disabled={i === 0}
+                          aria-label="Mover pra cima"
+                          className="flex h-4 w-4 items-center justify-center text-ink-muted hover:text-ink disabled:opacity-20"
+                        >
+                          <svg width="10" height="10" viewBox="0 0 12 12">
+                            <path d="M2 8l4-4 4 4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                      </form>
+                      <form action={moverEtapaPadrao}>
+                        <input type="hidden" name="id" value={e.id} />
+                        <input type="hidden" name="categoria" value={categoria} />
+                        <input type="hidden" name="direcao" value="baixo" />
+                        <button
+                          type="submit"
+                          disabled={i === lista.length - 1}
+                          aria-label="Mover pra baixo"
+                          className="flex h-4 w-4 items-center justify-center text-ink-muted hover:text-ink disabled:opacity-20"
+                        >
+                          <svg width="10" height="10" viewBox="0 0 12 12">
+                            <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </button>
+                      </form>
+                    </div>
+                    <span className="text-sm text-ink">{e.nome}</span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <details className="relative">
+                      <summary className="cursor-pointer list-none rounded-md p-1.5 text-ink-muted hover:bg-background">
+                        ✎
+                      </summary>
+                      <form
+                        action={editarEtapaPadrao}
+                        className="absolute right-0 z-10 mt-1 flex items-center gap-1.5 rounded-md border border-border bg-surface p-2 shadow-md"
+                      >
+                        <input type="hidden" name="id" value={e.id} />
+                        <input
+                          name="nome"
+                          defaultValue={e.nome}
+                          className="w-48 rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
+                        />
+                        <button
+                          type="submit"
+                          className="rounded-md bg-brand px-2 py-1 text-xs font-medium text-white hover:opacity-90"
+                        >
+                          Salvar
+                        </button>
+                      </form>
+                    </details>
+                    <form action={removerEtapaPadrao}>
+                      <input type="hidden" name="id" value={e.id} />
+                      <button
+                        type="submit"
+                        aria-label={`Remover ${e.nome}`}
+                        className="rounded-md p-1.5 text-ink-muted hover:bg-background hover:text-rose-600"
+                      >
+                        🗑
+                      </button>
+                    </form>
+                  </div>
+                </div>
               </li>
             ))}
           </ul>

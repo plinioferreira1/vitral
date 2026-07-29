@@ -93,7 +93,7 @@ export default async function ProcessoDetalhePage({
     <div className="max-w-3xl space-y-8">
       <div>
         <p className="font-mono text-xs text-ink-muted">{p.numero_processo}</p>
-        <h1 className="mt-1 text-xl font-serif font-semibold text-ink">
+        <h1 className="mt-1 text-xl font-serif font-bold uppercase tracking-wide text-ink">
           {p.modelos_processo?.nome} — {p.comprador?.nome ?? "Sem comprador"}
         </h1>
         <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-ink-muted sm:grid-cols-3">

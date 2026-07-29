@@ -52,7 +52,7 @@ export default async function PerfilPage({
   return (
     <div className="max-w-lg space-y-6">
       <div>
-        <h1 className="text-xl font-serif font-semibold text-ink">Meu perfil</h1>
+        <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">Meu perfil</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Sua foto e cargo aparecem para o resto da equipe. O nível de acesso ao sistema
           (perfil) é definido por um administrador.

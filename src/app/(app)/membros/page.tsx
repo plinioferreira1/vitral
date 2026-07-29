@@ -38,7 +38,7 @@ export default async function MembrosPage({
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h1 className="text-xl font-serif font-semibold text-ink">Membros</h1>
+        <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">Membros</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Adicione a diretora e os outros gerentes ao mesmo espaço de trabalho. A pessoa
           precisa primeiro criar uma conta em <code className="text-xs">/login</code> — depois
@@ -118,64 +118,57 @@ export default async function MembrosPage({
         </button>
       </form>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-surface">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
-              <th className="px-4 py-2.5 font-medium">Nome</th>
-              <th className="px-4 py-2.5 font-medium">E-mail</th>
-              <th className="px-4 py-2.5 font-medium">Permissões</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border">
-            {(membros ?? []).map((m) => {
-              const categoriasAtuais = categoriasPorUsuario.get(m.id) ?? new Set();
-              return (
-                <tr key={m.id}>
-                  <td className="px-4 py-2.5 text-ink">
+      <div className="space-y-2">
+        {(membros ?? []).map((m) => {
+          const categoriasAtuais = categoriasPorUsuario.get(m.id) ?? new Set();
+          return (
+            <div key={m.id} className="rounded-xl border border-border bg-surface p-4">
+              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                <div>
+                  <p className="text-sm font-medium text-ink">
                     {m.nome}
-                    {m.cargo && <span className="block text-xs text-ink-muted">{m.cargo}</span>}
-                  </td>
-                  <td className="px-4 py-2.5 text-ink-muted">{m.email}</td>
-                  <td className="px-4 py-2.5">
-                    <form action={atualizarCategoriasMembro} className="inline-flex items-center gap-1.5">
-                      <input type="hidden" name="usuario_id" value={m.id} />
-                      <select
-                        name="nivel_acesso"
-                        defaultValue={m.nivel_acesso}
-                        className="rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
-                      >
-                        {NIVEIS.map((n) => (
-                          <option key={n} value={n}>
-                            {NIVEL_ACESSO_LABEL[n]}
-                          </option>
-                        ))}
-                      </select>
-                      {CATEGORIAS.map((c) => (
-                        <label key={c} className="flex items-center gap-1 text-xs text-ink-muted">
-                          <input
-                            type="checkbox"
-                            name="categorias"
-                            value={c}
-                            defaultChecked={categoriasAtuais.has(c)}
-                            className="accent-brand"
-                          />
-                          {CATEGORIA_LABEL[c]}
-                        </label>
-                      ))}
-                      <button
-                        type="submit"
-                        className="rounded-md border border-border px-2 py-1 text-xs text-ink-muted hover:bg-background"
-                      >
-                        Salvar
-                      </button>
-                    </form>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+                    {m.cargo && <span className="ml-2 text-xs font-normal text-ink-muted">{m.cargo}</span>}
+                  </p>
+                  <p className="text-xs text-ink-muted">{m.email}</p>
+                </div>
+              </div>
+              <form action={atualizarCategoriasMembro} className="flex flex-wrap items-center gap-3">
+                <input type="hidden" name="usuario_id" value={m.id} />
+                <select
+                  name="nivel_acesso"
+                  defaultValue={m.nivel_acesso}
+                  className="rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
+                >
+                  {NIVEIS.map((n) => (
+                    <option key={n} value={n}>
+                      {NIVEL_ACESSO_LABEL[n]}
+                    </option>
+                  ))}
+                </select>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIAS.map((c) => (
+                    <label key={c} className="flex items-center gap-1 text-xs text-ink-muted">
+                      <input
+                        type="checkbox"
+                        name="categorias"
+                        value={c}
+                        defaultChecked={categoriasAtuais.has(c)}
+                        className="accent-brand"
+                      />
+                      {CATEGORIA_LABEL[c]}
+                    </label>
+                  ))}
+                </div>
+                <button
+                  type="submit"
+                  className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-background"
+                >
+                  Salvar
+                </button>
+              </form>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
