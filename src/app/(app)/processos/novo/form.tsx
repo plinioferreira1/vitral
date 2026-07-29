@@ -61,9 +61,16 @@ export function NovoProcessoForm({
   return (
     <form action={criarProcesso} className="space-y-5">
       <input type="hidden" name="categoria" value={modeloSelecionado?.categoria ?? "venda"} />
-      {Array.from(etapasSelecionadas).map((id) => (
-        <input key={id} type="hidden" name="etapas_selecionadas" value={id} />
-      ))}
+      {!ehFinanciamento &&
+        Array.from(etapasSelecionadas).map((id) => (
+          <input key={id} type="hidden" name="etapas_selecionadas" value={id} />
+        ))}
+
+      <Datalist id="lista-clientes" options={clientes.map((c) => c.nome)} />
+      <Datalist id="lista-imoveis" options={imoveis.map((i) => i.endereco)} />
+      <Datalist id="lista-bancos" options={bancos.map((b) => b.nome)} />
+      <Datalist id="lista-corretores" options={corretores.map((c) => c.nome)} />
+      <Datalist id="lista-usuarios" options={usuarios.map((u) => u.nome)} />
 
       <div>
         <label className="mb-1 block text-xs font-medium text-ink-muted">Modelo</label>
@@ -89,18 +96,44 @@ export function NovoProcessoForm({
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Select
+        <CampoTexto
           label={ehFinanciamento ? "Cliente" : "Comprador"}
-          name="comprador_id"
-          options={clientes.map((c) => [c.id, c.nome])}
+          name="comprador_nome"
+          listId="lista-clientes"
+          placeholder="Digite ou escolha um nome"
         />
         {!ehFinanciamento && (
-          <Select label="Vendedor" name="vendedor_id" options={clientes.map((c) => [c.id, c.nome])} />
+          <CampoTexto
+            label="Vendedor"
+            name="vendedor_nome"
+            listId="lista-clientes"
+            placeholder="Digite ou escolha um nome"
+          />
         )}
-        <Select label="Imóvel" name="imovel_id" options={imoveis.map((i) => [i.id, i.endereco])} />
-        <Select label="Banco" name="banco_id" options={bancos.map((b) => [b.id, b.nome])} />
-        <Select label="Corretor" name="corretor_id" options={corretores.map((c) => [c.id, c.nome])} />
-        <Select label="Responsável" name="responsavel_id" options={usuarios.map((u) => [u.id, u.nome])} />
+        <CampoTexto
+          label="Imóvel"
+          name="imovel_endereco"
+          listId="lista-imoveis"
+          placeholder="Endereço do imóvel"
+        />
+        <CampoTexto
+          label="Banco"
+          name="banco_nome"
+          listId="lista-bancos"
+          placeholder="Ex: CAIXA, ITAÚ..."
+        />
+        <CampoTexto
+          label="Corretor"
+          name="corretor_nome"
+          listId="lista-corretores"
+          placeholder="Nome do corretor"
+        />
+        <CampoTexto
+          label="Responsável"
+          name="responsavel_nome"
+          listId="lista-usuarios"
+          placeholder="Quem vai acompanhar"
+        />
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">
             {ehFinanciamento ? "Valor do imóvel (R$)" : "Valor (R$)"}
@@ -136,10 +169,11 @@ export function NovoProcessoForm({
                 className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
-            <Select
+            <CampoTexto
               label="Indicação"
-              name="indicacao_id"
-              options={corretores.map((c) => [c.id, c.nome])}
+              name="indicacao_nome"
+              listId="lista-corretores"
+              placeholder="Quem indicou o cliente"
             />
           </>
         )}
@@ -159,42 +193,55 @@ export function NovoProcessoForm({
         />
       </div>
 
-      {etapasDaCategoria.length > 0 && (
-        <div className="rounded-lg border border-border bg-background p-4">
-          <p className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-muted">
-            Quais etapas fazem parte desse processo?
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {etapasDaCategoria.map((ep) => {
-              const marcada = etapasSelecionadas.has(ep.id);
-              return (
-                <button
-                  key={ep.id}
-                  type="button"
-                  onClick={() => alternarEtapa(ep.id)}
-                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
-                    marcada
-                      ? "border-brand bg-brand/10 font-medium text-brand"
-                      : "border-border bg-surface text-ink-muted hover:bg-background"
-                  }`}
-                >
-                  <span
-                    className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[9px] ${
-                      marcada ? "border-brand bg-brand text-white" : "border-border"
+      {ehFinanciamento ? (
+        etapasDaCategoria.length > 0 && (
+          <div className="rounded-lg border border-border bg-background p-4">
+            <p className="text-xs text-ink-muted">
+              As etapas do financiamento seguem um fluxo padrão e serão criadas
+              automaticamente ({etapasDaCategoria.length} etapas, de &quot;
+              {etapasDaCategoria[0]?.nome}&quot; até &quot;
+              {etapasDaCategoria[etapasDaCategoria.length - 1]?.nome}&quot;).
+            </p>
+          </div>
+        )
+      ) : (
+        etapasDaCategoria.length > 0 && (
+          <div className="rounded-lg border border-border bg-background p-4">
+            <p className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-muted">
+              Quais etapas fazem parte desse processo?
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {etapasDaCategoria.map((ep) => {
+                const marcada = etapasSelecionadas.has(ep.id);
+                return (
+                  <button
+                    key={ep.id}
+                    type="button"
+                    onClick={() => alternarEtapa(ep.id)}
+                    className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
+                      marcada
+                        ? "border-brand bg-brand/10 font-medium text-brand"
+                        : "border-border bg-surface text-ink-muted hover:bg-background"
                     }`}
                   >
-                    {marcada ? "✓" : ""}
-                  </span>
-                  {ep.nome}
-                </button>
-              );
-            })}
+                    <span
+                      className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[9px] ${
+                        marcada ? "border-brand bg-brand text-white" : "border-border"
+                      }`}
+                    >
+                      {marcada ? "✓" : ""}
+                    </span>
+                    {ep.nome}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="mt-2 text-xs text-ink-muted">
+              Sem data automática — depois de criado, ajuste o prazo de cada etapa na tela do
+              processo.
+            </p>
           </div>
-          <p className="mt-2 text-xs text-ink-muted">
-            Sem data automática — depois de criado, ajuste o prazo de cada etapa na tela do
-            processo.
-          </p>
-        </div>
+        )
       )}
 
       <button
@@ -207,30 +254,38 @@ export function NovoProcessoForm({
   );
 }
 
-function Select({
+function CampoTexto({
   label,
   name,
-  options,
+  listId,
+  placeholder,
 }: {
   label: string;
   name: string;
-  options: [string, string][];
+  listId: string;
+  placeholder?: string;
 }) {
   return (
     <div>
       <label className="mb-1 block text-xs font-medium text-ink-muted">{label}</label>
-      <select
+      <input
         name={name}
+        list={listId}
+        placeholder={placeholder}
+        autoComplete="off"
         className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-        defaultValue=""
-      >
-        <option value="">—</option>
-        {options.map(([id, nome]) => (
-          <option key={id} value={id}>
-            {nome}
-          </option>
-        ))}
-      </select>
+      />
     </div>
+  );
+}
+
+function Datalist({ id, options }: { id: string; options: string[] }) {
+  const opcoesUnicas = Array.from(new Set(options));
+  return (
+    <datalist id={id}>
+      {opcoesUnicas.map((o) => (
+        <option key={o} value={o} />
+      ))}
+    </datalist>
   );
 }

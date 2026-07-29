@@ -2,6 +2,42 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+/**
+ * Acha um registro pelo nome (exato, sem diferenciar maiúsculas)
+ * numa tabela do tenant; se não existir, cria na hora com esse
+ * nome. É o que permite digitar um nome novo direto no formulário
+ * em vez de precisar cadastrar antes em outro lugar.
+ */
+async function resolverOuCriar(
+  supabase: SupabaseClient,
+  tabela: string,
+  campoNome: string,
+  tenantId: string,
+  valorDigitado: string
+): Promise<string | null> {
+  const nome = valorDigitado.trim();
+  if (!nome) return null;
+
+  const { data: existente } = await supabase
+    .from(tabela)
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .ilike(campoNome, nome)
+    .limit(1)
+    .maybeSingle();
+
+  if (existente) return existente.id;
+
+  const { data: criado } = await supabase
+    .from(tabela)
+    .insert({ tenant_id: tenantId, [campoNome]: nome })
+    .select("id")
+    .single();
+
+  return criado?.id ?? null;
+}
 
 export async function criarProcesso(formData: FormData) {
   const supabase = await createClient();
@@ -13,17 +49,17 @@ export async function criarProcesso(formData: FormData) {
 
   const modeloProcessoId = String(formData.get("modelo_processo_id") ?? "");
   const categoria = String(formData.get("categoria") ?? "venda");
-  const compradorId = String(formData.get("comprador_id") ?? "") || null;
-  const vendedorId = String(formData.get("vendedor_id") ?? "") || null;
-  const imovelId = String(formData.get("imovel_id") ?? "") || null;
-  const bancoId = String(formData.get("banco_id") ?? "") || null;
-  const corretorId = String(formData.get("corretor_id") ?? "") || null;
-  const responsavelId = String(formData.get("responsavel_id") ?? "") || user.id;
+  const compradorNome = String(formData.get("comprador_nome") ?? "");
+  const vendedorNome = String(formData.get("vendedor_nome") ?? "");
+  const imovelEndereco = String(formData.get("imovel_endereco") ?? "");
+  const bancoNome = String(formData.get("banco_nome") ?? "");
+  const corretorNome = String(formData.get("corretor_nome") ?? "");
+  const responsavelNome = String(formData.get("responsavel_nome") ?? "");
   const dataBase = String(formData.get("data_base") ?? "");
   const valorTotal = String(formData.get("valor_total") ?? "");
   const valorFinanciado = String(formData.get("valor_financiado") ?? "");
   const origem = String(formData.get("origem") ?? "").trim() || null;
-  const indicacaoId = String(formData.get("indicacao_id") ?? "") || null;
+  const indicacaoNome = String(formData.get("indicacao_nome") ?? "");
   const etapasSelecionadas = formData.getAll("etapas_selecionadas") as string[];
 
   if (!modeloProcessoId || !dataBase) {
@@ -44,6 +80,29 @@ export async function criarProcesso(formData: FormData) {
     .select("nome")
     .eq("id", modeloProcessoId)
     .single();
+
+  // Resolve (ou cria na hora) cada entidade digitada
+  const compradorId = await resolverOuCriar(supabase, "clientes", "nome", tenantId, compradorNome);
+  const vendedorId = await resolverOuCriar(supabase, "clientes", "nome", tenantId, vendedorNome);
+  const imovelId = await resolverOuCriar(supabase, "imoveis", "endereco", tenantId, imovelEndereco);
+  const bancoId = await resolverOuCriar(supabase, "bancos", "nome", tenantId, bancoNome);
+  const corretorId = await resolverOuCriar(supabase, "corretores", "nome", tenantId, corretorNome);
+  const indicacaoId = await resolverOuCriar(supabase, "corretores", "nome", tenantId, indicacaoNome);
+
+  // Responsável precisa ser alguém que já tem conta no sistema —
+  // não dá pra "criar" uma pessoa nova aqui. Se não encontrar pelo
+  // nome digitado, cai pra quem está criando o processo.
+  let responsavelId = user.id;
+  if (responsavelNome.trim()) {
+    const { data: usuarioEncontrado } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .ilike("nome", responsavelNome.trim())
+      .limit(1)
+      .maybeSingle();
+    if (usuarioEncontrado) responsavelId = usuarioEncontrado.id;
+  }
 
   // Número de processo legível: PROC-<ano>-<sequencial simples baseado em timestamp>
   const numeroProcesso = `PROC-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}`;
@@ -77,7 +136,27 @@ export async function criarProcesso(formData: FormData) {
     return;
   }
 
-  if (etapasSelecionadas.length > 0) {
+  if (categoria === "financiamento") {
+    // Financiamento segue um fluxo padrão: todas as etapas da
+    // categoria entram automaticamente, sem precisar escolher.
+    const { data: todasEtapas } = await supabase
+      .from("etapas_padrao")
+      .select("id, nome, ordem")
+      .eq("categoria", "financiamento")
+      .order("ordem", { ascending: true });
+
+    if (todasEtapas && todasEtapas.length > 0) {
+      await supabase.from("etapas").insert(
+        todasEtapas.map((ep) => ({
+          processo_id: processo.id,
+          nome: ep.nome,
+          responsavel_id: responsavelId,
+          status: "pendente",
+          ordem: ep.ordem,
+        }))
+      );
+    }
+  } else if (etapasSelecionadas.length > 0) {
     const { data: etapasPadrao } = await supabase
       .from("etapas_padrao")
       .select("id, nome, ordem")
