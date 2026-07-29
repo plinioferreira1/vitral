@@ -149,12 +149,12 @@ export default async function ProcessoDetalhePage({
                   </p>
                   <div className="flex w-full items-center">
                     <div
-                      className={`h-0.5 flex-1 ${i === 0 ? "invisible" : anteriorConcluida ? "bg-emerald-500" : "bg-border"}`}
+                      className={`h-0.5 flex-1 ${i === 0 ? "invisible" : anteriorConcluida ? "bg-brand" : "bg-border"}`}
                     />
                     <div
                       className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[2.5px] ${
                         concluida
-                          ? "border-emerald-500 bg-emerald-500"
+                          ? "border-brand bg-brand"
                           : atual
                             ? "border-gold bg-surface"
                             : "border-border bg-surface"
@@ -173,7 +173,7 @@ export default async function ProcessoDetalhePage({
                       )}
                     </div>
                     <div
-                      className={`h-0.5 flex-1 ${i === etapas.length - 1 ? "invisible" : concluida ? "bg-emerald-500" : "bg-border"}`}
+                      className={`h-0.5 flex-1 ${i === etapas.length - 1 ? "invisible" : concluida ? "bg-brand" : "bg-border"}`}
                     />
                   </div>
                 </div>
