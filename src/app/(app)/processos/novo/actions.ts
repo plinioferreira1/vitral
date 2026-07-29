@@ -1,9 +1,7 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
-import { gerarEtapas } from "@/lib/motor-processos";
 import { redirect } from "next/navigation";
-import { parseISO } from "date-fns";
 
 export async function criarProcesso(formData: FormData) {
   const supabase = await createClient();
@@ -26,6 +24,7 @@ export async function criarProcesso(formData: FormData) {
   const valorFinanciado = String(formData.get("valor_financiado") ?? "");
   const origem = String(formData.get("origem") ?? "").trim() || null;
   const indicacaoId = String(formData.get("indicacao_id") ?? "") || null;
+  const etapasSelecionadas = formData.getAll("etapas_selecionadas") as string[];
 
   if (!modeloProcessoId || !dataBase) {
     redirect(`/processos/novo?erro=${encodeURIComponent("Modelo e data base são obrigatórios.")}`);
@@ -45,16 +44,6 @@ export async function criarProcesso(formData: FormData) {
     .select("nome")
     .eq("id", modeloProcessoId)
     .single();
-
-  const { data: modelosEtapa, error: errModelos } = await supabase
-    .from("modelos_etapa")
-    .select("*")
-    .eq("modelo_processo_id", modeloProcessoId)
-    .order("ordem", { ascending: true });
-
-  if (errModelos || !modelosEtapa) {
-    redirect(`/processos/novo?erro=${encodeURIComponent("Não foi possível carregar o modelo.")}`);
-  }
 
   // Número de processo legível: PROC-<ano>-<sequencial simples baseado em timestamp>
   const numeroProcesso = `PROC-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}`;
@@ -88,47 +77,20 @@ export async function criarProcesso(formData: FormData) {
     return;
   }
 
-  const etapasGeradas = gerarEtapas(modelosEtapa, parseISO(dataBase));
+  if (etapasSelecionadas.length > 0) {
+    const { data: etapasPadrao } = await supabase
+      .from("etapas_padrao")
+      .select("id, nome, ordem")
+      .in("id", etapasSelecionadas);
 
-  // mapa modelo_etapa_id -> id real da etapa criada, pra resolver dependência
-  const modeloIdParaEtapaId = new Map<string, string>();
-
-  for (const eg of etapasGeradas) {
-    const dependenciaEtapaId = eg.etapa_dependencia_modelo_id
-      ? modeloIdParaEtapaId.get(eg.etapa_dependencia_modelo_id) ?? null
-      : null;
-
-    const { data: etapaCriada, error: errEtapa } = await supabase
-      .from("etapas")
-      .insert({
-        processo_id: processo.id,
-        modelo_etapa_id: eg.modelo_etapa_id,
-        nome: eg.nome,
-        responsavel_id: responsavelId,
-        data_prevista: eg.data_prevista,
-        status: "pendente",
-        ordem: eg.ordem,
-        etapa_dependencia_id: dependenciaEtapaId,
-      })
-      .select("id")
-      .single();
-
-    if (errEtapa || !etapaCriada) continue;
-
-    modeloIdParaEtapaId.set(eg.modelo_etapa_id, etapaCriada.id);
-
-    const { data: checklistModelo } = await supabase
-      .from("modelos_checklist_item")
-      .select("*")
-      .eq("modelo_etapa_id", eg.modelo_etapa_id)
-      .order("ordem", { ascending: true });
-
-    if (checklistModelo && checklistModelo.length > 0) {
-      await supabase.from("checklist_itens").insert(
-        checklistModelo.map((c) => ({
-          etapa_id: etapaCriada.id,
-          descricao: c.descricao,
-          ordem: c.ordem,
+    if (etapasPadrao && etapasPadrao.length > 0) {
+      await supabase.from("etapas").insert(
+        etapasPadrao.map((ep) => ({
+          processo_id: processo.id,
+          nome: ep.nome,
+          responsavel_id: responsavelId,
+          status: "pendente",
+          ordem: ep.ordem,
         }))
       );
     }

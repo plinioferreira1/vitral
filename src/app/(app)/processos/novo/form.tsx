@@ -2,21 +2,25 @@
 
 import { useMemo, useState } from "react";
 import { criarProcesso } from "./actions";
-import { gerarEtapas } from "@/lib/motor-processos";
-import type { ModeloEtapa, CategoriaProcesso } from "@/lib/types";
-import { format, parseISO } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import type { CategoriaProcesso } from "@/lib/types";
 
-interface ModeloComEtapas {
+interface EtapaPadraoBasica {
+  id: string;
+  nome: string;
+  ordem: number;
+  categoria: CategoriaProcesso;
+}
+
+interface ModeloBasico {
   id: string;
   nome: string;
   descricao: string | null;
   categoria: CategoriaProcesso;
-  etapas: ModeloEtapa[];
 }
 
 interface Props {
-  modelos: ModeloComEtapas[];
+  modelos: ModeloBasico[];
+  etapasPadrao: EtapaPadraoBasica[];
   clientes: { id: string; nome: string }[];
   imoveis: { id: string; endereco: string }[];
   bancos: { id: string; nome: string }[];
@@ -24,32 +28,52 @@ interface Props {
   usuarios: { id: string; nome: string }[];
 }
 
-export function NovoProcessoForm({ modelos, clientes, imoveis, bancos, corretores, usuarios }: Props) {
+export function NovoProcessoForm({
+  modelos,
+  etapasPadrao,
+  clientes,
+  imoveis,
+  bancos,
+  corretores,
+  usuarios,
+}: Props) {
   const [modeloId, setModeloId] = useState(modelos[0]?.id ?? "");
   const [dataBase, setDataBase] = useState(() => new Date().toISOString().slice(0, 10));
+  const [etapasSelecionadas, setEtapasSelecionadas] = useState<Set<string>>(new Set());
 
   const modeloSelecionado = modelos.find((m) => m.id === modeloId);
   const ehFinanciamento = modeloSelecionado?.categoria === "financiamento";
 
-  const preview = useMemo(() => {
-    if (!modeloSelecionado || !dataBase) return [];
-    try {
-      return gerarEtapas(modeloSelecionado.etapas, parseISO(dataBase));
-    } catch {
-      return [];
-    }
-  }, [modeloSelecionado, dataBase]);
+  const etapasDaCategoria = useMemo(
+    () => etapasPadrao.filter((ep) => ep.categoria === modeloSelecionado?.categoria),
+    [etapasPadrao, modeloSelecionado]
+  );
+
+  const alternarEtapa = (id: string) => {
+    setEtapasSelecionadas((prev) => {
+      const novo = new Set(prev);
+      if (novo.has(id)) novo.delete(id);
+      else novo.add(id);
+      return novo;
+    });
+  };
 
   return (
     <form action={criarProcesso} className="space-y-5">
       <input type="hidden" name="categoria" value={modeloSelecionado?.categoria ?? "venda"} />
+      {Array.from(etapasSelecionadas).map((id) => (
+        <input key={id} type="hidden" name="etapas_selecionadas" value={id} />
+      ))}
 
       <div>
         <label className="mb-1 block text-xs font-medium text-ink-muted">Modelo</label>
         <select
           name="modelo_processo_id"
           value={modeloId}
-          onChange={(e) => setModeloId(e.target.value)}
+          onChange={(e) => {
+            setModeloId(e.target.value);
+            setEtapasSelecionadas(new Set());
+          }}
           required
           className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
         >
@@ -135,26 +159,41 @@ export function NovoProcessoForm({ modelos, clientes, imoveis, bancos, corretore
         />
       </div>
 
-      {preview.length > 0 && (
+      {etapasDaCategoria.length > 0 && (
         <div className="rounded-lg border border-border bg-background p-4">
           <p className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-muted">
-            Prévia das etapas geradas
+            Quais etapas fazem parte desse processo?
           </p>
-          <ol className="space-y-2">
-            {preview.map((e, i) => (
-              <li key={e.modelo_etapa_id} className="flex items-center gap-3 text-sm">
-                <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-surface text-xs text-ink-muted">
-                  {i + 1}
-                </span>
-                <span className="flex-1 text-ink">{e.nome}</span>
-                <span className="font-mono text-xs text-ink-muted">
-                  {e.data_prevista
-                    ? format(parseISO(e.data_prevista), "dd MMM yyyy", { locale: ptBR })
-                    : "a definir"}
-                </span>
-              </li>
-            ))}
-          </ol>
+          <div className="flex flex-wrap gap-1.5">
+            {etapasDaCategoria.map((ep) => {
+              const marcada = etapasSelecionadas.has(ep.id);
+              return (
+                <button
+                  key={ep.id}
+                  type="button"
+                  onClick={() => alternarEtapa(ep.id)}
+                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
+                    marcada
+                      ? "border-brand bg-brand/10 font-medium text-brand"
+                      : "border-border bg-surface text-ink-muted hover:bg-background"
+                  }`}
+                >
+                  <span
+                    className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[9px] ${
+                      marcada ? "border-brand bg-brand text-white" : "border-border"
+                    }`}
+                  >
+                    {marcada ? "✓" : ""}
+                  </span>
+                  {ep.nome}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-2 text-xs text-ink-muted">
+            Sem data automática — depois de criado, ajuste o prazo de cada etapa na tela do
+            processo.
+          </p>
         </div>
       )}
 

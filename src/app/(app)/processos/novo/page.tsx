@@ -33,28 +33,18 @@ export default async function NovoProcessoPage({
     minhasCategorias = (categoriasRaw ?? []).map((c) => c.categoria as CategoriaProcesso);
   }
 
-  const [modelos, clientes, imoveis, bancos, corretores, usuarios] = await Promise.all([
+  const [modelos, clientes, imoveis, bancos, corretores, usuarios, etapasPadrao] = await Promise.all([
     supabase.from("modelos_processo").select("id, nome, descricao, categoria").eq("ativo", true).order("nome"),
     supabase.from("clientes").select("id, nome").order("nome"),
     supabase.from("imoveis").select("id, endereco").order("endereco"),
     supabase.from("bancos").select("id, nome").order("nome"),
     supabase.from("corretores").select("id, nome").order("nome"),
     supabase.from("usuarios").select("id, nome").order("nome"),
+    supabase.from("etapas_padrao").select("id, nome, ordem, categoria").order("ordem", { ascending: true }),
   ]);
 
   const modelosPermitidos = (modelos.data ?? []).filter((m) =>
     minhasCategorias.includes(m.categoria as CategoriaProcesso)
-  );
-
-  const modelosComEtapas = await Promise.all(
-    modelosPermitidos.map(async (m) => {
-      const { data: etapas } = await supabase
-        .from("modelos_etapa")
-        .select("*")
-        .eq("modelo_processo_id", m.id)
-        .order("ordem", { ascending: true });
-      return { ...m, etapas: etapas ?? [] };
-    })
   );
 
   return (
@@ -62,7 +52,7 @@ export default async function NovoProcessoPage({
       <div>
         <h1 className="text-xl font-serif font-semibold text-ink">Novo processo</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Escolha um modelo e as etapas são geradas automaticamente com as datas previstas.
+          Escolha um modelo e marque quais etapas fazem parte desse processo específico.
         </p>
       </div>
 
@@ -72,14 +62,15 @@ export default async function NovoProcessoPage({
         </p>
       )}
 
-      {modelosComEtapas.length === 0 ? (
+      {modelosPermitidos.length === 0 ? (
         <p className="rounded-md border border-border bg-surface p-5 text-sm text-ink-muted">
           Você não tem permissão pra criar processos em nenhuma categoria. Fale com um
           administrador.
         </p>
       ) : (
         <NovoProcessoForm
-          modelos={modelosComEtapas}
+          modelos={modelosPermitidos}
+          etapasPadrao={etapasPadrao.data ?? []}
           clientes={clientes.data ?? []}
           imoveis={imoveis.data ?? []}
           bancos={bancos.data ?? []}
