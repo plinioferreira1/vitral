@@ -129,23 +129,57 @@ export default async function ProcessoDetalhePage({
 
       {/* Timeline */}
       <section>
-        <h2 className="mb-3 text-sm font-semibold text-ink">Linha do tempo</h2>
-        <div className="flex flex-wrap items-center gap-1">
-          {etapas.map((e, i) => (
-            <div key={e.id} className="flex items-center gap-1">
-              <span
-                className={`rounded-full border px-2.5 py-1 text-xs font-medium ${
-                  e.status === "concluida"
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : URGENCIA_COR[e.urgencia]
-                }`}
-                title={e.data_prevista ?? undefined}
-              >
-                {e.nome}
-              </span>
-              {i < etapas.length - 1 && <span className="text-ink-muted">→</span>}
-            </div>
-          ))}
+        <h2 className="mb-4 text-sm font-semibold text-ink">Linha do tempo</h2>
+        <div className="overflow-x-auto pb-1">
+          <div className="flex min-w-max items-start">
+            {etapas.map((e, i) => {
+              const concluida = e.status === "concluida";
+              const anteriorConcluida = i === 0 ? true : etapas[i - 1].status === "concluida";
+              const atual = !concluida && anteriorConcluida;
+
+              return (
+                <div key={e.id} className="flex w-[110px] shrink-0 flex-col items-center">
+                  <p
+                    className={`mb-2 h-8 px-1 text-center text-[11px] font-medium leading-tight ${
+                      concluida || atual ? "text-ink" : "text-ink-muted"
+                    }`}
+                    title={e.data_prevista ?? undefined}
+                  >
+                    {e.nome}
+                  </p>
+                  <div className="flex w-full items-center">
+                    <div
+                      className={`h-0.5 flex-1 ${i === 0 ? "invisible" : anteriorConcluida ? "bg-emerald-500" : "bg-border"}`}
+                    />
+                    <div
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[2.5px] ${
+                        concluida
+                          ? "border-emerald-500 bg-emerald-500"
+                          : atual
+                            ? "border-gold bg-surface"
+                            : "border-border bg-surface"
+                      }`}
+                    >
+                      {concluida && (
+                        <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
+                          <path
+                            d="M2 6.5L4.5 9L10 3"
+                            stroke="white"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                    <div
+                      className={`h-0.5 flex-1 ${i === etapas.length - 1 ? "invisible" : concluida ? "bg-emerald-500" : "bg-border"}`}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 
