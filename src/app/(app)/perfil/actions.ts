@@ -41,4 +41,5 @@ export async function atualizarPerfil(formData: FormData) {
 
   revalidatePath("/perfil");
   revalidatePath("/", "layout");
+  redirect("/perfil?salvo=1");
 }

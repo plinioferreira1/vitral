@@ -127,6 +127,7 @@ export async function atualizarContrato(formData: FormData) {
 
   await supabase.from("contratos_locacao").update(campos).eq("id", id);
   revalidatePath(`/locacao/${id}`);
+  redirect(`/locacao/${id}?salvo=1`);
 }
 
 export async function encerrarContrato(formData: FormData) {

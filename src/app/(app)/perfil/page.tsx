@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { atualizarPerfil } from "./actions";
 import { SeletorFoto } from "./photo-picker";
+import { SucessoBanner } from "@/components/banners";
+import { VoltarLink } from "@/components/voltar-link";
 
 const PERFIL_LABEL: Record<string, string> = {
   admin: "Administrador",
@@ -25,7 +27,7 @@ const CARGOS_SUGERIDOS = [
 export default async function PerfilPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string }>;
+  searchParams: Promise<{ erro?: string; salvo?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -41,7 +43,7 @@ export default async function PerfilPage({
 
   if (!usuario) redirect("/login");
 
-  const { erro } = await searchParams;
+  const { erro, salvo } = await searchParams;
   const iniciais = usuario.nome
     .split(" ")
     .filter(Boolean)
@@ -52,12 +54,15 @@ export default async function PerfilPage({
   return (
     <div className="max-w-lg space-y-6">
       <div>
+        <VoltarLink href="/" label="Início" />
         <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">Meu perfil</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Sua foto e cargo aparecem para o resto da equipe. O nível de acesso ao sistema
           (perfil) é definido por um administrador.
         </p>
       </div>
+
+      <SucessoBanner mostrar={salvo === "1"} texto="Perfil salvo com sucesso." />
 
       {erro && (
         <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { criarContratoLocacao } from "./actions";
+import { VoltarLink } from "@/components/voltar-link";
 
 export default async function NovoContratoLocacaoPage({
   searchParams,
@@ -17,6 +18,7 @@ export default async function NovoContratoLocacaoPage({
   return (
     <div className="max-w-lg space-y-6">
       <div>
+        <VoltarLink href="/locacao" label="Locação" />
         <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">Novo contrato de locação</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Depois de criar, você vai poder marcar o status de cada conta (IPTU, condomínio, água,

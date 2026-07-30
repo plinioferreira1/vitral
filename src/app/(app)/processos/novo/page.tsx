@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { NovoProcessoForm } from "./form";
 import type { CategoriaProcesso } from "@/lib/types";
+import { VoltarLink } from "@/components/voltar-link";
 
 export default async function NovoProcessoPage({
   searchParams,
@@ -50,6 +51,7 @@ export default async function NovoProcessoPage({
   return (
     <div className="max-w-2xl space-y-6">
       <div>
+        <VoltarLink href="/processos" label="Processos" />
         <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">Novo processo</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Escolha um modelo e marque quais etapas fazem parte desse processo específico.

@@ -14,6 +14,8 @@ import {
   encerrarContrato,
   reativarContrato,
 } from "./actions";
+import { SucessoBanner } from "@/components/banners";
+import { VoltarLink } from "@/components/voltar-link";
 
 const MESES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez",
@@ -38,10 +40,10 @@ export default async function ContratoLocacaoPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ ano?: string }>;
+  searchParams: Promise<{ ano?: string; salvo?: string }>;
 }) {
   const { id } = await params;
-  const { ano: anoParam } = await searchParams;
+  const { ano: anoParam, salvo } = await searchParams;
   const ano = Number(anoParam) || new Date().getFullYear();
 
   const supabase = await createClient();
@@ -90,7 +92,9 @@ export default async function ContratoLocacaoPage({
   return (
     <div className="max-w-4xl space-y-8">
       <div>
-        <div className="flex items-start justify-between gap-3">
+        <VoltarLink href="/locacao" label="Locação" />
+        <SucessoBanner mostrar={salvo === "1"} texto="Contrato salvo com sucesso." />
+        <div className="mt-2 flex items-start justify-between gap-3">
           <div>
             <p className="font-mono text-xs text-ink-muted">{c.numero}</p>
             <h1 className="mt-1 text-xl font-serif font-bold uppercase tracking-wide text-ink">

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { anexarUrgencia, URGENCIA_COR, formatarPrazo } from "@/lib/alertas";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { VoltarLink } from "@/components/voltar-link";
 import {
   concluirEtapa,
   reabrirEtapa,
@@ -92,6 +93,10 @@ export default async function ProcessoDetalhePage({
   return (
     <div className="max-w-3xl space-y-8">
       <div>
+        <VoltarLink
+          href={`/processos?categoria=${p.categoria}`}
+          label={p.categoria === "financiamento" ? "Financiamentos" : "Vendas"}
+        />
         <p className="font-mono text-xs text-ink-muted">{p.numero_processo}</p>
         <h1 className="mt-1 text-xl font-serif font-bold uppercase tracking-wide text-ink">
           {p.modelos_processo?.nome} — {p.comprador?.nome ?? "Sem comprador"}
