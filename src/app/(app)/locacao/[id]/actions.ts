@@ -2,7 +2,9 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import type { StatusContaLocacao } from "@/lib/types";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 const PROXIMO_STATUS: Record<StatusContaLocacao, StatusContaLocacao> = {
   nao_aplicavel: "pendente",
@@ -54,30 +56,102 @@ export async function atualizarDetalhesConta(formData: FormData) {
   revalidatePath(`/locacao/${contratoId}`);
 }
 
+/**
+ * Acha um cliente pelo nome (sem diferenciar maiúsculas); se não
+ * existir, cria na hora. Permite digitar um nome novo direto no
+ * formulário em vez de precisar de um cadastro prévio.
+ */
+async function resolverOuCriarCliente(
+  supabase: SupabaseClient,
+  tenantId: string,
+  nomeDigitado: string
+): Promise<string | null> {
+  const nome = nomeDigitado.trim();
+  if (!nome) return null;
+
+  const { data: existente } = await supabase
+    .from("clientes")
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .ilike("nome", nome)
+    .limit(1)
+    .maybeSingle();
+
+  if (existente) return existente.id;
+
+  const { data: criado } = await supabase
+    .from("clientes")
+    .insert({ tenant_id: tenantId, nome })
+    .select("id")
+    .single();
+
+  return criado?.id ?? null;
+}
+
 export async function atualizarContrato(formData: FormData) {
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
 
+  const { data: contratoAtual } = await supabase
+    .from("contratos_locacao")
+    .select("tenant_id")
+    .eq("id", id)
+    .single();
+
+  if (!contratoAtual) return;
+
+  const locadorNome = String(formData.get("locador_nome") ?? "");
+  const locatarioNome = String(formData.get("locatario_nome") ?? "");
+
+  const locadorId = await resolverOuCriarCliente(supabase, contratoAtual.tenant_id, locadorNome);
+  const locatarioId = await resolverOuCriarCliente(supabase, contratoAtual.tenant_id, locatarioNome);
+
   const campos = {
     numero: String(formData.get("numero") ?? "").trim(),
-    locador_id: String(formData.get("locador_id") ?? "") || null,
-    locatario_id: String(formData.get("locatario_id") ?? "") || null,
+    locador_id: locadorId,
+    locatario_id: locatarioId,
     emite_nf: formData.get("emite_nf") === "on",
     iptu_inscricao: String(formData.get("iptu_inscricao") ?? "").trim() || null,
     iptu_tipo: String(formData.get("iptu_tipo") ?? "") || null,
     condominio_administradora: String(formData.get("condominio_administradora") ?? "").trim() || null,
     condominio_contato: String(formData.get("condominio_contato") ?? "").trim() || null,
     agua_inscricao: String(formData.get("agua_inscricao") ?? "").trim() || null,
-    agua_codigo_cliente: String(formData.get("agua_codigo_cliente") ?? "").trim() || null,
+    luz_codigo_cliente: String(formData.get("luz_codigo_cliente") ?? "").trim() || null,
     responsavel_iptu: String(formData.get("responsavel_iptu") ?? "") || null,
     responsavel_condominio: String(formData.get("responsavel_condominio") ?? "") || null,
     responsavel_agua: String(formData.get("responsavel_agua") ?? "") || null,
     responsavel_luz: String(formData.get("responsavel_luz") ?? "") || null,
     responsavel_gas: String(formData.get("responsavel_gas") ?? "") || null,
-    ativo: formData.get("ativo") === "on",
     observacoes: String(formData.get("observacoes") ?? "").trim() || null,
   };
 
   await supabase.from("contratos_locacao").update(campos).eq("id", id);
   revalidatePath(`/locacao/${id}`);
+}
+
+export async function encerrarContrato(formData: FormData) {
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+
+  await supabase
+    .from("contratos_locacao")
+    .update({ ativo: false, data_encerramento: new Date().toISOString().slice(0, 10) })
+    .eq("id", id);
+
+  revalidatePath(`/locacao/${id}`);
+  revalidatePath("/locacao");
+  redirect("/locacao");
+}
+
+export async function reativarContrato(formData: FormData) {
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+
+  await supabase
+    .from("contratos_locacao")
+    .update({ ativo: true, data_encerramento: null })
+    .eq("id", id);
+
+  revalidatePath(`/locacao/${id}`);
+  revalidatePath("/locacao");
 }

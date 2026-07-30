@@ -172,6 +172,7 @@ export interface ContratoLocacao {
   condominio_contato: string | null;
   agua_inscricao: string | null;
   agua_codigo_cliente: string | null;
+  luz_codigo_cliente: string | null;
   responsavel_iptu: ResponsavelPagamentoLocacao | null;
   responsavel_condominio: ResponsavelPagamentoLocacao | null;
   responsavel_agua: ResponsavelPagamentoLocacao | null;
@@ -180,6 +181,7 @@ export interface ContratoLocacao {
   ativo: boolean;
   responsavel_id: string | null;
   observacoes: string | null;
+  data_encerramento: string | null;
 }
 
 export interface ContaLocacao {

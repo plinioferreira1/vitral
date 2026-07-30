@@ -7,7 +7,13 @@ import {
   type StatusContaLocacao,
   type ResponsavelPagamentoLocacao,
 } from "@/lib/types";
-import { alternarStatusConta, atualizarDetalhesConta, atualizarContrato } from "./actions";
+import {
+  alternarStatusConta,
+  atualizarDetalhesConta,
+  atualizarContrato,
+  encerrarContrato,
+  reativarContrato,
+} from "./actions";
 
 const MESES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez",
@@ -16,15 +22,15 @@ const MESES = [
 const TIPOS: TipoContaLocacao[] = ["iptu", "condominio", "agua", "luz", "gas"];
 
 const STATUS_STYLE: Record<StatusContaLocacao, string> = {
-  pago: "bg-emerald-50 border-emerald-200 text-emerald-700",
-  pendente: "bg-rose-50 border-rose-200 text-rose-700",
-  nao_aplicavel: "bg-background border-border text-ink-muted/50",
+  pago: "bg-emerald-500 border-emerald-500 text-white",
+  pendente: "bg-rose-500 border-rose-500 text-white",
+  nao_aplicavel: "bg-background border-border text-ink-muted/40 hover:border-border-strong",
 };
 
 const STATUS_SIMBOLO: Record<StatusContaLocacao, string> = {
   pago: "✓",
   pendente: "!",
-  nao_aplicavel: "·",
+  nao_aplicavel: "",
 };
 
 export default async function ContratoLocacaoPage({
@@ -51,8 +57,6 @@ export default async function ContratoLocacaoPage({
     .single();
 
   if (!contrato) notFound();
-
-  const { data: clientes } = await supabase.from("clientes").select("id, nome").order("nome");
 
   type Contrato = typeof contrato & {
     imoveis: { endereco: string } | null;
@@ -86,18 +90,44 @@ export default async function ContratoLocacaoPage({
   return (
     <div className="max-w-4xl space-y-8">
       <div>
-        <p className="font-mono text-xs text-ink-muted">{c.numero}</p>
-        <h1 className="mt-1 text-xl font-serif font-bold uppercase tracking-wide text-ink">
-          {c.imoveis?.endereco ?? "Sem imóvel definido"}
-        </h1>
-        <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-ink-muted sm:grid-cols-3">
-          <Info label="Locador" value={c.locador?.nome} />
-          <Info label="Telefone" value={c.locador?.telefone} />
-          <Info label="Locatário" value={c.locatario?.nome} />
-          <Info label="Telefone" value={c.locatario?.telefone} />
-          <Info label="Emite NF" value={c.emite_nf ? "Sim" : "Não"} />
-          <Info label="Status" value={c.ativo ? "Ativo" : "Encerrado"} />
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-mono text-xs text-ink-muted">{c.numero}</p>
+            <h1 className="mt-1 text-xl font-serif font-bold uppercase tracking-wide text-ink">
+              {c.imoveis?.endereco ?? "Sem imóvel definido"}
+            </h1>
+          </div>
+          <span
+            className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${
+              c.ativo
+                ? "border-emerald-100 bg-emerald-50 text-emerald-700"
+                : "border-stone-200 bg-stone-100 text-stone-500"
+            }`}
+          >
+            {c.ativo ? "Ativo" : `Encerrado${c.data_encerramento ? " em " + new Date(c.data_encerramento + "T00:00:00").toLocaleDateString("pt-BR") : ""}`}
+          </span>
         </div>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-lg border border-border bg-surface p-3">
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
+              Locador
+            </p>
+            <p className="text-sm font-medium text-ink">{c.locador?.nome ?? "—"}</p>
+            {c.locador?.telefone && <p className="text-xs text-ink-muted">{c.locador.telefone}</p>}
+            {c.locador?.email && <p className="text-xs text-ink-muted">{c.locador.email}</p>}
+          </div>
+          <div className="rounded-lg border border-border bg-surface p-3">
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
+              Locatário
+            </p>
+            <p className="text-sm font-medium text-ink">{c.locatario?.nome ?? "—"}</p>
+            {c.locatario?.telefone && <p className="text-xs text-ink-muted">{c.locatario.telefone}</p>}
+            {c.locatario?.email && <p className="text-xs text-ink-muted">{c.locatario.email}</p>}
+          </div>
+        </div>
+
+        <p className="mt-2 text-xs text-ink-muted">Emite NF: {c.emite_nf ? "Sim" : "Não"}</p>
       </div>
 
       {/* Grid de contas */}
@@ -121,58 +151,58 @@ export default async function ContratoLocacaoPage({
         </div>
 
         <p className="mb-3 text-xs text-ink-muted">
-          Clique numa célula pra alternar: sem informação → pendente → pago → sem informação.
+          Toque numa célula pra alternar: sem informação → pendente → pago → sem informação.
         </p>
 
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface">
-          <table className="w-full text-xs">
+        <div className="overflow-x-auto rounded-xl border border-border bg-surface p-2">
+          <table className="w-full border-separate" style={{ borderSpacing: "3px" }}>
             <thead>
-              <tr className="border-b border-border bg-background text-left text-ink-muted">
-                <th className="px-3 py-2 font-medium">Conta</th>
+              <tr className="text-ink-muted">
+                <th className="px-2 py-1 text-left text-xs font-medium">Conta</th>
                 {MESES.map((m) => (
-                  <th key={m} className="px-1.5 py-2 text-center font-medium">
+                  <th key={m} className="w-10 py-1 text-center text-xs font-medium">
                     {m}
                   </th>
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border">
+            <tbody>
               {TIPOS.map((tipo) => {
                 const responsavel = RESPONSAVEL_POR_TIPO[tipo];
                 return (
-                <tr key={tipo}>
-                  <td className="px-3 py-2 font-medium text-ink">
-                    {TIPO_CONTA_LABEL[tipo]}
-                    {responsavel && (
-                      <span className="ml-1.5 rounded border border-border bg-background px-1 py-0.5 text-[9px] font-normal uppercase tracking-wide text-ink-muted">
-                        {RESPONSAVEL_PAGAMENTO_LABEL[responsavel]}
-                      </span>
-                    )}
-                  </td>
-                  {MESES.map((_, mesIdx) => {
-                    const competencia = `${ano}-${String(mesIdx + 1).padStart(2, "0")}-01`;
-                    const conta = contasPorChave.get(`${tipo}-${competencia}`);
-                    const status = (conta?.status ?? "nao_aplicavel") as StatusContaLocacao;
-                    return (
-                      <td key={mesIdx} className="px-1 py-1.5 text-center">
-                        <form action={alternarStatusConta}>
-                          <input type="hidden" name="contrato_id" value={id} />
-                          <input type="hidden" name="tipo" value={tipo} />
-                          <input type="hidden" name="competencia" value={competencia} />
-                          <input type="hidden" name="status_atual" value={status} />
-                          {conta && <input type="hidden" name="conta_id" value={conta.id} />}
-                          <button
-                            type="submit"
-                            title={`${TIPO_CONTA_LABEL[tipo]} — ${MESES[mesIdx]}/${ano}`}
-                            className={`flex h-6 w-6 items-center justify-center rounded border text-[10px] font-medium ${STATUS_STYLE[status]}`}
-                          >
-                            {STATUS_SIMBOLO[status]}
-                          </button>
-                        </form>
-                      </td>
-                    );
-                  })}
-                </tr>
+                  <tr key={tipo}>
+                    <td className="px-2 py-1 text-sm font-medium text-ink">
+                      {TIPO_CONTA_LABEL[tipo]}
+                      {responsavel && (
+                        <span className="ml-1.5 rounded border border-border bg-background px-1 py-0.5 text-[9px] font-normal uppercase tracking-wide text-ink-muted">
+                          {RESPONSAVEL_PAGAMENTO_LABEL[responsavel]}
+                        </span>
+                      )}
+                    </td>
+                    {MESES.map((_, mesIdx) => {
+                      const competencia = `${ano}-${String(mesIdx + 1).padStart(2, "0")}-01`;
+                      const conta = contasPorChave.get(`${tipo}-${competencia}`);
+                      const status = (conta?.status ?? "nao_aplicavel") as StatusContaLocacao;
+                      return (
+                        <td key={mesIdx} className="p-0 text-center">
+                          <form action={alternarStatusConta}>
+                            <input type="hidden" name="contrato_id" value={id} />
+                            <input type="hidden" name="tipo" value={tipo} />
+                            <input type="hidden" name="competencia" value={competencia} />
+                            <input type="hidden" name="status_atual" value={status} />
+                            {conta && <input type="hidden" name="conta_id" value={conta.id} />}
+                            <button
+                              type="submit"
+                              title={`${TIPO_CONTA_LABEL[tipo]} — ${MESES[mesIdx]}/${ano}`}
+                              className={`flex h-9 w-full items-center justify-center rounded-md border text-sm font-bold transition hover:opacity-80 ${STATUS_STYLE[status]}`}
+                            >
+                              {STATUS_SIMBOLO[status]}
+                            </button>
+                          </form>
+                        </td>
+                      );
+                    })}
+                  </tr>
                 );
               })}
             </tbody>
@@ -182,18 +212,22 @@ export default async function ContratoLocacaoPage({
 
       {/* Detalhes editáveis (valor/vencimento) das contas com status definido */}
       {contasComDados.length > 0 && (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold text-ink">Valores e vencimentos</h2>
-          <div className="overflow-hidden rounded-xl border border-border bg-surface">
+        <details className="group rounded-xl border border-border bg-surface">
+          <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-sm font-semibold text-ink">
+            Valores e vencimentos
+            <span className="text-xs font-normal text-ink-muted group-open:hidden">
+              mostrar ({contasComDados.length})
+            </span>
+            <span className="hidden text-xs font-normal text-ink-muted group-open:inline">ocultar</span>
+          </summary>
+          <div className="overflow-hidden border-t border-border">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
                   <th className="px-4 py-2.5 font-medium">Conta</th>
                   <th className="px-4 py-2.5 font-medium">Mês</th>
                   <th className="px-4 py-2.5 font-medium">Status</th>
-                  <th className="px-4 py-2.5 font-medium">Valor</th>
-                  <th className="px-4 py-2.5 font-medium">Vencimento</th>
-                  <th className="px-4 py-2.5 font-medium"></th>
+                  <th className="px-4 py-2.5 font-medium">Valor e vencimento</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -210,7 +244,11 @@ export default async function ContratoLocacaoPage({
                       </td>
                       <td className="px-4 py-2">
                         <span
-                          className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_STYLE[cc.status as StatusContaLocacao]}`}
+                          className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
+                            cc.status === "pago"
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                              : "border-rose-200 bg-rose-50 text-rose-700"
+                          }`}
                         >
                           {cc.status === "pago" ? "Pago" : "Pendente"}
                         </span>
@@ -241,13 +279,12 @@ export default async function ContratoLocacaoPage({
                           </button>
                         </form>
                       </td>
-                      <td />
                     </tr>
                   ))}
               </tbody>
             </table>
           </div>
-        </section>
+        </details>
       )}
 
       {/* Dados do contrato */}
@@ -256,51 +293,37 @@ export default async function ContratoLocacaoPage({
         <form action={atualizarContrato} className="space-y-4 rounded-xl border border-border bg-surface p-5">
           <input type="hidden" name="id" value={id} />
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">Número</label>
-              <input
-                name="numero"
-                defaultValue={c.numero}
-                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-              />
-            </div>
-            <label className="flex items-center gap-2 self-end pb-2 text-sm text-ink">
-              <input type="checkbox" name="ativo" defaultChecked={c.ativo} className="accent-brand" />
-              Contrato ativo
-            </label>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Número</label>
+            <input
+              name="numero"
+              defaultValue={c.numero}
+              className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+            />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-muted">Locador</label>
-              <select
-                name="locador_id"
-                defaultValue={contrato.locador_id ?? ""}
-                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
-              >
-                <option value="">—</option>
-                {(clientes ?? []).map((cl) => (
-                  <option key={cl.id} value={cl.id}>
-                    {cl.nome}
-                  </option>
-                ))}
-              </select>
+              <input
+                name="locador_nome"
+                defaultValue={c.locador?.nome ?? ""}
+                list="lista-clientes-locacao"
+                placeholder="Digite ou escolha um nome"
+                autoComplete="off"
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-muted">Locatário</label>
-              <select
-                name="locatario_id"
-                defaultValue={contrato.locatario_id ?? ""}
-                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
-              >
-                <option value="">—</option>
-                {(clientes ?? []).map((cl) => (
-                  <option key={cl.id} value={cl.id}>
-                    {cl.nome}
-                  </option>
-                ))}
-              </select>
+              <input
+                name="locatario_nome"
+                defaultValue={c.locatario?.nome ?? ""}
+                list="lista-clientes-locacao"
+                placeholder="Digite ou escolha um nome"
+                autoComplete="off"
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
             </div>
           </div>
 
@@ -369,11 +392,11 @@ export default async function ContratoLocacaoPage({
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-muted">
-                Código do cliente (água)
+                Código do cliente (luz)
               </label>
               <input
-                name="agua_codigo_cliente"
-                defaultValue={c.agua_codigo_cliente ?? ""}
+                name="luz_codigo_cliente"
+                defaultValue={c.luz_codigo_cliente ?? ""}
                 className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
@@ -413,18 +436,44 @@ export default async function ContratoLocacaoPage({
             Salvar contrato
           </button>
         </form>
+
+        <datalist id="lista-clientes-locacao">
+          {[c.locador?.nome, c.locatario?.nome].filter(Boolean).map((n) => (
+            <option key={n} value={n!} />
+          ))}
+        </datalist>
+
+        <div className="mt-4 rounded-xl border border-border bg-surface p-5">
+          {c.ativo ? (
+            <>
+              <p className="mb-2 text-xs text-ink-muted">
+                Encerrar move esse contrato pra uma área separada de contratos encerrados —
+                não apaga nada, dá pra reativar depois.
+              </p>
+              <form action={encerrarContrato}>
+                <input type="hidden" name="id" value={id} />
+                <button
+                  type="submit"
+                  className="rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100"
+                >
+                  Encerrar contrato
+                </button>
+              </form>
+            </>
+          ) : (
+            <form action={reativarContrato}>
+              <input type="hidden" name="id" value={id} />
+              <button
+                type="submit"
+                className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
+              >
+                Reativar contrato
+              </button>
+            </form>
+          )}
+        </div>
       </section>
     </div>
-  );
-}
-
-function Info({ label, value }: { label: string; value?: string | null }) {
-  if (!value) return null;
-  return (
-    <p>
-      <span className="text-ink-muted">{label}: </span>
-      <span className="text-ink">{value}</span>
-    </p>
   );
 }
 

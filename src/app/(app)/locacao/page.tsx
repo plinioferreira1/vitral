@@ -148,49 +148,73 @@ export default async function LocacaoPage() {
             </Link>
             .
           </p>
+        ) : listaContratos.filter((c) => c.ativo).length === 0 ? (
+          <p className="p-8 text-center text-sm text-ink-muted">
+            Nenhum contrato ativo no momento (veja os encerrados abaixo).
+          </p>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
-                <th className="px-5 py-3 font-medium">Nº</th>
-                <th className="px-5 py-3 font-medium">Imóvel</th>
-                <th className="px-5 py-3 font-medium">Locador</th>
-                <th className="px-5 py-3 font-medium">Locatário</th>
-                <th className="px-5 py-3 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {listaContratos.map((c) => (
-                <tr key={c.id} className="transition hover:bg-background">
-                  <td className="px-5 py-3 font-mono text-xs text-ink-muted">
-                    <Link href={`/locacao/${c.id}`} className="hover:underline">
-                      {c.numero}
-                    </Link>
-                  </td>
-                  <td className="px-5 py-3">
-                    <Link href={`/locacao/${c.id}`} className="font-medium text-ink hover:underline">
-                      {c.imoveis?.endereco ?? "—"}
-                    </Link>
-                  </td>
-                  <td className="px-5 py-3 text-ink-muted">{c.locador?.nome ?? "—"}</td>
-                  <td className="px-5 py-3 text-ink-muted">{c.locatario?.nome ?? "—"}</td>
-                  <td className="px-5 py-3">
-                    <span
-                      className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
-                        c.ativo
-                          ? "border-emerald-100 bg-emerald-50 text-emerald-700"
-                          : "border-stone-200 bg-stone-100 text-stone-500"
-                      }`}
-                    >
-                      {c.ativo ? "Ativo" : "Encerrado"}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <TabelaContratos contratos={listaContratos.filter((c) => c.ativo)} />
         )}
       </div>
+
+      {listaContratos.some((c) => !c.ativo) && (
+        <details className="group overflow-hidden rounded-xl border border-border bg-surface">
+          <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-sm font-semibold text-ink">
+            Contratos encerrados
+            <span className="text-xs font-normal text-ink-muted group-open:hidden">
+              mostrar ({listaContratos.filter((c) => !c.ativo).length})
+            </span>
+            <span className="hidden text-xs font-normal text-ink-muted group-open:inline">ocultar</span>
+          </summary>
+          <div className="border-t border-border">
+            <TabelaContratos contratos={listaContratos.filter((c) => !c.ativo)} />
+          </div>
+        </details>
+      )}
     </div>
+  );
+}
+
+function TabelaContratos({
+  contratos,
+}: {
+  contratos: {
+    id: string;
+    numero: string;
+    ativo: boolean;
+    imoveis: { endereco: string } | null;
+    locador: { nome: string } | null;
+    locatario: { nome: string } | null;
+  }[];
+}) {
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
+          <th className="px-5 py-3 font-medium">Nº</th>
+          <th className="px-5 py-3 font-medium">Imóvel</th>
+          <th className="px-5 py-3 font-medium">Locador</th>
+          <th className="px-5 py-3 font-medium">Locatário</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-border">
+        {contratos.map((c) => (
+          <tr key={c.id} className="transition hover:bg-background">
+            <td className="px-5 py-3 font-mono text-xs text-ink-muted">
+              <Link href={`/locacao/${c.id}`} className="hover:underline">
+                {c.numero}
+              </Link>
+            </td>
+            <td className="px-5 py-3">
+              <Link href={`/locacao/${c.id}`} className="font-medium text-ink hover:underline">
+                {c.imoveis?.endereco ?? "—"}
+              </Link>
+            </td>
+            <td className="px-5 py-3 text-ink-muted">{c.locador?.nome ?? "—"}</td>
+            <td className="px-5 py-3 text-ink-muted">{c.locatario?.nome ?? "—"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   );
 }
