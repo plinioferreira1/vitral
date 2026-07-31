@@ -1,7 +1,5 @@
-import Link from "next/link";
-import { URGENCIA_COR } from "@/lib/alertas";
-import { CATEGORIA_LABEL, type CategoriaProcesso } from "@/lib/types";
 import type { EventoCalendario } from "@/lib/queries";
+import { DiaCelula } from "./dia-celula";
 import {
   eachDayOfInterval,
   endOfMonth,
@@ -12,12 +10,6 @@ import {
   startOfMonth,
   startOfWeek,
 } from "date-fns";
-
-const CATEGORIA_PONTO: Record<CategoriaProcesso, string> = {
-  venda: "bg-brand",
-  financiamento: "bg-gold",
-  locacao: "bg-stone-500",
-};
 
 export function CalendarioGrid({
   eventos,
@@ -59,44 +51,15 @@ export function CalendarioGrid({
           const foraDoMes = !isSameMonth(dia, referencia);
 
           return (
-            <div
+            <DiaCelula
               key={chave}
-              className={`border-b border-r border-border p-1.5 last:border-r-0 ${
-                compacto ? "min-h-[74px]" : "min-h-[110px]"
-              } ${foraDoMes ? "bg-background/50" : ""}`}
-            >
-              <p
-                className={`mb-1 text-xs ${
-                  isToday(dia)
-                    ? "flex h-5 w-5 items-center justify-center rounded-full bg-brand font-medium text-white"
-                    : foraDoMes
-                      ? "text-ink-muted/50"
-                      : "text-ink-muted"
-                }`}
-              >
-                {format(dia, "d")}
-              </p>
-              <div className="space-y-1">
-                {eventosDoDia.slice(0, maxPorDia).map((e) => (
-                  <Link
-                    key={e.id}
-                    href={e.href}
-                    className={`flex items-center gap-1 truncate rounded border px-1 py-0.5 text-[10px] leading-tight ${
-                      e.concluida
-                        ? "border-stone-200 bg-stone-100 text-stone-500"
-                        : URGENCIA_COR[e.urgencia]
-                    }`}
-                    title={`${CATEGORIA_LABEL[e.categoria]} — ${e.titulo}`}
-                  >
-                    <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${CATEGORIA_PONTO[e.categoria]}`} />
-                    <span className="truncate">{e.titulo}</span>
-                  </Link>
-                ))}
-                {eventosDoDia.length > maxPorDia && (
-                  <p className="text-[10px] text-ink-muted">+{eventosDoDia.length - maxPorDia} mais</p>
-                )}
-              </div>
-            </div>
+              dia={format(dia, "d")}
+              isToday={isToday(dia)}
+              foraDoMes={foraDoMes}
+              eventos={eventosDoDia}
+              compacto={compacto}
+              maxPorDia={maxPorDia}
+            />
           );
         })}
       </div>
