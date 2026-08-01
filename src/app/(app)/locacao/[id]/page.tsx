@@ -23,17 +23,36 @@ const MESES = [
 
 const TIPOS: TipoContaLocacao[] = ["iptu", "condominio", "agua", "luz", "gas"];
 
-const STATUS_STYLE: Record<StatusContaLocacao, string> = {
+type EstadoVisual = "pago" | "em_dia" | "vencido" | "nao_aplicavel";
+
+const ESTADO_STYLE: Record<EstadoVisual, string> = {
   pago: "bg-emerald-500 border-emerald-500 text-white",
-  pendente: "bg-rose-500 border-rose-500 text-white",
+  em_dia: "bg-amber-50 border-amber-200 text-amber-600 hover:border-amber-300",
+  vencido: "bg-rose-500 border-rose-500 text-white",
   nao_aplicavel: "bg-background border-border text-ink-muted/40 hover:border-border-strong",
 };
 
-const STATUS_SIMBOLO: Record<StatusContaLocacao, string> = {
+const ESTADO_SIMBOLO: Record<EstadoVisual, string> = {
   pago: "✓",
-  pendente: "!",
+  em_dia: "○",
+  vencido: "!",
   nao_aplicavel: "",
 };
+
+/**
+ * "Pendente" sozinho não conta a história certa: se ainda não
+ * venceu, não é pra parecer um alarme. Só vira "vencido" (vermelho)
+ * quando o dia do vencimento já passou.
+ */
+function calcularEstadoVisual(
+  status: StatusContaLocacao,
+  vencimento: string | null | undefined
+): EstadoVisual {
+  if (status !== "pendente") return status;
+  if (!vencimento) return "em_dia";
+  const hoje = new Date().toISOString().slice(0, 10);
+  return vencimento < hoje ? "vencido" : "em_dia";
+}
 
 export default async function ContratoLocacaoPage({
   params,
@@ -154,7 +173,8 @@ export default async function ContratoLocacaoPage({
         </div>
 
         <p className="mb-3 text-xs text-ink-muted">
-          Toque numa célula pra alternar: sem informação → pendente → pago → sem informação.
+          Toque numa célula pra alternar: sem informação → pendente (fica &quot;em dia&quot; até
+          vencer) → pago → sem informação.
         </p>
 
         <div className="overflow-x-auto rounded-xl border border-border bg-surface p-2">
@@ -186,6 +206,7 @@ export default async function ContratoLocacaoPage({
                       const competencia = `${ano}-${String(mesIdx + 1).padStart(2, "0")}-01`;
                       const conta = contasPorChave.get(`${tipo}-${competencia}`);
                       const status = (conta?.status ?? "nao_aplicavel") as StatusContaLocacao;
+                      const estado = calcularEstadoVisual(status, conta?.vencimento);
                       return (
                         <td key={mesIdx} className="p-0 text-center">
                           <form action={alternarStatusConta}>
@@ -196,10 +217,12 @@ export default async function ContratoLocacaoPage({
                             {conta && <input type="hidden" name="conta_id" value={conta.id} />}
                             <button
                               type="submit"
-                              title={`${TIPO_CONTA_LABEL[tipo]} — ${MESES[mesIdx]}/${ano}`}
-                              className={`flex h-9 w-full items-center justify-center rounded-md border text-sm font-bold transition hover:opacity-80 ${STATUS_STYLE[status]}`}
+                              title={`${TIPO_CONTA_LABEL[tipo]} — ${MESES[mesIdx]}/${ano}${
+                                estado === "em_dia" ? " (em dia)" : estado === "vencido" ? " (vencido)" : ""
+                              }`}
+                              className={`flex h-9 w-full items-center justify-center rounded-md border text-sm font-bold transition hover:opacity-80 ${ESTADO_STYLE[estado]}`}
                             >
-                              {STATUS_SIMBOLO[status]}
+                              {ESTADO_SIMBOLO[estado]}
                             </button>
                           </form>
                         </td>
@@ -246,15 +269,25 @@ export default async function ContratoLocacaoPage({
                         })}
                       </td>
                       <td className="px-4 py-2">
-                        <span
-                          className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
-                            cc.status === "pago"
+                        {(() => {
+                          const estado = calcularEstadoVisual(
+                            cc.status as StatusContaLocacao,
+                            cc.vencimento
+                          );
+                          const texto =
+                            estado === "pago" ? "Pago" : estado === "vencido" ? "Vencido" : "Em dia";
+                          const cor =
+                            estado === "pago"
                               ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                              : "border-rose-200 bg-rose-50 text-rose-700"
-                          }`}
-                        >
-                          {cc.status === "pago" ? "Pago" : "Pendente"}
-                        </span>
+                              : estado === "vencido"
+                                ? "border-rose-200 bg-rose-50 text-rose-700"
+                                : "border-amber-200 bg-amber-50 text-amber-700";
+                          return (
+                            <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${cor}`}>
+                              {texto}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-4 py-2">
                         <form action={atualizarDetalhesConta} className="flex items-center gap-1.5">
