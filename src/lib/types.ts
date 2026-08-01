@@ -146,11 +146,12 @@ export interface EtapaPadrao {
 export type TipoContaLocacao = "iptu" | "condominio" | "agua" | "luz" | "gas";
 export type StatusContaLocacao = "pago" | "pendente" | "nao_aplicavel";
 export type TipoIptuLocacao = "parcelado" | "cota_unica";
-export type ResponsavelPagamentoLocacao = "locador" | "locatario";
+export type ResponsavelPagamentoLocacao = "locador" | "locatario" | "imobiliaria";
 
 export const RESPONSAVEL_PAGAMENTO_LABEL: Record<ResponsavelPagamentoLocacao, string> = {
   locador: "Locador",
   locatario: "Locatário",
+  imobiliaria: "Imobiliária",
 };
 
 export const TIPO_CONTA_LABEL: Record<TipoContaLocacao, string> = {

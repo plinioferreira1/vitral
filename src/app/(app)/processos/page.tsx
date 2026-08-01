@@ -87,13 +87,13 @@ export default async function ProcessosPage({
   const rows = (processos ?? []) as unknown as Row[];
   const ehFinanciamento = categoria === "financiamento";
 
-  const abas = abasPermitidas;
-
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">Processos</h1>
+          <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">
+            {CATEGORIA_LABEL[categoria]}
+          </h1>
           <p className="mt-1 text-sm text-ink-muted">{rows.length} processos nessa categoria</p>
         </div>
         <Link
@@ -102,20 +102,6 @@ export default async function ProcessosPage({
         >
           + Novo processo
         </Link>
-      </div>
-
-      <div className="flex gap-1 rounded-lg bg-background p-1 text-sm w-fit">
-        {abas.map((c) => (
-          <Link
-            key={c}
-            href={`/processos?categoria=${c}`}
-            className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
-              categoria === c ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
-            }`}
-          >
-            {CATEGORIA_LABEL[c]}
-          </Link>
-        ))}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">

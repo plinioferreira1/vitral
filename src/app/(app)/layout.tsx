@@ -43,6 +43,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     },
     { href: "/calendario", label: "Calendário" },
     { href: "/calculadora", label: "Calculadora" },
+    { href: "/cartorio", label: "Cartório" },
     {
       label: "Configurações",
       children: [

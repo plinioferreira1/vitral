@@ -533,6 +533,7 @@ function ResponsavelSelect({
         <option value="">—</option>
         <option value="locador">Locador</option>
         <option value="locatario">Locatário</option>
+        <option value="imobiliaria">Imobiliária</option>
       </select>
     </div>
   );
