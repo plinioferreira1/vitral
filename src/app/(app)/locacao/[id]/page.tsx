@@ -96,9 +96,8 @@ export default async function ContratoLocacaoPage({
         <SucessoBanner mostrar={salvo === "1"} texto="Contrato salvo com sucesso." />
         <div className="mt-2 flex items-start justify-between gap-3">
           <div>
-            <p className="font-mono text-xs text-ink-muted">{c.numero}</p>
-            <h1 className="mt-1 text-xl font-serif font-bold uppercase tracking-wide text-ink">
-              {c.imoveis?.endereco ?? "Sem imóvel definido"}
+            <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">
+              {c.imoveis?.endereco ?? c.numero ?? "Sem imóvel definido"}
             </h1>
           </div>
           <span

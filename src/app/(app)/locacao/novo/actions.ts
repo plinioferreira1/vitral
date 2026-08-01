@@ -22,7 +22,11 @@ export async function criarContratoLocacao(formData: FormData) {
   const locatarioId = String(formData.get("locatario_id") ?? "") || null;
   const emiteNf = formData.get("emite_nf") === "on";
 
-  const numero = `LOC-${Date.now().toString().slice(-6)}`;
+  let numero = `Contrato ${Date.now().toString().slice(-6)}`;
+  if (imovelId) {
+    const { data: imovel } = await supabase.from("imoveis").select("endereco").eq("id", imovelId).single();
+    if (imovel?.endereco) numero = imovel.endereco;
+  }
 
   const { data: contrato, error } = await supabase
     .from("contratos_locacao")

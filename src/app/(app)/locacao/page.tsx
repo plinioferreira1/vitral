@@ -298,12 +298,7 @@ function TabelaContratos({
               className="flex items-center justify-between gap-4 px-5 py-3.5 transition hover:bg-background"
             >
               <div className="min-w-0">
-                <p className="flex items-baseline gap-2">
-                  <span className="truncate font-medium text-ink">
-                    {c.imoveis?.endereco ?? c.numero}
-                  </span>
-                  <span className="shrink-0 font-mono text-[11px] text-ink-muted">{c.numero}</span>
-                </p>
+                <p className="truncate font-medium text-ink">{c.imoveis?.endereco ?? c.numero}</p>
                 <p className="mt-0.5 truncate text-xs text-ink-muted">
                   {c.locador?.nome ?? "sem locador"}
                   <span className="mx-1">→</span>
