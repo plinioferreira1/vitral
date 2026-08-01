@@ -29,7 +29,9 @@ export default async function DashboardPage({
 }) {
   const { filtro } = await searchParams;
   const eventos = await getEventosCalendario();
-  const pendentes = eventos.filter((e) => !e.concluida);
+  // Locação já tem o resumo dela própria na aba de Inadimplências — aqui só
+  // Vendas e Financiamento, senão a contagem infla e perde o sentido.
+  const pendentes = eventos.filter((e) => !e.concluida && e.categoria !== "locacao");
 
   const atrasados = pendentes.filter((e) => e.urgencia === "atrasada");
   const venceHoje = pendentes.filter((e) => e.urgencia === "vence_hoje");
@@ -56,7 +58,7 @@ export default async function DashboardPage({
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCardLink href="/calendario" label="Em aberto" value={pendentes.length} bg="#731515" icone={Icones.relogio} />
+        <StatCardLink href="/calendario" label="Em aberto" value={pendentes.length} bg="#6B5D57" icone={Icones.relogio} />
         <StatCardLink
           href="/?filtro=atrasada"
           label="Atrasados"
@@ -160,6 +162,7 @@ function StatCardLink({
   bg,
   icone,
   ativo,
+  detalhe,
 }: {
   href: string;
   label: string;
@@ -167,6 +170,7 @@ function StatCardLink({
   bg: string;
   icone: React.ReactNode;
   ativo?: boolean;
+  detalhe?: string;
 }) {
   return (
     <Link
@@ -181,6 +185,7 @@ function StatCardLink({
       </div>
       <p className="mt-3 font-mono text-2xl font-semibold">{value}</p>
       <p className="mt-0.5 text-xs text-white/80">{label}</p>
+      {detalhe && <p className="mt-1 text-[10px] text-white/60">{detalhe}</p>}
     </Link>
   );
 }
