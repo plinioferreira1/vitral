@@ -13,14 +13,19 @@ function primeiroDiaDoMes(): string {
 }
 
 type Aba = "contratos" | "inadimplencias";
+type Filtro = "mes" | "atrasadas" | "pagas" | undefined;
 
 export default async function LocacaoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string; aba?: string }>;
+  searchParams: Promise<{ mes?: string; aba?: string; filtro?: string }>;
 }) {
-  const { mes, aba: abaParam } = await searchParams;
+  const { mes, aba: abaParam, filtro: filtroParam } = await searchParams;
   const aba: Aba = abaParam === "inadimplencias" ? "inadimplencias" : "contratos";
+  const filtro: Filtro =
+    filtroParam === "mes" || filtroParam === "atrasadas" || filtroParam === "pagas"
+      ? filtroParam
+      : undefined;
 
   const supabase = await createClient();
   const competenciaAtual = primeiroDiaDoMes();
@@ -30,6 +35,7 @@ export default async function LocacaoPage({
   const fimMes = format(addMonths(mesReferencia, 1), "yyyy-MM-01");
   const mesAnterior = format(addMonths(mesReferencia, -1), "yyyy-MM");
   const proximoMes = format(addMonths(mesReferencia, 1), "yyyy-MM");
+  const mesLabel = format(mesReferencia, "MMMM yyyy", { locale: ptBR });
 
   const { data: contratos } = await supabase
     .from("contratos_locacao")
@@ -47,7 +53,7 @@ export default async function LocacaoPage({
     .eq("status", "pendente")
     .order("vencimento", { ascending: true, nullsFirst: true });
 
-  type ContaPendente = {
+  type ContaLinha = {
     id: string;
     tipo: import("@/lib/types").TipoContaLocacao;
     status: string;
@@ -55,26 +61,25 @@ export default async function LocacaoPage({
     contrato_id: string;
     vencimento: string | null;
   };
-  const contasPendentes = (contasPendentesRaw ?? []) as ContaPendente[];
+  const contasPendentes = (contasPendentesRaw ?? []) as ContaLinha[];
 
-  // resumo do mês selecionado (pra visão geral do Gerente)
-  const { count: pendentesNoMes } = await supabase
+  const { data: contasPagasNoMesRaw } = await supabase
     .from("contas_locacao")
-    .select("id", { count: "exact", head: true })
-    .eq("status", "pendente")
-    .gte("competencia", inicioMes)
-    .lt("competencia", fimMes);
-
-  const { count: pagasNoMes } = await supabase
-    .from("contas_locacao")
-    .select("id", { count: "exact", head: true })
+    .select("id, tipo, status, competencia, contrato_id, vencimento")
     .eq("status", "pago")
     .gte("competencia", inicioMes)
-    .lt("competencia", fimMes);
+    .lt("competencia", fimMes)
+    .order("competencia", { ascending: false });
+  const contasPagasNoMes = (contasPagasNoMesRaw ?? []) as ContaLinha[];
 
-  const atrasadas = contasPendentes.filter(
-    (c) => calcularUrgencia({ status: "pendente", data_prevista: c.vencimento ?? c.competencia }).urgencia === "atrasada"
-  ).length;
+  const pendentesNoMes = contasPendentes.filter(
+    (c) => c.competencia >= inicioMes && c.competencia < fimMes
+  );
+  const atrasadasLista = contasPendentes.filter(
+    (c) =>
+      calcularUrgencia({ status: "pendente", data_prevista: c.vencimento ?? c.competencia }).urgencia ===
+      "atrasada"
+  );
 
   const { data: tarefas } = await supabase
     .from("tarefas_mensais")
@@ -104,6 +109,18 @@ export default async function LocacaoPage({
   });
   const totalContratosAtivos = listaContratos.filter((c) => c.ativo).length;
 
+  // qual lista mostrar embaixo, conforme o cartão clicado
+  const listaExibida =
+    filtro === "mes" ? pendentesNoMes : filtro === "atrasadas" ? atrasadasLista : filtro === "pagas" ? contasPagasNoMes : contasPendentes;
+  const tituloLista =
+    filtro === "mes"
+      ? `Contas pendentes em ${mesLabel}`
+      : filtro === "atrasadas"
+        ? "Contas atrasadas"
+        : filtro === "pagas"
+          ? `Contas pagas em ${mesLabel}`
+          : "Contas pendentes";
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -122,25 +139,6 @@ export default async function LocacaoPage({
             + Novo contrato
           </Link>
         )}
-      </div>
-
-      <div className="flex gap-1 rounded-lg bg-background p-1 text-sm w-fit">
-        <Link
-          href="/locacao?aba=contratos"
-          className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
-            aba === "contratos" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
-          }`}
-        >
-          Contratos
-        </Link>
-        <Link
-          href="/locacao?aba=inadimplencias"
-          className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
-            aba === "inadimplencias" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
-          }`}
-        >
-          Inadimplências
-        </Link>
       </div>
 
       {aba === "contratos" ? (
@@ -191,18 +189,16 @@ export default async function LocacaoPage({
           {/* Visão geral do mês */}
           <div>
             <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-semibold capitalize text-ink">
-                Visão geral · {format(mesReferencia, "MMMM yyyy", { locale: ptBR })}
-              </p>
+              <p className="text-sm font-semibold capitalize text-ink">Visão geral · {mesLabel}</p>
               <div className="flex gap-1.5">
                 <Link
-                  href={`/locacao?aba=inadimplencias&mes=${mesAnterior}`}
+                  href={`/locacao?aba=inadimplencias&mes=${mesAnterior}${filtro ? `&filtro=${filtro}` : ""}`}
                   className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-surface"
                 >
                   ← Mês anterior
                 </Link>
                 <Link
-                  href={`/locacao?aba=inadimplencias&mes=${proximoMes}`}
+                  href={`/locacao?aba=inadimplencias&mes=${proximoMes}${filtro ? `&filtro=${filtro}` : ""}`}
                   className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-surface"
                 >
                   Próximo mês →
@@ -210,27 +206,45 @@ export default async function LocacaoPage({
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4">
-              <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#B9822C" }}>
+              <Link
+                href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=mes`}
+                className={`rounded-xl p-5 text-white transition hover:opacity-90 ${
+                  filtro === "mes" ? "ring-2 ring-offset-2 ring-offset-background" : ""
+                }`}
+                style={{ backgroundColor: "#B9822C", ["--tw-ring-color" as string]: "#B9822C" }}
+              >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
                   {Icones.relogio}
                 </div>
-                <p className="mt-3 font-mono text-2xl font-semibold">{pendentesNoMes ?? 0}</p>
+                <p className="mt-3 font-mono text-2xl font-semibold">{pendentesNoMes.length}</p>
                 <p className="mt-0.5 text-xs text-white/80">Contas pendentes no mês</p>
-              </div>
-              <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#0F7A4E" }}>
+              </Link>
+              <Link
+                href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=pagas`}
+                className={`rounded-xl p-5 text-white transition hover:opacity-90 ${
+                  filtro === "pagas" ? "ring-2 ring-offset-2 ring-offset-background" : ""
+                }`}
+                style={{ backgroundColor: "#0F7A4E", ["--tw-ring-color" as string]: "#0F7A4E" }}
+              >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
                   {Icones.check}
                 </div>
-                <p className="mt-3 font-mono text-2xl font-semibold">{pagasNoMes ?? 0}</p>
+                <p className="mt-3 font-mono text-2xl font-semibold">{contasPagasNoMes.length}</p>
                 <p className="mt-0.5 text-xs text-white/80">Contas pagas no mês</p>
-              </div>
-              <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#9F1D1D" }}>
+              </Link>
+              <Link
+                href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=atrasadas`}
+                className={`rounded-xl p-5 text-white transition hover:opacity-90 ${
+                  filtro === "atrasadas" ? "ring-2 ring-offset-2 ring-offset-background" : ""
+                }`}
+                style={{ backgroundColor: "#9F1D1D", ["--tw-ring-color" as string]: "#9F1D1D" }}
+              >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
                   {Icones.alerta}
                 </div>
-                <p className="mt-3 font-mono text-2xl font-semibold">{atrasadas}</p>
+                <p className="mt-3 font-mono text-2xl font-semibold">{atrasadasLista.length}</p>
                 <p className="mt-0.5 text-xs text-white/80">Atrasadas (todos os meses)</p>
-              </div>
+              </Link>
             </div>
           </div>
 
@@ -268,23 +282,33 @@ export default async function LocacaoPage({
           </div>
 
           <div className="rounded-xl border border-border bg-surface p-5">
-            <p className="mb-3 text-sm font-semibold text-ink">Contas pendentes</p>
-            {contasPendentes.length === 0 ? (
-              <p className="text-sm text-ink-muted">Nenhuma conta pendente no momento. 🎉</p>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-semibold text-ink">{tituloLista}</p>
+              {filtro && (
+                <Link
+                  href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}`}
+                  className="text-xs text-ink-muted hover:underline"
+                >
+                  limpar filtro
+                </Link>
+              )}
+            </div>
+            {listaExibida.length === 0 ? (
+              <p className="text-sm text-ink-muted">Nada aqui. 🎉</p>
             ) : (
               <ul className="space-y-1.5">
-                {contasPendentes.slice(0, 30).map((c) => {
+                {listaExibida.slice(0, 30).map((c) => {
                   const contrato = contratosPorId.get(c.contrato_id);
+                  const pago = c.status === "pago";
                   const { urgencia } = calcularUrgencia({
-                    status: "pendente",
+                    status: pago ? "concluida" : "pendente",
                     data_prevista: c.vencimento ?? c.competencia,
                   });
-                  const barra =
-                    urgencia === "atrasada"
+                  const barra = pago
+                    ? "border-l-emerald-500"
+                    : urgencia === "atrasada"
                       ? "border-l-rose-500"
-                      : urgencia === "vence_hoje" || urgencia === "vence_em_breve"
-                        ? "border-l-amber-500"
-                        : "border-l-emerald-500";
+                      : "border-l-amber-500";
                   return (
                     <li
                       key={c.id}
@@ -297,7 +321,9 @@ export default async function LocacaoPage({
                         <span className="text-ink-muted"> — {TIPO_CONTA_LABEL[c.tipo]}</span>
                       </Link>
                       <span
-                        className={`rounded-full border px-2 py-0.5 text-xs font-medium ${URGENCIA_COR[urgencia]}`}
+                        className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
+                          pago ? URGENCIA_COR.concluida : URGENCIA_COR[urgencia]
+                        }`}
                       >
                         {new Date(c.competencia + "T00:00:00").toLocaleDateString("pt-BR", {
                           month: "long",
