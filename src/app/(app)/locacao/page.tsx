@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { alternarTarefaMensal } from "./actions";
 import { TIPO_CONTA_LABEL } from "@/lib/types";
 import { calcularUrgencia, URGENCIA_COR } from "@/lib/alertas";
-import { IconeBadge, Icones } from "@/components/icone-badge";
+import { Icones } from "@/components/icone-badge";
 import { addMonths, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -135,20 +135,26 @@ export default async function LocacaoPage({
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-xl border border-border bg-surface p-5">
-            <IconeBadge tom="brand" icone={Icones.relogio} />
-            <p className="mt-3 font-mono text-2xl font-semibold text-ink">{pendentesNoMes ?? 0}</p>
-            <p className="mt-0.5 text-xs text-ink-muted">Contas pendentes no mês</p>
+          <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#731515" }}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+              {Icones.relogio}
+            </div>
+            <p className="mt-3 font-mono text-2xl font-semibold">{pendentesNoMes ?? 0}</p>
+            <p className="mt-0.5 text-xs text-white/80">Contas pendentes no mês</p>
           </div>
-          <div className="rounded-xl border border-border bg-surface p-5">
-            <IconeBadge tom="emerald" icone={Icones.check} />
-            <p className="mt-3 font-mono text-2xl font-semibold text-emerald-700">{pagasNoMes ?? 0}</p>
-            <p className="mt-0.5 text-xs text-ink-muted">Contas pagas no mês</p>
+          <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#0F7A4E" }}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+              {Icones.check}
+            </div>
+            <p className="mt-3 font-mono text-2xl font-semibold">{pagasNoMes ?? 0}</p>
+            <p className="mt-0.5 text-xs text-white/80">Contas pagas no mês</p>
           </div>
-          <div className="rounded-xl border border-border bg-surface p-5">
-            <IconeBadge tom="rose" icone={Icones.alerta} />
-            <p className="mt-3 font-mono text-2xl font-semibold text-rose-700">{atrasadas}</p>
-            <p className="mt-0.5 text-xs text-ink-muted">Atrasadas (todos os meses)</p>
+          <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#9F1D1D" }}>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+              {Icones.alerta}
+            </div>
+            <p className="mt-3 font-mono text-2xl font-semibold">{atrasadas}</p>
+            <p className="mt-0.5 text-xs text-white/80">Atrasadas (todos os meses)</p>
           </div>
         </div>
       </div>
