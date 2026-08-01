@@ -177,7 +177,7 @@ export default async function ContratoLocacaoPage({
           vencer) → pago → sem informação.
         </p>
 
-        <div className="overflow-x-auto rounded-xl border border-border bg-surface p-2">
+        <div className="overflow-x-auto rounded-xl border border-border/60 bg-surface shadow-sm p-2">
           <table className="w-full border-separate" style={{ borderSpacing: "3px" }}>
             <thead>
               <tr className="text-ink-muted">
@@ -238,7 +238,7 @@ export default async function ContratoLocacaoPage({
 
       {/* Detalhes editáveis (valor/vencimento) das contas com status definido */}
       {contasComDados.length > 0 && (
-        <details className="group rounded-xl border border-border bg-surface">
+        <details className="group rounded-xl border border-border/60 bg-surface shadow-sm">
           <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-sm font-semibold text-ink">
             Valores e vencimentos
             <span className="text-xs font-normal text-ink-muted group-open:hidden">
@@ -326,7 +326,7 @@ export default async function ContratoLocacaoPage({
       {/* Dados do contrato */}
       <section>
         <h2 className="mb-3 text-sm font-semibold text-ink">Dados do contrato</h2>
-        <form action={atualizarContrato} className="space-y-4 rounded-xl border border-border bg-surface p-5">
+        <form action={atualizarContrato} className="space-y-4 rounded-xl border border-border/60 bg-surface shadow-sm p-5">
           <input type="hidden" name="id" value={id} />
 
           <div>
@@ -479,7 +479,7 @@ export default async function ContratoLocacaoPage({
           ))}
         </datalist>
 
-        <div className="mt-4 rounded-xl border border-border bg-surface p-5">
+        <div className="mt-4 rounded-xl border border-border/60 bg-surface shadow-sm p-5">
           {c.ativo ? (
             <>
               <p className="mb-2 text-xs text-ink-muted">

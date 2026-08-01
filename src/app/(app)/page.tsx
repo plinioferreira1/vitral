@@ -108,7 +108,7 @@ export default async function DashboardPage({
             )}
           </div>
           {criticos.length === 0 ? (
-            <p className="rounded-xl border border-border bg-surface p-5 text-center text-sm text-ink-muted">
+            <p className="rounded-xl border border-border/60 bg-surface shadow-sm p-5 text-center text-sm text-ink-muted">
               {filtro ? "Nada aqui." : "Nenhum prazo atrasado ou vencendo nos próximos dias. 🎉"}
             </p>
           ) : (

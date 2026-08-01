@@ -71,17 +71,14 @@ export function AppShell({
     <Link
       href="/"
       onClick={() => setMenuAberto(false)}
-      className="flex items-center gap-2 rounded-md px-2 py-1 transition hover:bg-background"
+      className="flex items-center rounded-md px-2 py-1 transition hover:bg-background"
+      aria-label={tenantName}
     >
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center">
-        <img
-          src="/brand/vitral-icone.png"
-          alt=""
-          aria-hidden="true"
-          className="h-8 w-8 object-contain"
-        />
-      </div>
-      <p className="line-clamp-2 text-sm font-serif font-semibold leading-tight text-ink">{tenantName}</p>
+      <img
+        src="/brand/sacra-logo-bordo.png"
+        alt={tenantName}
+        className="h-9 w-auto object-contain"
+      />
     </Link>
   );
 

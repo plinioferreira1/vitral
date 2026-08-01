@@ -86,7 +86,7 @@ export function DiaCelula({
             aria-hidden="true"
           />
           {/* cartão centralizado na tela */}
-          <div className="fixed inset-x-4 top-1/2 z-30 mx-auto max-h-[70vh] w-full max-w-sm -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-surface p-3 shadow-xl">
+          <div className="fixed inset-x-4 top-1/2 z-30 mx-auto max-h-[70vh] w-full max-w-sm -translate-y-1/2 overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm p-3 shadow-xl">
             <div className="mb-1.5 flex items-center justify-between px-1">
               <p className="text-[11px] font-semibold text-ink">
                 {eventos.length} evento{eventos.length > 1 ? "s" : ""} nesse dia

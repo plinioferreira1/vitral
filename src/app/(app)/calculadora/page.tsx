@@ -390,7 +390,7 @@ function PainelCalculo({
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border border-border bg-surface p-5">
+      <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
         <p className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-muted">
           Identificação
         </p>
@@ -420,7 +420,7 @@ function PainelCalculo({
       </div>
 
       {grupos.map((grupo) => (
-        <div key={grupo.id} className="rounded-xl border border-border bg-surface p-5">
+        <div key={grupo.id} className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
           <p className="text-sm font-semibold text-ink">{grupo.label}</p>
           <p className="mb-3 text-xs text-ink-muted">{grupo.descricao}</p>
 
@@ -491,7 +491,7 @@ function PainelCalculo({
       ))}
 
       {permiteItensPersonalizados && (
-        <div className="rounded-xl border border-border bg-surface p-5">
+        <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
           <p className="text-sm font-semibold text-ink">Itens personalizados</p>
           <p className="mb-3 text-xs text-ink-muted">
             Taxas extras, móveis, ou qualquer outro valor que precise ser rateado ou atribuído a
@@ -534,7 +534,7 @@ function PainelCalculo({
       </button>
 
       {resultado && (
-        <div className="rounded-xl border border-border bg-surface p-5">
+        <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
           <p className="mb-3 text-sm font-semibold text-ink">Resultado</p>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -841,7 +841,7 @@ function PainelCartorio() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-xl border border-border bg-surface p-5">
+      <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">
@@ -891,7 +891,7 @@ function PainelCartorio() {
       </button>
 
       {resultado && (
-        <div className="rounded-xl border border-border bg-surface p-5">
+        <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
           <p className="mb-3 text-sm font-semibold text-ink">Resultado</p>
           <ul className="divide-y divide-border text-sm">
             <li className="flex items-center justify-between py-2">

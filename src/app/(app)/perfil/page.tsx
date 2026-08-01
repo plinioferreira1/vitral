@@ -70,7 +70,7 @@ export default async function PerfilPage({
         </p>
       )}
 
-      <form action={atualizarPerfil} className="space-y-5 rounded-xl border border-border bg-surface p-6">
+      <form action={atualizarPerfil} className="space-y-5 rounded-xl border border-border/60 bg-surface shadow-sm p-6">
         <SeletorFoto fotoAtual={usuario.foto_url} iniciais={iniciais} />
 
         <div>

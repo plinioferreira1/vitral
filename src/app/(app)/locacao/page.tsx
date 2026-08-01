@@ -143,7 +143,7 @@ export default async function LocacaoPage({
 
       {aba === "contratos" ? (
         <div className="space-y-6">
-          <div className="overflow-hidden rounded-xl border border-border bg-surface">
+          <div className="overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
             {listaContratos.length === 0 ? (
               <p className="p-8 text-center text-sm text-ink-muted">
                 Nenhum contrato ainda.{" "}
@@ -165,7 +165,7 @@ export default async function LocacaoPage({
           </div>
 
           {listaContratos.some((c) => !c.ativo) && (
-            <details className="group overflow-hidden rounded-xl border border-border bg-surface">
+            <details className="group overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
               <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-sm font-semibold text-ink">
                 Contratos encerrados
                 <span className="text-xs font-normal text-ink-muted group-open:hidden">
@@ -248,7 +248,7 @@ export default async function LocacaoPage({
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
             <p className="mb-3 text-sm font-semibold text-ink">Tarefas do mês</p>
             <div className="space-y-2">
               {(tarefas ?? []).map((t) => {
@@ -281,7 +281,7 @@ export default async function LocacaoPage({
             </div>
           </div>
 
-          <div className="rounded-xl border border-border bg-surface p-5">
+          <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-semibold text-ink">{tituloLista}</p>
               {filtro && (

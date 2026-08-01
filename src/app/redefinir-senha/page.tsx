@@ -12,15 +12,15 @@ export default async function RedefinirSenhaPage({
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <img
-            src="/brand/vitral-icone.png"
+            src="/brand/sacra-logo-bordo.png"
             alt="Sacra Netimóveis"
-            className="mx-auto mb-3 h-16 w-16 object-contain"
+            className="mx-auto mb-4 h-12 w-auto object-contain"
           />
           <h1 className="text-lg font-serif font-semibold text-ink">Nova senha</h1>
           <p className="mt-1 text-sm text-ink-muted">Digite a nova senha da sua conta.</p>
         </div>
 
-        <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-6 shadow-sm">
           {erro && (
             <p className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
               {erro}

@@ -34,7 +34,7 @@ export default async function NovoContratoLocacaoPage({
 
       <form
         action={criarContratoLocacao}
-        className="space-y-4 rounded-xl border border-border bg-surface p-6"
+        className="space-y-4 rounded-xl border border-border/60 bg-surface shadow-sm p-6"
       >
         <Select label="Imóvel" name="imovel_id" options={(imoveis.data ?? []).map((i) => [i.id, i.endereco])} />
         <Select

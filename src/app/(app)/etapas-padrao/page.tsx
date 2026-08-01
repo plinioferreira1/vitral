@@ -65,7 +65,7 @@ export default async function EtapasPadraoPage({
 
       <form
         action={adicionarEtapaPadrao}
-        className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-3"
+        className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-surface shadow-sm p-3"
       >
         <input type="hidden" name="categoria" value={categoria} />
         <input
@@ -117,7 +117,7 @@ function ListaEtapas({
   tipo: TipoEtapaPadrao;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface">
+    <div className="rounded-xl border border-border/60 bg-surface shadow-sm">
       {etapas.length === 0 ? (
         <p className="p-6 text-center text-sm text-ink-muted">Nenhuma etapa aqui ainda.</p>
       ) : (

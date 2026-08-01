@@ -118,7 +118,7 @@ export default async function ProcessosPage({
         ))}
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-surface">
+      <div className="overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
         {rows.length === 0 ? (
           <p className="p-8 text-center text-sm text-ink-muted">
             Nenhum processo nessa categoria ainda.{" "}

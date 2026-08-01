@@ -36,7 +36,7 @@ export function CalendarioGrid({
   });
 
   return (
-    <div className="overflow-hidden rounded-xl border border-border bg-surface">
+    <div className="overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
       <div className="grid grid-cols-7 border-b border-border bg-background text-center text-xs font-medium text-ink-muted">
         {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"].map((d) => (
           <div key={d} className="py-2">

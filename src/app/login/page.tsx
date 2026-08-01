@@ -20,11 +20,10 @@ export default async function LoginPage({
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
           <img
-            src="/brand/vitral-icone.png"
+            src="/brand/sacra-logo-bordo.png"
             alt="Sacra Netimóveis"
-            className="mx-auto mb-3 h-16 w-16 object-contain"
+            className="mx-auto mb-3 h-14 w-auto object-contain"
           />
-          <h1 className="text-lg font-serif font-semibold text-ink">Vitral</h1>
           <p className="mt-1 text-sm text-ink-muted">Vitral - Gestão de Processos</p>
         </div>
 

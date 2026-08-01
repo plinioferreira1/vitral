@@ -56,7 +56,7 @@ export default async function MembrosPage({
         </p>
       )}
 
-      <form action={adicionarMembro} className="space-y-3 rounded-xl border border-border bg-surface p-5">
+      <form action={adicionarMembro} className="space-y-3 rounded-xl border border-border/60 bg-surface shadow-sm p-5">
         <div className="flex flex-wrap items-end gap-2">
           <div className="flex-1 min-w-[200px]">
             <label className="mb-1 block text-xs font-medium text-ink-muted">E-mail</label>
@@ -122,7 +122,7 @@ export default async function MembrosPage({
         {(membros ?? []).map((m) => {
           const categoriasAtuais = categoriasPorUsuario.get(m.id) ?? new Set();
           return (
-            <div key={m.id} className="rounded-xl border border-border bg-surface p-4">
+            <div key={m.id} className="rounded-xl border border-border/60 bg-surface shadow-sm p-4">
               <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
                 <div>
                   <p className="text-sm font-medium text-ink">

@@ -312,7 +312,7 @@ export default async function ProcessoDetalhePage({
           const nome = (etapa as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
 
           return (
-            <div key={etapa.id} className="rounded-xl border border-border bg-surface p-5">
+            <div key={etapa.id} className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-sm font-medium text-ink">{etapa.nome}</p>
@@ -525,7 +525,7 @@ function ComissaoForm({
   return (
     <form
       action={salvarComissao}
-      className="grid gap-3 rounded-xl border border-border bg-surface p-5 sm:grid-cols-2"
+      className="grid gap-3 rounded-xl border border-border/60 bg-surface shadow-sm p-5 sm:grid-cols-2"
     >
       <input type="hidden" name="processo_id" value={processoId} />
       {comissao && <input type="hidden" name="comissao_id" value={comissao.id} />}
