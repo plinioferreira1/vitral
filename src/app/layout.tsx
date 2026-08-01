@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Vitral — Gestão de Processos",
+  title: "Vitral | Sacra Netimóveis",
   description: "Gestão de processos e prazos da imobiliária",
 };
 
