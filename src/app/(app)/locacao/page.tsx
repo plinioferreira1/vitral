@@ -2,15 +2,29 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { alternarTarefaMensal } from "./actions";
 import { TIPO_CONTA_LABEL } from "@/lib/types";
+import { calcularUrgencia, URGENCIA_COR } from "@/lib/alertas";
+import { addMonths, format, parseISO } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 function primeiroDiaDoMes(): string {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
 
-export default async function LocacaoPage() {
+export default async function LocacaoPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mes?: string }>;
+}) {
+  const { mes } = await searchParams;
   const supabase = await createClient();
   const competenciaAtual = primeiroDiaDoMes();
+
+  const mesReferencia = mes ? parseISO(`${mes}-01`) : new Date();
+  const inicioMes = format(mesReferencia, "yyyy-MM-01");
+  const fimMes = format(addMonths(mesReferencia, 1), "yyyy-MM-01");
+  const mesAnterior = format(addMonths(mesReferencia, -1), "yyyy-MM");
+  const proximoMes = format(addMonths(mesReferencia, 1), "yyyy-MM");
 
   const { data: contratos } = await supabase
     .from("contratos_locacao")
@@ -37,6 +51,25 @@ export default async function LocacaoPage() {
     vencimento: string | null;
   };
   const contasPendentes = (contasPendentesRaw ?? []) as ContaPendente[];
+
+  // resumo do mês selecionado (pra visão geral do Gerente)
+  const { count: pendentesNoMes } = await supabase
+    .from("contas_locacao")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pendente")
+    .gte("competencia", inicioMes)
+    .lt("competencia", fimMes);
+
+  const { count: pagasNoMes } = await supabase
+    .from("contas_locacao")
+    .select("id", { count: "exact", head: true })
+    .eq("status", "pago")
+    .gte("competencia", inicioMes)
+    .lt("competencia", fimMes);
+
+  const atrasadas = contasPendentes.filter(
+    (c) => calcularUrgencia({ status: "pendente", data_prevista: c.vencimento ?? c.competencia }).urgencia === "atrasada"
+  ).length;
 
   const { data: tarefas } = await supabase
     .from("tarefas_mensais")
@@ -79,6 +112,43 @@ export default async function LocacaoPage() {
         </Link>
       </div>
 
+      {/* Visão geral do mês */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <p className="text-sm font-semibold capitalize text-ink">
+            Visão geral · {format(mesReferencia, "MMMM yyyy", { locale: ptBR })}
+          </p>
+          <div className="flex gap-1.5">
+            <Link
+              href={`/locacao?mes=${mesAnterior}`}
+              className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-surface"
+            >
+              ← Mês anterior
+            </Link>
+            <Link
+              href={`/locacao?mes=${proximoMes}`}
+              className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-surface"
+            >
+              Próximo mês →
+            </Link>
+          </div>
+        </div>
+        <div className="grid grid-cols-3 gap-4">
+          <div className="rounded-xl border border-border border-t-[3px] border-t-brand bg-surface p-6">
+            <p className="font-mono text-2xl font-semibold text-ink">{pendentesNoMes ?? 0}</p>
+            <p className="mt-1 text-xs text-ink-muted">Contas pendentes no mês</p>
+          </div>
+          <div className="rounded-xl border border-border border-t-[3px] border-t-emerald-500 bg-surface p-6">
+            <p className="font-mono text-2xl font-semibold text-emerald-700">{pagasNoMes ?? 0}</p>
+            <p className="mt-1 text-xs text-ink-muted">Contas pagas no mês</p>
+          </div>
+          <div className="rounded-xl border border-border border-t-[3px] border-t-rose-500 bg-surface p-6">
+            <p className="font-mono text-2xl font-semibold text-rose-700">{atrasadas}</p>
+            <p className="mt-1 text-xs text-ink-muted">Atrasadas (todos os meses)</p>
+          </div>
+        </div>
+      </div>
+
       <div className="rounded-xl border border-border bg-surface p-5">
         <p className="mb-3 text-sm font-semibold text-ink">Tarefas do mês</p>
         <div className="space-y-2">
@@ -108,35 +178,6 @@ export default async function LocacaoPage() {
             );
           })}
         </div>
-      </div>
-
-      <div className="rounded-xl border border-border bg-surface p-5">
-        <p className="mb-3 text-sm font-semibold text-ink">Contas pendentes</p>
-        {contasPendentes.length === 0 ? (
-          <p className="text-sm text-ink-muted">Nenhuma conta pendente no momento. 🎉</p>
-        ) : (
-          <ul className="divide-y divide-border">
-            {contasPendentes.slice(0, 15).map((c) => {
-              const contrato = contratosPorId.get(c.contrato_id);
-              return (
-                <li key={c.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                  <Link href={`/locacao/${c.contrato_id}`} className="hover:underline">
-                    <span className="font-medium text-ink">
-                      {contrato?.imoveis?.endereco ?? contrato?.numero ?? "—"}
-                    </span>
-                    <span className="text-ink-muted"> — {TIPO_CONTA_LABEL[c.tipo]}</span>
-                  </Link>
-                  <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
-                    {new Date(c.competencia + "T00:00:00").toLocaleDateString("pt-BR", {
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
       </div>
 
       <div className="overflow-hidden rounded-xl border border-border bg-surface">
@@ -171,6 +212,39 @@ export default async function LocacaoPage() {
           </div>
         </details>
       )}
+
+      <div className="rounded-xl border border-border bg-surface p-5">
+        <p className="mb-3 text-sm font-semibold text-ink">Contas pendentes</p>
+        {contasPendentes.length === 0 ? (
+          <p className="text-sm text-ink-muted">Nenhuma conta pendente no momento. 🎉</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {contasPendentes.slice(0, 15).map((c) => {
+              const contrato = contratosPorId.get(c.contrato_id);
+              const { urgencia } = calcularUrgencia({
+                status: "pendente",
+                data_prevista: c.vencimento ?? c.competencia,
+              });
+              return (
+                <li key={c.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                  <Link href={`/locacao/${c.contrato_id}`} className="hover:underline">
+                    <span className="font-medium text-ink">
+                      {contrato?.imoveis?.endereco ?? contrato?.numero ?? "—"}
+                    </span>
+                    <span className="text-ink-muted"> — {TIPO_CONTA_LABEL[c.tipo]}</span>
+                  </Link>
+                  <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${URGENCIA_COR[urgencia]}`}>
+                    {new Date(c.competencia + "T00:00:00").toLocaleDateString("pt-BR", {
+                      month: "long",
+                      year: "numeric",
+                    })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
     </div>
   );
 }
