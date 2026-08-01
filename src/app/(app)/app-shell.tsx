@@ -97,7 +97,7 @@ export function AppShell({
               onClick={() => setMenuAberto(false)}
               className={`block rounded-md px-2.5 py-2 text-sm transition ${
                 ativo
-                  ? "bg-background font-medium text-ink"
+                  ? "bg-brand-soft font-medium text-brand"
                   : "text-ink-muted hover:bg-background hover:text-ink"
               }`}
             >
@@ -115,7 +115,7 @@ export function AppShell({
               type="button"
               onClick={() => alternarGrupo(item.label)}
               className={`flex w-full items-center justify-between rounded-md px-2.5 py-2 text-sm transition ${
-                algumFilhoAtivo ? "font-medium text-ink" : "text-ink-muted hover:bg-background hover:text-ink"
+                algumFilhoAtivo ? "font-medium text-brand" : "text-ink-muted hover:bg-background hover:text-ink"
               }`}
             >
               {item.label}
@@ -139,7 +139,7 @@ export function AppShell({
                       onClick={() => setMenuAberto(false)}
                       className={`block rounded-md px-2.5 py-1.5 text-sm transition ${
                         ativo
-                          ? "bg-background font-medium text-ink"
+                          ? "bg-brand-soft font-medium text-brand"
                           : "text-ink-muted hover:bg-background hover:text-ink"
                       }`}
                     >

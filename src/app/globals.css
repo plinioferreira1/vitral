@@ -8,11 +8,12 @@
   --border: #e9ded0;
   --border-strong: #d8cab3;
   --brand: #731515;
+  --brand-soft: #f6e8e8;
   --brand-ink: #ffffff;
   --gold: #b9822c;
   --gold-soft: #f3e6cc;
   --gold-ink: #241512;
-  --font-sans: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --font-sans: "Cambria", Georgia, "Times New Roman", serif;
   --font-serif: var(--font-sans);
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
@@ -25,6 +26,7 @@
   --color-border: var(--border);
   --color-border-strong: var(--border-strong);
   --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
   --color-gold: var(--gold);
   --color-gold-soft: var(--gold-soft);
   --font-sans: var(--font-sans);
@@ -36,6 +38,11 @@ body {
   background: var(--background);
   color: var(--ink);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Barra de destaque bordô no topo dos cartões principais */
+.faixa-marca {
+  border-top: 3px solid var(--brand);
 }
 
 ::selection {

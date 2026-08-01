@@ -28,7 +28,7 @@ export default async function LoginPage({
           <p className="mt-1 text-sm text-ink-muted">Vitral - Gestão de Processos</p>
         </div>
 
-        <div className="rounded-xl border border-border bg-surface p-6 shadow-sm">
+        <div className="rounded-xl border border-border border-t-[3px] border-t-brand bg-surface p-6 shadow-sm">
           {modoEsqueci ? (
             <>
               <p className="mb-4 text-sm font-medium text-ink">Esqueci minha senha</p>

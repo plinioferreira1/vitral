@@ -41,7 +41,7 @@ export default async function DashboardPage() {
         <div>
           <div className="mb-3 flex items-center justify-between">
             <h2 className="text-sm font-semibold text-ink">Calendário</h2>
-            <Link href="/calendario" className="text-xs text-gold hover:underline">
+            <Link href="/calendario" className="text-xs font-medium text-brand hover:underline">
               Abrir calendário completo →
             </Link>
           </div>
@@ -114,7 +114,7 @@ function StatCard({
         : "text-ink";
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-6">
+    <div className="rounded-xl border border-border border-t-[3px] border-t-brand bg-surface p-6">
       <p className={`font-mono text-2xl font-semibold ${toneClass}`}>{value}</p>
       <p className="mt-1 text-xs text-ink-muted">{label}</p>
     </div>
