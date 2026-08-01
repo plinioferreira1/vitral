@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { alternarTarefaMensal } from "./actions";
 import { TIPO_CONTA_LABEL } from "@/lib/types";
 import { calcularUrgencia, URGENCIA_COR } from "@/lib/alertas";
+import { IconeBadge, Icones } from "@/components/icone-badge";
 import { addMonths, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -134,17 +135,20 @@ export default async function LocacaoPage({
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-xl border border-border border-t-[3px] border-t-brand bg-surface p-6">
-            <p className="font-mono text-2xl font-semibold text-ink">{pendentesNoMes ?? 0}</p>
-            <p className="mt-1 text-xs text-ink-muted">Contas pendentes no mês</p>
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <IconeBadge tom="brand" icone={Icones.relogio} />
+            <p className="mt-3 font-mono text-2xl font-semibold text-ink">{pendentesNoMes ?? 0}</p>
+            <p className="mt-0.5 text-xs text-ink-muted">Contas pendentes no mês</p>
           </div>
-          <div className="rounded-xl border border-border border-t-[3px] border-t-emerald-500 bg-surface p-6">
-            <p className="font-mono text-2xl font-semibold text-emerald-700">{pagasNoMes ?? 0}</p>
-            <p className="mt-1 text-xs text-ink-muted">Contas pagas no mês</p>
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <IconeBadge tom="emerald" icone={Icones.check} />
+            <p className="mt-3 font-mono text-2xl font-semibold text-emerald-700">{pagasNoMes ?? 0}</p>
+            <p className="mt-0.5 text-xs text-ink-muted">Contas pagas no mês</p>
           </div>
-          <div className="rounded-xl border border-border border-t-[3px] border-t-rose-500 bg-surface p-6">
-            <p className="font-mono text-2xl font-semibold text-rose-700">{atrasadas}</p>
-            <p className="mt-1 text-xs text-ink-muted">Atrasadas (todos os meses)</p>
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <IconeBadge tom="rose" icone={Icones.alerta} />
+            <p className="mt-3 font-mono text-2xl font-semibold text-rose-700">{atrasadas}</p>
+            <p className="mt-0.5 text-xs text-ink-muted">Atrasadas (todos os meses)</p>
           </div>
         </div>
       </div>
@@ -218,15 +222,24 @@ export default async function LocacaoPage({
         {contasPendentes.length === 0 ? (
           <p className="text-sm text-ink-muted">Nenhuma conta pendente no momento. 🎉</p>
         ) : (
-          <ul className="divide-y divide-border">
+          <ul className="space-y-1.5">
             {contasPendentes.slice(0, 15).map((c) => {
               const contrato = contratosPorId.get(c.contrato_id);
               const { urgencia } = calcularUrgencia({
                 status: "pendente",
                 data_prevista: c.vencimento ?? c.competencia,
               });
+              const barra =
+                urgencia === "atrasada"
+                  ? "border-l-rose-500"
+                  : urgencia === "vence_hoje" || urgencia === "vence_em_breve"
+                    ? "border-l-amber-500"
+                    : "border-l-emerald-500";
               return (
-                <li key={c.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                <li
+                  key={c.id}
+                  className={`flex items-center justify-between gap-3 rounded-lg border border-l-[3px] border-border bg-background/40 px-3 py-2.5 text-sm ${barra}`}
+                >
                   <Link href={`/locacao/${c.contrato_id}`} className="hover:underline">
                     <span className="font-medium text-ink">
                       {contrato?.imoveis?.endereco ?? contrato?.numero ?? "—"}

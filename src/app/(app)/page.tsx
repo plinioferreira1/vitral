@@ -1,10 +1,20 @@
 import Link from "next/link";
 import { getEventosCalendario } from "@/lib/queries";
-import { URGENCIA_COR, formatarPrazo } from "@/lib/alertas";
+import { formatarPrazo } from "@/lib/alertas";
 import { CATEGORIA_LABEL } from "@/lib/types";
 import { CalendarioGrid } from "@/components/calendario-grid";
+import { IconeBadge, Icones, type TomBadge } from "@/components/icone-badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+
+const URGENCIA_BARRA: Record<string, string> = {
+  atrasada: "border-l-rose-500",
+  vence_hoje: "border-l-amber-500",
+  vence_em_breve: "border-l-amber-400",
+  no_prazo: "border-l-emerald-500",
+  concluida: "border-l-stone-300",
+  sem_data: "border-l-stone-300",
+};
 
 export default async function DashboardPage() {
   const eventos = await getEventosCalendario();
@@ -31,10 +41,15 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Em aberto" value={pendentes.length} />
-        <StatCard label="Atrasados" value={atrasados.length} tone="rose" />
-        <StatCard label="Vencendo hoje" value={venceHoje.length} tone="amber" />
-        <StatCard label="Vencendo em 7 dias" value={venceEmBreve.length} tone="amber" />
+        <StatCard label="Em aberto" value={pendentes.length} tom="brand" icone={Icones.relogio} />
+        <StatCard label="Atrasados" value={atrasados.length} tom="rose" icone={Icones.alerta} />
+        <StatCard label="Vencendo hoje" value={venceHoje.length} tom="amber" icone={Icones.calendario} />
+        <StatCard
+          label="Vencendo em 7 dias"
+          value={venceEmBreve.length}
+          tom="gold"
+          icone={Icones.calendario}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_300px]">
@@ -57,21 +72,22 @@ export default async function DashboardPage() {
           ) : (
             <ul className="space-y-2">
               {criticos.map((e) => (
-                <li key={e.id} className="rounded-lg border border-border bg-surface p-3">
+                <li
+                  key={e.id}
+                  className={`rounded-lg border border-l-[3px] border-border bg-surface p-3 ${URGENCIA_BARRA[e.urgencia]}`}
+                >
                   <div className="flex items-start justify-between gap-2">
                     <Link href={e.href} className="text-xs font-medium text-ink hover:underline">
                       {e.titulo}
                     </Link>
+                    <span className="shrink-0 text-[10px] font-medium text-ink-muted">
+                      {formatarPrazo(e.diasParaVencer)}
+                    </span>
                   </div>
                   <p className="mt-1 text-[11px] text-ink-muted">
                     {CATEGORIA_LABEL[e.categoria]}
                     {e.responsavelNome ? ` · ${e.responsavelNome}` : ""}
                   </p>
-                  <span
-                    className={`mt-1.5 inline-block rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${URGENCIA_COR[e.urgencia]}`}
-                  >
-                    {formatarPrazo(e.diasParaVencer)}
-                  </span>
                 </li>
               ))}
             </ul>
@@ -100,23 +116,19 @@ export default async function DashboardPage() {
 function StatCard({
   label,
   value,
-  tone,
+  tom,
+  icone,
 }: {
   label: string;
   value: number;
-  tone?: "rose" | "amber";
+  tom: TomBadge;
+  icone: React.ReactNode;
 }) {
-  const toneClass =
-    tone === "rose"
-      ? "text-rose-700"
-      : tone === "amber"
-        ? "text-amber-700"
-        : "text-ink";
-
   return (
-    <div className="rounded-xl border border-border border-t-[3px] border-t-brand bg-surface p-6">
-      <p className={`font-mono text-2xl font-semibold ${toneClass}`}>{value}</p>
-      <p className="mt-1 text-xs text-ink-muted">{label}</p>
+    <div className="rounded-xl border border-border bg-surface p-5">
+      <IconeBadge tom={tom} icone={icone} />
+      <p className="mt-3 font-mono text-2xl font-semibold text-ink">{value}</p>
+      <p className="mt-0.5 text-xs text-ink-muted">{label}</p>
     </div>
   );
 }
