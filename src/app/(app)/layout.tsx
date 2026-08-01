@@ -36,7 +36,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     },
     {
       label: "Locação",
-      children: [{ href: "/locacao", label: "Inadimplências" }],
+      children: [
+        { href: "/locacao?aba=contratos", label: "Contratos" },
+        { href: "/locacao?aba=inadimplencias", label: "Inadimplências" },
+      ],
     },
     { href: "/calendario", label: "Calendário" },
     { href: "/calculadora", label: "Calculadora" },

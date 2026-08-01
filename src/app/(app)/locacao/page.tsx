@@ -12,12 +12,16 @@ function primeiroDiaDoMes(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
 
+type Aba = "contratos" | "inadimplencias";
+
 export default async function LocacaoPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string }>;
+  searchParams: Promise<{ mes?: string; aba?: string }>;
 }) {
-  const { mes } = await searchParams;
+  const { mes, aba: abaParam } = await searchParams;
+  const aba: Aba = abaParam === "inadimplencias" ? "inadimplencias" : "contratos";
+
   const supabase = await createClient();
   const competenciaAtual = primeiroDiaDoMes();
 
@@ -101,7 +105,7 @@ export default async function LocacaoPage({
   const totalContratosAtivos = listaContratos.filter((c) => c.ativo).length;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">Locação</h1>
@@ -110,165 +114,204 @@ export default async function LocacaoPage({
             pendentes
           </p>
         </div>
+        {aba === "contratos" && (
+          <Link
+            href="/locacao/novo"
+            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          >
+            + Novo contrato
+          </Link>
+        )}
+      </div>
+
+      <div className="flex gap-1 rounded-lg bg-background p-1 text-sm w-fit">
         <Link
-          href="/locacao/novo"
-          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          href="/locacao?aba=contratos"
+          className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
+            aba === "contratos" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
+          }`}
         >
-          + Novo contrato
+          Contratos
+        </Link>
+        <Link
+          href="/locacao?aba=inadimplencias"
+          className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
+            aba === "inadimplencias" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
+          }`}
+        >
+          Inadimplências
         </Link>
       </div>
 
-      {/* Visão geral do mês */}
-      <div>
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-sm font-semibold capitalize text-ink">
-            Visão geral · {format(mesReferencia, "MMMM yyyy", { locale: ptBR })}
-          </p>
-          <div className="flex gap-1.5">
-            <Link
-              href={`/locacao?mes=${mesAnterior}`}
-              className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-surface"
-            >
-              ← Mês anterior
-            </Link>
-            <Link
-              href={`/locacao?mes=${proximoMes}`}
-              className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-surface"
-            >
-              Próximo mês →
-            </Link>
+      {aba === "contratos" ? (
+        <div className="space-y-6">
+          <div className="overflow-hidden rounded-xl border border-border bg-surface">
+            {listaContratos.length === 0 ? (
+              <p className="p-8 text-center text-sm text-ink-muted">
+                Nenhum contrato ainda.{" "}
+                <Link href="/locacao/novo" className="text-brand hover:underline">
+                  Criar o primeiro
+                </Link>
+                .
+              </p>
+            ) : listaContratos.filter((c) => c.ativo).length === 0 ? (
+              <p className="p-8 text-center text-sm text-ink-muted">
+                Nenhum contrato ativo no momento (veja os encerrados abaixo).
+              </p>
+            ) : (
+              <TabelaContratos
+                contratos={listaContratos.filter((c) => c.ativo)}
+                pendentesPorContrato={pendentesPorContrato}
+              />
+            )}
           </div>
+
+          {listaContratos.some((c) => !c.ativo) && (
+            <details className="group overflow-hidden rounded-xl border border-border bg-surface">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-sm font-semibold text-ink">
+                Contratos encerrados
+                <span className="text-xs font-normal text-ink-muted group-open:hidden">
+                  mostrar ({listaContratos.filter((c) => !c.ativo).length})
+                </span>
+                <span className="hidden text-xs font-normal text-ink-muted group-open:inline">
+                  ocultar
+                </span>
+              </summary>
+              <div className="border-t border-border">
+                <TabelaContratos
+                  contratos={listaContratos.filter((c) => !c.ativo)}
+                  pendentesPorContrato={pendentesPorContrato}
+                />
+              </div>
+            </details>
+          )}
         </div>
-        <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#B9822C" }}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-              {Icones.relogio}
-            </div>
-            <p className="mt-3 font-mono text-2xl font-semibold">{pendentesNoMes ?? 0}</p>
-            <p className="mt-0.5 text-xs text-white/80">Contas pendentes no mês</p>
-          </div>
-          <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#0F7A4E" }}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-              {Icones.check}
-            </div>
-            <p className="mt-3 font-mono text-2xl font-semibold">{pagasNoMes ?? 0}</p>
-            <p className="mt-0.5 text-xs text-white/80">Contas pagas no mês</p>
-          </div>
-          <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#9F1D1D" }}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
-              {Icones.alerta}
-            </div>
-            <p className="mt-3 font-mono text-2xl font-semibold">{atrasadas}</p>
-            <p className="mt-0.5 text-xs text-white/80">Atrasadas (todos os meses)</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="rounded-xl border border-border bg-surface p-5">
-        <p className="mb-3 text-sm font-semibold text-ink">Tarefas do mês</p>
-        <div className="space-y-2">
-          {(tarefas ?? []).map((t) => {
-            const statusExistente = (tarefasStatus ?? []).find((s) => s.tarefa_id === t.id);
-            const concluida = statusExistente?.concluida ?? false;
-            return (
-              <form key={t.id} action={alternarTarefaMensal}>
-                <input type="hidden" name="tarefa_id" value={t.id} />
-                <input type="hidden" name="competencia" value={competenciaAtual} />
-                <input type="hidden" name="concluida_atual" value={String(concluida)} />
-                {statusExistente && <input type="hidden" name="status_id" value={statusExistente.id} />}
-                <button type="submit" className="flex w-full items-center gap-2.5 text-left text-sm">
-                  <span
-                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
-                      concluida ? "border-brand bg-brand text-white" : "border-border bg-surface"
-                    }`}
-                  >
-                    {concluida ? "✓" : ""}
-                  </span>
-                  <span className={concluida ? "text-ink-muted line-through" : "text-ink"}>
-                    {t.nome}
-                  </span>
-                  {t.regra && <span className="text-xs text-ink-muted">· {t.regra}</span>}
-                </button>
-              </form>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="overflow-hidden rounded-xl border border-border bg-surface">
-        {listaContratos.length === 0 ? (
-          <p className="p-8 text-center text-sm text-ink-muted">
-            Nenhum contrato ainda.{" "}
-            <Link href="/locacao/novo" className="text-brand hover:underline">
-              Criar o primeiro
-            </Link>
-            .
-          </p>
-        ) : listaContratos.filter((c) => c.ativo).length === 0 ? (
-          <p className="p-8 text-center text-sm text-ink-muted">
-            Nenhum contrato ativo no momento (veja os encerrados abaixo).
-          </p>
-        ) : (
-          <TabelaContratos contratos={listaContratos.filter((c) => c.ativo)} pendentesPorContrato={pendentesPorContrato} />
-        )}
-      </div>
-
-      {listaContratos.some((c) => !c.ativo) && (
-        <details className="group overflow-hidden rounded-xl border border-border bg-surface">
-          <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-sm font-semibold text-ink">
-            Contratos encerrados
-            <span className="text-xs font-normal text-ink-muted group-open:hidden">
-              mostrar ({listaContratos.filter((c) => !c.ativo).length})
-            </span>
-            <span className="hidden text-xs font-normal text-ink-muted group-open:inline">ocultar</span>
-          </summary>
-          <div className="border-t border-border">
-            <TabelaContratos contratos={listaContratos.filter((c) => !c.ativo)} pendentesPorContrato={pendentesPorContrato} />
-          </div>
-        </details>
-      )}
-
-      <div className="rounded-xl border border-border bg-surface p-5">
-        <p className="mb-3 text-sm font-semibold text-ink">Contas pendentes</p>
-        {contasPendentes.length === 0 ? (
-          <p className="text-sm text-ink-muted">Nenhuma conta pendente no momento. 🎉</p>
-        ) : (
-          <ul className="space-y-1.5">
-            {contasPendentes.slice(0, 15).map((c) => {
-              const contrato = contratosPorId.get(c.contrato_id);
-              const { urgencia } = calcularUrgencia({
-                status: "pendente",
-                data_prevista: c.vencimento ?? c.competencia,
-              });
-              const barra =
-                urgencia === "atrasada"
-                  ? "border-l-rose-500"
-                  : urgencia === "vence_hoje" || urgencia === "vence_em_breve"
-                    ? "border-l-amber-500"
-                    : "border-l-emerald-500";
-              return (
-                <li
-                  key={c.id}
-                  className={`flex items-center justify-between gap-3 rounded-lg border border-l-[3px] border-border bg-background/40 px-3 py-2.5 text-sm ${barra}`}
+      ) : (
+        <div className="space-y-6">
+          {/* Visão geral do mês */}
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-semibold capitalize text-ink">
+                Visão geral · {format(mesReferencia, "MMMM yyyy", { locale: ptBR })}
+              </p>
+              <div className="flex gap-1.5">
+                <Link
+                  href={`/locacao?aba=inadimplencias&mes=${mesAnterior}`}
+                  className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-surface"
                 >
-                  <Link href={`/locacao/${c.contrato_id}`} className="hover:underline">
-                    <span className="font-medium text-ink">
-                      {contrato?.imoveis?.endereco ?? contrato?.numero ?? "—"}
-                    </span>
-                    <span className="text-ink-muted"> — {TIPO_CONTA_LABEL[c.tipo]}</span>
-                  </Link>
-                  <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${URGENCIA_COR[urgencia]}`}>
-                    {new Date(c.competencia + "T00:00:00").toLocaleDateString("pt-BR", {
-                      month: "long",
-                      year: "numeric",
-                    })}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+                  ← Mês anterior
+                </Link>
+                <Link
+                  href={`/locacao?aba=inadimplencias&mes=${proximoMes}`}
+                  className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-surface"
+                >
+                  Próximo mês →
+                </Link>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#B9822C" }}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+                  {Icones.relogio}
+                </div>
+                <p className="mt-3 font-mono text-2xl font-semibold">{pendentesNoMes ?? 0}</p>
+                <p className="mt-0.5 text-xs text-white/80">Contas pendentes no mês</p>
+              </div>
+              <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#0F7A4E" }}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+                  {Icones.check}
+                </div>
+                <p className="mt-3 font-mono text-2xl font-semibold">{pagasNoMes ?? 0}</p>
+                <p className="mt-0.5 text-xs text-white/80">Contas pagas no mês</p>
+              </div>
+              <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#9F1D1D" }}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+                  {Icones.alerta}
+                </div>
+                <p className="mt-3 font-mono text-2xl font-semibold">{atrasadas}</p>
+                <p className="mt-0.5 text-xs text-white/80">Atrasadas (todos os meses)</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <p className="mb-3 text-sm font-semibold text-ink">Tarefas do mês</p>
+            <div className="space-y-2">
+              {(tarefas ?? []).map((t) => {
+                const statusExistente = (tarefasStatus ?? []).find((s) => s.tarefa_id === t.id);
+                const concluida = statusExistente?.concluida ?? false;
+                return (
+                  <form key={t.id} action={alternarTarefaMensal}>
+                    <input type="hidden" name="tarefa_id" value={t.id} />
+                    <input type="hidden" name="competencia" value={competenciaAtual} />
+                    <input type="hidden" name="concluida_atual" value={String(concluida)} />
+                    {statusExistente && (
+                      <input type="hidden" name="status_id" value={statusExistente.id} />
+                    )}
+                    <button type="submit" className="flex w-full items-center gap-2.5 text-left text-sm">
+                      <span
+                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
+                          concluida ? "border-brand bg-brand text-white" : "border-border bg-surface"
+                        }`}
+                      >
+                        {concluida ? "✓" : ""}
+                      </span>
+                      <span className={concluida ? "text-ink-muted line-through" : "text-ink"}>
+                        {t.nome}
+                      </span>
+                      {t.regra && <span className="text-xs text-ink-muted">· {t.regra}</span>}
+                    </button>
+                  </form>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <p className="mb-3 text-sm font-semibold text-ink">Contas pendentes</p>
+            {contasPendentes.length === 0 ? (
+              <p className="text-sm text-ink-muted">Nenhuma conta pendente no momento. 🎉</p>
+            ) : (
+              <ul className="space-y-1.5">
+                {contasPendentes.slice(0, 30).map((c) => {
+                  const contrato = contratosPorId.get(c.contrato_id);
+                  const { urgencia } = calcularUrgencia({
+                    status: "pendente",
+                    data_prevista: c.vencimento ?? c.competencia,
+                  });
+                  const barra =
+                    urgencia === "atrasada"
+                      ? "border-l-rose-500"
+                      : urgencia === "vence_hoje" || urgencia === "vence_em_breve"
+                        ? "border-l-amber-500"
+                        : "border-l-emerald-500";
+                  return (
+                    <li
+                      key={c.id}
+                      className={`flex items-center justify-between gap-3 rounded-lg border border-l-[3px] border-border bg-background/40 px-3 py-2.5 text-sm ${barra}`}
+                    >
+                      <Link href={`/locacao/${c.contrato_id}`} className="hover:underline">
+                        <span className="font-medium text-ink">
+                          {contrato?.imoveis?.endereco ?? contrato?.numero ?? "—"}
+                        </span>
+                        <span className="text-ink-muted"> — {TIPO_CONTA_LABEL[c.tipo]}</span>
+                      </Link>
+                      <span
+                        className={`rounded-full border px-2 py-0.5 text-xs font-medium ${URGENCIA_COR[urgencia]}`}
+                      >
+                        {new Date(c.competencia + "T00:00:00").toLocaleDateString("pt-BR", {
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </span>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
