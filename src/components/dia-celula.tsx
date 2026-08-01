@@ -137,12 +137,12 @@ export function DiaCelula({
                   key={e.id}
                   href={e.href}
                   onClick={() => setAberto(false)}
-                  className={`flex items-center gap-1.5 rounded border px-1.5 py-1.5 text-xs leading-tight sm:py-1 sm:text-[11px] ${
+                  className={`flex items-start gap-1.5 rounded border px-1.5 py-1.5 text-xs leading-tight sm:py-1 sm:text-[11px] ${
                     e.concluida ? "border-stone-200 bg-stone-100 text-stone-500" : URGENCIA_COR[e.urgencia]
                   }`}
                 >
-                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${CATEGORIA_PONTO[e.categoria]}`} />
-                  <span className="min-w-0 flex-1 truncate">{e.titulo}</span>
+                  <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${CATEGORIA_PONTO[e.categoria]}`} />
+                  <span className="min-w-0 flex-1">{e.titulo}</span>
                 </Link>
               ))}
             </div>
