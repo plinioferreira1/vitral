@@ -108,26 +108,46 @@ export function DiaCelula({
       </div>
 
       {aberto && (
-        <div className="absolute left-0 top-full z-20 mt-1 w-64 max-w-[80vw] rounded-lg border border-border bg-surface p-2 shadow-lg">
-          <p className="mb-1.5 px-1 text-[11px] font-semibold text-ink">
-            {eventos.length} evento{eventos.length > 1 ? "s" : ""} nesse dia
-          </p>
-          <div className="max-h-64 space-y-1 overflow-y-auto">
-            {eventos.map((e) => (
-              <Link
-                key={e.id}
-                href={e.href}
+        <>
+          {/* fundo escurecido, só no celular (fecha ao tocar fora) */}
+          <div
+            className="fixed inset-0 z-20 bg-black/30 sm:hidden"
+            onClick={() => setAberto(false)}
+            aria-hidden="true"
+          />
+          <div
+            className="fixed inset-x-4 top-1/2 z-30 max-h-[70vh] -translate-y-1/2 overflow-hidden rounded-xl border border-border bg-surface p-3 shadow-xl sm:absolute sm:inset-x-auto sm:left-0 sm:top-full sm:z-20 sm:mt-1 sm:w-64 sm:max-w-[80vw] sm:translate-y-0 sm:rounded-lg sm:p-2 sm:shadow-lg"
+          >
+            <div className="mb-1.5 flex items-center justify-between px-1">
+              <p className="text-[11px] font-semibold text-ink sm:text-[11px]">
+                {eventos.length} evento{eventos.length > 1 ? "s" : ""} nesse dia
+              </p>
+              <button
+                type="button"
                 onClick={() => setAberto(false)}
-                className={`flex items-center gap-1.5 rounded border px-1.5 py-1 text-[11px] leading-tight ${
-                  e.concluida ? "border-stone-200 bg-stone-100 text-stone-500" : URGENCIA_COR[e.urgencia]
-                }`}
+                className="text-ink-muted sm:hidden"
+                aria-label="Fechar"
               >
-                <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${CATEGORIA_PONTO[e.categoria]}`} />
-                <span className="min-w-0 flex-1 truncate">{e.titulo}</span>
-              </Link>
-            ))}
+                ✕
+              </button>
+            </div>
+            <div className="max-h-[55vh] space-y-1 overflow-y-auto sm:max-h-64">
+              {eventos.map((e) => (
+                <Link
+                  key={e.id}
+                  href={e.href}
+                  onClick={() => setAberto(false)}
+                  className={`flex items-center gap-1.5 rounded border px-1.5 py-1.5 text-xs leading-tight sm:py-1 sm:text-[11px] ${
+                    e.concluida ? "border-stone-200 bg-stone-100 text-stone-500" : URGENCIA_COR[e.urgencia]
+                  }`}
+                >
+                  <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${CATEGORIA_PONTO[e.categoria]}`} />
+                  <span className="min-w-0 flex-1 truncate">{e.titulo}</span>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
