@@ -140,7 +140,7 @@ export default async function LocacaoPage({
           </div>
         </div>
         <div className="grid grid-cols-3 gap-4">
-          <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#731515" }}>
+          <div className="rounded-xl p-5 text-white" style={{ backgroundColor: "#B9822C" }}>
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
               {Icones.relogio}
             </div>
