@@ -58,12 +58,12 @@ export default async function DashboardPage({
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCardLink href="/calendario" label="Em aberto" value={pendentes.length} bg="#2A211D" icone={Icones.relogio} />
+        <StatCardLink href="/calendario" label="Em aberto" value={pendentes.length} bg="#334155" icone={Icones.relogio} />
         <StatCardLink
           href="/?filtro=atrasada"
           label="Atrasados"
           value={atrasados.length}
-          bg="#9F1D1D"
+          bg="#DC2626"
           icone={Icones.alerta}
           ativo={filtro === "atrasada"}
         />
@@ -71,7 +71,7 @@ export default async function DashboardPage({
           href="/?filtro=vence_hoje"
           label="Vencendo hoje"
           value={venceHoje.length}
-          bg="#B9822C"
+          bg="#F59E0B"
           icone={Icones.calendario}
           ativo={filtro === "vence_hoje"}
         />
@@ -79,7 +79,7 @@ export default async function DashboardPage({
           href="/?filtro=vence_em_breve"
           label="Vencendo em 7 dias"
           value={venceEmBreve.length}
-          bg="#A8652E"
+          bg="#EA580C"
           icone={Icones.calendario}
           ativo={filtro === "vence_em_breve"}
         />

@@ -211,7 +211,7 @@ export default async function LocacaoPage({
                 className={`rounded-xl p-5 text-white transition hover:opacity-90 ${
                   filtro === "mes" ? "ring-2 ring-offset-2 ring-offset-background" : ""
                 }`}
-                style={{ backgroundColor: "#B9822C", ["--tw-ring-color" as string]: "#B9822C" }}
+                style={{ backgroundColor: "#F59E0B", ["--tw-ring-color" as string]: "#F59E0B" }}
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
                   {Icones.relogio}
@@ -237,7 +237,7 @@ export default async function LocacaoPage({
                 className={`rounded-xl p-5 text-white transition hover:opacity-90 ${
                   filtro === "atrasadas" ? "ring-2 ring-offset-2 ring-offset-background" : ""
                 }`}
-                style={{ backgroundColor: "#9F1D1D", ["--tw-ring-color" as string]: "#9F1D1D" }}
+                style={{ backgroundColor: "#DC2626", ["--tw-ring-color" as string]: "#DC2626" }}
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
                   {Icones.alerta}
