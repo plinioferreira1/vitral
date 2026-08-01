@@ -93,6 +93,11 @@ export default async function LocacaoPage({
   const listaContratos = (contratos ?? []) as unknown as ContratoRow[];
 
   const contratosPorId = new Map(listaContratos.map((c) => [c.id, c]));
+
+  const pendentesPorContrato = new Map<string, number>();
+  contasPendentes.forEach((c) => {
+    pendentesPorContrato.set(c.contrato_id, (pendentesPorContrato.get(c.contrato_id) ?? 0) + 1);
+  });
   const totalContratosAtivos = listaContratos.filter((c) => c.ativo).length;
 
   return (
@@ -204,7 +209,7 @@ export default async function LocacaoPage({
             Nenhum contrato ativo no momento (veja os encerrados abaixo).
           </p>
         ) : (
-          <TabelaContratos contratos={listaContratos.filter((c) => c.ativo)} />
+          <TabelaContratos contratos={listaContratos.filter((c) => c.ativo)} pendentesPorContrato={pendentesPorContrato} />
         )}
       </div>
 
@@ -218,7 +223,7 @@ export default async function LocacaoPage({
             <span className="hidden text-xs font-normal text-ink-muted group-open:inline">ocultar</span>
           </summary>
           <div className="border-t border-border">
-            <TabelaContratos contratos={listaContratos.filter((c) => !c.ativo)} />
+            <TabelaContratos contratos={listaContratos.filter((c) => !c.ativo)} pendentesPorContrato={pendentesPorContrato} />
           </div>
         </details>
       )}
@@ -270,6 +275,7 @@ export default async function LocacaoPage({
 
 function TabelaContratos({
   contratos,
+  pendentesPorContrato,
 }: {
   contratos: {
     id: string;
@@ -279,35 +285,44 @@ function TabelaContratos({
     locador: { nome: string } | null;
     locatario: { nome: string } | null;
   }[];
+  pendentesPorContrato: Map<string, number>;
 }) {
   return (
-    <table className="w-full text-sm">
-      <thead>
-        <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
-          <th className="px-5 py-3 font-medium">Nº</th>
-          <th className="px-5 py-3 font-medium">Imóvel</th>
-          <th className="px-5 py-3 font-medium">Locador</th>
-          <th className="px-5 py-3 font-medium">Locatário</th>
-        </tr>
-      </thead>
-      <tbody className="divide-y divide-border">
-        {contratos.map((c) => (
-          <tr key={c.id} className="transition hover:bg-background">
-            <td className="px-5 py-3 font-mono text-xs text-ink-muted">
-              <Link href={`/locacao/${c.id}`} className="hover:underline">
-                {c.numero}
-              </Link>
-            </td>
-            <td className="px-5 py-3">
-              <Link href={`/locacao/${c.id}`} className="font-medium text-ink hover:underline">
-                {c.imoveis?.endereco ?? "—"}
-              </Link>
-            </td>
-            <td className="px-5 py-3 text-ink-muted">{c.locador?.nome ?? "—"}</td>
-            <td className="px-5 py-3 text-ink-muted">{c.locatario?.nome ?? "—"}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <ul className="divide-y divide-border">
+      {contratos.map((c) => {
+        const pendentes = pendentesPorContrato.get(c.id) ?? 0;
+        return (
+          <li key={c.id}>
+            <Link
+              href={`/locacao/${c.id}`}
+              className="flex items-center justify-between gap-4 px-5 py-3.5 transition hover:bg-background"
+            >
+              <div className="min-w-0">
+                <p className="flex items-baseline gap-2">
+                  <span className="truncate font-medium text-ink">
+                    {c.imoveis?.endereco ?? c.numero}
+                  </span>
+                  <span className="shrink-0 font-mono text-[11px] text-ink-muted">{c.numero}</span>
+                </p>
+                <p className="mt-0.5 truncate text-xs text-ink-muted">
+                  {c.locador?.nome ?? "sem locador"}
+                  <span className="mx-1">→</span>
+                  {c.locatario?.nome ?? "sem locatário"}
+                </p>
+              </div>
+              {pendentes > 0 ? (
+                <span className="shrink-0 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700">
+                  {pendentes} pendente{pendentes > 1 ? "s" : ""}
+                </span>
+              ) : (
+                <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                  em dia
+                </span>
+              )}
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
