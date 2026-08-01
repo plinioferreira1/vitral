@@ -9,6 +9,7 @@ interface EtapaPadraoBasica {
   nome: string;
   ordem: number;
   categoria: CategoriaProcesso;
+  tipo: "sequencial" | "especial";
 }
 
 interface ModeloBasico {
@@ -45,7 +46,7 @@ export function NovoProcessoForm({
   const ehFinanciamento = modeloSelecionado?.categoria === "financiamento";
 
   const etapasDaCategoria = useMemo(
-    () => etapasPadrao.filter((ep) => ep.categoria === modeloSelecionado?.categoria),
+    () => etapasPadrao.filter((ep) => ep.categoria === modeloSelecionado?.categoria && ep.tipo === "sequencial"),
     [etapasPadrao, modeloSelecionado]
   );
 

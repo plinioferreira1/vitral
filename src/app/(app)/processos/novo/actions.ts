@@ -137,12 +137,14 @@ export async function criarProcesso(formData: FormData) {
   }
 
   if (categoria === "financiamento") {
-    // Financiamento segue um fluxo padrão: todas as etapas da
-    // categoria entram automaticamente, sem precisar escolher.
+    // Financiamento segue um fluxo padrão: as etapas sequenciais da
+    // categoria entram automaticamente. Situações especiais (Reprovado,
+    // Desistência) só entram se/quando acontecerem, na tela do processo.
     const { data: todasEtapas } = await supabase
       .from("etapas_padrao")
       .select("id, nome, ordem")
       .eq("categoria", "financiamento")
+      .eq("tipo", "sequencial")
       .order("ordem", { ascending: true });
 
     if (todasEtapas && todasEtapas.length > 0) {

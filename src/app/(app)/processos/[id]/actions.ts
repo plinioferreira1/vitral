@@ -149,6 +149,38 @@ export async function alternarEtapaPadrao(formData: FormData) {
   revalidatePath("/calendario");
 }
 
+export async function salvarComissao(formData: FormData) {
+  const supabase = await createClient();
+  const processoId = String(formData.get("processo_id") ?? "");
+  const comissaoId = String(formData.get("comissao_id") ?? "") || null;
+  const beneficiarioId = String(formData.get("beneficiario_id") ?? "") || null;
+  const valorPrevisto = String(formData.get("valor_previsto") ?? "");
+  const status = String(formData.get("status") ?? "0% pago");
+  const dataPrevista = String(formData.get("data_prevista") ?? "") || null;
+  const observacoes = String(formData.get("observacoes") ?? "").trim() || null;
+
+  const pago100 = status === "100% pago";
+
+  const campos = {
+    beneficiario_id: beneficiarioId,
+    valor_previsto: valorPrevisto ? Number(valorPrevisto) : null,
+    status,
+    data_prevista: dataPrevista,
+    observacoes,
+    ...(pago100
+      ? { valor_recebido: valorPrevisto ? Number(valorPrevisto) : null, data_recebida: new Date().toISOString().slice(0, 10) }
+      : { valor_recebido: null, data_recebida: null }),
+  };
+
+  if (comissaoId) {
+    await supabase.from("comissoes").update(campos).eq("id", comissaoId);
+  } else {
+    await supabase.from("comissoes").insert({ processo_id: processoId, ...campos });
+  }
+
+  revalidatePath(`/processos/${processoId}`);
+}
+
 export async function adicionarComentario(formData: FormData) {
   const supabase = await createClient();
   const {

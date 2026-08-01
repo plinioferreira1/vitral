@@ -41,7 +41,7 @@ export default async function NovoProcessoPage({
     supabase.from("bancos").select("id, nome").order("nome"),
     supabase.from("corretores").select("id, nome").order("nome"),
     supabase.from("usuarios").select("id, nome").order("nome"),
-    supabase.from("etapas_padrao").select("id, nome, ordem, categoria").order("ordem", { ascending: true }),
+    supabase.from("etapas_padrao").select("id, nome, ordem, categoria, tipo").order("ordem", { ascending: true }),
   ]);
 
   const modelosPermitidos = (modelos.data ?? []).filter((m) =>

@@ -132,12 +132,15 @@ export interface Processo {
   criado_em: string;
 }
 
+export type TipoEtapaPadrao = "sequencial" | "especial";
+
 export interface EtapaPadrao {
   id: string;
   tenant_id: string;
   nome: string;
   ordem: number;
   categoria: CategoriaProcesso;
+  tipo: TipoEtapaPadrao;
 }
 
 export type TipoContaLocacao = "iptu" | "condominio" | "agua" | "luz" | "gas";
@@ -211,6 +214,7 @@ export interface Comissao {
   data_prevista: string | null;
   data_recebida: string | null;
   status: StatusComissao;
+  observacoes: string | null;
 }
 
 export interface Etapa {

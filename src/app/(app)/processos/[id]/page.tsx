@@ -10,6 +10,7 @@ import {
   alterarDataPrevista,
   alternarChecklistItem,
   alternarEtapaPadrao,
+  salvarComissao,
   adicionarComentario,
 } from "./actions";
 
@@ -44,9 +45,14 @@ export default async function ProcessoDetalhePage({
 
   const { data: etapasPadrao } = await supabase
     .from("etapas_padrao")
-    .select("id, nome, ordem, categoria")
+    .select("id, nome, ordem, categoria, tipo")
     .eq("categoria", (processo as unknown as { categoria: string }).categoria)
     .order("ordem", { ascending: true });
+
+  const { data: corretoresLista } = await supabase
+    .from("corretores")
+    .select("id, nome")
+    .order("nome");
 
   const { data: etapasRaw } = await supabase
     .from("etapas")
@@ -90,6 +96,13 @@ export default async function ProcessoDetalhePage({
   const p = processo as unknown as P;
   const ehFinanciamento = p.categoria === "financiamento";
 
+  const etapasPadraoSequencial = (etapasPadrao ?? []).filter((ep) => ep.tipo === "sequencial");
+  const etapasPadraoEspecial = (etapasPadrao ?? []).filter((ep) => ep.tipo === "especial");
+  const nomesEspeciais = new Set(etapasPadraoEspecial.map((ep) => ep.nome));
+
+  const etapasSequenciais = etapas.filter((e) => !nomesEspeciais.has(e.nome));
+  const etapasEspeciaisAtivas = etapas.filter((e) => nomesEspeciais.has(e.nome));
+
   return (
     <div className="max-w-3xl space-y-8">
       <div>
@@ -132,14 +145,33 @@ export default async function ProcessoDetalhePage({
         </div>
       </div>
 
+      {/* Situação especial ativa (se houver) */}
+      {etapasEspeciaisAtivas.length > 0 && (
+        <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
+            ⚠ Situação especial
+          </p>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {etapasEspeciaisAtivas.map((e) => (
+              <span
+                key={e.id}
+                className="rounded-full border border-amber-300 bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-900"
+              >
+                {e.nome}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Timeline */}
       <section>
         <h2 className="mb-4 text-sm font-semibold text-ink">Linha do tempo</h2>
         <div className="overflow-x-auto pb-1">
           <div className="flex min-w-max items-start">
-            {etapas.map((e, i) => {
+            {etapasSequenciais.map((e, i) => {
               const concluida = e.status === "concluida";
-              const anteriorConcluida = i === 0 ? true : etapas[i - 1].status === "concluida";
+              const anteriorConcluida = i === 0 ? true : etapasSequenciais[i - 1].status === "concluida";
               const atual = !concluida && anteriorConcluida;
 
               return (
@@ -178,7 +210,7 @@ export default async function ProcessoDetalhePage({
                       )}
                     </div>
                     <div
-                      className={`h-0.5 flex-1 ${i === etapas.length - 1 ? "invisible" : concluida ? "bg-brand" : "bg-border"}`}
+                      className={`h-0.5 flex-1 ${i === etapasSequenciais.length - 1 ? "invisible" : concluida ? "bg-brand" : "bg-border"}`}
                     />
                   </div>
                 </div>
@@ -192,13 +224,13 @@ export default async function ProcessoDetalhePage({
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-ink">Etapas</h2>
 
-        {(etapasPadrao ?? []).length > 0 && (
+        {etapasPadraoSequencial.length > 0 && (
           <div className="rounded-xl border border-border bg-background p-3">
             <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-muted">
-              Adicionar etapa
+              Sequência do processo
             </p>
             <div className="flex flex-wrap gap-1.5">
-              {(etapasPadrao ?? []).map((ep) => {
+              {etapasPadraoSequencial.map((ep) => {
                 const etapaExistente = etapas.find((e) => e.nome === ep.nome);
                 const aplicada = Boolean(etapaExistente);
                 return (
@@ -221,6 +253,48 @@ export default async function ProcessoDetalhePage({
                       <span
                         className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[9px] ${
                           aplicada ? "border-brand bg-brand text-white" : "border-border"
+                        }`}
+                      >
+                        {aplicada ? "✓" : ""}
+                      </span>
+                      {ep.nome}
+                    </button>
+                  </form>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {etapasPadraoEspecial.length > 0 && (
+          <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-3">
+            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-amber-800">
+              Situação especial (fora da sequência normal)
+            </p>
+            <div className="flex flex-wrap gap-1.5">
+              {etapasPadraoEspecial.map((ep) => {
+                const etapaExistente = etapas.find((e) => e.nome === ep.nome);
+                const aplicada = Boolean(etapaExistente);
+                return (
+                  <form key={ep.id} action={alternarEtapaPadrao}>
+                    <input type="hidden" name="processo_id" value={p.id} />
+                    <input type="hidden" name="nome" value={ep.nome} />
+                    <input type="hidden" name="ordem" value={ep.ordem} />
+                    <input type="hidden" name="aplicada" value={String(aplicada)} />
+                    {etapaExistente && (
+                      <input type="hidden" name="etapa_id" value={etapaExistente.id} />
+                    )}
+                    <button
+                      type="submit"
+                      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
+                        aplicada
+                          ? "border-amber-400 bg-amber-100 font-medium text-amber-900"
+                          : "border-amber-200 bg-surface text-ink-muted hover:bg-amber-50"
+                      }`}
+                    >
+                      <span
+                        className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[9px] ${
+                          aplicada ? "border-amber-500 bg-amber-500 text-white" : "border-border"
                         }`}
                       >
                         {aplicada ? "✓" : ""}
@@ -350,43 +424,24 @@ export default async function ProcessoDetalhePage({
         })}
       </section>
 
-      {/* Comissões */}
-      {(comissoes ?? []).length > 0 && (
-        <section>
-          <h2 className="mb-3 text-sm font-semibold text-ink">Comissões</h2>
-          <div className="space-y-2">
-            {(comissoes ?? []).map((c) => {
-              const nomeCorretor = (c as unknown as { corretores: { nome: string } | null }).corretores
-                ?.nome;
-              const corCom =
-                c.status === "100% pago"
-                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : c.status === "50% pago"
-                    ? "border-amber-200 bg-amber-50 text-amber-800"
-                    : c.status === "cancelada"
-                      ? "border-stone-200 bg-stone-100 text-stone-500"
-                      : "border-rose-200 bg-rose-50 text-rose-700";
-              return (
-                <div
-                  key={c.id}
-                  className="flex items-center justify-between rounded-lg border border-border bg-surface p-3 text-sm"
-                >
-                  <div>
-                    <p className="font-medium text-ink">{nomeCorretor ?? "Sem corretor vinculado"}</p>
-                    <p className="text-xs text-ink-muted">
-                      Previsto: R$ {Number(c.valor_previsto ?? 0).toLocaleString("pt-BR")}
-                      {c.valor_recebido ? ` · Recebido: R$ ${Number(c.valor_recebido).toLocaleString("pt-BR")}` : ""}
-                    </p>
-                  </div>
-                  <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${corCom}`}>
-                    {c.status}
-                  </span>
-                </div>
-              );
-            })}
+      {/* Comissão */}
+      <section>
+        <h2 className="mb-3 text-sm font-semibold text-ink">Comissão</h2>
+        {(comissoes ?? []).length === 0 ? (
+          <ComissaoForm processoId={p.id} comissao={null} corretores={corretoresLista ?? []} />
+        ) : (
+          <div className="space-y-3">
+            {(comissoes ?? []).map((c) => (
+              <ComissaoForm
+                key={c.id}
+                processoId={p.id}
+                comissao={c}
+                corretores={corretoresLista ?? []}
+              />
+            ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
       {/* Comentários */}
       <section>
@@ -446,5 +501,108 @@ function Info({ label, value }: { label: string; value?: string | null }) {
       <span className="text-ink-muted">{label}: </span>
       <span className="text-ink">{value}</span>
     </p>
+  );
+}
+
+function ComissaoForm({
+  processoId,
+  comissao,
+  corretores,
+}: {
+  processoId: string;
+  comissao:
+    | {
+        id: string;
+        beneficiario_id: string | null;
+        valor_previsto: number | null;
+        status: string;
+        data_prevista: string | null;
+        observacoes: string | null;
+      }
+    | null;
+  corretores: { id: string; nome: string }[];
+}) {
+  return (
+    <form
+      action={salvarComissao}
+      className="grid gap-3 rounded-xl border border-border bg-surface p-5 sm:grid-cols-2"
+    >
+      <input type="hidden" name="processo_id" value={processoId} />
+      {comissao && <input type="hidden" name="comissao_id" value={comissao.id} />}
+
+      <div>
+        <label className="mb-1 block text-xs font-medium text-ink-muted">Corretor</label>
+        <select
+          name="beneficiario_id"
+          defaultValue={comissao?.beneficiario_id ?? ""}
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
+        >
+          <option value="">—</option>
+          {corretores.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.nome}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-medium text-ink-muted">Valor previsto (R$)</label>
+        <input
+          name="valor_previsto"
+          type="number"
+          step="0.01"
+          defaultValue={comissao?.valor_previsto ?? ""}
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+        />
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-medium text-ink-muted">Status</label>
+        <select
+          name="status"
+          defaultValue={comissao?.status ?? "0% pago"}
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
+        >
+          <option value="0% pago">0% pago</option>
+          <option value="50% pago">50% pago</option>
+          <option value="100% pago">100% pago</option>
+          <option value="cancelada">Cancelada</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-xs font-medium text-ink-muted">
+          Prevista pra quando
+        </label>
+        <input
+          name="data_prevista"
+          type="date"
+          defaultValue={comissao?.data_prevista ?? ""}
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+        />
+      </div>
+
+      <div className="sm:col-span-2">
+        <label className="mb-1 block text-xs font-medium text-ink-muted">
+          Observações <span className="text-ink-muted/70">(ex: combinado de pagar na entrega)</span>
+        </label>
+        <textarea
+          name="observacoes"
+          defaultValue={comissao?.observacoes ?? ""}
+          rows={2}
+          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+        />
+      </div>
+
+      <div className="sm:col-span-2">
+        <button
+          type="submit"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+        >
+          {comissao ? "Salvar comissão" : "Adicionar comissão"}
+        </button>
+      </div>
+    </form>
   );
 }
