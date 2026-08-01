@@ -45,7 +45,7 @@ export function DiaCelula({
     <div
       ref={ref}
       className={`relative border-b border-r border-border p-1.5 last:border-r-0 ${
-        compacto ? "min-h-[74px]" : "min-h-[110px]"
+        compacto ? "min-h-[50px] sm:min-h-[74px]" : "min-h-[50px] sm:min-h-[110px]"
       } ${foraDoMes ? "bg-background/50" : ""}`}
     >
       <p
@@ -60,28 +60,51 @@ export function DiaCelula({
         {dia}
       </p>
       <div className="space-y-1">
-        {eventos.slice(0, maxPorDia).map((e) => (
-          <Link
-            key={e.id}
-            href={e.href}
-            className={`flex items-center gap-1 truncate rounded border px-1 py-0.5 text-[10px] leading-tight ${
-              e.concluida ? "border-stone-200 bg-stone-100 text-stone-500" : URGENCIA_COR[e.urgencia]
-            }`}
-            title={`${CATEGORIA_LABEL[e.categoria]} — ${e.titulo}`}
-          >
-            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${CATEGORIA_PONTO[e.categoria]}`} />
-            <span className="truncate">{e.titulo}</span>
-          </Link>
-        ))}
-        {restantes > 0 && (
+        {/* Mobile: só bolinhas, sem texto (evita quebra de linha feia) */}
+        {eventos.length > 0 && (
           <button
             type="button"
             onClick={() => setAberto((v) => !v)}
-            className="block w-full rounded px-1 py-0.5 text-left text-[10px] font-medium text-brand hover:bg-background hover:underline"
+            aria-label={`${eventos.length} evento${eventos.length > 1 ? "s" : ""} nesse dia`}
+            className="flex w-full flex-wrap items-center gap-1 sm:hidden"
           >
-            +{restantes} mais
+            {eventos.slice(0, 5).map((e) => (
+              <span
+                key={e.id}
+                className={`h-2 w-2 shrink-0 rounded-full ${CATEGORIA_PONTO[e.categoria]}`}
+              />
+            ))}
+            {eventos.length > 5 && (
+              <span className="text-[9px] text-ink-muted">+{eventos.length - 5}</span>
+            )}
           </button>
         )}
+
+        {/* Tablet/desktop: chips com texto + "mais" */}
+        <div className="hidden space-y-1 sm:block">
+          {eventos.slice(0, maxPorDia).map((e) => (
+            <Link
+              key={e.id}
+              href={e.href}
+              className={`flex items-center gap-1 truncate rounded border px-1 py-0.5 text-[10px] leading-tight ${
+                e.concluida ? "border-stone-200 bg-stone-100 text-stone-500" : URGENCIA_COR[e.urgencia]
+              }`}
+              title={`${CATEGORIA_LABEL[e.categoria]} — ${e.titulo}`}
+            >
+              <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${CATEGORIA_PONTO[e.categoria]}`} />
+              <span className="truncate">{e.titulo}</span>
+            </Link>
+          ))}
+          {restantes > 0 && (
+            <button
+              type="button"
+              onClick={() => setAberto((v) => !v)}
+              className="block w-full rounded px-1 py-0.5 text-left text-[10px] font-medium text-brand hover:bg-background hover:underline"
+            >
+              +{restantes} mais
+            </button>
+          )}
+        </div>
       </div>
 
       {aberto && (
