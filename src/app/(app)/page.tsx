@@ -3,7 +3,7 @@ import { getEventosCalendario } from "@/lib/queries";
 import { formatarPrazo } from "@/lib/alertas";
 import { CATEGORIA_LABEL } from "@/lib/types";
 import { CalendarioGrid } from "@/components/calendario-grid";
-import { IconeBadge, Icones, type TomBadge } from "@/components/icone-badge";
+import { Icones } from "@/components/icone-badge";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -16,7 +16,18 @@ const URGENCIA_BARRA: Record<string, string> = {
   sem_data: "border-l-stone-300",
 };
 
-export default async function DashboardPage() {
+const FILTRO_LABEL: Record<string, string> = {
+  atrasada: "Atrasados",
+  vence_hoje: "Vencendo hoje",
+  vence_em_breve: "Vencendo em 7 dias",
+};
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ filtro?: string }>;
+}) {
+  const { filtro } = await searchParams;
   const eventos = await getEventosCalendario();
   const pendentes = eventos.filter((e) => !e.concluida);
 
@@ -24,9 +35,13 @@ export default async function DashboardPage() {
   const venceHoje = pendentes.filter((e) => e.urgencia === "vence_hoje");
   const venceEmBreve = pendentes.filter((e) => e.urgencia === "vence_em_breve");
 
-  const criticos = [...atrasados, ...venceHoje, ...venceEmBreve]
-    .sort((a, b) => (a.diasParaVencer ?? 0) - (b.diasParaVencer ?? 0))
-    .slice(0, 10);
+  const todosCriticos = [...atrasados, ...venceHoje, ...venceEmBreve].sort(
+    (a, b) => (a.diasParaVencer ?? 0) - (b.diasParaVencer ?? 0)
+  );
+
+  const criticos = filtro
+    ? todosCriticos.filter((e) => e.urgencia === filtro).slice(0, 20)
+    : todosCriticos.slice(0, 10);
 
   const referencia = new Date();
 
@@ -41,14 +56,30 @@ export default async function DashboardPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCard label="Em aberto" value={pendentes.length} tom="brand" icone={Icones.relogio} />
-        <StatCard label="Atrasados" value={atrasados.length} tom="rose" icone={Icones.alerta} />
-        <StatCard label="Vencendo hoje" value={venceHoje.length} tom="amber" icone={Icones.calendario} />
-        <StatCard
+        <StatCardLink href="/calendario" label="Em aberto" value={pendentes.length} bg="#731515" icone={Icones.relogio} />
+        <StatCardLink
+          href="/?filtro=atrasada"
+          label="Atrasados"
+          value={atrasados.length}
+          bg="#9F1D1D"
+          icone={Icones.alerta}
+          ativo={filtro === "atrasada"}
+        />
+        <StatCardLink
+          href="/?filtro=vence_hoje"
+          label="Vencendo hoje"
+          value={venceHoje.length}
+          bg="#B9822C"
+          icone={Icones.calendario}
+          ativo={filtro === "vence_hoje"}
+        />
+        <StatCardLink
+          href="/?filtro=vence_em_breve"
           label="Vencendo em 7 dias"
           value={venceEmBreve.length}
-          tom="gold"
+          bg="#8C6423"
           icone={Icones.calendario}
+          ativo={filtro === "vence_em_breve"}
         />
       </div>
 
@@ -64,10 +95,19 @@ export default async function DashboardPage() {
         </div>
 
         <aside className="space-y-3">
-          <h2 className="text-sm font-semibold text-ink">Prazos críticos</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-ink">
+              {filtro ? FILTRO_LABEL[filtro] ?? "Prazos críticos" : "Prazos críticos"}
+            </h2>
+            {filtro && (
+              <Link href="/" className="text-xs text-ink-muted hover:underline">
+                limpar filtro
+              </Link>
+            )}
+          </div>
           {criticos.length === 0 ? (
             <p className="rounded-xl border border-border bg-surface p-5 text-center text-sm text-ink-muted">
-              Nenhum prazo atrasado ou vencendo nos próximos dias. 🎉
+              {filtro ? "Nada aqui." : "Nenhum prazo atrasado ou vencendo nos próximos dias. 🎉"}
             </p>
           ) : (
             <ul className="space-y-2">
@@ -113,22 +153,34 @@ export default async function DashboardPage() {
   );
 }
 
-function StatCard({
+function StatCardLink({
+  href,
   label,
   value,
-  tom,
+  bg,
   icone,
+  ativo,
 }: {
+  href: string;
   label: string;
   value: number;
-  tom: TomBadge;
+  bg: string;
   icone: React.ReactNode;
+  ativo?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-border bg-surface p-5">
-      <IconeBadge tom={tom} icone={icone} />
-      <p className="mt-3 font-mono text-2xl font-semibold text-ink">{value}</p>
-      <p className="mt-0.5 text-xs text-ink-muted">{label}</p>
-    </div>
+    <Link
+      href={href}
+      className={`block rounded-xl p-5 text-white transition hover:opacity-90 ${
+        ativo ? "ring-2 ring-offset-2 ring-offset-background" : ""
+      }`}
+      style={{ backgroundColor: bg, ...(ativo ? ({ ["--tw-ring-color" as string]: bg }) : {}) }}
+    >
+      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+        {icone}
+      </div>
+      <p className="mt-3 font-mono text-2xl font-semibold">{value}</p>
+      <p className="mt-0.5 text-xs text-white/80">{label}</p>
+    </Link>
   );
 }
