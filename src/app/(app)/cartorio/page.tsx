@@ -345,7 +345,10 @@ export default function CartorioPage() {
           Valores de escritura e registro baseados na tabela de emolumentos do cartório (faixa
           fixa por valor, já com ISSQN incluso). ITBI calculado sobre o valor da venda. Quando há
           financiamento, o registro da alienação fiduciária é calculado à parte, só sobre o valor
-          financiado.
+          financiado.{" "}
+          <strong className="font-medium text-ink-muted">
+            Valores aproximados, sujeitos a alteração sem aviso prévio.
+          </strong>
         </p>
       </div>
     </div>
@@ -467,7 +470,7 @@ async function baixarImagemResultado(
     const margem = 40;
     const alturaLinha = 78;
     const topoTabela = 250;
-    const alturaRodape = 90;
+    const alturaRodape = 110;
     const alturaTotalConteudo = topoTabela + linhas.length * alturaLinha + 80 + alturaRodape;
 
     const escala = 2;
@@ -583,7 +586,7 @@ async function baixarImagemResultado(
     ctx.font = "400 12px Arial, sans-serif";
     quebrarTexto(
       ctx,
-      "Valores de escritura e registro baseados na tabela de emolumentos do cartório (já com ISSQN incluso). Estimativa sujeita a confirmação no cartório no momento da lavratura/registro.",
+      "Valores de escritura e registro baseados na tabela de emolumentos do cartório (já com ISSQN incluso). Estimativa sujeita a confirmação no cartório no momento da lavratura/registro. Valores aproximados, sujeitos a alteração sem aviso prévio.",
       xEsq,
       y,
       xDir - xEsq,
