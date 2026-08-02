@@ -55,7 +55,7 @@ export default async function PerfilPage({
     <div className="max-w-lg space-y-6">
       <div>
         <VoltarLink href="/" label="Início" />
-        <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">Meu perfil</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">Meu perfil</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Sua foto e cargo aparecem para o resto da equipe. O nível de acesso ao sistema
           (perfil) é definido por um administrador.

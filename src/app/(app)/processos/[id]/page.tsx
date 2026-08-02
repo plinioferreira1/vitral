@@ -112,7 +112,7 @@ export default async function ProcessoDetalhePage({
           label={p.categoria === "financiamento" ? "Financiamentos" : "Vendas"}
         />
         <p className="font-mono text-xs text-ink-muted">{p.numero_processo}</p>
-        <h1 className="mt-1 text-xl font-serif font-bold uppercase tracking-wide text-ink">
+        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
           {p.modelos_processo?.nome} — {p.comprador?.nome ?? "Sem comprador"}
         </h1>
         <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-ink-muted sm:grid-cols-3">

@@ -50,7 +50,7 @@ export default async function DashboardPage({
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">Início</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">Início</h1>
         <p className="mt-1 text-sm text-ink-muted">
           VITRAL | Gestão completa dos fluxos de vendas, financiamentos e locações. Tudo em um só
           lugar.
@@ -61,12 +61,12 @@ export default async function DashboardPage({
       </div>
 
       <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCardLink href="/calendario" label="Em aberto" value={pendentes.length} bg="#334155" icone={Icones.relogio} />
+        <StatCardLink href="/calendario" label="Em aberto" value={pendentes.length} accent="#78716c" icone={Icones.relogio} />
         <StatCardLink
           href="/?filtro=atrasada"
           label="Atrasados"
           value={atrasados.length}
-          bg="#DC2626"
+          accent="#e11d48"
           icone={Icones.alerta}
           ativo={filtro === "atrasada"}
         />
@@ -74,7 +74,7 @@ export default async function DashboardPage({
           href="/?filtro=vence_hoje"
           label="Vencendo hoje"
           value={venceHoje.length}
-          bg="#F59E0B"
+          accent="#f59e0b"
           icone={Icones.calendario}
           ativo={filtro === "vence_hoje"}
         />
@@ -82,7 +82,7 @@ export default async function DashboardPage({
           href="/?filtro=vence_em_breve"
           label="Vencendo em 7 dias"
           value={venceEmBreve.length}
-          bg="#EA580C"
+          accent="#fbbf24"
           icone={Icones.calendario}
           ativo={filtro === "vence_em_breve"}
         />
@@ -111,7 +111,7 @@ export default async function DashboardPage({
             )}
           </div>
           {criticos.length === 0 ? (
-            <p className="rounded-xl border border-border/60 bg-surface shadow-sm p-5 text-center text-sm text-ink-muted">
+            <p className="rounded-xl border border-border/60 bg-surface p-5 text-center text-sm text-ink-muted">
               {filtro ? "Nada aqui." : "Nenhum prazo atrasado ou vencendo nos próximos dias. 🎉"}
             </p>
           ) : (
@@ -162,7 +162,7 @@ function StatCardLink({
   href,
   label,
   value,
-  bg,
+  accent,
   icone,
   ativo,
   detalhe,
@@ -170,7 +170,7 @@ function StatCardLink({
   href: string;
   label: string;
   value: number;
-  bg: string;
+  accent: string;
   icone: React.ReactNode;
   ativo?: boolean;
   detalhe?: string;
@@ -178,17 +178,24 @@ function StatCardLink({
   return (
     <Link
       href={href}
-      className={`block rounded-xl p-5 text-white transition hover:opacity-90 ${
+      className={`block rounded-xl border border-border bg-surface p-5 transition hover:border-border-strong ${
         ativo ? "ring-2 ring-offset-2 ring-offset-background" : ""
       }`}
-      style={{ backgroundColor: bg, ...(ativo ? ({ ["--tw-ring-color" as string]: bg }) : {}) }}
+      style={{
+        borderLeftColor: accent,
+        borderLeftWidth: "3px",
+        ...(ativo ? ({ ["--tw-ring-color" as string]: accent }) : {}),
+      }}
     >
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+      <div
+        className="flex h-9 w-9 items-center justify-center rounded-lg"
+        style={{ backgroundColor: `${accent}1a`, color: accent }}
+      >
         {icone}
       </div>
-      <p className="mt-3 font-mono text-2xl font-semibold">{value}</p>
-      <p className="mt-0.5 text-xs text-white/80">{label}</p>
-      {detalhe && <p className="mt-1 text-[10px] text-white/60">{detalhe}</p>}
+      <p className="mt-3 font-mono text-2xl font-semibold text-ink">{value}</p>
+      <p className="mt-0.5 text-xs text-ink-muted">{label}</p>
+      {detalhe && <p className="mt-1 text-[10px] text-ink-muted/70">{detalhe}</p>}
     </Link>
   );
 }

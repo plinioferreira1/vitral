@@ -39,7 +39,7 @@ export default async function EtapasPadraoPage({
   return (
     <div className="max-w-xl space-y-6">
       <div>
-        <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">
           Etapas padrão
         </h1>
         <p className="mt-1 text-sm text-ink-muted">
