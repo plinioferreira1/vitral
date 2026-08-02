@@ -270,11 +270,21 @@ export default async function LocacaoPage({
                     )}
                     <button type="submit" className="flex w-full items-center gap-2.5 text-left text-sm">
                       <span
-                        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border text-[10px] ${
-                          concluida ? "border-brand bg-brand text-white" : "border-border bg-surface"
+                        className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
+                          concluida ? "border-brand bg-brand text-white" : "border-border-strong bg-surface"
                         }`}
                       >
-                        {concluida ? "✓" : ""}
+                        {concluida && (
+                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                            <path
+                              d="M2 6.5L4.5 9L10 3"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        )}
                       </span>
                       <span className={concluida ? "text-ink-muted line-through" : "text-ink"}>
                         {t.nome}

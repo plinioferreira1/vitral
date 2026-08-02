@@ -284,13 +284,23 @@ export default async function ProcessoDetalhePage({
                         />
                         <button type="submit" className="flex items-center gap-2 text-left">
                           <span
-                            className={`flex h-4 w-4 items-center justify-center rounded border text-[10px] ${
+                            className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
                               item.concluido
                                 ? "border-brand bg-brand text-white"
-                                : "border-border bg-surface"
+                                : "border-border-strong bg-surface"
                             }`}
                           >
-                            {item.concluido ? "✓" : ""}
+                            {item.concluido && (
+                              <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                                <path
+                                  d="M2 6.5L4.5 9L10 3"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                />
+                              </svg>
+                            )}
                           </span>
                           <span className={item.concluido ? "text-ink-muted line-through" : "text-ink"}>
                             {item.descricao}
@@ -467,11 +477,21 @@ export default async function ProcessoDetalhePage({
                         }`}
                       >
                         <span
-                          className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[9px] ${
-                            aplicada ? "border-brand bg-brand text-white" : "border-border"
+                          className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border ${
+                            aplicada ? "border-brand bg-brand text-white" : "border-border-strong"
                           }`}
                         >
-                          {aplicada ? "✓" : ""}
+                          {aplicada && (
+                            <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
+                              <path
+                                d="M2 6.5L4.5 9L10 3"
+                                stroke="currentColor"
+                                strokeWidth="2.2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          )}
                         </span>
                         {ep.nome}
                       </button>
@@ -509,11 +529,21 @@ export default async function ProcessoDetalhePage({
                         }`}
                       >
                         <span
-                          className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[9px] ${
-                            aplicada ? "border-amber-500 bg-amber-500 text-white" : "border-border"
+                          className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border ${
+                            aplicada ? "border-amber-500 bg-amber-500 text-white" : "border-border-strong"
                           }`}
                         >
-                          {aplicada ? "✓" : ""}
+                          {aplicada && (
+                            <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
+                              <path
+                                d="M2 6.5L4.5 9L10 3"
+                                stroke="currentColor"
+                                strokeWidth="2.2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                            </svg>
+                          )}
                         </span>
                         {ep.nome}
                       </button>

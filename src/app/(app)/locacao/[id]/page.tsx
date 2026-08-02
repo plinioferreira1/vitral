@@ -28,16 +28,47 @@ type EstadoVisual = "pago" | "em_dia" | "vencido" | "nao_aplicavel";
 
 const ESTADO_STYLE: Record<EstadoVisual, string> = {
   pago: "bg-emerald-500 border-emerald-500 text-white",
-  em_dia: "bg-amber-50 border-amber-200 text-amber-600 hover:border-amber-300",
+  em_dia: "bg-amber-50 border-amber-200 text-amber-500 hover:border-amber-300",
   vencido: "bg-rose-500 border-rose-500 text-white",
-  nao_aplicavel: "bg-background border-border text-ink-muted/40 hover:border-border-strong",
+  nao_aplicavel: "bg-background border-border text-ink-muted/30 hover:border-border-strong",
 };
 
-const ESTADO_SIMBOLO: Record<EstadoVisual, string> = {
-  pago: "✓",
-  em_dia: "○",
-  vencido: "!",
-  nao_aplicavel: "",
+function IconeContaCheck() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 12 12" fill="none">
+      <path
+        d="M2 6.5L4.5 9L10 3"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+function IconeContaPendente() {
+  return (
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+      <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+
+function IconeContaVencida() {
+  return (
+    <svg width="4" height="12" viewBox="0 0 4 12" fill="none">
+      <rect x="0" y="0" width="4" height="7.5" rx="1.5" fill="currentColor" />
+      <circle cx="2" cy="10.5" r="1.5" fill="currentColor" />
+    </svg>
+  );
+}
+
+const ESTADO_SIMBOLO: Record<EstadoVisual, React.ReactNode> = {
+  pago: <IconeContaCheck />,
+  em_dia: <IconeContaPendente />,
+  vencido: <IconeContaVencida />,
+  nao_aplicavel: null,
 };
 
 /**
@@ -221,7 +252,7 @@ export default async function ContratoLocacaoPage({
                               title={`${TIPO_CONTA_LABEL[tipo]} — ${MESES[mesIdx]}/${ano}${
                                 estado === "em_dia" ? " (em dia)" : estado === "vencido" ? " (vencido)" : ""
                               }`}
-                              className={`flex h-9 w-full items-center justify-center rounded-md border text-sm font-bold transition hover:opacity-80 ${ESTADO_STYLE[estado]}`}
+                              className={`flex h-9 w-full items-center justify-center rounded-md border transition hover:opacity-80 ${ESTADO_STYLE[estado]}`}
                             >
                               {ESTADO_SIMBOLO[estado]}
                             </button>
