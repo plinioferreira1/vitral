@@ -166,13 +166,13 @@ export default async function ProcessoDetalhePage({
       )}
 
       {/* Timeline */}
-      <section className="rounded-2xl border border-border bg-surface p-5 md:p-8">
-        <h2 className="mb-5 text-base font-semibold text-ink md:mb-8">Linha do tempo</h2>
+      <section className="rounded-2xl border border-border bg-surface p-6 md:p-10">
+        <h2 className="mb-6 text-base font-semibold text-ink md:mb-10">Linha do tempo</h2>
         <div className="overflow-x-auto pb-1 md:overflow-visible">
           <div
             className="grid"
             style={{
-              gridTemplateColumns: `repeat(${etapasSequenciais.length}, minmax(92px, 1fr))`,
+              gridTemplateColumns: `repeat(${etapasSequenciais.length}, minmax(104px, 1fr))`,
             }}
           >
             {etapasSequenciais.map((e, i) => {
@@ -184,7 +184,7 @@ export default async function ProcessoDetalhePage({
                 <div
                   key={`label-${e.id}`}
                   style={{ gridRow: 1, gridColumn: i + 1 }}
-                  className="flex items-end justify-center px-0.5 pb-2 md:px-1.5 md:pb-3"
+                  className="flex items-end justify-center px-1 pb-3 md:px-2 md:pb-4"
                 >
                   <p
                     className={`break-words text-center text-[11px] font-medium leading-tight md:text-[12px] ${
