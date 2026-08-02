@@ -286,6 +286,17 @@ export interface RescisaoChecklistItem {
   ordem: number;
 }
 
+export interface SimulacaoCustas {
+  id: string;
+  valor: number;
+  tipo_imovel: "usado" | "novo";
+  valor_financiado: number | null;
+  primeiro_imovel: boolean;
+  instrumento_particular: boolean;
+  total: number;
+  criado_em: string;
+}
+
 // Placeholder mínimo para o supabase-js tipar os clients.
 // (Não é um schema gerado automaticamente — ver README para gerar
 // com `supabase gen types typescript` quando o projeto já existir.)

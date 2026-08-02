@@ -5,6 +5,7 @@ import { formatarPrazo } from "@/lib/alertas";
 import { CATEGORIA_LABEL } from "@/lib/types";
 import { CalendarioGrid } from "@/components/calendario-grid";
 import { ResumoPrazos } from "@/components/resumo-prazos";
+import { InicioCorretor } from "@/components/inicio-corretor";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -36,12 +37,31 @@ export default async function DashboardPage({
   } = await supabase.auth.getUser();
   const { data: usuario } = await supabase
     .from("usuarios")
-    .select("nome, nivel_acesso")
+    .select("nome, nivel_acesso, tenant_id")
     .eq("id", user?.id ?? "")
     .single();
 
   if (usuario?.nivel_acesso === "corretor") {
-    return <InicioCorretor nome={usuario.nome} />;
+    const { data: simulacoes } = await supabase
+      .from("simulacoes_custas")
+      .select("id, valor, tipo_imovel, valor_financiado, primeiro_imovel, instrumento_particular, total, criado_em")
+      .eq("usuario_id", user?.id ?? "")
+      .order("criado_em", { ascending: false })
+      .limit(5);
+
+    const { data: tenant } = await supabase
+      .from("tenants")
+      .select("whatsapp_contato")
+      .eq("id", usuario.tenant_id ?? "")
+      .single();
+
+    return (
+      <InicioCorretor
+        nome={usuario.nome}
+        simulacoes={simulacoes ?? []}
+        whatsappContato={tenant?.whatsapp_contato ?? null}
+      />
+    );
   }
 
   const eventos = await getEventosCalendario();
@@ -157,60 +177,4 @@ export default async function DashboardPage({
   );
 }
 
-function InicioCorretor({ nome }: { nome: string }) {
-  const primeiroNome = nome.split(" ")[0];
-  return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Olá, {primeiroNome}</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Suas ferramentas de apoio pra passar informações certas pro cliente.
-        </p>
-      </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Link
-          href="/cartorio"
-          className="block rounded-xl border border-border bg-surface p-6 transition hover:border-brand/40 hover:shadow-sm"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-soft text-brand">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M4 19h16M6 19V9l6-4 6 4v10M10 19v-5h4v5"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <p className="mt-4 text-base font-semibold text-ink">Simulação de Custas</p>
-          <p className="mt-1 text-sm text-ink-muted">
-            ITBI, escritura e registro — gera uma imagem pra enviar pro cliente.
-          </p>
-        </Link>
-
-        <Link
-          href="/calculadora"
-          className="block rounded-xl border border-border bg-surface p-6 transition hover:border-brand/40 hover:shadow-sm"
-        >
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-soft text-brand">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M6 3h12a1 1 0 011 1v16a1 1 0 01-1 1H6a1 1 0 01-1-1V4a1 1 0 011-1zM8 7h8M8 11h2M12 11h2M16 11h0M8 15h2M12 15h2M16 15h0"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <p className="mt-4 text-base font-semibold text-ink">Calculadora de Proporcionalidade</p>
-          <p className="mt-1 text-sm text-ink-muted">
-            Rateio de IPTU, condomínio, água, luz e aluguel entre as partes.
-          </p>
-        </Link>
-      </div>
-    </div>
-  );
-}

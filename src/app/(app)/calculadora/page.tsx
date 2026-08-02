@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   brl,
   calcularInfoDias,
@@ -146,7 +147,9 @@ function hoje(): string {
 }
 
 export default function CalculadoraPage() {
-  const [aba, setAba] = useState<"venda" | "locacao">("venda");
+  const searchParams = useSearchParams();
+  const tipoParam = searchParams.get("tipo");
+  const [aba, setAba] = useState<"venda" | "locacao">(tipoParam === "locacao" ? "locacao" : "venda");
 
   return (
     <div className="max-w-3xl space-y-6">

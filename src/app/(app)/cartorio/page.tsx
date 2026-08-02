@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { brl } from "@/lib/proporcionalidade";
 import { CampoMoeda } from "@/components/campo-moeda";
+import { registrarSimulacaoCustas } from "./actions";
 
 // ---------------------------------------------------------
 // Tabelas de emolumentos fornecidas pela Sacra (faixa fixa,
@@ -61,55 +63,54 @@ interface ResultadoCartorio {
   total: number;
 }
 
-export default function CartorioPage() {
-  const [valor, setValor] = useState(0);
-  const [temFinanciamento, setTemFinanciamento] = useState(false);
-  const [instrumentoParticular, setInstrumentoParticular] = useState(false);
-  const [valorFinanciado, setValorFinanciado] = useState(0);
-  const [tipoImovel, setTipoImovel] = useState<"usado" | "novo">("usado");
-  const [primeiroImovel, setPrimeiroImovel] = useState(false);
-  const [resultado, setResultado] = useState<ResultadoCartorio | null>(null);
-  const [erro, setErro] = useState<string | null>(null);
-  const [gerandoImagem, setGerandoImagem] = useState(false);
+function computarResultado(params: {
+  valor: number;
+  temFinanciamento: boolean;
+  valorFinanciado: number;
+  tipoImovel: "usado" | "novo";
+  primeiroImovel: boolean;
+  instrumentoParticular: boolean;
+}): { resultado: ResultadoCartorio | null; erro: string | null } {
+  const { valor, temFinanciamento, valorFinanciado, tipoImovel, primeiroImovel, instrumentoParticular } =
+    params;
 
-  const calcular = () => {
-    setErro(null);
-    if (!valor || valor <= 0) {
-      setErro("Informe o valor do imóvel/venda antes de calcular.");
-      setResultado(null);
-      return;
+  if (!valor || valor <= 0) {
+    return { resultado: null, erro: "Informe o valor do imóvel/venda antes de calcular." };
+  }
+
+  if (temFinanciamento) {
+    if (!valorFinanciado || valorFinanciado <= 0) {
+      return {
+        resultado: null,
+        erro: 'Informe o valor financiado, ou desmarque "Tem financiamento".',
+      };
     }
-
-    if (temFinanciamento) {
-      if (!valorFinanciado || valorFinanciado <= 0) {
-        setErro('Informe o valor financiado, ou desmarque "Tem financiamento".');
-        setResultado(null);
-        return;
-      }
-      if (valorFinanciado > valor) {
-        setErro("O valor financiado não pode ser maior que o valor do imóvel.");
-        setResultado(null);
-        return;
-      }
+    if (valorFinanciado > valor) {
+      return {
+        resultado: null,
+        erro: "O valor financiado não pode ser maior que o valor do imóvel.",
+      };
     }
+  }
 
-    const aliquotaItbi = tipoImovel === "novo" ? 0.01 : 0.02;
-    const itbi = valor * aliquotaItbi;
-    // Quando o financiamento é feito por instrumento particular com força
-    // de escritura pública, o próprio contrato do banco substitui a
-    // escritura — não se paga escritura à parte nesse caso.
-    const escritura =
-      temFinanciamento && instrumentoParticular ? 0 : buscarFaixa(valor, FAIXAS_ESCRITURA);
-    // Registro da compra e venda incide sobre o valor total do imóvel.
-    // Primeiro imóvel dá direito a 50% de desconto nesse registro.
-    const registroCompraVendaCheio = buscarFaixa(valor, FAIXAS_REGISTRO);
-    const registroCompraVenda = primeiroImovel ? registroCompraVendaCheio / 2 : registroCompraVendaCheio;
-    // Quando tem financiamento, o registro da alienação fiduciária
-    // (garantia do banco) é um registro à parte, incidindo só sobre
-    // o valor financiado — não sobre o valor total do imóvel.
-    const registroAlienacao = temFinanciamento ? buscarFaixa(valorFinanciado, FAIXAS_REGISTRO) : 0;
+  const aliquotaItbi = tipoImovel === "novo" ? 0.01 : 0.02;
+  const itbi = valor * aliquotaItbi;
+  // Quando o financiamento é feito por instrumento particular com força
+  // de escritura pública, o próprio contrato do banco substitui a
+  // escritura — não se paga escritura à parte nesse caso.
+  const escritura =
+    temFinanciamento && instrumentoParticular ? 0 : buscarFaixa(valor, FAIXAS_ESCRITURA);
+  // Registro da compra e venda incide sobre o valor total do imóvel.
+  // Primeiro imóvel dá direito a 50% de desconto nesse registro.
+  const registroCompraVendaCheio = buscarFaixa(valor, FAIXAS_REGISTRO);
+  const registroCompraVenda = primeiroImovel ? registroCompraVendaCheio / 2 : registroCompraVendaCheio;
+  // Quando tem financiamento, o registro da alienação fiduciária
+  // (garantia do banco) é um registro à parte, incidindo só sobre
+  // o valor financiado — não sobre o valor total do imóvel.
+  const registroAlienacao = temFinanciamento ? buscarFaixa(valorFinanciado, FAIXAS_REGISTRO) : 0;
 
-    setResultado({
+  return {
+    resultado: {
       valor,
       valorFinanciado,
       itbi,
@@ -120,7 +121,47 @@ export default function CartorioPage() {
       registroAlienacao,
       primeiroImovel,
       total: itbi + escritura + registroCompraVenda + registroAlienacao,
+    },
+    erro: null,
+  };
+}
+
+export default function CartorioPage() {
+  const searchParams = useSearchParams();
+  const valorInicialParam = Number(searchParams.get("valor")) || undefined;
+  const [valor, setValor] = useState(valorInicialParam ?? 0);
+  const [temFinanciamento, setTemFinanciamento] = useState(false);
+  const [instrumentoParticular, setInstrumentoParticular] = useState(false);
+  const [valorFinanciado, setValorFinanciado] = useState(0);
+  const [tipoImovel, setTipoImovel] = useState<"usado" | "novo">("usado");
+  const [primeiroImovel, setPrimeiroImovel] = useState(false);
+  // Atalho vindo do Início (corretor): ?valor=300000 já chega calculado.
+  const [resultado, setResultado] = useState<ResultadoCartorio | null>(() =>
+    valorInicialParam
+      ? computarResultado({
+          valor: valorInicialParam,
+          temFinanciamento: false,
+          valorFinanciado: 0,
+          tipoImovel: "usado",
+          primeiroImovel: false,
+          instrumentoParticular: false,
+        }).resultado
+      : null
+  );
+  const [erro, setErro] = useState<string | null>(null);
+  const [gerandoImagem, setGerandoImagem] = useState(false);
+
+  const calcular = () => {
+    const { resultado: novoResultado, erro: novoErro } = computarResultado({
+      valor,
+      temFinanciamento,
+      valorFinanciado,
+      tipoImovel,
+      primeiroImovel,
+      instrumentoParticular,
     });
+    setErro(novoErro);
+    setResultado(novoResultado);
   };
 
   return (
@@ -141,7 +182,11 @@ export default function CartorioPage() {
               <label className="mb-1 block text-xs font-medium text-ink-muted">
                 Valor do imóvel / da venda (R$)
               </label>
-              <CampoMoeda onValorChange={setValor} placeholder="420.000,00" />
+              <CampoMoeda
+                onValorChange={setValor}
+                defaultValue={valorInicialParam}
+                placeholder="420.000,00"
+              />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-muted">Tipo de imóvel</label>
@@ -370,6 +415,17 @@ async function baixarImagemResultado(
 ) {
   setGerando(true);
   try {
+    // Registra no histórico (fire-and-forget — não deve travar o download
+    // se, por algum motivo, o registro falhar).
+    registrarSimulacaoCustas({
+      valor: r.valor,
+      tipoImovel,
+      valorFinanciado: r.valorFinanciado || null,
+      primeiroImovel: r.primeiroImovel,
+      instrumentoParticular: r.instrumentoParticular,
+      total: r.total,
+    }).catch(() => {});
+
     interface LinhaResultado {
       label: string;
       sublabel?: string;
