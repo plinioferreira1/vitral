@@ -71,7 +71,7 @@ export function AppShell({
     <Link
       href="/"
       onClick={() => setMenuAberto(false)}
-      className="flex items-center rounded-md px-2 py-1 transition hover:bg-background"
+      className="flex w-full items-center justify-center rounded-md px-2 py-1 transition hover:bg-background"
       aria-label={tenantName}
     >
       <img
