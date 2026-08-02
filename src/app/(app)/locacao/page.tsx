@@ -103,9 +103,15 @@ export default async function LocacaoPage({
 
   const contratosPorId = new Map(listaContratos.map((c) => [c.id, c]));
 
-  const pendentesPorContrato = new Map<string, number>();
+  const vencidasPorContrato = new Map<string, number>();
   contasPendentes.forEach((c) => {
-    pendentesPorContrato.set(c.contrato_id, (pendentesPorContrato.get(c.contrato_id) ?? 0) + 1);
+    const { urgencia } = calcularUrgencia({
+      status: "pendente",
+      data_prevista: c.vencimento ?? c.competencia,
+    });
+    if (urgencia === "atrasada") {
+      vencidasPorContrato.set(c.contrato_id, (vencidasPorContrato.get(c.contrato_id) ?? 0) + 1);
+    }
   });
   const totalContratosAtivos = listaContratos.filter((c) => c.ativo).length;
 
@@ -159,7 +165,7 @@ export default async function LocacaoPage({
             ) : (
               <TabelaContratos
                 contratos={listaContratos.filter((c) => c.ativo)}
-                pendentesPorContrato={pendentesPorContrato}
+                pendentesPorContrato={vencidasPorContrato}
               />
             )}
           </div>
@@ -178,7 +184,7 @@ export default async function LocacaoPage({
               <div className="border-t border-border">
                 <TabelaContratos
                   contratos={listaContratos.filter((c) => !c.ativo)}
-                  pendentesPorContrato={pendentesPorContrato}
+                  pendentesPorContrato={vencidasPorContrato}
                 />
               </div>
             </details>
@@ -376,7 +382,7 @@ function TabelaContratos({
               </div>
               {pendentes > 0 ? (
                 <span className="shrink-0 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700">
-                  {pendentes} pendente{pendentes > 1 ? "s" : ""}
+                  {pendentes} vencida{pendentes > 1 ? "s" : ""}
                 </span>
               ) : (
                 <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">

@@ -16,6 +16,7 @@ import {
 } from "./actions";
 import { SucessoBanner } from "@/components/banners";
 import { VoltarLink } from "@/components/voltar-link";
+import { CampoMoeda } from "@/components/campo-moeda";
 
 const MESES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez",
@@ -293,13 +294,10 @@ export default async function ContratoLocacaoPage({
                         <form action={atualizarDetalhesConta} className="flex items-center gap-1.5">
                           <input type="hidden" name="conta_id" value={cc.id} />
                           <input type="hidden" name="contrato_id" value={id} />
-                          <span className="text-xs text-ink-muted">R$</span>
-                          <input
+                          <CampoMoeda
                             name="valor"
-                            type="number"
-                            step="0.01"
-                            defaultValue={cc.valor ?? ""}
-                            className="w-24 rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
+                            defaultValue={cc.valor ?? undefined}
+                            className="w-20 rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
                           />
                           <input
                             name="vencimento"

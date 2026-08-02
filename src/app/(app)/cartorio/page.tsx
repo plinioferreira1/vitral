@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { brl, formatarEntradaBR, parseBR } from "@/lib/proporcionalidade";
+import { brl } from "@/lib/proporcionalidade";
+import { CampoMoeda } from "@/components/campo-moeda";
 
 // ---------------------------------------------------------
 // Tabelas de emolumentos fornecidas pela Sacra (faixa fixa,
@@ -48,9 +49,9 @@ function buscarFaixa(valor: number, faixas: FaixaEmolumento[]): number {
 }
 
 export default function CartorioPage() {
-  const [valorTexto, setValorTexto] = useState("");
+  const [valor, setValor] = useState(0);
   const [temFinanciamento, setTemFinanciamento] = useState(false);
-  const [valorFinanciadoTexto, setValorFinanciadoTexto] = useState("");
+  const [valorFinanciado, setValorFinanciado] = useState(0);
   const [tipoImovel, setTipoImovel] = useState<"usado" | "novo">("usado");
   const [resultado, setResultado] = useState<{
     valor: number;
@@ -65,17 +66,14 @@ export default function CartorioPage() {
 
   const calcular = () => {
     setErro(null);
-    const valor = parseBR(valorTexto);
-    if (isNaN(valor) || valor <= 0) {
+    if (!valor || valor <= 0) {
       setErro("Informe o valor do imóvel/venda antes de calcular.");
       setResultado(null);
       return;
     }
 
-    let valorFinanciado = 0;
     if (temFinanciamento) {
-      valorFinanciado = parseBR(valorFinanciadoTexto);
-      if (isNaN(valorFinanciado) || valorFinanciado <= 0) {
+      if (!valorFinanciado || valorFinanciado <= 0) {
         setErro('Informe o valor financiado, ou desmarque "Tem financiamento".');
         setResultado(null);
         return;
@@ -126,20 +124,7 @@ export default function CartorioPage() {
               <label className="mb-1 block text-xs font-medium text-ink-muted">
                 Valor do imóvel / da venda (R$)
               </label>
-              <div className="flex items-center gap-1">
-                <span className="text-sm text-ink-muted">R$</span>
-                <input
-                  inputMode="decimal"
-                  value={valorTexto}
-                  onChange={(e) => setValorTexto(e.target.value)}
-                  onBlur={(e) => {
-                    const n = parseBR(e.target.value);
-                    if (!isNaN(n)) setValorTexto(formatarEntradaBR(n));
-                  }}
-                  placeholder="420.000,00"
-                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                />
-              </div>
+              <CampoMoeda onValorChange={setValor} placeholder="420.000,00" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-muted">Tipo de imóvel</label>
@@ -169,20 +154,11 @@ export default function CartorioPage() {
               <label className="mb-1 block text-xs font-medium text-ink-muted">
                 Valor financiado (R$)
               </label>
-              <div className="flex items-center gap-1">
-                <span className="text-sm text-ink-muted">R$</span>
-                <input
-                  inputMode="decimal"
-                  value={valorFinanciadoTexto}
-                  onChange={(e) => setValorFinanciadoTexto(e.target.value)}
-                  onBlur={(e) => {
-                    const n = parseBR(e.target.value);
-                    if (!isNaN(n)) setValorFinanciadoTexto(formatarEntradaBR(n));
-                  }}
-                  placeholder="250.000,00"
-                  className="w-full max-w-xs rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                />
-              </div>
+              <CampoMoeda
+                onValorChange={setValorFinanciado}
+                placeholder="250.000,00"
+                className="w-full max-w-xs rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
               <p className="mt-1 text-xs text-ink-muted">
                 O restante (valor do imóvel − valor financiado) é considerado recursos próprios.
               </p>

@@ -4,6 +4,7 @@ import { anexarUrgencia, URGENCIA_COR, formatarPrazo } from "@/lib/alertas";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { VoltarLink } from "@/components/voltar-link";
+import { CampoMoeda } from "@/components/campo-moeda";
 import {
   concluirEtapa,
   reabrirEtapa,
@@ -548,13 +549,7 @@ function ComissaoForm({
 
       <div>
         <label className="mb-1 block text-xs font-medium text-ink-muted">Valor previsto (R$)</label>
-        <input
-          name="valor_previsto"
-          type="number"
-          step="0.01"
-          defaultValue={comissao?.valor_previsto ?? ""}
-          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-        />
+        <CampoMoeda name="valor_previsto" defaultValue={comissao?.valor_previsto ?? undefined} />
       </div>
 
       <div>

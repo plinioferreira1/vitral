@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { criarProcesso } from "./actions";
 import type { CategoriaProcesso } from "@/lib/types";
+import { CampoMoeda } from "@/components/campo-moeda";
 
 interface EtapaPadraoBasica {
   id: string;
@@ -139,13 +140,7 @@ export function NovoProcessoForm({
           <label className="mb-1 block text-xs font-medium text-ink-muted">
             {ehFinanciamento ? "Valor do imóvel (R$)" : "Valor (R$)"}
           </label>
-          <input
-            name="valor_total"
-            type="number"
-            step="0.01"
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-            placeholder="420000.00"
-          />
+          <CampoMoeda name="valor_total" placeholder="420.000,00" />
         </div>
 
         {ehFinanciamento && (
@@ -154,13 +149,7 @@ export function NovoProcessoForm({
               <label className="mb-1 block text-xs font-medium text-ink-muted">
                 Valor financiado (R$)
               </label>
-              <input
-                name="valor_financiado"
-                type="number"
-                step="0.01"
-                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                placeholder="220000.00"
-              />
+              <CampoMoeda name="valor_financiado" placeholder="220.000,00" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-muted">Origem</label>
