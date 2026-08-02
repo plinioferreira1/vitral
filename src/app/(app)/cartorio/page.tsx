@@ -53,6 +53,7 @@ interface ResultadoCartorio {
   valorFinanciado: number;
   itbi: number;
   escritura: number;
+  instrumentoParticular: boolean;
   registroCompraVendaCheio: number;
   registroCompraVenda: number;
   registroAlienacao: number;
@@ -63,6 +64,7 @@ interface ResultadoCartorio {
 export default function CartorioPage() {
   const [valor, setValor] = useState(0);
   const [temFinanciamento, setTemFinanciamento] = useState(false);
+  const [instrumentoParticular, setInstrumentoParticular] = useState(false);
   const [valorFinanciado, setValorFinanciado] = useState(0);
   const [tipoImovel, setTipoImovel] = useState<"usado" | "novo">("usado");
   const [primeiroImovel, setPrimeiroImovel] = useState(false);
@@ -93,7 +95,11 @@ export default function CartorioPage() {
 
     const aliquotaItbi = tipoImovel === "novo" ? 0.01 : 0.02;
     const itbi = valor * aliquotaItbi;
-    const escritura = buscarFaixa(valor, FAIXAS_ESCRITURA);
+    // Quando o financiamento é feito por instrumento particular com força
+    // de escritura pública, o próprio contrato do banco substitui a
+    // escritura — não se paga escritura à parte nesse caso.
+    const escritura =
+      temFinanciamento && instrumentoParticular ? 0 : buscarFaixa(valor, FAIXAS_ESCRITURA);
     // Registro da compra e venda incide sobre o valor total do imóvel.
     // Primeiro imóvel dá direito a 50% de desconto nesse registro.
     const registroCompraVendaCheio = buscarFaixa(valor, FAIXAS_REGISTRO);
@@ -108,6 +114,7 @@ export default function CartorioPage() {
       valorFinanciado,
       itbi,
       escritura,
+      instrumentoParticular: temFinanciamento && instrumentoParticular,
       registroCompraVendaCheio,
       registroCompraVenda,
       registroAlienacao,
@@ -153,11 +160,27 @@ export default function CartorioPage() {
             <input
               type="checkbox"
               checked={temFinanciamento}
-              onChange={(e) => setTemFinanciamento(e.target.checked)}
+              onChange={(e) => {
+                setTemFinanciamento(e.target.checked);
+                if (!e.target.checked) setInstrumentoParticular(false);
+              }}
               className="accent-brand"
             />
             Parte do valor é financiada (gera registro de alienação fiduciária à parte)
           </label>
+
+          {temFinanciamento && (
+            <label className="mt-2 ml-6 flex items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={instrumentoParticular}
+                onChange={(e) => setInstrumentoParticular(e.target.checked)}
+                className="accent-brand"
+              />
+              Financiamento por instrumento particular com força de escritura (não paga
+              escritura)
+            </label>
+          )}
 
           <label className="mt-2 flex items-center gap-2 text-sm text-ink">
             <input
@@ -214,7 +237,14 @@ export default function CartorioPage() {
                 <span className="font-mono text-ink">{brl(resultado.itbi)}</span>
               </li>
               <li className="flex items-center justify-between py-2">
-                <span className="text-ink">Escritura (emolumentos + ISSQN)</span>
+                <span className="text-ink">
+                  Escritura (emolumentos + ISSQN)
+                  {resultado.instrumentoParticular && (
+                    <span className="block text-xs text-ink-muted">
+                      não paga — instrumento particular com força de escritura
+                    </span>
+                  )}
+                </span>
                 <span className="font-mono text-ink">{brl(resultado.escritura)}</span>
               </li>
               <li className="flex items-center justify-between py-2">
@@ -353,7 +383,13 @@ async function baixarImagemResultado(
         sublabel: "pode ser parcelado em até 10x no boleto, solicitando no GDF",
         valor: brl(r.itbi),
       },
-      { label: "Escritura (emolumentos + ISSQN)", valor: brl(r.escritura) },
+      {
+        label: "Escritura (emolumentos + ISSQN)",
+        sublabel: r.instrumentoParticular
+          ? "não paga — instrumento particular com força de escritura"
+          : undefined,
+        valor: brl(r.escritura),
+      },
       {
         label: "Registro da compra e venda",
         sublabel: r.primeiroImovel
