@@ -444,6 +444,52 @@ export default async function ContratoLocacaoPage({
             </div>
           </div>
 
+          <div className="rounded-lg border border-border bg-background p-3">
+            <p className="mb-2 text-xs font-medium text-ink-muted">
+              Portal da administradora (se ela disponibilizar acesso pra consultar
+              inadimplências)
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">
+                  Link do site
+                </label>
+                <input
+                  name="portal_administradora_url"
+                  defaultValue={c.portal_administradora_url ?? ""}
+                  placeholder="https://..."
+                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">Login</label>
+                <input
+                  name="portal_administradora_login"
+                  defaultValue={c.portal_administradora_login ?? ""}
+                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">Senha</label>
+                <input
+                  name="portal_administradora_senha"
+                  defaultValue={c.portal_administradora_senha ?? ""}
+                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                />
+              </div>
+            </div>
+            {c.portal_administradora_url && (
+              <a
+                href={c.portal_administradora_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-2 inline-block text-xs font-medium text-brand hover:underline"
+              >
+                Abrir portal da administradora →
+              </a>
+            )}
+          </div>
+
           <div>
             <p className="mb-2 text-xs font-medium text-ink-muted">
               Quem paga cada conta neste contrato

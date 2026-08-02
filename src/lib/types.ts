@@ -174,6 +174,9 @@ export interface ContratoLocacao {
   iptu_tipo: TipoIptuLocacao | null;
   condominio_administradora: string | null;
   condominio_contato: string | null;
+  portal_administradora_url: string | null;
+  portal_administradora_login: string | null;
+  portal_administradora_senha: string | null;
   agua_inscricao: string | null;
   agua_codigo_cliente: string | null;
   luz_codigo_cliente: string | null;
