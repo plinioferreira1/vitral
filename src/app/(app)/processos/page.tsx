@@ -30,6 +30,7 @@ type Row = {
   valor_total: number | null;
   valor_financiado: number | null;
   origem: string | null;
+  imoveis: { endereco: string } | null;
   comprador: { nome: string } | null;
   vendedor: { nome: string } | null;
   corretores: { nome: string } | null;
@@ -46,7 +47,7 @@ function TabelaProcessos({ rows, ehFinanciamento }: { rows: Row[]; ehFinanciamen
     <table className="w-full text-sm">
       <thead>
         <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
-          <th className="px-5 py-3 font-medium">Nº</th>
+          <th className="px-5 py-3 font-medium">Imóvel</th>
           {ehFinanciamento ? (
             <>
               <th className="px-5 py-3 font-medium">Cliente</th>
@@ -67,9 +68,10 @@ function TabelaProcessos({ rows, ehFinanciamento }: { rows: Row[]; ehFinanciamen
       <tbody className="divide-y divide-border">
         {rows.map((p) => (
           <tr key={p.id} className="transition hover:bg-background">
-            <td className="px-5 py-3 font-mono text-xs text-ink-muted">
+            <td className="px-5 py-3">
               <Link href={`/processos/${p.id}`} className="hover:underline">
-                {p.numero_processo}
+                <span className="block font-medium text-ink">{p.imoveis?.endereco ?? "—"}</span>
+                <span className="block font-mono text-xs text-ink-muted">{p.numero_processo}</span>
               </Link>
             </td>
             {ehFinanciamento ? (
@@ -148,6 +150,7 @@ export default async function ProcessosPage({
     .from("processos")
     .select(
       `id, numero_processo, tipo, status, data_criacao, valor_total, valor_financiado, origem,
+       imoveis ( endereco ),
        comprador:clientes!processos_comprador_id_fkey ( nome ),
        vendedor:clientes!processos_vendedor_id_fkey ( nome ),
        corretores!processos_corretor_id_fkey ( nome ), bancos ( nome ),
