@@ -22,6 +22,7 @@ const FILTRO_LABEL: Record<string, string> = {
   atrasada: "Atrasados",
   vence_hoje: "Vencendo hoje",
   vence_em_breve: "Vencendo em 7 dias",
+  em_aberto: "Em aberto",
 };
 
 export default async function DashboardPage({
@@ -77,10 +78,16 @@ export default async function DashboardPage({
   const todosCriticos = [...atrasados, ...venceHoje, ...venceEmBreve].sort(
     (a, b) => (a.diasParaVencer ?? 0) - (b.diasParaVencer ?? 0)
   );
+  const todosPendentesOrdenados = [...pendentes].sort(
+    (a, b) => (a.diasParaVencer ?? 9999) - (b.diasParaVencer ?? 9999)
+  );
 
-  const criticos = filtro
-    ? todosCriticos.filter((e) => e.urgencia === filtro).slice(0, 20)
-    : todosCriticos.slice(0, 10);
+  const criticos =
+    filtro === "em_aberto"
+      ? todosPendentesOrdenados
+      : filtro
+        ? todosCriticos.filter((e) => e.urgencia === filtro).slice(0, 20)
+        : todosCriticos.slice(0, 10);
 
   const referencia = new Date();
   const mesReferenciaLabel = format(referencia, "MMMM 'de' yyyy", { locale: ptBR });
@@ -102,7 +109,7 @@ export default async function DashboardPage({
 
       <ResumoPrazos
         eventos={eventos}
-        hrefEmAberto="/calendario"
+        hrefEmAberto="/?filtro=em_aberto"
         hrefFiltro={(f) => `/?filtro=${f}`}
         filtroAtivo={filtro}
       />
@@ -134,7 +141,11 @@ export default async function DashboardPage({
               {filtro ? "Nada aqui." : "Nenhum prazo atrasado ou vencendo nos próximos dias. 🎉"}
             </p>
           ) : (
-            <ul className="space-y-2">
+            <ul
+              className={`space-y-2 ${
+                filtro === "em_aberto" ? "max-h-[70vh] overflow-y-auto pr-1" : ""
+              }`}
+            >
               {criticos.map((e) => (
                 <li
                   key={e.id}

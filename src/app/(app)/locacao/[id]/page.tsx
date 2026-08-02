@@ -34,16 +34,16 @@ const TIPOS: TipoContaLocacao[] = ["iptu", "condominio"];
 
 type EstadoVisual = "pago" | "em_dia" | "vencido" | "nao_aplicavel";
 
-const ESTADO_STYLE: Record<EstadoVisual, string> = {
-  pago: "bg-emerald-500 border-emerald-500 text-white",
-  em_dia: "bg-amber-50 border-amber-200 text-amber-500 hover:border-amber-300",
-  vencido: "bg-rose-500 border-rose-500 text-white",
-  nao_aplicavel: "bg-background border-border text-ink-muted/30 hover:border-border-strong",
+const ESTADO_CHECKBOX: Record<EstadoVisual, string> = {
+  pago: "border-emerald-500 bg-emerald-500 text-white",
+  em_dia: "border-amber-400 bg-surface text-amber-400",
+  vencido: "border-rose-500 bg-surface text-rose-500",
+  nao_aplicavel: "border-border-strong bg-surface text-transparent",
 };
 
 function IconeContaCheck() {
   return (
-    <svg width="15" height="15" viewBox="0 0 12 12" fill="none">
+    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
       <path
         d="M2 6.5L4.5 9L10 3"
         stroke="currentColor"
@@ -54,30 +54,6 @@ function IconeContaCheck() {
     </svg>
   );
 }
-
-function IconeContaPendente() {
-  return (
-    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-      <circle cx="6" cy="6" r="4.5" stroke="currentColor" strokeWidth="1.6" />
-    </svg>
-  );
-}
-
-function IconeContaVencida() {
-  return (
-    <svg width="4" height="12" viewBox="0 0 4 12" fill="none">
-      <rect x="0" y="0" width="4" height="7.5" rx="1.5" fill="currentColor" />
-      <circle cx="2" cy="10.5" r="1.5" fill="currentColor" />
-    </svg>
-  );
-}
-
-const ESTADO_SIMBOLO: Record<EstadoVisual, React.ReactNode> = {
-  pago: <IconeContaCheck />,
-  em_dia: <IconeContaPendente />,
-  vencido: <IconeContaVencida />,
-  nao_aplicavel: null,
-};
 
 /**
  * "Pendente" sozinho não conta a história certa: se ainda não
@@ -459,9 +435,13 @@ export default async function ContratoLocacaoPage({
                               title={`${TIPO_CONTA_LABEL[tipo]} — ${MESES[mesIdx]}/${ano}${
                                 estado === "em_dia" ? " (em dia)" : estado === "vencido" ? " (vencido)" : ""
                               }`}
-                              className={`flex h-9 w-full items-center justify-center rounded-md border transition hover:opacity-80 ${ESTADO_STYLE[estado]}`}
+                              className="flex h-9 w-full items-center justify-center rounded-md transition hover:bg-background"
                             >
-                              {ESTADO_SIMBOLO[estado]}
+                              <span
+                                className={`flex h-[18px] w-[18px] items-center justify-center rounded border ${ESTADO_CHECKBOX[estado]}`}
+                              >
+                                {estado === "pago" && <IconeContaCheck />}
+                              </span>
                             </button>
                           </form>
                         </td>

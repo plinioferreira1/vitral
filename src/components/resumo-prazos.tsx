@@ -80,6 +80,7 @@ export function ResumoPrazos({
         value={pendentes.length}
         accent="#a8a29e"
         icone={Icones.relogio}
+        ativo={filtroAtivo === "em_aberto"}
       />
       <StatCardLink
         href={hrefPara("atrasada")}
