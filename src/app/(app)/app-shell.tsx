@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 
 interface SubNavItem {
   href: string;
@@ -25,10 +25,22 @@ interface Props {
   sairAction: () => Promise<void>;
 }
 
-function ehAtivo(pathname: string, href: string) {
+// Compara caminho E os parâmetros de query presentes no href (ex:
+// "/locacao?aba=inadimplencias") — só comparar o caminho fazia
+// "Contratos" e "Inadimplências" (mesmo /locacao, aba diferente)
+// ficarem os dois marcados como ativos ao mesmo tempo.
+function ehAtivo(pathname: string, href: string, queryAtual: URLSearchParams) {
   if (href === "/") return pathname === "/";
-  const [caminho] = href.split("?");
-  return pathname === caminho || pathname.startsWith(`${caminho}/`);
+  const [caminho, queryString] = href.split("?");
+  const caminhoBate = pathname === caminho || pathname.startsWith(`${caminho}/`);
+  if (!caminhoBate) return false;
+  if (!queryString) return true;
+
+  const queryHref = new URLSearchParams(queryString);
+  for (const [chave, valor] of queryHref.entries()) {
+    if (queryAtual.get(chave) !== valor) return false;
+  }
+  return true;
 }
 
 export function AppShell({
@@ -42,11 +54,12 @@ export function AppShell({
 }: Props) {
   const [menuAberto, setMenuAberto] = useState(false);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [gruposAbertos, setGruposAbertos] = useState<Set<string>>(() => {
     const abertos = new Set<string>();
     navItems.forEach((item) => {
-      if (item.children?.some((c) => ehAtivo(pathname, c.href))) abertos.add(item.label);
+      if (item.children?.some((c) => ehAtivo(pathname, c.href, searchParams))) abertos.add(item.label);
     });
     return abertos;
   });
@@ -94,7 +107,7 @@ export function AppShell({
     <nav data-nav-root className="flex-1 space-y-0.5">
       {navItems.map((item) => {
         if (!item.children) {
-          const ativo = ehAtivo(pathname, item.href!);
+          const ativo = ehAtivo(pathname, item.href!, searchParams);
           return (
             <Link
               key={item.label}
@@ -115,7 +128,7 @@ export function AppShell({
         }
 
         const aberto = gruposAbertos.has(item.label);
-        const algumFilhoAtivo = item.children.some((c) => ehAtivo(pathname, c.href));
+        const algumFilhoAtivo = item.children.some((c) => ehAtivo(pathname, c.href, searchParams));
 
         return (
           <div key={item.label}>
@@ -139,7 +152,7 @@ export function AppShell({
             {aberto && (
               <div className="ml-2 space-y-0.5 border-l border-border pl-2">
                 {item.children.map((child) => {
-                  const ativo = ehAtivo(pathname, child.href);
+                  const ativo = ehAtivo(pathname, child.href, searchParams);
                   return (
                     <Link
                       key={child.href}
