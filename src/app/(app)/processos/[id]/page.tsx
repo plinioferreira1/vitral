@@ -105,7 +105,7 @@ export default async function ProcessoDetalhePage({
   const etapasEspeciaisAtivas = etapas.filter((e) => nomesEspeciais.has(e.nome));
 
   return (
-    <div className="max-w-3xl space-y-8">
+    <div className="max-w-3xl space-y-8 lg:max-w-5xl">
       <div>
         <VoltarLink
           href={`/processos?categoria=${p.categoria}`}
@@ -166,19 +166,22 @@ export default async function ProcessoDetalhePage({
       )}
 
       {/* Timeline */}
-      <section>
-        <h2 className="mb-4 text-sm font-semibold text-ink">Linha do tempo</h2>
-        <div className="overflow-x-auto pb-1">
-          <div className="flex min-w-max items-start">
+      <section className="rounded-2xl border border-border bg-surface p-5 md:p-8">
+        <h2 className="mb-5 text-base font-semibold text-ink md:mb-8">Linha do tempo</h2>
+        <div className="overflow-x-auto pb-1 md:overflow-visible">
+          <div className="flex min-w-max items-start md:min-w-0 md:w-full">
             {etapasSequenciais.map((e, i) => {
               const concluida = e.status === "concluida";
               const anteriorConcluida = i === 0 ? true : etapasSequenciais[i - 1].status === "concluida";
               const atual = !concluida && anteriorConcluida;
 
               return (
-                <div key={e.id} className="flex w-[110px] shrink-0 flex-col items-center">
+                <div
+                  key={e.id}
+                  className="flex w-[110px] shrink-0 flex-col items-center md:w-auto md:flex-1 md:shrink"
+                >
                   <p
-                    className={`mb-2 h-8 px-1 text-center text-[11px] font-medium leading-tight ${
+                    className={`mb-2 h-8 px-1 text-center text-[11px] font-medium leading-tight md:mb-3 md:h-10 md:px-2 md:text-sm ${
                       concluida || atual ? "text-ink" : "text-ink-muted"
                     }`}
                     title={e.data_prevista ?? undefined}
@@ -187,10 +190,10 @@ export default async function ProcessoDetalhePage({
                   </p>
                   <div className="flex w-full items-center">
                     <div
-                      className={`h-0.5 flex-1 ${i === 0 ? "invisible" : anteriorConcluida ? "bg-brand" : "bg-border"}`}
+                      className={`h-0.5 flex-1 md:h-1 ${i === 0 ? "invisible" : anteriorConcluida ? "bg-brand" : "bg-border"}`}
                     />
                     <div
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[2.5px] ${
+                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[2.5px] md:h-7 md:w-7 md:border-[3px] ${
                         concluida
                           ? "border-brand bg-brand"
                           : atual
@@ -199,7 +202,11 @@ export default async function ProcessoDetalhePage({
                       }`}
                     >
                       {concluida && (
-                        <svg width="8" height="8" viewBox="0 0 12 12" fill="none">
+                        <svg
+                          viewBox="0 0 12 12"
+                          fill="none"
+                          className="h-2 w-2 md:h-3 md:w-3"
+                        >
                           <path
                             d="M2 6.5L4.5 9L10 3"
                             stroke="white"
@@ -211,7 +218,7 @@ export default async function ProcessoDetalhePage({
                       )}
                     </div>
                     <div
-                      className={`h-0.5 flex-1 ${i === etapasSequenciais.length - 1 ? "invisible" : concluida ? "bg-brand" : "bg-border"}`}
+                      className={`h-0.5 flex-1 md:h-1 ${i === etapasSequenciais.length - 1 ? "invisible" : concluida ? "bg-brand" : "bg-border"}`}
                     />
                   </div>
                 </div>
