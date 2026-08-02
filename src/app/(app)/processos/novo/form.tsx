@@ -25,9 +25,7 @@ interface Props {
   etapasPadrao: EtapaPadraoBasica[];
   clientes: { id: string; nome: string }[];
   imoveis: { id: string; endereco: string }[];
-  bancos: { id: string; nome: string }[];
   corretores: { id: string; nome: string }[];
-  usuarios: { id: string; nome: string }[];
 }
 
 export function NovoProcessoForm({
@@ -35,9 +33,7 @@ export function NovoProcessoForm({
   etapasPadrao,
   clientes,
   imoveis,
-  bancos,
   corretores,
-  usuarios,
 }: Props) {
   const [modeloId, setModeloId] = useState(modelos[0]?.id ?? "");
   const [dataBase, setDataBase] = useState(() => new Date().toISOString().slice(0, 10));
@@ -70,9 +66,7 @@ export function NovoProcessoForm({
 
       <Datalist id="lista-clientes" options={clientes.map((c) => c.nome)} />
       <Datalist id="lista-imoveis" options={imoveis.map((i) => i.endereco)} />
-      <Datalist id="lista-bancos" options={bancos.map((b) => b.nome)} />
       <Datalist id="lista-corretores" options={corretores.map((c) => c.nome)} />
-      <Datalist id="lista-usuarios" options={usuarios.map((u) => u.nome)} />
 
       <div>
         <label className="mb-1 block text-xs font-medium text-ink-muted">Modelo</label>
@@ -118,24 +112,41 @@ export function NovoProcessoForm({
           listId="lista-imoveis"
           placeholder="Endereço do imóvel"
         />
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-muted">Banco</label>
+          <select
+            name="banco_nome"
+            defaultValue=""
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          >
+            <option value="">—</option>
+            <option value="ITAÚ">ITAÚ</option>
+            <option value="BRB">BRB</option>
+            <option value="CAIXA">CAIXA</option>
+            <option value="SANTANDER">SANTANDER</option>
+            <option value="INTER">INTER</option>
+            <option value="BANCO DO BRASIL">BANCO DO BRASIL</option>
+          </select>
+        </div>
         <CampoTexto
-          label="Banco"
-          name="banco_nome"
-          listId="lista-bancos"
-          placeholder="Ex: CAIXA, ITAÚ..."
-        />
-        <CampoTexto
-          label="Corretor"
+          label="Indicação"
           name="corretor_nome"
           listId="lista-corretores"
-          placeholder="Nome do corretor"
+          placeholder="Quem indicou o cliente"
         />
-        <CampoTexto
-          label="Responsável"
-          name="responsavel_nome"
-          listId="lista-usuarios"
-          placeholder="Quem vai acompanhar"
-        />
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-muted">Responsável</label>
+          <select
+            name="responsavel_nome"
+            defaultValue=""
+            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          >
+            <option value="">—</option>
+            <option value="Ricardo">Ricardo</option>
+            <option value="Jefté">Jefté</option>
+            <option value="Plínio">Plínio</option>
+          </select>
+        </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">
             {ehFinanciamento ? "Valor do imóvel (R$)" : "Valor (R$)"}
@@ -159,12 +170,6 @@ export function NovoProcessoForm({
                 className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
               />
             </div>
-            <CampoTexto
-              label="Indicação"
-              name="indicacao_nome"
-              listId="lista-corretores"
-              placeholder="Quem indicou o cliente"
-            />
           </>
         )}
       </div>
@@ -187,10 +192,7 @@ export function NovoProcessoForm({
         etapasDaCategoria.length > 0 && (
           <div className="rounded-lg border border-border bg-background p-4">
             <p className="text-xs text-ink-muted">
-              As etapas do financiamento seguem um fluxo padrão e serão criadas
-              automaticamente ({etapasDaCategoria.length} etapas, de &quot;
-              {etapasDaCategoria[0]?.nome}&quot; até &quot;
-              {etapasDaCategoria[etapasDaCategoria.length - 1]?.nome}&quot;).
+              {`As etapas do financiamento seguem um fluxo padrão e serão criadas automaticamente (${etapasDaCategoria.length} etapas, de "${etapasDaCategoria[0]?.nome}" até "${etapasDaCategoria[etapasDaCategoria.length - 1]?.nome}").`}
             </p>
           </div>
         )

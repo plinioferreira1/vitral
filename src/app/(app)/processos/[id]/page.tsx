@@ -221,93 +221,10 @@ export default async function ProcessoDetalhePage({
         </div>
       </section>
 
-      {/* Etapas */}
+      {/* Etapas do processo */}
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-ink">Etapas</h2>
+        <h2 className="text-sm font-semibold text-ink">Etapas do processo</h2>
 
-        {etapasPadraoSequencial.length > 0 && (
-          <div className="rounded-xl border border-border bg-background p-3">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-muted">
-              Sequência do processo
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {etapasPadraoSequencial.map((ep) => {
-                const etapaExistente = etapas.find((e) => e.nome === ep.nome);
-                const aplicada = Boolean(etapaExistente);
-                return (
-                  <form key={ep.id} action={alternarEtapaPadrao}>
-                    <input type="hidden" name="processo_id" value={p.id} />
-                    <input type="hidden" name="nome" value={ep.nome} />
-                    <input type="hidden" name="ordem" value={ep.ordem} />
-                    <input type="hidden" name="aplicada" value={String(aplicada)} />
-                    {etapaExistente && (
-                      <input type="hidden" name="etapa_id" value={etapaExistente.id} />
-                    )}
-                    <button
-                      type="submit"
-                      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
-                        aplicada
-                          ? "border-brand bg-brand/10 font-medium text-brand"
-                          : "border-border bg-surface text-ink-muted hover:bg-background"
-                      }`}
-                    >
-                      <span
-                        className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[9px] ${
-                          aplicada ? "border-brand bg-brand text-white" : "border-border"
-                        }`}
-                      >
-                        {aplicada ? "✓" : ""}
-                      </span>
-                      {ep.nome}
-                    </button>
-                  </form>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {etapasPadraoEspecial.length > 0 && (
-          <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-3">
-            <p className="mb-2 text-xs font-medium uppercase tracking-wide text-amber-800">
-              Situação especial (fora da sequência normal)
-            </p>
-            <div className="flex flex-wrap gap-1.5">
-              {etapasPadraoEspecial.map((ep) => {
-                const etapaExistente = etapas.find((e) => e.nome === ep.nome);
-                const aplicada = Boolean(etapaExistente);
-                return (
-                  <form key={ep.id} action={alternarEtapaPadrao}>
-                    <input type="hidden" name="processo_id" value={p.id} />
-                    <input type="hidden" name="nome" value={ep.nome} />
-                    <input type="hidden" name="ordem" value={ep.ordem} />
-                    <input type="hidden" name="aplicada" value={String(aplicada)} />
-                    {etapaExistente && (
-                      <input type="hidden" name="etapa_id" value={etapaExistente.id} />
-                    )}
-                    <button
-                      type="submit"
-                      className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
-                        aplicada
-                          ? "border-amber-400 bg-amber-100 font-medium text-amber-900"
-                          : "border-amber-200 bg-surface text-ink-muted hover:bg-amber-50"
-                      }`}
-                    >
-                      <span
-                        className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[9px] ${
-                          aplicada ? "border-amber-500 bg-amber-500 text-white" : "border-border"
-                        }`}
-                      >
-                        {aplicada ? "✓" : ""}
-                      </span>
-                      {ep.nome}
-                    </button>
-                  </form>
-                );
-              })}
-            </div>
-          </div>
-        )}
         {etapas.map((etapa) => {
           const itensChecklist = (checklistItens ?? []).filter((c) => c.etapa_id === etapa.id);
           const nome = (etapa as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
@@ -491,6 +408,116 @@ export default async function ProcessoDetalhePage({
           })}
         </ul>
       </section>
+
+      {/* Personalização de etapas — fica oculta por padrão pra não
+          confundir com o acompanhamento normal do processo. */}
+      <details className="group rounded-xl border border-border/60 bg-surface shadow-sm">
+        <summary className="cursor-pointer list-none p-4 text-sm font-semibold text-ink">
+          <span className="inline-flex items-center gap-1.5">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 12 12"
+              className="transition-transform group-open:rotate-90"
+            >
+              <path
+                d="M4 2l4 4-4 4"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                fill="none"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Personalização de etapas
+          </span>
+        </summary>
+        <div className="space-y-3 border-t border-border p-4">
+          {etapasPadraoSequencial.length > 0 && (
+            <div className="rounded-xl border border-border bg-background p-3">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-ink-muted">
+                Sequência do processo
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {etapasPadraoSequencial.map((ep) => {
+                  const etapaExistente = etapas.find((e) => e.nome === ep.nome);
+                  const aplicada = Boolean(etapaExistente);
+                  return (
+                    <form key={ep.id} action={alternarEtapaPadrao}>
+                      <input type="hidden" name="processo_id" value={p.id} />
+                      <input type="hidden" name="nome" value={ep.nome} />
+                      <input type="hidden" name="ordem" value={ep.ordem} />
+                      <input type="hidden" name="aplicada" value={String(aplicada)} />
+                      {etapaExistente && (
+                        <input type="hidden" name="etapa_id" value={etapaExistente.id} />
+                      )}
+                      <button
+                        type="submit"
+                        className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
+                          aplicada
+                            ? "border-brand bg-brand/10 font-medium text-brand"
+                            : "border-border bg-surface text-ink-muted hover:bg-background"
+                        }`}
+                      >
+                        <span
+                          className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[9px] ${
+                            aplicada ? "border-brand bg-brand text-white" : "border-border"
+                          }`}
+                        >
+                          {aplicada ? "✓" : ""}
+                        </span>
+                        {ep.nome}
+                      </button>
+                    </form>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {etapasPadraoEspecial.length > 0 && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-3">
+              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-amber-800">
+                Situação especial (fora da sequência normal)
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {etapasPadraoEspecial.map((ep) => {
+                  const etapaExistente = etapas.find((e) => e.nome === ep.nome);
+                  const aplicada = Boolean(etapaExistente);
+                  return (
+                    <form key={ep.id} action={alternarEtapaPadrao}>
+                      <input type="hidden" name="processo_id" value={p.id} />
+                      <input type="hidden" name="nome" value={ep.nome} />
+                      <input type="hidden" name="ordem" value={ep.ordem} />
+                      <input type="hidden" name="aplicada" value={String(aplicada)} />
+                      {etapaExistente && (
+                        <input type="hidden" name="etapa_id" value={etapaExistente.id} />
+                      )}
+                      <button
+                        type="submit"
+                        className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
+                          aplicada
+                            ? "border-amber-400 bg-amber-100 font-medium text-amber-900"
+                            : "border-amber-200 bg-surface text-ink-muted hover:bg-amber-50"
+                        }`}
+                      >
+                        <span
+                          className={`flex h-3.5 w-3.5 items-center justify-center rounded-full border text-[9px] ${
+                            aplicada ? "border-amber-500 bg-amber-500 text-white" : "border-border"
+                          }`}
+                        >
+                          {aplicada ? "✓" : ""}
+                        </span>
+                        {ep.nome}
+                      </button>
+                    </form>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      </details>
     </div>
   );
 }

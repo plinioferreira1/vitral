@@ -59,7 +59,6 @@ export async function criarProcesso(formData: FormData) {
   const valorTotal = String(formData.get("valor_total") ?? "");
   const valorFinanciado = String(formData.get("valor_financiado") ?? "");
   const origem = String(formData.get("origem") ?? "").trim() || null;
-  const indicacaoNome = String(formData.get("indicacao_nome") ?? "");
   const etapasSelecionadas = formData.getAll("etapas_selecionadas") as string[];
 
   if (!modeloProcessoId || !dataBase) {
@@ -87,7 +86,9 @@ export async function criarProcesso(formData: FormData) {
   const imovelId = await resolverOuCriar(supabase, "imoveis", "endereco", tenantId, imovelEndereco);
   const bancoId = await resolverOuCriar(supabase, "bancos", "nome", tenantId, bancoNome);
   const corretorId = await resolverOuCriar(supabase, "corretores", "nome", tenantId, corretorNome);
-  const indicacaoId = await resolverOuCriar(supabase, "corretores", "nome", tenantId, indicacaoNome);
+  // o campo "Indicação" na tela virou o mesmo campo que antes era
+  // "Corretor" — usa a mesma pessoa resolvida pros dois papéis.
+  const indicacaoId = corretorId;
 
   // Responsável precisa ser alguém que já tem conta no sistema —
   // não dá pra "criar" uma pessoa nova aqui. Se não encontrar pelo

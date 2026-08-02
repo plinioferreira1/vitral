@@ -52,8 +52,11 @@ export default async function DashboardPage({
       <div>
         <h1 className="text-xl font-serif font-bold uppercase tracking-wide text-ink">Início</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          {format(referencia, "MMMM yyyy", { locale: ptBR })} · prazos de vendas, financiamento e
-          locação, tudo num só lugar.
+          VITRAL | Gestão completa dos fluxos de vendas, financiamentos e locações. Tudo em um só
+          lugar.
+        </p>
+        <p className="mt-0.5 text-xs font-medium capitalize text-ink-muted/80">
+          {format(referencia, "MMMM 'de' yyyy", { locale: ptBR })}
         </p>
       </div>
 

@@ -34,13 +34,11 @@ export default async function NovoProcessoPage({
     minhasCategorias = (categoriasRaw ?? []).map((c) => c.categoria as CategoriaProcesso);
   }
 
-  const [modelos, clientes, imoveis, bancos, corretores, usuarios, etapasPadrao] = await Promise.all([
+  const [modelos, clientes, imoveis, corretores, etapasPadrao] = await Promise.all([
     supabase.from("modelos_processo").select("id, nome, descricao, categoria").eq("ativo", true).order("nome"),
     supabase.from("clientes").select("id, nome").order("nome"),
     supabase.from("imoveis").select("id, endereco").order("endereco"),
-    supabase.from("bancos").select("id, nome").order("nome"),
     supabase.from("corretores").select("id, nome").order("nome"),
-    supabase.from("usuarios").select("id, nome").order("nome"),
     supabase.from("etapas_padrao").select("id, nome, ordem, categoria, tipo").order("ordem", { ascending: true }),
   ]);
 
@@ -75,9 +73,7 @@ export default async function NovoProcessoPage({
           etapasPadrao={etapasPadrao.data ?? []}
           clientes={clientes.data ?? []}
           imoveis={imoveis.data ?? []}
-          bancos={bancos.data ?? []}
           corretores={corretores.data ?? []}
-          usuarios={usuarios.data ?? []}
         />
       )}
     </div>
