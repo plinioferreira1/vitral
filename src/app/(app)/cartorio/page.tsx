@@ -274,30 +274,29 @@ export default function CartorioPage() {
             <ul className="divide-y divide-border text-sm">
               <li className="flex items-center justify-between py-2">
                 <span className="text-ink">
-                  ITBI ({tipoImovel === "novo" ? "1%" : "2%"} sobre {brl(resultado.valor)})
+                  ITBI ({tipoImovel === "novo" ? "1%" : "2%"} do valor da compra e venda)
                   <span className="block text-xs text-ink-muted">
-                    pode ser parcelado em até 10x no boleto, solicitando no GDF
+                    Pode ser parcelado em até 10x no boleto, se solicitado no GDF
                   </span>
                 </span>
                 <span className="font-mono text-ink">{brl(resultado.itbi)}</span>
               </li>
               <li className="flex items-center justify-between py-2">
                 <span className="text-ink">
-                  Escritura (emolumentos + ISSQN)
-                  {resultado.instrumentoParticular && (
-                    <span className="block text-xs text-ink-muted">
-                      não paga — instrumento particular com força de escritura
-                    </span>
-                  )}
+                  Escritura (Emolumentos + Impostos)
+                  <span className="block text-xs text-ink-muted">
+                    Caso seja Instrumento Particular com Força de Escritura, o cliente não tem
+                    esse custo
+                  </span>
                 </span>
                 <span className="font-mono text-ink">{brl(resultado.escritura)}</span>
               </li>
               <li className="flex items-center justify-between py-2">
                 <span className="text-ink">
-                  Registro da compra e venda
+                  Registro da Compra e Venda
                   <span className="block text-xs text-ink-muted">
-                    sobre o valor total, {brl(resultado.valor)}
-                    {resultado.primeiroImovel && " · desconto de 50% (1º imóvel)"}
+                    Aplicado sobre o valor da compra e venda (caso seja o primeiro imóvel, tem
+                    50% de desconto)
                   </span>
                 </span>
                 <span className="text-right font-mono text-ink">
@@ -312,9 +311,10 @@ export default function CartorioPage() {
               {resultado.registroAlienacao > 0 && (
                 <li className="flex items-center justify-between py-2">
                   <span className="text-ink">
-                    Registro do financiamento (alienação)
+                    Registro da Alienação Fiduciária
                     <span className="block text-xs text-ink-muted">
-                      sobre o valor financiado, {brl(resultado.valorFinanciado)}
+                      Aplicado sobre o montante alienado (pode chegar até 80% do valor da compra
+                      e venda)
                     </span>
                   </span>
                   <span className="font-mono text-ink">{brl(resultado.registroAlienacao)}</span>
@@ -342,12 +342,16 @@ export default function CartorioPage() {
         )}
 
         <p className="text-xs text-ink-muted">
-          Valores de escritura e registro baseados na tabela de emolumentos do cartório (faixa
-          fixa por valor, já com ISSQN incluso). ITBI calculado sobre o valor da venda. Quando há
-          financiamento, o registro da alienação fiduciária é calculado à parte, só sobre o valor
-          financiado.{" "}
+          * Caso haja algum registro/averbação acessório (pacto antenupcial, cédula de crédito
+          imobiliário, cancelamento de alienação fiduciária, usufruto, etc), o valor pode sofrer
+          alterações.
+        </p>
+
+        <p className="text-xs text-ink-muted">
+          Valores de escritura e registro baseados na tabela divulgada pelo ANOREG-DF, já com
+          impostos inclusos.{" "}
           <strong className="font-medium text-ink-muted">
-            Valores aproximados, sujeitos a alteração sem aviso prévio.
+            Os valores são estimados, e podem sofrer alterações sem aviso prévio.
           </strong>
         </p>
       </div>
@@ -386,29 +390,21 @@ function caminhoArredondado(
   ctx.closePath();
 }
 
-function quebrarTexto(
-  ctx: CanvasRenderingContext2D,
-  texto: string,
-  x: number,
-  y: number,
-  larguraMax: number,
-  alturaLinha: number
-): number {
+function medirLinhasTexto(ctx: CanvasRenderingContext2D, texto: string, larguraMax: number): string[] {
   const palavras = texto.split(" ");
-  let linha = "";
-  let yAtual = y;
+  const linhas: string[] = [];
+  let linhaAtual = "";
   for (const palavra of palavras) {
-    const teste = linha ? `${linha} ${palavra}` : palavra;
-    if (ctx.measureText(teste).width > larguraMax && linha) {
-      ctx.fillText(linha, x, yAtual);
-      linha = palavra;
-      yAtual += alturaLinha;
+    const teste = linhaAtual ? `${linhaAtual} ${palavra}` : palavra;
+    if (ctx.measureText(teste).width > larguraMax && linhaAtual) {
+      linhas.push(linhaAtual);
+      linhaAtual = palavra;
     } else {
-      linha = teste;
+      linhaAtual = teste;
     }
   }
-  if (linha) ctx.fillText(linha, x, yAtual);
-  return yAtual + alturaLinha;
+  if (linhaAtual) linhas.push(linhaAtual);
+  return linhas;
 }
 
 async function baixarImagemResultado(
@@ -438,48 +434,73 @@ async function baixarImagemResultado(
 
     const linhas: LinhaResultado[] = [
       {
-        label: `ITBI (${tipoImovel === "novo" ? "1%" : "2%"} sobre ${brl(r.valor)})`,
-        sublabel: "pode ser parcelado em até 10x no boleto, solicitando no GDF",
+        label: `ITBI (${tipoImovel === "novo" ? "1%" : "2%"} do valor da compra e venda)`,
+        sublabel: "Pode ser parcelado em até 10x no boleto, se solicitado no GDF",
         valor: brl(r.itbi),
       },
       {
-        label: "Escritura (emolumentos + ISSQN)",
-        sublabel: r.instrumentoParticular
-          ? "não paga — instrumento particular com força de escritura"
-          : undefined,
+        label: "Escritura (Emolumentos + Impostos)",
+        sublabel:
+          "Caso seja Instrumento Particular com Força de Escritura, o cliente não tem esse custo",
         valor: brl(r.escritura),
       },
       {
-        label: "Registro da compra e venda",
-        sublabel: r.primeiroImovel
-          ? `sobre ${brl(r.valor)} · desconto de 50% (1º imóvel)`
-          : `sobre ${brl(r.valor)}`,
+        label: "Registro da Compra e Venda",
+        sublabel:
+          "Aplicado sobre o valor da compra e venda (caso seja o primeiro imóvel, tem 50% de desconto)",
         valor: brl(r.registroCompraVenda),
         valorRiscado: r.primeiroImovel ? brl(r.registroCompraVendaCheio) : undefined,
       },
     ];
     if (r.registroAlienacao > 0) {
       linhas.push({
-        label: "Registro do financiamento (alienação)",
-        sublabel: `sobre ${brl(r.valorFinanciado)}`,
+        label: "Registro da Alienação Fiduciária",
+        sublabel:
+          "Aplicado sobre o montante alienado (pode chegar até 80% do valor da compra e venda)",
         valor: brl(r.registroAlienacao),
       });
     }
 
     const largura = 1000;
     const margem = 40;
-    const alturaLinha = 78;
     const topoTabela = 250;
-    const alturaRodape = 110;
-    const alturaTotalConteudo = topoTabela + linhas.length * alturaLinha + 80 + alturaRodape;
 
     const escala = 2;
     const canvas = document.createElement("canvas");
     canvas.width = largura * escala;
-    canvas.height = alturaTotalConteudo * escala;
+    canvas.height = 100; // provisório, recalculado abaixo depois de medir os textos
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.scale(escala, escala);
+
+    const xEsq = margem + 40;
+    const xDir = largura - margem - 40;
+    const larguraTexto = xDir - xEsq;
+
+    // Mede antes de desenhar, pra descobrir quantas linhas cada
+    // sublabel/rodapé vai ocupar e calcular a altura real do card.
+    ctx.font = "400 13px Arial, sans-serif";
+    const linhasComQuebra = linhas.map((linha) => ({
+      ...linha,
+      sublabelLinhas: linha.sublabel ? medirLinhasTexto(ctx, linha.sublabel, larguraTexto - 140) : [],
+    }));
+    const alturaPorLinha = linhasComQuebra.map((l) => 34 + Math.max(l.sublabelLinhas.length, 1) * 16 + 14);
+
+    const textoRodape1 =
+      "* Caso haja algum registro/averbação acessório (pacto antenupcial, cédula de crédito imobiliário, cancelamento de alienação fiduciária, usufruto, etc), o valor pode sofrer alterações.";
+    const textoRodape2 =
+      "Valores de escritura e registro baseados na tabela divulgada pelo ANOREG-DF, já com impostos inclusos. Os valores são estimados, e podem sofrer alterações sem aviso prévio.";
+    ctx.font = "400 12px Arial, sans-serif";
+    const rodape1Linhas = medirLinhasTexto(ctx, textoRodape1, larguraTexto);
+    const rodape2Linhas = medirLinhasTexto(ctx, textoRodape2, larguraTexto);
+    const alturaRodape = (rodape1Linhas.length + rodape2Linhas.length) * 17 + 20;
+
+    const alturaTotalConteudo =
+      topoTabela + alturaPorLinha.reduce((a, b) => a + b, 0) + 80 + alturaRodape;
+
+    canvas.width = largura * escala;
+    canvas.height = alturaTotalConteudo * escala;
+    ctx.scale(escala, escala); // o resize acima limpa o canvas e o scale anterior (aplicado de novo)
 
     // fundo da página
     ctx.fillStyle = "#fafaf9";
@@ -492,9 +513,6 @@ async function baixarImagemResultado(
     ctx.strokeStyle = "#e7e5e4";
     ctx.lineWidth = 1;
     ctx.stroke();
-
-    const xEsq = margem + 40;
-    const xDir = largura - margem - 40;
 
     // logo (se falhar ao carregar, cai no texto)
     try {
@@ -510,16 +528,16 @@ async function baixarImagemResultado(
 
     // título
     ctx.fillStyle = "#1c1917";
-    ctx.font = "600 28px Arial, sans-serif";
-    ctx.fillText("Simulação de Custas de cartório", xEsq, margem + 130);
+    ctx.font = "700 26px Arial, sans-serif";
+    ctx.fillText("SIMULAÇÃO DE CUSTAS — COMPRA E VENDA", xEsq, margem + 130);
 
     ctx.fillStyle = "#78716c";
     ctx.font = "400 15px Arial, sans-serif";
-    ctx.fillText(`Imóvel avaliado em ${brl(r.valor)}`, xEsq, margem + 158);
+    ctx.fillText(`Valor de compra e venda: ${brl(r.valor)}`, xEsq, margem + 158);
 
     // linhas do resultado
     let y = topoTabela;
-    linhas.forEach((linha, i) => {
+    linhasComQuebra.forEach((linha, i) => {
       if (i > 0) {
         ctx.beginPath();
         ctx.moveTo(xEsq, y);
@@ -532,11 +550,11 @@ async function baixarImagemResultado(
       ctx.font = "500 18px Arial, sans-serif";
       ctx.fillText(linha.label, xEsq, y + 30);
 
-      if (linha.sublabel) {
-        ctx.fillStyle = "#78716c";
-        ctx.font = "400 13px Arial, sans-serif";
-        ctx.fillText(linha.sublabel, xEsq, y + 50);
-      }
+      ctx.fillStyle = "#78716c";
+      ctx.font = "400 13px Arial, sans-serif";
+      linha.sublabelLinhas.forEach((linhaTexto, j) => {
+        ctx.fillText(linhaTexto, xEsq, y + 50 + j * 16);
+      });
 
       ctx.textAlign = "right";
       if (linha.valorRiscado) {
@@ -560,7 +578,7 @@ async function baixarImagemResultado(
       }
       ctx.textAlign = "left";
 
-      y += alturaLinha;
+      y += alturaPorLinha[i];
     });
 
     // total
@@ -584,14 +602,9 @@ async function baixarImagemResultado(
     y += 34;
     ctx.fillStyle = "#78716c";
     ctx.font = "400 12px Arial, sans-serif";
-    quebrarTexto(
-      ctx,
-      "Valores de escritura e registro baseados na tabela de emolumentos do cartório (já com ISSQN incluso). Estimativa sujeita a confirmação no cartório no momento da lavratura/registro. Valores aproximados, sujeitos a alteração sem aviso prévio.",
-      xEsq,
-      y,
-      xDir - xEsq,
-      17
-    );
+    rodape1Linhas.forEach((linhaTexto, i) => ctx.fillText(linhaTexto, xEsq, y + i * 17));
+    y += rodape1Linhas.length * 17 + 12;
+    rodape2Linhas.forEach((linhaTexto, i) => ctx.fillText(linhaTexto, xEsq, y + i * 17));
 
     const url = canvas.toDataURL("image/png");
     const link = document.createElement("a");
