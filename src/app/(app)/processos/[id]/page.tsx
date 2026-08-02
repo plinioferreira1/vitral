@@ -169,7 +169,34 @@ export default async function ProcessoDetalhePage({
       <section className="rounded-2xl border border-border bg-surface p-5 md:p-8">
         <h2 className="mb-5 text-base font-semibold text-ink md:mb-8">Linha do tempo</h2>
         <div className="overflow-x-auto pb-1 md:overflow-visible">
-          <div className="flex min-w-max items-start md:min-w-0 md:w-full">
+          <div
+            className="grid"
+            style={{
+              gridTemplateColumns: `repeat(${etapasSequenciais.length}, minmax(92px, 1fr))`,
+            }}
+          >
+            {etapasSequenciais.map((e, i) => {
+              const concluida = e.status === "concluida";
+              const atual =
+                !concluida &&
+                (i === 0 ? true : etapasSequenciais[i - 1].status === "concluida");
+              return (
+                <div
+                  key={`label-${e.id}`}
+                  style={{ gridRow: 1, gridColumn: i + 1 }}
+                  className="flex items-end justify-center px-0.5 pb-2 md:px-1.5 md:pb-3"
+                >
+                  <p
+                    className={`break-words text-center text-[11px] font-medium leading-tight md:text-[12px] ${
+                      concluida || atual ? "text-ink" : "text-ink-muted"
+                    }`}
+                    title={e.data_prevista ? `${e.nome} — ${e.data_prevista}` : e.nome}
+                  >
+                    {e.nome}
+                  </p>
+                </div>
+              );
+            })}
             {etapasSequenciais.map((e, i) => {
               const concluida = e.status === "concluida";
               const anteriorConcluida = i === 0 ? true : etapasSequenciais[i - 1].status === "concluida";
@@ -177,52 +204,37 @@ export default async function ProcessoDetalhePage({
 
               return (
                 <div
-                  key={e.id}
-                  className="flex w-[110px] shrink-0 flex-col items-center md:w-auto md:flex-1 md:shrink"
+                  key={`circulo-${e.id}`}
+                  style={{ gridRow: 2, gridColumn: i + 1 }}
+                  className="flex items-center"
                 >
-                  <div className="mb-2 flex h-8 items-end justify-center px-1 md:mb-3 md:h-10 md:px-2">
-                    <p
-                      className={`line-clamp-2 break-words text-center text-[11px] font-medium leading-tight md:text-sm ${
-                        concluida || atual ? "text-ink" : "text-ink-muted"
-                      }`}
-                      title={e.data_prevista ? `${e.nome} — ${e.data_prevista}` : e.nome}
-                    >
-                      {e.nome}
-                    </p>
+                  <div
+                    className={`h-0.5 flex-1 md:h-1 ${i === 0 ? "invisible" : anteriorConcluida ? "bg-brand" : "bg-border"}`}
+                  />
+                  <div
+                    className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[2.5px] md:h-7 md:w-7 md:border-[3px] ${
+                      concluida
+                        ? "border-brand bg-brand"
+                        : atual
+                          ? "border-gold bg-surface"
+                          : "border-border bg-surface"
+                    }`}
+                  >
+                    {concluida && (
+                      <svg viewBox="0 0 12 12" fill="none" className="h-2 w-2 md:h-3 md:w-3">
+                        <path
+                          d="M2 6.5L4.5 9L10 3"
+                          stroke="white"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
                   </div>
-                  <div className="flex w-full items-center">
-                    <div
-                      className={`h-0.5 flex-1 md:h-1 ${i === 0 ? "invisible" : anteriorConcluida ? "bg-brand" : "bg-border"}`}
-                    />
-                    <div
-                      className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-[2.5px] md:h-7 md:w-7 md:border-[3px] ${
-                        concluida
-                          ? "border-brand bg-brand"
-                          : atual
-                            ? "border-gold bg-surface"
-                            : "border-border bg-surface"
-                      }`}
-                    >
-                      {concluida && (
-                        <svg
-                          viewBox="0 0 12 12"
-                          fill="none"
-                          className="h-2 w-2 md:h-3 md:w-3"
-                        >
-                          <path
-                            d="M2 6.5L4.5 9L10 3"
-                            stroke="white"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                      )}
-                    </div>
-                    <div
-                      className={`h-0.5 flex-1 md:h-1 ${i === etapasSequenciais.length - 1 ? "invisible" : concluida ? "bg-brand" : "bg-border"}`}
-                    />
-                  </div>
+                  <div
+                    className={`h-0.5 flex-1 md:h-1 ${i === etapasSequenciais.length - 1 ? "invisible" : concluida ? "bg-brand" : "bg-border"}`}
+                  />
                 </div>
               );
             })}
