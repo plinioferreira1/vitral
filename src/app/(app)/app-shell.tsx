@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -52,13 +52,21 @@ export function AppShell({
   });
 
   const alternarGrupo = (label: string) => {
-    setGruposAbertos((prev) => {
-      const novo = new Set(prev);
-      if (novo.has(label)) novo.delete(label);
-      else novo.add(label);
-      return novo;
-    });
+    setGruposAbertos((prev) => (prev.has(label) ? new Set() : new Set([label])));
   };
+
+  // Fecha qualquer grupo aberto ao clicar fora do menu de navegação
+  // (em qualquer outro lugar da página).
+  useEffect(() => {
+    function aoClicarFora(e: MouseEvent) {
+      const alvo = e.target as Element;
+      if (!alvo.closest("[data-nav-root]")) {
+        setGruposAbertos(new Set());
+      }
+    }
+    document.addEventListener("mousedown", aoClicarFora);
+    return () => document.removeEventListener("mousedown", aoClicarFora);
+  }, []);
 
   const iniciais = userName
     .split(" ")
@@ -83,7 +91,7 @@ export function AppShell({
   );
 
   const nav = (
-    <nav className="flex-1 space-y-0.5">
+    <nav data-nav-root className="flex-1 space-y-0.5">
       {navItems.map((item) => {
         if (!item.children) {
           const ativo = ehAtivo(pathname, item.href!);
@@ -91,7 +99,10 @@ export function AppShell({
             <Link
               key={item.label}
               href={item.href!}
-              onClick={() => setMenuAberto(false)}
+              onClick={() => {
+                setMenuAberto(false);
+                setGruposAbertos(new Set());
+              }}
               className={`block rounded-md px-2.5 py-2 text-sm transition ${
                 ativo
                   ? "bg-brand-soft font-medium text-brand"
