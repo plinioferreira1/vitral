@@ -46,6 +46,9 @@ export default async function DashboardPage({
     : todosCriticos.slice(0, 10);
 
   const referencia = new Date();
+  const mesReferenciaLabel = format(referencia, "MMMM 'de' yyyy", { locale: ptBR });
+  const mesReferenciaCapitalizado =
+    mesReferenciaLabel.charAt(0).toUpperCase() + mesReferenciaLabel.slice(1);
 
   return (
     <div className="space-y-8">
@@ -55,8 +58,8 @@ export default async function DashboardPage({
           Gestão processual completa de fluxos de vendas, financiamentos e locações. Tudo em um só
           lugar.
         </p>
-        <p className="mt-0.5 text-xs font-medium capitalize text-ink-muted/80">
-          {format(referencia, "MMMM 'de' yyyy", { locale: ptBR })}
+        <p className="mt-0.5 text-xs font-medium text-ink-muted/80">
+          {mesReferenciaCapitalizado}
         </p>
       </div>
 
