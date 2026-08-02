@@ -164,7 +164,7 @@ export default function CalculadoraPage() {
         <button
           onClick={() => setAba("venda")}
           className={`flex-1 rounded-md py-2 text-center font-medium transition ${
-            aba === "venda" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
+            aba === "venda" ? "bg-brand text-white shadow-sm" : "text-ink-muted"
           }`}
         >
           Venda
@@ -172,7 +172,7 @@ export default function CalculadoraPage() {
         <button
           onClick={() => setAba("locacao")}
           className={`flex-1 rounded-md py-2 text-center font-medium transition ${
-            aba === "locacao" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
+            aba === "locacao" ? "bg-brand text-white shadow-sm" : "text-ink-muted"
           }`}
         >
           Locação
