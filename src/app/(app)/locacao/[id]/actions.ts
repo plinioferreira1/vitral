@@ -26,11 +26,17 @@ export async function alternarStatusConta(formData: FormData) {
   if (contaId) {
     await supabase.from("contas_locacao").update({ status: proximoStatus }).eq("id", contaId);
   } else {
+    // Vencimento padrão: dia 15 do mês de competência (mesma regra já
+    // usada pro resto da base). Sem isso, a conta cai como "atrasada"
+    // a partir do dia 2 do mês (a urgência usa a competência como
+    // fallback quando não há vencimento).
+    const vencimentoPadrao = `${competencia.slice(0, 7)}-15`;
     await supabase.from("contas_locacao").insert({
       contrato_id: contratoId,
       tipo,
       competencia,
       status: proximoStatus,
+      vencimento: vencimentoPadrao,
     });
   }
 
