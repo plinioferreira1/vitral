@@ -3,7 +3,7 @@ import { getEventosCalendario } from "@/lib/queries";
 import { formatarPrazo } from "@/lib/alertas";
 import { CATEGORIA_LABEL } from "@/lib/types";
 import { CalendarioGrid } from "@/components/calendario-grid";
-import { Icones } from "@/components/icone-badge";
+import { ResumoPrazos } from "@/components/resumo-prazos";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -29,9 +29,10 @@ export default async function DashboardPage({
 }) {
   const { filtro } = await searchParams;
   const eventos = await getEventosCalendario();
-  // Locação já tem o resumo dela própria na aba de Inadimplências — aqui só
-  // Vendas e Financiamento, senão a contagem infla e perde o sentido.
-  const pendentes = eventos.filter((e) => !e.concluida && e.categoria !== "locacao");
+  // Resumo combinado das 3 categorias (Venda, Financiamento e Locação).
+  // Cada usuário só vê o que tem permissão de categoria pra ver — a
+  // consulta já respeita isso (RLS por tenant/categoria).
+  const pendentes = eventos.filter((e) => !e.concluida);
 
   const atrasados = pendentes.filter((e) => e.urgencia === "atrasada");
   const venceHoje = pendentes.filter((e) => e.urgencia === "vence_hoje");
@@ -63,33 +64,12 @@ export default async function DashboardPage({
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <StatCardLink href="/calendario" label="Em aberto" value={pendentes.length} accent="#a8a29e" icone={Icones.relogio} />
-        <StatCardLink
-          href="/?filtro=atrasada"
-          label="Atrasados"
-          value={atrasados.length}
-          accent="#fb7185"
-          icone={Icones.alerta}
-          ativo={filtro === "atrasada"}
-        />
-        <StatCardLink
-          href="/?filtro=vence_hoje"
-          label="Vencendo hoje"
-          value={venceHoje.length}
-          accent="#fbbf24"
-          icone={Icones.calendario}
-          ativo={filtro === "vence_hoje"}
-        />
-        <StatCardLink
-          href="/?filtro=vence_em_breve"
-          label="Vencendo em 7 dias"
-          value={venceEmBreve.length}
-          accent="#fcd34d"
-          icone={Icones.calendario}
-          ativo={filtro === "vence_em_breve"}
-        />
-      </div>
+      <ResumoPrazos
+        eventos={eventos}
+        hrefEmAberto="/calendario"
+        hrefFiltro={(f) => `/?filtro=${f}`}
+        filtroAtivo={filtro}
+      />
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_300px]">
         <div>
@@ -158,47 +138,5 @@ export default async function DashboardPage({
         </Link>
       </div>
     </div>
-  );
-}
-
-function StatCardLink({
-  href,
-  label,
-  value,
-  accent,
-  icone,
-  ativo,
-  detalhe,
-}: {
-  href: string;
-  label: string;
-  value: number;
-  accent: string;
-  icone: React.ReactNode;
-  ativo?: boolean;
-  detalhe?: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className={`block rounded-xl border border-border bg-surface p-5 transition hover:border-border-strong ${
-        ativo ? "ring-2 ring-offset-2 ring-offset-background" : ""
-      }`}
-      style={{
-        borderLeftColor: accent,
-        borderLeftWidth: "3px",
-        ...(ativo ? ({ ["--tw-ring-color" as string]: accent }) : {}),
-      }}
-    >
-      <div
-        className="flex h-9 w-9 items-center justify-center rounded-lg"
-        style={{ backgroundColor: `${accent}1a`, color: accent }}
-      >
-        {icone}
-      </div>
-      <p className="mt-3 font-mono text-2xl font-semibold text-ink">{value}</p>
-      <p className="mt-0.5 text-xs text-ink-muted">{label}</p>
-      {detalhe && <p className="mt-1 text-[10px] text-ink-muted/70">{detalhe}</p>}
-    </Link>
   );
 }

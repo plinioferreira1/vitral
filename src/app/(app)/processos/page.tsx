@@ -2,6 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import type { CategoriaProcesso } from "@/lib/types";
 import { CATEGORIA_LABEL } from "@/lib/types";
+import { getEventosCalendario } from "@/lib/queries";
+import { ResumoPrazos } from "@/components/resumo-prazos";
 
 const STATUS_LABEL: Record<string, string> = {
   ativo: "Ativo",
@@ -87,6 +89,8 @@ export default async function ProcessosPage({
   const rows = (processos ?? []) as unknown as Row[];
   const ehFinanciamento = categoria === "financiamento";
 
+  const eventos = (await getEventosCalendario()).filter((e) => e.categoria === categoria);
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -103,6 +107,8 @@ export default async function ProcessosPage({
           + Novo processo
         </Link>
       </div>
+
+      <ResumoPrazos eventos={eventos} hrefEmAberto={`/calendario?categoria=${categoria}`} />
 
       <div className="overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
         {rows.length === 0 ? (
