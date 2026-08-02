@@ -48,21 +48,27 @@ function buscarFaixa(valor: number, faixas: FaixaEmolumento[]): number {
   return faixas[faixas.length - 1].valor;
 }
 
+interface ResultadoCartorio {
+  valor: number;
+  valorFinanciado: number;
+  itbi: number;
+  escritura: number;
+  registroCompraVendaCheio: number;
+  registroCompraVenda: number;
+  registroAlienacao: number;
+  primeiroImovel: boolean;
+  total: number;
+}
+
 export default function CartorioPage() {
   const [valor, setValor] = useState(0);
   const [temFinanciamento, setTemFinanciamento] = useState(false);
   const [valorFinanciado, setValorFinanciado] = useState(0);
   const [tipoImovel, setTipoImovel] = useState<"usado" | "novo">("usado");
-  const [resultado, setResultado] = useState<{
-    valor: number;
-    valorFinanciado: number;
-    itbi: number;
-    escritura: number;
-    registroCompraVenda: number;
-    registroAlienacao: number;
-    total: number;
-  } | null>(null);
+  const [primeiroImovel, setPrimeiroImovel] = useState(false);
+  const [resultado, setResultado] = useState<ResultadoCartorio | null>(null);
   const [erro, setErro] = useState<string | null>(null);
+  const [gerandoImagem, setGerandoImagem] = useState(false);
 
   const calcular = () => {
     setErro(null);
@@ -89,7 +95,9 @@ export default function CartorioPage() {
     const itbi = valor * aliquotaItbi;
     const escritura = buscarFaixa(valor, FAIXAS_ESCRITURA);
     // Registro da compra e venda incide sobre o valor total do imóvel.
-    const registroCompraVenda = buscarFaixa(valor, FAIXAS_REGISTRO);
+    // Primeiro imóvel dá direito a 50% de desconto nesse registro.
+    const registroCompraVendaCheio = buscarFaixa(valor, FAIXAS_REGISTRO);
+    const registroCompraVenda = primeiroImovel ? registroCompraVendaCheio / 2 : registroCompraVendaCheio;
     // Quando tem financiamento, o registro da alienação fiduciária
     // (garantia do banco) é um registro à parte, incidindo só sobre
     // o valor financiado — não sobre o valor total do imóvel.
@@ -100,8 +108,10 @@ export default function CartorioPage() {
       valorFinanciado,
       itbi,
       escritura,
+      registroCompraVendaCheio,
       registroCompraVenda,
       registroAlienacao,
+      primeiroImovel,
       total: itbi + escritura + registroCompraVenda + registroAlienacao,
     });
   };
@@ -110,7 +120,7 @@ export default function CartorioPage() {
     <div className="max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          Calculadora de Cartório
+          Simulação de custos
         </h1>
         <p className="mt-1 text-sm text-ink-muted">
           Estimativa de ITBI, escritura e registro pra passar pro cliente.
@@ -147,6 +157,16 @@ export default function CartorioPage() {
               className="accent-brand"
             />
             Parte do valor é financiada (gera registro de alienação fiduciária à parte)
+          </label>
+
+          <label className="mt-2 flex items-center gap-2 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={primeiroImovel}
+              onChange={(e) => setPrimeiroImovel(e.target.checked)}
+              className="accent-brand"
+            />
+            É o primeiro imóvel do cliente (desconto de 50% no registro da compra e venda)
           </label>
 
           {temFinanciamento && (
@@ -187,6 +207,9 @@ export default function CartorioPage() {
               <li className="flex items-center justify-between py-2">
                 <span className="text-ink">
                   ITBI ({tipoImovel === "novo" ? "1%" : "2%"} sobre {brl(resultado.valor)})
+                  <span className="block text-xs text-ink-muted">
+                    pode ser parcelado em até 10x no boleto, solicitando no GDF
+                  </span>
                 </span>
                 <span className="font-mono text-ink">{brl(resultado.itbi)}</span>
               </li>
@@ -199,9 +222,17 @@ export default function CartorioPage() {
                   Registro da compra e venda
                   <span className="block text-xs text-ink-muted">
                     sobre o valor total, {brl(resultado.valor)}
+                    {resultado.primeiroImovel && " · desconto de 50% (1º imóvel)"}
                   </span>
                 </span>
-                <span className="font-mono text-ink">{brl(resultado.registroCompraVenda)}</span>
+                <span className="text-right font-mono text-ink">
+                  {resultado.primeiroImovel && (
+                    <span className="mr-1.5 text-xs text-ink-muted line-through">
+                      {brl(resultado.registroCompraVendaCheio)}
+                    </span>
+                  )}
+                  {brl(resultado.registroCompraVenda)}
+                </span>
               </li>
               {resultado.registroAlienacao > 0 && (
                 <li className="flex items-center justify-between py-2">
@@ -223,6 +254,15 @@ export default function CartorioPage() {
                 </span>
               </div>
             </div>
+
+            <button
+              type="button"
+              onClick={() => baixarImagemResultado(resultado, tipoImovel, setGerandoImagem)}
+              disabled={gerandoImagem}
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-md border border-border bg-background px-4 py-2.5 text-sm font-medium text-ink transition hover:bg-brand-soft disabled:opacity-60"
+            >
+              {gerandoImagem ? "Gerando imagem..." : "Baixar imagem para enviar ao cliente"}
+            </button>
           </div>
         )}
 
@@ -235,4 +275,235 @@ export default function CartorioPage() {
       </div>
     </div>
   );
+}
+
+// ---------------------------------------------------------
+// Geração da imagem de resultado (canvas), pro corretor
+// baixar e enviar pro cliente pelo WhatsApp.
+// ---------------------------------------------------------
+
+function carregarImagem(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+function caminhoArredondado(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function quebrarTexto(
+  ctx: CanvasRenderingContext2D,
+  texto: string,
+  x: number,
+  y: number,
+  larguraMax: number,
+  alturaLinha: number
+): number {
+  const palavras = texto.split(" ");
+  let linha = "";
+  let yAtual = y;
+  for (const palavra of palavras) {
+    const teste = linha ? `${linha} ${palavra}` : palavra;
+    if (ctx.measureText(teste).width > larguraMax && linha) {
+      ctx.fillText(linha, x, yAtual);
+      linha = palavra;
+      yAtual += alturaLinha;
+    } else {
+      linha = teste;
+    }
+  }
+  if (linha) ctx.fillText(linha, x, yAtual);
+  return yAtual + alturaLinha;
+}
+
+async function baixarImagemResultado(
+  r: ResultadoCartorio,
+  tipoImovel: "usado" | "novo",
+  setGerando: (v: boolean) => void
+) {
+  setGerando(true);
+  try {
+    interface LinhaResultado {
+      label: string;
+      sublabel?: string;
+      valor: string;
+      valorRiscado?: string;
+    }
+
+    const linhas: LinhaResultado[] = [
+      {
+        label: `ITBI (${tipoImovel === "novo" ? "1%" : "2%"} sobre ${brl(r.valor)})`,
+        sublabel: "pode ser parcelado em até 10x no boleto, solicitando no GDF",
+        valor: brl(r.itbi),
+      },
+      { label: "Escritura (emolumentos + ISSQN)", valor: brl(r.escritura) },
+      {
+        label: "Registro da compra e venda",
+        sublabel: r.primeiroImovel
+          ? `sobre ${brl(r.valor)} · desconto de 50% (1º imóvel)`
+          : `sobre ${brl(r.valor)}`,
+        valor: brl(r.registroCompraVenda),
+        valorRiscado: r.primeiroImovel ? brl(r.registroCompraVendaCheio) : undefined,
+      },
+    ];
+    if (r.registroAlienacao > 0) {
+      linhas.push({
+        label: "Registro do financiamento (alienação)",
+        sublabel: `sobre ${brl(r.valorFinanciado)}`,
+        valor: brl(r.registroAlienacao),
+      });
+    }
+
+    const largura = 1000;
+    const margem = 40;
+    const alturaLinha = 78;
+    const topoTabela = 250;
+    const alturaRodape = 90;
+    const alturaTotalConteudo = topoTabela + linhas.length * alturaLinha + 80 + alturaRodape;
+
+    const escala = 2;
+    const canvas = document.createElement("canvas");
+    canvas.width = largura * escala;
+    canvas.height = alturaTotalConteudo * escala;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.scale(escala, escala);
+
+    // fundo da página
+    ctx.fillStyle = "#fafaf9";
+    ctx.fillRect(0, 0, largura, alturaTotalConteudo);
+
+    // cartão central
+    ctx.fillStyle = "#ffffff";
+    caminhoArredondado(ctx, margem, margem, largura - margem * 2, alturaTotalConteudo - margem * 2, 20);
+    ctx.fill();
+    ctx.strokeStyle = "#e7e5e4";
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    const xEsq = margem + 40;
+    const xDir = largura - margem - 40;
+
+    // logo (se falhar ao carregar, cai no texto)
+    try {
+      const logo = await carregarImagem("/brand/sacra-logo-bordo.png");
+      const logoAltura = 40;
+      const logoLargura = (logo.width / logo.height) * logoAltura;
+      ctx.drawImage(logo, xEsq, margem + 36, logoLargura, logoAltura);
+    } catch {
+      ctx.fillStyle = "#731515";
+      ctx.font = "700 22px Arial, sans-serif";
+      ctx.fillText("SACRA NETIMÓVEIS", xEsq, margem + 62);
+    }
+
+    // título
+    ctx.fillStyle = "#1c1917";
+    ctx.font = "600 28px Arial, sans-serif";
+    ctx.fillText("Simulação de custos de cartório", xEsq, margem + 130);
+
+    ctx.fillStyle = "#78716c";
+    ctx.font = "400 15px Arial, sans-serif";
+    ctx.fillText(`Imóvel avaliado em ${brl(r.valor)}`, xEsq, margem + 158);
+
+    // linhas do resultado
+    let y = topoTabela;
+    linhas.forEach((linha, i) => {
+      if (i > 0) {
+        ctx.beginPath();
+        ctx.moveTo(xEsq, y);
+        ctx.lineTo(xDir, y);
+        ctx.strokeStyle = "#e7e5e4";
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = "#1c1917";
+      ctx.font = "500 18px Arial, sans-serif";
+      ctx.fillText(linha.label, xEsq, y + 30);
+
+      if (linha.sublabel) {
+        ctx.fillStyle = "#78716c";
+        ctx.font = "400 13px Arial, sans-serif";
+        ctx.fillText(linha.sublabel, xEsq, y + 50);
+      }
+
+      ctx.textAlign = "right";
+      if (linha.valorRiscado) {
+        ctx.fillStyle = "#a8a29e";
+        ctx.font = "400 14px Arial, sans-serif";
+        const larguraRiscado = ctx.measureText(linha.valorRiscado).width;
+        ctx.fillText(linha.valorRiscado, xDir, y + 24);
+        ctx.beginPath();
+        ctx.moveTo(xDir - larguraRiscado, y + 19);
+        ctx.lineTo(xDir, y + 19);
+        ctx.strokeStyle = "#a8a29e";
+        ctx.stroke();
+
+        ctx.fillStyle = "#1c1917";
+        ctx.font = "600 19px Arial, sans-serif";
+        ctx.fillText(linha.valor, xDir, y + 48);
+      } else {
+        ctx.fillStyle = "#1c1917";
+        ctx.font = "600 19px Arial, sans-serif";
+        ctx.fillText(linha.valor, xDir, y + 32);
+      }
+      ctx.textAlign = "left";
+
+      y += alturaLinha;
+    });
+
+    // total
+    y += 8;
+    ctx.beginPath();
+    ctx.moveTo(xEsq, y);
+    ctx.lineTo(xDir, y);
+    ctx.strokeStyle = "#1c1917";
+    ctx.stroke();
+    y += 38;
+    ctx.fillStyle = "#1c1917";
+    ctx.font = "700 21px Arial, sans-serif";
+    ctx.fillText("Total estimado", xEsq, y);
+    ctx.fillStyle = "#731515";
+    ctx.textAlign = "right";
+    ctx.font = "700 25px Arial, sans-serif";
+    ctx.fillText(brl(r.total), xDir, y);
+    ctx.textAlign = "left";
+
+    // rodapé
+    y += 34;
+    ctx.fillStyle = "#78716c";
+    ctx.font = "400 12px Arial, sans-serif";
+    quebrarTexto(
+      ctx,
+      "Valores de escritura e registro baseados na tabela de emolumentos do cartório (já com ISSQN incluso). Estimativa sujeita a confirmação no cartório no momento da lavratura/registro.",
+      xEsq,
+      y,
+      xDir - xEsq,
+      17
+    );
+
+    const url = canvas.toDataURL("image/png");
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `simulacao-custos-cartorio-${Date.now()}.png`;
+    link.click();
+  } finally {
+    setGerando(false);
+  }
 }
