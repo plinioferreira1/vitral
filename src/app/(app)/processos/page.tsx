@@ -21,6 +21,97 @@ const STATUS_COR: Record<string, string> = {
   cancelado: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
+type Row = {
+  id: string;
+  numero_processo: string;
+  tipo: string | null;
+  status: string;
+  data_criacao: string;
+  valor_total: number | null;
+  valor_financiado: number | null;
+  origem: string | null;
+  comprador: { nome: string } | null;
+  vendedor: { nome: string } | null;
+  corretores: { nome: string } | null;
+  bancos: { nome: string } | null;
+  indicacao: { nome: string } | null;
+  modelos_processo: { nome: string } | null;
+};
+
+function TabelaProcessos({ rows, ehFinanciamento }: { rows: Row[]; ehFinanciamento: boolean }) {
+  if (rows.length === 0) {
+    return <p className="p-8 text-center text-sm text-ink-muted">Nenhum processo aqui.</p>;
+  }
+  return (
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
+          <th className="px-5 py-3 font-medium">Nº</th>
+          {ehFinanciamento ? (
+            <>
+              <th className="px-5 py-3 font-medium">Cliente</th>
+              <th className="px-5 py-3 font-medium">Valor financiado</th>
+              <th className="px-5 py-3 font-medium">Indicação</th>
+            </>
+          ) : (
+            <>
+              <th className="px-5 py-3 font-medium">Comprador</th>
+              <th className="px-5 py-3 font-medium">Vendedor</th>
+            </>
+          )}
+          <th className="px-5 py-3 font-medium">Modelo</th>
+          <th className="px-5 py-3 font-medium">Banco</th>
+          <th className="px-5 py-3 font-medium">Status</th>
+        </tr>
+      </thead>
+      <tbody className="divide-y divide-border">
+        {rows.map((p) => (
+          <tr key={p.id} className="transition hover:bg-background">
+            <td className="px-5 py-3 font-mono text-xs text-ink-muted">
+              <Link href={`/processos/${p.id}`} className="hover:underline">
+                {p.numero_processo}
+              </Link>
+            </td>
+            {ehFinanciamento ? (
+              <>
+                <td className="px-5 py-3">
+                  <Link href={`/processos/${p.id}`} className="font-medium text-ink hover:underline">
+                    {p.comprador?.nome ?? "—"}
+                  </Link>
+                </td>
+                <td className="px-5 py-3 text-ink-muted">
+                  {p.valor_financiado
+                    ? `R$ ${Number(p.valor_financiado).toLocaleString("pt-BR")}`
+                    : "—"}
+                </td>
+                <td className="px-5 py-3 text-ink-muted">{p.indicacao?.nome ?? "—"}</td>
+              </>
+            ) : (
+              <>
+                <td className="px-5 py-3">
+                  <Link href={`/processos/${p.id}`} className="font-medium text-ink hover:underline">
+                    {p.comprador?.nome ?? "—"}
+                  </Link>
+                </td>
+                <td className="px-5 py-3 text-ink-muted">{p.vendedor?.nome ?? "—"}</td>
+              </>
+            )}
+            <td className="px-5 py-3 text-ink-muted">{p.modelos_processo?.nome ?? "—"}</td>
+            <td className="px-5 py-3 text-ink-muted">{p.bancos?.nome ?? "—"}</td>
+            <td className="px-5 py-3">
+              <span
+                className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COR[p.status]}`}
+              >
+                {STATUS_LABEL[p.status]}
+              </span>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
 export default async function ProcessosPage({
   searchParams,
 }: {
@@ -70,23 +161,9 @@ export default async function ProcessosPage({
     return <p className="text-sm text-rose-700">Erro ao carregar processos: {error.message}</p>;
   }
 
-  type Row = {
-    id: string;
-    numero_processo: string;
-    tipo: string | null;
-    status: string;
-    data_criacao: string;
-    valor_total: number | null;
-    valor_financiado: number | null;
-    origem: string | null;
-    comprador: { nome: string } | null;
-    vendedor: { nome: string } | null;
-    corretores: { nome: string } | null;
-    bancos: { nome: string } | null;
-    indicacao: { nome: string } | null;
-    modelos_processo: { nome: string } | null;
-  };
   const rows = (processos ?? []) as unknown as Row[];
+  const emAndamento = rows.filter((p) => p.status !== "concluido");
+  const concluidos = rows.filter((p) => p.status === "concluido");
   const ehFinanciamento = categoria === "financiamento";
 
   const eventos = (await getEventosCalendario()).filter((e) => e.categoria === categoria);
@@ -111,7 +188,7 @@ export default async function ProcessosPage({
       <ResumoPrazos eventos={eventos} hrefEmAberto={`/calendario?categoria=${categoria}`} />
 
       <div className="overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
-        {rows.length === 0 ? (
+        {emAndamento.length === 0 && concluidos.length === 0 ? (
           <p className="p-8 text-center text-sm text-ink-muted">
             Nenhum processo nessa categoria ainda.{" "}
             <Link href="/processos/novo" className="text-brand hover:underline">
@@ -120,80 +197,21 @@ export default async function ProcessosPage({
             .
           </p>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
-                <th className="px-5 py-3 font-medium">Nº</th>
-                {ehFinanciamento ? (
-                  <>
-                    <th className="px-5 py-3 font-medium">Cliente</th>
-                    <th className="px-5 py-3 font-medium">Valor financiado</th>
-                    <th className="px-5 py-3 font-medium">Indicação</th>
-                  </>
-                ) : (
-                  <>
-                    <th className="px-5 py-3 font-medium">Comprador</th>
-                    <th className="px-5 py-3 font-medium">Vendedor</th>
-                  </>
-                )}
-                <th className="px-5 py-3 font-medium">Modelo</th>
-                <th className="px-5 py-3 font-medium">Banco</th>
-                <th className="px-5 py-3 font-medium">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {rows.map((p) => (
-                <tr key={p.id} className="transition hover:bg-background">
-                  <td className="px-5 py-3 font-mono text-xs text-ink-muted">
-                    <Link href={`/processos/${p.id}`} className="hover:underline">
-                      {p.numero_processo}
-                    </Link>
-                  </td>
-                  {ehFinanciamento ? (
-                    <>
-                      <td className="px-5 py-3">
-                        <Link
-                          href={`/processos/${p.id}`}
-                          className="font-medium text-ink hover:underline"
-                        >
-                          {p.comprador?.nome ?? "—"}
-                        </Link>
-                      </td>
-                      <td className="px-5 py-3 text-ink-muted">
-                        {p.valor_financiado
-                          ? `R$ ${Number(p.valor_financiado).toLocaleString("pt-BR")}`
-                          : "—"}
-                      </td>
-                      <td className="px-5 py-3 text-ink-muted">{p.indicacao?.nome ?? "—"}</td>
-                    </>
-                  ) : (
-                    <>
-                      <td className="px-5 py-3">
-                        <Link
-                          href={`/processos/${p.id}`}
-                          className="font-medium text-ink hover:underline"
-                        >
-                          {p.comprador?.nome ?? "—"}
-                        </Link>
-                      </td>
-                      <td className="px-5 py-3 text-ink-muted">{p.vendedor?.nome ?? "—"}</td>
-                    </>
-                  )}
-                  <td className="px-5 py-3 text-ink-muted">{p.modelos_processo?.nome ?? "—"}</td>
-                  <td className="px-5 py-3 text-ink-muted">{p.bancos?.nome ?? "—"}</td>
-                  <td className="px-5 py-3">
-                    <span
-                      className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COR[p.status]}`}
-                    >
-                      {STATUS_LABEL[p.status]}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <TabelaProcessos rows={emAndamento} ehFinanciamento={ehFinanciamento} />
         )}
       </div>
+
+      {concluidos.length > 0 && (
+        <details className="overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
+          <summary className="cursor-pointer select-none px-5 py-3 text-sm font-medium text-ink-muted hover:text-ink">
+            {concluidos.length} processo{concluidos.length > 1 ? "s" : ""} concluído
+            {concluidos.length > 1 ? "s" : ""}
+          </summary>
+          <div className="border-t border-border">
+            <TabelaProcessos rows={concluidos} ehFinanciamento={ehFinanciamento} />
+          </div>
+        </details>
+      )}
     </div>
   );
 }
