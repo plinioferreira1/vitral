@@ -22,7 +22,7 @@ const MESES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez",
 ];
 
-const TIPOS: TipoContaLocacao[] = ["iptu", "condominio", "agua", "luz", "gas"];
+const TIPOS: TipoContaLocacao[] = ["iptu", "condominio"];
 
 type EstadoVisual = "pago" | "em_dia" | "vencido" | "nao_aplicavel";
 
@@ -413,29 +413,6 @@ export default async function ContratoLocacaoPage({
             </div>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">
-                Inscrição de água
-              </label>
-              <input
-                name="agua_inscricao"
-                defaultValue={c.agua_inscricao ?? ""}
-                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">
-                Código do cliente (luz)
-              </label>
-              <input
-                name="luz_codigo_cliente"
-                defaultValue={c.luz_codigo_cliente ?? ""}
-                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-              />
-            </div>
-          </div>
-
           <div>
             <p className="mb-2 text-xs font-medium text-ink-muted">
               Quem paga cada conta neste contrato
@@ -447,9 +424,6 @@ export default async function ContratoLocacaoPage({
                 name="responsavel_condominio"
                 value={c.responsavel_condominio}
               />
-              <ResponsavelSelect label="Água" name="responsavel_agua" value={c.responsavel_agua} />
-              <ResponsavelSelect label="Luz" name="responsavel_luz" value={c.responsavel_luz} />
-              <ResponsavelSelect label="Gás" name="responsavel_gas" value={c.responsavel_gas} />
             </div>
           </div>
 

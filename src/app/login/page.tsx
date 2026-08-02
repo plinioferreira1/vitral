@@ -25,6 +25,10 @@ export default async function LoginPage({
             className="mx-auto mb-3 h-40 w-auto object-contain"
           />
           <p className="mt-1 text-sm text-ink-muted">Vitral - Gestão de Processos</p>
+          <p className="mt-1 text-xs text-ink-muted">
+            Gestão processual completa de fluxos de vendas, financiamentos e locações. Tudo em um
+            só lugar.
+          </p>
         </div>
 
         <div className="rounded-xl border border-border border-t-[3px] border-t-brand bg-surface p-6 shadow-sm">
