@@ -10,9 +10,9 @@ import { ptBR } from "date-fns/locale";
 export default async function CalendarioPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string; responsavel?: string }>;
+  searchParams: Promise<{ mes?: string; responsavel?: string; categoria?: string }>;
 }) {
-  const { mes, responsavel } = await searchParams;
+  const { mes, responsavel, categoria } = await searchParams;
   const supabase = await createClient();
 
   const referencia = mes ? parseISO(`${mes}-01`) : new Date();
@@ -24,9 +24,9 @@ export default async function CalendarioPage({
   // filtro de responsável só afeta eventos que têm responsável (etapas);
   // contas de locação ainda não têm responsável individual, então
   // continuam aparecendo mesmo com o filtro ativo.
-  const eventosFiltrados = responsavel
-    ? todosEventos.filter((e) => e.href.startsWith("/locacao") || e.responsavelNome === nomeResponsavelFiltro)
-    : todosEventos;
+  const eventosFiltrados = todosEventos
+    .filter((e) => (responsavel ? e.href.startsWith("/locacao") || e.responsavelNome === nomeResponsavelFiltro : true))
+    .filter((e) => (categoria ? e.categoria === categoria : true));
 
   const mesAnterior = format(addMonths(referencia, -1), "yyyy-MM");
   const proximoMes = format(addMonths(referencia, 1), "yyyy-MM");
@@ -50,6 +50,16 @@ export default async function CalendarioPage({
         <div className="flex items-center gap-2">
           <form className="flex items-center gap-1.5">
             <select
+              name="categoria"
+              defaultValue={categoria ?? ""}
+              className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-brand"
+            >
+              <option value="">Todos os processos</option>
+              <option value="venda">Venda</option>
+              <option value="financiamento">Financiamento</option>
+              <option value="locacao">Locação</option>
+            </select>
+            <select
               name="responsavel"
               defaultValue={responsavel ?? ""}
               className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-brand"
@@ -70,13 +80,13 @@ export default async function CalendarioPage({
             </button>
           </form>
           <Link
-            href={`/calendario?mes=${mesAnterior}${responsavel ? `&responsavel=${responsavel}` : ""}`}
+            href={`/calendario?mes=${mesAnterior}${responsavel ? `&responsavel=${responsavel}` : ""}${categoria ? `&categoria=${categoria}` : ""}`}
             className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface"
           >
             ← Anterior
           </Link>
           <Link
-            href={`/calendario?mes=${proximoMes}${responsavel ? `&responsavel=${responsavel}` : ""}`}
+            href={`/calendario?mes=${proximoMes}${responsavel ? `&responsavel=${responsavel}` : ""}${categoria ? `&categoria=${categoria}` : ""}`}
             className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface"
           >
             Próximo →
