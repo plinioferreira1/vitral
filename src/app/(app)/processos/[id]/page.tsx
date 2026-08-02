@@ -180,14 +180,16 @@ export default async function ProcessoDetalhePage({
                   key={e.id}
                   className="flex w-[110px] shrink-0 flex-col items-center md:w-auto md:flex-1 md:shrink"
                 >
-                  <p
-                    className={`mb-2 h-8 px-1 text-center text-[11px] font-medium leading-tight md:mb-3 md:h-10 md:px-2 md:text-sm ${
-                      concluida || atual ? "text-ink" : "text-ink-muted"
-                    }`}
-                    title={e.data_prevista ?? undefined}
-                  >
-                    {e.nome}
-                  </p>
+                  <div className="mb-2 flex h-8 items-end justify-center px-1 md:mb-3 md:h-10 md:px-2">
+                    <p
+                      className={`line-clamp-2 break-words text-center text-[11px] font-medium leading-tight md:text-sm ${
+                        concluida || atual ? "text-ink" : "text-ink-muted"
+                      }`}
+                      title={e.data_prevista ? `${e.nome} — ${e.data_prevista}` : e.nome}
+                    >
+                      {e.nome}
+                    </p>
+                  </div>
                   <div className="flex w-full items-center">
                     <div
                       className={`h-0.5 flex-1 md:h-1 ${i === 0 ? "invisible" : anteriorConcluida ? "bg-brand" : "bg-border"}`}
