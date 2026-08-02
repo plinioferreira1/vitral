@@ -253,6 +253,38 @@ export interface Comentario {
   criado_em: string;
 }
 
+export type StatusRescisaoLocacao = "em_andamento" | "concluida";
+export type StatusRescisaoEtapa = "pendente" | "concluida";
+
+export interface RescisaoLocacao {
+  id: string;
+  tenant_id: string;
+  contrato_id: string;
+  data_aviso: string;
+  status: StatusRescisaoLocacao;
+  criado_em: string;
+  concluida_em: string | null;
+}
+
+export interface RescisaoEtapa {
+  id: string;
+  rescisao_id: string;
+  nome: string;
+  ordem: number;
+  status: StatusRescisaoEtapa;
+  data_prevista: string | null;
+  data_realizada: string | null;
+  responsavel_id: string | null;
+}
+
+export interface RescisaoChecklistItem {
+  id: string;
+  etapa_id: string;
+  descricao: string;
+  concluido: boolean;
+  ordem: number;
+}
+
 // Placeholder mínimo para o supabase-js tipar os clients.
 // (Não é um schema gerado automaticamente — ver README para gerar
 // com `supabase gen types typescript` quando o projeto já existir.)
