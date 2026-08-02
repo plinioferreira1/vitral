@@ -67,6 +67,32 @@ export async function concluirEtapa(formData: FormData) {
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/");
   revalidatePath("/calendario");
+
+  // Se essa era a última etapa pendente do processo (contando
+  // sequenciais e especiais — uma especial ativa e pendente, tipo
+  // "Em Processo Judicial", bloqueia a conclusão), o processo passa
+  // pra "concluído" sozinho.
+  const { data: processoAtual } = await supabase
+    .from("processos")
+    .select("status")
+    .eq("id", processoId)
+    .single();
+
+  if (processoAtual && processoAtual.status !== "concluido") {
+    const { data: todasEtapas } = await supabase
+      .from("etapas")
+      .select("status")
+      .eq("processo_id", processoId);
+
+    const todasConcluidas =
+      (todasEtapas?.length ?? 0) > 0 && todasEtapas!.every((e) => e.status === "concluida");
+
+    if (todasConcluidas) {
+      await supabase.from("processos").update({ status: "concluido" }).eq("id", processoId);
+      revalidatePath(`/processos/${processoId}`);
+      revalidatePath("/processos");
+    }
+  }
 }
 
 export async function reabrirEtapa(formData: FormData) {
@@ -78,6 +104,19 @@ export async function reabrirEtapa(formData: FormData) {
     .from("etapas")
     .update({ status: "pendente", data_realizada: null })
     .eq("id", etapaId);
+
+  // Se o processo já tinha sido dado como concluído, reabrir uma
+  // etapa desfaz isso — volta a aparecer na lista principal.
+  const { data: processoAtual } = await supabase
+    .from("processos")
+    .select("status")
+    .eq("id", processoId)
+    .single();
+
+  if (processoAtual?.status === "concluido") {
+    await supabase.from("processos").update({ status: "ativo" }).eq("id", processoId);
+    revalidatePath("/processos");
+  }
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/");
