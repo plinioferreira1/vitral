@@ -13,7 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const { data: usuario } = await supabase
     .from("usuarios")
-    .select("nome, perfil, tenant_id, cargo, foto_url")
+    .select("nome, perfil, tenant_id, cargo, foto_url, nivel_acesso")
     .eq("id", user.id)
     .single();
 
@@ -25,33 +25,41 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .eq("id", usuario.tenant_id)
     .single();
 
-  const navItems = [
-    { href: "/", label: "Início" },
-    {
-      label: "Processos",
-      children: [
-        { href: "/processos?categoria=venda", label: "Vendas" },
-        { href: "/processos?categoria=financiamento", label: "Financiamentos" },
-      ],
-    },
-    {
-      label: "Locação",
-      children: [
-        { href: "/locacao?aba=contratos", label: "Contratos" },
-        { href: "/locacao?aba=inadimplencias", label: "Inadimplências" },
-      ],
-    },
-    { href: "/calendario", label: "Calendário" },
-    { href: "/calculadora", label: "Calculadora" },
-    { href: "/cartorio", label: "Simulação de custos" },
-    {
-      label: "Configurações",
-      children: [
-        { href: "/etapas-padrao", label: "Etapas padrão" },
-        { href: "/membros", label: "Membros/Permissões" },
-      ],
-    },
-  ];
+  const ehCorretor = usuario.nivel_acesso === "corretor";
+
+  const navItems = ehCorretor
+    ? [
+        { href: "/", label: "Início" },
+        { href: "/calculadora", label: "Calculadora de Proporcionalidade" },
+        { href: "/cartorio", label: "Simulação de Custas" },
+      ]
+    : [
+        { href: "/", label: "Início" },
+        {
+          label: "Processos",
+          children: [
+            { href: "/processos?categoria=venda", label: "Vendas" },
+            { href: "/processos?categoria=financiamento", label: "Financiamentos" },
+          ],
+        },
+        {
+          label: "Locação",
+          children: [
+            { href: "/locacao?aba=contratos", label: "Contratos" },
+            { href: "/locacao?aba=inadimplencias", label: "Inadimplências" },
+          ],
+        },
+        { href: "/calendario", label: "Calendário" },
+        { href: "/calculadora", label: "Calculadora de Proporcionalidade" },
+        { href: "/cartorio", label: "Simulação de Custas" },
+        {
+          label: "Configurações",
+          children: [
+            { href: "/etapas-padrao", label: "Etapas padrão" },
+            { href: "/membros", label: "Membros/Permissões" },
+          ],
+        },
+      ];
 
   return (
     <div className="flex min-h-screen flex-1 flex-col md:flex-row">

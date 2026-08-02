@@ -120,7 +120,7 @@ export default function CartorioPage() {
     <div className="max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          Simulação de custos
+          Simulação de Custas
         </h1>
         <p className="mt-1 text-sm text-ink-muted">
           Estimativa de ITBI, escritura e registro pra passar pro cliente.
@@ -416,7 +416,7 @@ async function baixarImagemResultado(
     // título
     ctx.fillStyle = "#1c1917";
     ctx.font = "600 28px Arial, sans-serif";
-    ctx.fillText("Simulação de custos de cartório", xEsq, margem + 130);
+    ctx.fillText("Simulação de Custas de cartório", xEsq, margem + 130);
 
     ctx.fillStyle = "#78716c";
     ctx.font = "400 15px Arial, sans-serif";
@@ -501,7 +501,7 @@ async function baixarImagemResultado(
     const url = canvas.toDataURL("image/png");
     const link = document.createElement("a");
     link.href = url;
-    link.download = `simulacao-custos-cartorio-${Date.now()}.png`;
+    link.download = `simulacao-custas-cartorio-${Date.now()}.png`;
     link.click();
   } finally {
     setGerando(false);

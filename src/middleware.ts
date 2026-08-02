@@ -2,6 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/login", "/auth", "/redefinir-senha"];
+const ROTAS_CORRETOR = ["/", "/cartorio", "/calculadora", "/perfil", "/onboarding"];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -41,6 +42,20 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/";
     return NextResponse.redirect(url);
+  }
+
+  if (user && !isPublic) {
+    const { data: usuario } = await supabase
+      .from("usuarios")
+      .select("nivel_acesso")
+      .eq("id", user.id)
+      .single();
+
+    if (usuario?.nivel_acesso === "corretor" && !ROTAS_CORRETOR.includes(request.nextUrl.pathname)) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/cartorio";
+      return NextResponse.redirect(url);
+    }
   }
 
   return supabaseResponse;
