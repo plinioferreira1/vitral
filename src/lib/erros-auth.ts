@@ -9,9 +9,20 @@ const TRADUCOES: Record<string, string> = {
   "User not found": "Não encontramos uma conta com esse e-mail.",
 };
 
-export function traduzirErroAuth(mensagem: string): string {
+const MENSAGEM_GENERICA = "Não foi possível completar a solicitação. Tente novamente em instantes.";
+
+export function traduzirErroAuth(mensagem: string | null | undefined): string {
+  if (!mensagem || typeof mensagem !== "string") return MENSAGEM_GENERICA;
+
   for (const [chave, traducao] of Object.entries(TRADUCOES)) {
     if (mensagem.includes(chave)) return traducao;
   }
+
+  // Se a mensagem não parece um texto legível (ex: "{}", JSON cru,
+  // erro de rede sem detalhe), não mostra isso pro usuário — mostra
+  // a mensagem genérica em vez de um texto confuso.
+  const pareceTextoLegivel = /[a-zA-ZÀ-ÿ]{3,}/.test(mensagem);
+  if (!pareceTextoLegivel) return MENSAGEM_GENERICA;
+
   return mensagem;
 }
