@@ -164,7 +164,7 @@ function ListaEtapas({
                 </div>
 
                 <div className="flex items-center gap-1">
-                  <details className="relative">
+                  <details key={`${e.id}-${e.nome}-${e.tipo}`} className="relative">
                     <summary className="cursor-pointer list-none rounded-md p-1.5 text-ink-muted hover:bg-background">
                       ✎
                     </summary>
