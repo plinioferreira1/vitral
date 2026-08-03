@@ -246,7 +246,7 @@ export default async function ProcessoDetalhePage({
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-ink">Etapas do processo</h2>
 
-        {etapas.map((etapa) => {
+        {etapasSequenciais.map((etapa) => {
           const itensChecklist = (checklistItens ?? []).filter((c) => c.etapa_id === etapa.id);
           const nome = (etapa as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
 
