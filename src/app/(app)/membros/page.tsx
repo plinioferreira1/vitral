@@ -12,7 +12,14 @@ const PERFIS = [
 ] as const;
 
 const CATEGORIAS: CategoriaProcesso[] = ["venda", "financiamento", "locacao"];
-const NIVEIS: NivelAcesso[] = ["diretor", "gerente", "supervisor", "auxiliar", "corretor"];
+const NIVEIS: NivelAcesso[] = [
+  "diretor",
+  "gerente",
+  "gerente_locacao",
+  "supervisor",
+  "auxiliar",
+  "corretor",
+];
 
 export default async function MembrosPage({
   searchParams,
