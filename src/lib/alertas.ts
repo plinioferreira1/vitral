@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, parseISO } from "date-fns";
 import type { Etapa } from "@/lib/types";
+import { hojeISO } from "@/lib/data-br";
 
 /**
  * Urgência calculada de uma etapa, nunca persistida — sempre
@@ -31,7 +32,7 @@ export function calcularUrgencia(etapa: Pick<Etapa, "status" | "data_prevista">)
     return { urgencia: "sem_data", dias_para_vencer: null };
   }
 
-  const hoje = new Date();
+  const hoje = new Date(`${hojeISO()}T00:00:00`);
   const dias = differenceInCalendarDays(parseISO(etapa.data_prevista), hoje);
 
   if (dias < 0) return { urgencia: "atrasada", dias_para_vencer: dias };

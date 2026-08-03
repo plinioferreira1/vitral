@@ -6,6 +6,7 @@ import { CATEGORIA_LABEL } from "@/lib/types";
 import { CalendarioGrid } from "@/components/calendario-grid";
 import { ResumoPrazos } from "@/components/resumo-prazos";
 import { InicioCorretor } from "@/components/inicio-corretor";
+import { hojeISO } from "@/lib/data-br";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -89,7 +90,7 @@ export default async function DashboardPage({
         ? todosCriticos.filter((e) => e.urgencia === filtro).slice(0, 20)
         : todosCriticos.slice(0, 10);
 
-  const referencia = new Date();
+  const referencia = new Date(`${hojeISO()}T00:00:00`);
   const mesReferenciaLabel = format(referencia, "MMMM 'de' yyyy", { locale: ptBR });
   const mesReferenciaCapitalizado =
     mesReferenciaLabel.charAt(0).toUpperCase() + mesReferenciaLabel.slice(1);

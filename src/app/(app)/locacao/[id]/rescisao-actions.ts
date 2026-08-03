@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { hojeISO } from "@/lib/data-br";
 
 // ---------------------------------------------------------
 // Template fixo do processo de rescisão (baseado no organograma
@@ -99,7 +100,7 @@ export async function iniciarRescisao(formData: FormData) {
     .insert({
       tenant_id: contrato.tenant_id,
       contrato_id: contratoId,
-      data_aviso: dataAviso || new Date().toISOString().slice(0, 10),
+      data_aviso: dataAviso || hojeISO(),
     })
     .select("id")
     .single();
@@ -157,7 +158,7 @@ export async function concluirEtapaRescisao(formData: FormData) {
 
   await supabase
     .from("rescisao_etapas")
-    .update({ status: "concluida", data_realizada: new Date().toISOString().slice(0, 10) })
+    .update({ status: "concluida", data_realizada: hojeISO() })
     .eq("id", etapaId);
 
   // Se essa era a última etapa pendente, fecha a rescisão inteira e
@@ -176,7 +177,7 @@ export async function concluirEtapaRescisao(formData: FormData) {
 
     await supabase
       .from("contratos_locacao")
-      .update({ ativo: false, data_encerramento: new Date().toISOString().slice(0, 10) })
+      .update({ ativo: false, data_encerramento: hojeISO() })
       .eq("id", contratoId);
   }
 

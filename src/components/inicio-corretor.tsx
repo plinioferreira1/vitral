@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CampoMoeda } from "@/components/campo-moeda";
 import type { SimulacaoCustas } from "@/lib/types";
+import { formatarDataBR } from "@/lib/data-br";
 
 function brl(v: number): string {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -12,7 +13,7 @@ function dataRelativa(iso: string): string {
   if (dias <= 0) return "hoje";
   if (dias === 1) return "ontem";
   if (dias < 30) return `há ${dias} dias`;
-  return new Date(iso).toLocaleDateString("pt-BR");
+  return formatarDataBR(iso);
 }
 
 export function InicioCorretor({

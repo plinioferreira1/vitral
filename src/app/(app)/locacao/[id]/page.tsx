@@ -25,6 +25,7 @@ import {
 import { SucessoBanner } from "@/components/banners";
 import { VoltarLink } from "@/components/voltar-link";
 import { CampoMoeda } from "@/components/campo-moeda";
+import { hojeISO } from "@/lib/data-br";
 
 const MESES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez",
@@ -66,7 +67,7 @@ function calcularEstadoVisual(
 ): EstadoVisual {
   if (status !== "pendente") return status;
   if (!vencimento) return "em_dia";
-  const hoje = new Date().toISOString().slice(0, 10);
+  const hoje = hojeISO();
   return vencimento < hoje ? "vencido" : "em_dia";
 }
 
@@ -79,7 +80,7 @@ export default async function ContratoLocacaoPage({
 }) {
   const { id } = await params;
   const { ano: anoParam, salvo } = await searchParams;
-  const ano = Number(anoParam) || new Date().getFullYear();
+  const ano = Number(anoParam) || Number(hojeISO().slice(0, 4));
 
   const supabase = await createClient();
 
@@ -352,7 +353,7 @@ export default async function ContratoLocacaoPage({
                 <input
                   type="date"
                   name="data_aviso"
-                  defaultValue={new Date().toISOString().slice(0, 10)}
+                  defaultValue={hojeISO()}
                   className="rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                 />
               </div>

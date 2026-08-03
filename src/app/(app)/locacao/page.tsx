@@ -4,12 +4,12 @@ import { alternarTarefaMensal } from "./actions";
 import { TIPO_CONTA_LABEL } from "@/lib/types";
 import { calcularUrgencia, URGENCIA_COR } from "@/lib/alertas";
 import { Icones } from "@/components/icone-badge";
+import { hojeISO } from "@/lib/data-br";
 import { addMonths, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 function primeiroDiaDoMes(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
+  return `${hojeISO().slice(0, 7)}-01`;
 }
 
 type Aba = "contratos" | "inadimplencias";
@@ -30,7 +30,7 @@ export default async function LocacaoPage({
   const supabase = await createClient();
   const competenciaAtual = primeiroDiaDoMes();
 
-  const mesReferencia = mes ? parseISO(`${mes}-01`) : new Date();
+  const mesReferencia = mes ? parseISO(`${mes}-01`) : new Date(`${hojeISO()}T00:00:00`);
   const inicioMes = format(mesReferencia, "yyyy-MM-01");
   const fimMes = format(addMonths(mesReferencia, 1), "yyyy-MM-01");
   const mesAnterior = format(addMonths(mesReferencia, -1), "yyyy-MM");

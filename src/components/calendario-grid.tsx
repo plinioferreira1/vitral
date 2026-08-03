@@ -1,12 +1,12 @@
 import type { EventoCalendario } from "@/lib/queries";
 import { DiaCelula } from "./dia-celula";
+import { hojeISO } from "@/lib/data-br";
 import {
   eachDayOfInterval,
   endOfMonth,
   endOfWeek,
   format,
   isSameMonth,
-  isToday,
   startOfMonth,
   startOfWeek,
 } from "date-fns";
@@ -27,6 +27,7 @@ export function CalendarioGrid({
   const inicioGrade = startOfWeek(inicioMes, { weekStartsOn: 0 });
   const fimGrade = endOfWeek(fimMes, { weekStartsOn: 0 });
   const dias = eachDayOfInterval({ start: inicioGrade, end: fimGrade });
+  const hoje = hojeISO();
 
   const porDia = new Map<string, EventoCalendario[]>();
   eventos.forEach((e) => {
@@ -54,7 +55,7 @@ export function CalendarioGrid({
             <DiaCelula
               key={chave}
               dia={format(dia, "d")}
-              isToday={isToday(dia)}
+              isToday={chave === hoje}
               foraDoMes={foraDoMes}
               eventos={eventosDoDia}
               compacto={compacto}

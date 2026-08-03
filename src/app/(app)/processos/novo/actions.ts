@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { hojeISO } from "@/lib/data-br";
 
 /**
  * Acha um registro pelo nome (exato, sem diferenciar maiúsculas)
@@ -106,7 +107,7 @@ export async function criarProcesso(formData: FormData) {
   }
 
   // Número de processo legível: PROC-<ano>-<sequencial simples baseado em timestamp>
-  const numeroProcesso = `PROC-${new Date().getFullYear()}-${Date.now().toString().slice(-5)}`;
+  const numeroProcesso = `PROC-${hojeISO().slice(0, 4)}-${Date.now().toString().slice(-5)}`;
 
   const { data: processo, error: errProcesso } = await supabase
     .from("processos")

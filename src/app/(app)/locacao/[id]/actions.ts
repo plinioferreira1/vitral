@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { StatusContaLocacao } from "@/lib/types";
+import { hojeISO } from "@/lib/data-br";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const PROXIMO_STATUS: Record<StatusContaLocacao, StatusContaLocacao> = {
@@ -145,7 +146,7 @@ export async function encerrarContrato(formData: FormData) {
 
   await supabase
     .from("contratos_locacao")
-    .update({ ativo: false, data_encerramento: new Date().toISOString().slice(0, 10) })
+    .update({ ativo: false, data_encerramento: hojeISO() })
     .eq("id", id);
 
   revalidatePath(`/locacao/${id}`);

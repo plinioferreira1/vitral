@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { recalcularDataDependente } from "@/lib/motor-processos";
 import { revalidatePath } from "next/cache";
 import { parseISO } from "date-fns";
+import { hojeISO } from "@/lib/data-br";
 
 export async function concluirEtapa(formData: FormData) {
   const supabase = await createClient();
@@ -15,7 +16,7 @@ export async function concluirEtapa(formData: FormData) {
   const etapaId = String(formData.get("etapa_id") ?? "");
   const processoId = String(formData.get("processo_id") ?? "");
   const dataRealizada =
-    String(formData.get("data_realizada") ?? "") || new Date().toISOString().slice(0, 10);
+    String(formData.get("data_realizada") ?? "") || hojeISO();
 
   const { data: etapa } = await supabase
     .from("etapas")
@@ -207,7 +208,7 @@ export async function salvarComissao(formData: FormData) {
     data_prevista: dataPrevista,
     observacoes,
     ...(pago100
-      ? { valor_recebido: valorPrevisto ? Number(valorPrevisto) : null, data_recebida: new Date().toISOString().slice(0, 10) }
+      ? { valor_recebido: valorPrevisto ? Number(valorPrevisto) : null, data_recebida: hojeISO() }
       : { valor_recebido: null, data_recebida: null }),
   };
 

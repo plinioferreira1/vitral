@@ -4,6 +4,7 @@ import { getEventosCalendario } from "@/lib/queries";
 import { URGENCIA_COR, formatarPrazo } from "@/lib/alertas";
 import { CalendarioGrid } from "@/components/calendario-grid";
 import { CATEGORIA_LABEL } from "@/lib/types";
+import { hojeISO } from "@/lib/data-br";
 import { addMonths, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -15,7 +16,7 @@ export default async function CalendarioPage({
   const { mes, responsavel, categoria } = await searchParams;
   const supabase = await createClient();
 
-  const referencia = mes ? parseISO(`${mes}-01`) : new Date();
+  const referencia = mes ? parseISO(`${mes}-01`) : new Date(`${hojeISO()}T00:00:00`);
 
   const { data: usuarios } = await supabase.from("usuarios").select("id, nome").order("nome");
 
