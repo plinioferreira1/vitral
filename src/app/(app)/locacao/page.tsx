@@ -16,7 +16,7 @@ function segundaFeiraDaSemana(): string {
   return format(startOfWeek(parseISO(hojeISO()), { weekStartsOn: 1 }), "yyyy-MM-dd");
 }
 
-type Aba = "contratos" | "inadimplencias";
+type Aba = "resumo" | "contratos" | "inadimplencias";
 type Filtro = "mes" | "atrasadas" | "pagas" | undefined;
 
 export default async function LocacaoPage({
@@ -25,7 +25,8 @@ export default async function LocacaoPage({
   searchParams: Promise<{ mes?: string; aba?: string; filtro?: string }>;
 }) {
   const { mes, aba: abaParam, filtro: filtroParam } = await searchParams;
-  const aba: Aba = abaParam === "inadimplencias" ? "inadimplencias" : "contratos";
+  const aba: Aba =
+    abaParam === "contratos" ? "contratos" : abaParam === "inadimplencias" ? "inadimplencias" : "resumo";
   const filtro: Filtro =
     filtroParam === "mes" || filtroParam === "atrasadas" || filtroParam === "pagas"
       ? filtroParam
@@ -195,7 +196,7 @@ export default async function LocacaoPage({
             </details>
           )}
         </div>
-      ) : (
+      ) : aba === "resumo" ? (
         <div className="space-y-6">
           {/* Visão geral do mês */}
           <div>
@@ -203,13 +204,13 @@ export default async function LocacaoPage({
               <p className="text-sm font-semibold capitalize text-ink">Visão geral · {mesLabel}</p>
               <div className="flex gap-1.5">
                 <Link
-                  href={`/locacao?aba=inadimplencias&mes=${mesAnterior}${filtro ? `&filtro=${filtro}` : ""}`}
+                  href={`/locacao?aba=resumo&mes=${mesAnterior}`}
                   className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-surface"
                 >
                   ← Mês anterior
                 </Link>
                 <Link
-                  href={`/locacao?aba=inadimplencias&mes=${proximoMes}${filtro ? `&filtro=${filtro}` : ""}`}
+                  href={`/locacao?aba=resumo&mes=${proximoMes}`}
                   className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-surface"
                 >
                   Próximo mês →
@@ -219,10 +220,8 @@ export default async function LocacaoPage({
             <div className="grid grid-cols-3 gap-4">
               <Link
                 href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=mes`}
-                className={`rounded-xl p-5 text-white transition hover:opacity-90 ${
-                  filtro === "mes" ? "ring-2 ring-offset-2 ring-offset-background" : ""
-                }`}
-                style={{ backgroundColor: "#F59E0B", ["--tw-ring-color" as string]: "#F59E0B" }}
+                className="rounded-xl p-5 text-white transition hover:opacity-90"
+                style={{ backgroundColor: "#F59E0B" }}
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
                   {Icones.relogio}
@@ -232,10 +231,8 @@ export default async function LocacaoPage({
               </Link>
               <Link
                 href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=pagas`}
-                className={`rounded-xl p-5 text-white transition hover:opacity-90 ${
-                  filtro === "pagas" ? "ring-2 ring-offset-2 ring-offset-background" : ""
-                }`}
-                style={{ backgroundColor: "#0F7A4E", ["--tw-ring-color" as string]: "#0F7A4E" }}
+                className="rounded-xl p-5 text-white transition hover:opacity-90"
+                style={{ backgroundColor: "#0F7A4E" }}
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
                   {Icones.check}
@@ -245,10 +242,8 @@ export default async function LocacaoPage({
               </Link>
               <Link
                 href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=atrasadas`}
-                className={`rounded-xl p-5 text-white transition hover:opacity-90 ${
-                  filtro === "atrasadas" ? "ring-2 ring-offset-2 ring-offset-background" : ""
-                }`}
-                style={{ backgroundColor: "#DC2626", ["--tw-ring-color" as string]: "#DC2626" }}
+                className="rounded-xl p-5 text-white transition hover:opacity-90"
+                style={{ backgroundColor: "#DC2626" }}
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
                   {Icones.alerta}
@@ -305,7 +300,9 @@ export default async function LocacaoPage({
               })}
             </div>
           </div>
-
+        </div>
+      ) : (
+        <div className="space-y-6">
           <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-semibold text-ink">{tituloLista}</p>
