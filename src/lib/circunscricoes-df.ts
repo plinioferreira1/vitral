@@ -45,6 +45,18 @@ export const CIRCUNSCRICAO_POR_RA: Record<string, string> = {
 
 export const REGIOES_ADMINISTRATIVAS_DF = Object.keys(CIRCUNSCRICAO_POR_RA);
 
+function normalizar(s: string): string {
+  return s
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, ""); // remove acentos
+}
+
+const CIRCUNSCRICAO_POR_RA_NORMALIZADA: Record<string, string> = Object.fromEntries(
+  Object.entries(CIRCUNSCRICAO_POR_RA).map(([ra, foro]) => [normalizar(ra), foro])
+);
+
 export function foroPorRegiaoAdministrativa(ra: string): string {
-  return CIRCUNSCRICAO_POR_RA[ra] ?? "Brasília/DF";
+  return CIRCUNSCRICAO_POR_RA_NORMALIZADA[normalizar(ra)] ?? "Brasília/DF";
 }

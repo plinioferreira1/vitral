@@ -104,21 +104,21 @@ export default function NovaAutorizacaoPage() {
               <label className="mb-1 block text-xs font-medium text-ink-muted">
                 Região Administrativa
               </label>
-              <select
+              <input
                 name="regiao_administrativa"
                 required
+                list="regioes-administrativas"
+                placeholder="Ex: Águas Claras"
                 className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-              >
-                <option value="">Selecione...</option>
+              />
+              <datalist id="regioes-administrativas">
                 {REGIOES_ADMINISTRATIVAS_DF.map((ra) => (
-                  <option key={ra} value={ra}>
-                    {ra}
-                  </option>
+                  <option key={ra} value={ra} />
                 ))}
-              </select>
+              </datalist>
               <p className="mt-1 text-[11px] text-ink-muted">
                 Usada só pra calcular o foro certo no documento (a circunscrição judiciária do
-                imóvel).
+                imóvel). Comece a digitar pra ver sugestões.
               </p>
             </div>
             <div className="grid grid-cols-2 gap-3">
