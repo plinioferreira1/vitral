@@ -1,5 +1,6 @@
 import { VoltarLink } from "@/components/voltar-link";
 import { CampoMoeda } from "@/components/campo-moeda";
+import { REGIOES_ADMINISTRATIVAS_DF } from "@/lib/circunscricoes-df";
 import { criarAutorizacao } from "../actions";
 
 export default function NovaAutorizacaoPage() {
@@ -99,6 +100,27 @@ export default function NovaAutorizacaoPage() {
               placeholder="Endereço completo do imóvel"
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ink-muted">
+                Região Administrativa
+              </label>
+              <select
+                name="regiao_administrativa"
+                required
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              >
+                <option value="">Selecione...</option>
+                {REGIOES_ADMINISTRATIVAS_DF.map((ra) => (
+                  <option key={ra} value={ra}>
+                    {ra}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-[11px] text-ink-muted">
+                Usada só pra calcular o foro certo no documento (a circunscrição judiciária do
+                imóvel).
+              </p>
+            </div>
             <div className="grid grid-cols-2 gap-3">
               <input
                 name="cep"
@@ -156,26 +178,16 @@ export default function NovaAutorizacaoPage() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">
-              Prazo da autorização (dias)
-            </label>
-            <input
-              name="prazo_dias"
-              type="number"
-              defaultValue={90}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Foro</label>
-            <input
-              name="foro"
-              defaultValue="Brasília/DF"
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-            />
-          </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-muted">
+            Prazo da autorização (dias)
+          </label>
+          <input
+            name="prazo_dias"
+            type="number"
+            defaultValue={90}
+            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+          />
         </div>
 
         <label className="flex items-center gap-2 text-sm text-ink">

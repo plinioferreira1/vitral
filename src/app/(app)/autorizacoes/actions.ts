@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { foroPorRegiaoAdministrativa } from "@/lib/circunscricoes-df";
 
 async function resolverOuCriar(
   supabase: SupabaseClient,
@@ -75,6 +76,8 @@ export async function criarAutorizacao(formData: FormData) {
     })
     .eq("id", vendedorId);
 
+  const regiaoAdministrativa = campo("regiao_administrativa");
+
   await supabase
     .from("imoveis")
     .update({
@@ -84,6 +87,7 @@ export async function criarAutorizacao(formData: FormData) {
       area_lote: campo("area_lote"),
       inscricao_iptu: campo("inscricao_iptu"),
       valor_condominio: formData.get("valor_condominio") ? Number(formData.get("valor_condominio")) : null,
+      regiao_administrativa: regiaoAdministrativa,
     })
     .eq("id", imovelId);
 
@@ -109,7 +113,7 @@ export async function criarAutorizacao(formData: FormData) {
   const prazoDias = formData.get("prazo_dias");
   const exclusividade = formData.get("exclusividade") === "on";
   const observacoes = campo("observacoes");
-  const foro = campo("foro") || "Brasília/DF";
+  const foro = foroPorRegiaoAdministrativa(regiaoAdministrativa ?? "");
 
   const { data: autorizacao, error } = await supabase
     .from("autorizacoes_venda")
