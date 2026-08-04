@@ -64,6 +64,11 @@ export async function gerarCertificadoPNG(opcoes: {
   ctx.scale(escala, escala);
 
   // mede o texto todo antes de saber a altura final do card
+  ctx.font = "400 14px Arial, sans-serif";
+  const subtituloLinhas = opcoes.subtitulo
+    ? medirLinhas(ctx, opcoes.subtitulo, larguraTexto)
+    : [];
+
   ctx.font = "400 13px Arial, sans-serif";
   const paragrafosComQuebra = opcoes.paragrafos.map((p) => medirLinhas(ctx, p, larguraTexto));
   const alturaParagrafos = paragrafosComQuebra.reduce((soma, linhas) => soma + linhas.length * 18 + 10, 0);
@@ -71,7 +76,11 @@ export async function gerarCertificadoPNG(opcoes: {
   const alturaPorAssinatura = 90;
   const alturaAssinaturas = opcoes.assinaturas.length * alturaPorAssinatura;
 
-  const topoTexto = opcoes.subtitulo ? 195 : 165;
+  const subtituloYInicio = margem + 152;
+  const subtituloYFim = opcoes.subtitulo
+    ? subtituloYInicio + subtituloLinhas.length * 18
+    : margem + 128;
+  const topoTexto = subtituloYFim + 25;
   const alturaTotal = topoTexto + alturaParagrafos + 30 + alturaAssinaturas + 60;
 
   canvas.width = largura * escala;
@@ -116,7 +125,9 @@ export async function gerarCertificadoPNG(opcoes: {
   if (opcoes.subtitulo) {
     ctx.fillStyle = "#78716c";
     ctx.font = "400 14px Arial, sans-serif";
-    ctx.fillText(opcoes.subtitulo, xEsq, margem + 152);
+    subtituloLinhas.forEach((linha, i) => {
+      ctx.fillText(linha, xEsq, subtituloYInicio + i * 18);
+    });
   }
 
   // parágrafos
