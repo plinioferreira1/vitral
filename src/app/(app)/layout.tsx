@@ -42,6 +42,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             { href: "/processos?categoria=financiamento", label: "Financiamentos" },
           ],
         },
+        { href: "/termos-visita", label: "Termos de Visita" },
         { href: "/autorizacoes", label: "Autorizações de Venda" },
         {
           label: "Locação",
