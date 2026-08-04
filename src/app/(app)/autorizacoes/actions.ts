@@ -48,18 +48,68 @@ export async function criarAutorizacao(formData: FormData) {
   if (!usuario?.tenant_id) return;
   const tenantId = usuario.tenant_id;
 
-  const imovelNome = String(formData.get("imovel") ?? "");
-  const vendedorNome = String(formData.get("vendedor") ?? "");
+  const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
+
+  const imovelId = await resolverOuCriar(supabase, "imoveis", "endereco", tenantId, campo("imovel") ?? "");
+  const vendedorId = await resolverOuCriar(
+    supabase,
+    "clientes",
+    "nome",
+    tenantId,
+    campo("vendedor_nome") ?? ""
+  );
+
+  if (!imovelId || !vendedorId) return;
+
+  // Atualiza os dados complementares do proprietário e do imóvel
+  // (o resolverOuCriar só preenche o nome/endereço na criação; os
+  // demais campos do formulário são salvos aqui, sempre que
+  // informados).
+  await supabase
+    .from("clientes")
+    .update({
+      cpf_cnpj: campo("vendedor_cpf"),
+      rg: campo("vendedor_rg"),
+      telefone: campo("vendedor_telefone"),
+      endereco: campo("vendedor_endereco"),
+    })
+    .eq("id", vendedorId);
+
+  await supabase
+    .from("imoveis")
+    .update({
+      cep: campo("cep"),
+      matricula: campo("matricula"),
+      area_construida: campo("area_construida"),
+      area_lote: campo("area_lote"),
+      inscricao_iptu: campo("inscricao_iptu"),
+      valor_condominio: formData.get("valor_condominio") ? Number(formData.get("valor_condominio")) : null,
+    })
+    .eq("id", imovelId);
+
+  let conjugeId: string | null = null;
+  const conjugeNome = campo("conjuge_nome");
+  if (conjugeNome) {
+    conjugeId = await resolverOuCriar(supabase, "clientes", "nome", tenantId, conjugeNome);
+    if (conjugeId) {
+      await supabase
+        .from("clientes")
+        .update({
+          cpf_cnpj: campo("conjuge_cpf"),
+          rg: campo("conjuge_rg"),
+          telefone: campo("conjuge_telefone"),
+          endereco: campo("conjuge_endereco"),
+        })
+        .eq("id", conjugeId);
+    }
+  }
+
   const valorImovel = formData.get("valor_imovel");
   const comissaoPercentual = formData.get("comissao_percentual");
   const prazoDias = formData.get("prazo_dias");
   const exclusividade = formData.get("exclusividade") === "on";
-  const observacoes = String(formData.get("observacoes") ?? "").trim() || null;
-
-  const imovelId = await resolverOuCriar(supabase, "imoveis", "endereco", tenantId, imovelNome);
-  const vendedorId = await resolverOuCriar(supabase, "clientes", "nome", tenantId, vendedorNome);
-
-  if (!imovelId || !vendedorId) return;
+  const observacoes = campo("observacoes");
+  const foro = campo("foro") || "Brasília/DF";
 
   const { data: autorizacao, error } = await supabase
     .from("autorizacoes_venda")
@@ -67,11 +117,13 @@ export async function criarAutorizacao(formData: FormData) {
       tenant_id: tenantId,
       imovel_id: imovelId,
       vendedor_id: vendedorId,
+      conjuge_id: conjugeId,
       valor_imovel: valorImovel ? Number(valorImovel) : null,
       comissao_percentual: comissaoPercentual ? Number(comissaoPercentual) : null,
       prazo_dias: prazoDias ? Number(prazoDias) : null,
       exclusividade,
       observacoes,
+      foro,
       criado_por: user?.id ?? null,
     })
     .select("id")

@@ -4,9 +4,16 @@ import { useState } from "react";
 import { CanvasAssinatura } from "@/components/canvas-assinatura";
 import { registrarAssinatura } from "./actions";
 
-export function AssinaturaForm({ token }: { token: string }) {
+export function AssinaturaForm({
+  token,
+  nomeEsperado,
+}: {
+  token: string;
+  nomeEsperado: string;
+}) {
   const [nome, setNome] = useState("");
   const [assinatura, setAssinatura] = useState<string | null>(null);
+  const [concordo, setConcordo] = useState(false);
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [concluido, setConcluido] = useState(false);
@@ -36,6 +43,10 @@ export function AssinaturaForm({ token }: { token: string }) {
 
   return (
     <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
+      <p className="mb-4 text-xs text-ink-muted">
+        Assinando como: <span className="font-medium text-ink">{nomeEsperado}</span>
+      </p>
+
       <label className="mb-1 block text-xs font-medium text-ink-muted">Nome completo</label>
       <input
         value={nome}
@@ -47,20 +58,30 @@ export function AssinaturaForm({ token }: { token: string }) {
       <label className="mb-1 block text-xs font-medium text-ink-muted">Assinatura</label>
       <CanvasAssinatura onChange={setAssinatura} />
 
+      <label className="mt-4 flex items-start gap-2 text-xs text-ink">
+        <input
+          type="checkbox"
+          checked={concordo}
+          onChange={(e) => setConcordo(e.target.checked)}
+          className="mt-0.5 accent-brand"
+        />
+        <span>
+          Li e concordo com os termos descritos acima, e reconheço que esta ação constitui
+          minha assinatura eletrônica, válida nos termos do art. 10, §2º da MP 2.200-2/2001.
+          Data, hora e IP ficam registrados como comprovação.
+        </span>
+      </label>
+
       {erro && <p className="mt-3 text-sm text-rose-600">{erro}</p>}
 
       <button
         type="button"
         onClick={enviar}
-        disabled={enviando || !nome.trim() || !assinatura}
+        disabled={enviando || !nome.trim() || !assinatura || !concordo}
         className="mt-4 w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
       >
         {enviando ? "Enviando..." : "Confirmar assinatura"}
       </button>
-      <p className="mt-3 text-center text-[11px] text-ink-muted">
-        Ao assinar, você concorda com os termos descritos acima. Data, hora e IP ficam
-        registrados como comprovação.
-      </p>
     </div>
   );
 }
