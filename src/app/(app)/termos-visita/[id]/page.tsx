@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { VoltarLink } from "@/components/voltar-link";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
+import { BotaoCertificadoVisita } from "@/components/botao-certificado-visita";
 import { cancelarTermoVisita, atualizarFeedbackVisita } from "../actions";
 
 const STATUS_COR: Record<string, string> = {
@@ -82,6 +83,25 @@ export default async function TermoVisitaDetalhePage({
           </span>
         </div>
         <p className="mt-1 text-sm text-ink-muted">Cliente: {t.clientes?.nome ?? "—"}</p>
+        {t.status === "assinado" && t.assinado_em && (
+          <div className="mt-3">
+            <BotaoCertificadoVisita
+              imovelEndereco={t.imoveis?.endereco ?? "—"}
+              clienteNome={t.clientes?.nome ?? "—"}
+              valorImovel={t.valor_imovel}
+              corretorNome={t.corretores?.nome ?? null}
+              multaPercentual={t.multa_percentual}
+              assinatura={{
+                titulo: "Cliente",
+                nome: t.nome_digitado ?? "",
+                documento: t.cliente_cpf ?? undefined,
+                assinaturaImagem: t.assinatura_imagem ?? "",
+                assinadoEm: t.assinado_em,
+                ip: t.ip_assinatura,
+              }}
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 rounded-xl border border-border/60 bg-surface p-5 shadow-sm sm:grid-cols-3">

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { VoltarLink } from "@/components/voltar-link";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
+import { BotaoCertificadoAutorizacao } from "@/components/botao-certificado-autorizacao";
 import { cancelarAutorizacao } from "../actions";
 
 const STATUS_COR: Record<string, string> = {
@@ -45,6 +46,7 @@ export default async function AutorizacaoDetalhePage({
     prazo_dias: number | null;
     exclusividade: boolean;
     observacoes: string | null;
+    foro: string;
     imoveis: { endereco: string } | null;
     clientes: { nome: string } | null;
   };
@@ -72,6 +74,28 @@ export default async function AutorizacaoDetalhePage({
           </span>
         </div>
         <p className="mt-1 text-sm text-ink-muted">Proprietário: {a.clientes?.nome ?? "—"}</p>
+        {a.status === "assinado" && (
+          <div className="mt-3">
+            <BotaoCertificadoAutorizacao
+              imovelEndereco={a.imoveis?.endereco ?? "—"}
+              vendedorNome={a.clientes?.nome ?? "—"}
+              valorImovel={a.valor_imovel}
+              comissaoPercentual={a.comissao_percentual}
+              prazoDias={a.prazo_dias}
+              exclusividade={a.exclusividade}
+              foro={a.foro}
+              assinaturas={(signatarios ?? [])
+                .filter((s) => s.assinado_em)
+                .map((s) => ({
+                  titulo: s.nome_esperado,
+                  nome: s.nome_digitado ?? "",
+                  assinaturaImagem: s.assinatura_imagem ?? "",
+                  assinadoEm: s.assinado_em,
+                  ip: s.ip_assinatura,
+                }))}
+            />
+          </div>
+        )}
       </div>
 
       <div className="grid grid-cols-2 gap-4 rounded-xl border border-border/60 bg-surface p-5 shadow-sm sm:grid-cols-3">
