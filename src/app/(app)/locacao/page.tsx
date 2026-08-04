@@ -5,11 +5,15 @@ import { TIPO_CONTA_LABEL } from "@/lib/types";
 import { calcularUrgencia, URGENCIA_COR } from "@/lib/alertas";
 import { Icones } from "@/components/icone-badge";
 import { hojeISO } from "@/lib/data-br";
-import { addMonths, format, parseISO } from "date-fns";
+import { addMonths, format, parseISO, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 function primeiroDiaDoMes(): string {
   return `${hojeISO().slice(0, 7)}-01`;
+}
+
+function segundaFeiraDaSemana(): string {
+  return format(startOfWeek(parseISO(hojeISO()), { weekStartsOn: 1 }), "yyyy-MM-dd");
 }
 
 type Aba = "contratos" | "inadimplencias";
@@ -29,6 +33,7 @@ export default async function LocacaoPage({
 
   const supabase = await createClient();
   const competenciaAtual = primeiroDiaDoMes();
+  const competenciaSemanaAtual = segundaFeiraDaSemana();
 
   const mesReferencia = mes ? parseISO(`${mes}-01`) : new Date(`${hojeISO()}T00:00:00`);
   const inicioMes = format(mesReferencia, "yyyy-MM-01");
@@ -83,13 +88,13 @@ export default async function LocacaoPage({
 
   const { data: tarefas } = await supabase
     .from("tarefas_mensais")
-    .select("id, nome, regra, ordem")
+    .select("id, nome, regra, ordem, periodicidade")
     .order("ordem", { ascending: true });
 
   const { data: tarefasStatus } = await supabase
     .from("tarefas_mensais_status")
     .select("id, tarefa_id, competencia, concluida")
-    .eq("competencia", competenciaAtual);
+    .in("competencia", [competenciaAtual, competenciaSemanaAtual]);
 
   type ContratoRow = {
     id: string;
@@ -258,12 +263,16 @@ export default async function LocacaoPage({
             <p className="mb-3 text-sm font-semibold text-ink">Tarefas do mês</p>
             <div className="space-y-2">
               {(tarefas ?? []).map((t) => {
-                const statusExistente = (tarefasStatus ?? []).find((s) => s.tarefa_id === t.id);
+                const competenciaDaTarefa =
+                  t.periodicidade === "semanal" ? competenciaSemanaAtual : competenciaAtual;
+                const statusExistente = (tarefasStatus ?? []).find(
+                  (s) => s.tarefa_id === t.id && s.competencia === competenciaDaTarefa
+                );
                 const concluida = statusExistente?.concluida ?? false;
                 return (
                   <form key={t.id} action={alternarTarefaMensal}>
                     <input type="hidden" name="tarefa_id" value={t.id} />
-                    <input type="hidden" name="competencia" value={competenciaAtual} />
+                    <input type="hidden" name="competencia" value={competenciaDaTarefa} />
                     <input type="hidden" name="concluida_atual" value={String(concluida)} />
                     {statusExistente && (
                       <input type="hidden" name="status_id" value={statusExistente.id} />
