@@ -2,6 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { anexarUrgencia, calcularUrgencia, type Urgencia } from "@/lib/alertas";
 import type { Etapa, CategoriaProcesso, TipoContaLocacao } from "@/lib/types";
 import { TIPO_CONTA_LABEL } from "@/lib/types";
+import { ocorrenciasDaTarefa, type RegraTarefa } from "@/lib/tarefas-recorrentes";
+import { hojeISO } from "@/lib/data-br";
+import { addMonths } from "date-fns";
 
 export async function getEtapasComContexto() {
   const supabase = await createClient();
@@ -150,5 +153,44 @@ export async function getEventosCalendario(): Promise<EventoCalendario[]> {
     };
   });
 
-  return [...eventosEtapas, ...eventosLocacao].sort((a, b) => a.data.localeCompare(b.data));
+  const { data: tarefasRaw } = await supabase
+    .from("tarefas_mensais")
+    .select("id, nome, periodicidade, tipo_regra, dia_fixo");
+
+  const { data: statusRaw } = await supabase
+    .from("tarefas_mensais_status")
+    .select("tarefa_id, competencia, concluida");
+
+  const statusPorChave = new Map(
+    (statusRaw ?? []).map((s) => [`${s.tarefa_id}-${s.competencia}`, s.concluida])
+  );
+
+  const hoje = new Date(`${hojeISO()}T00:00:00`);
+  const eventosTarefas: EventoCalendario[] = [];
+  for (let deslocamento = -2; deslocamento <= 3; deslocamento++) {
+    const mesReferencia = addMonths(hoje, deslocamento);
+    for (const tarefa of (tarefasRaw ?? []) as unknown as RegraTarefa[]) {
+      for (const ocorrencia of ocorrenciasDaTarefa(tarefa, mesReferencia)) {
+        const dataStr = ocorrencia.data.toISOString().slice(0, 10);
+        const concluida = statusPorChave.get(`${tarefa.id}-${ocorrencia.competencia}`) ?? false;
+        const { urgencia, dias_para_vencer } = calcularUrgencia({
+          status: concluida ? "concluida" : "pendente",
+          data_prevista: dataStr,
+        });
+        eventosTarefas.push({
+          id: `tarefa-${tarefa.id}-${ocorrencia.competencia}`,
+          data: dataStr,
+          titulo: tarefa.nome,
+          categoria: "locacao",
+          urgencia,
+          diasParaVencer: dias_para_vencer,
+          href: "/locacao?aba=resumo",
+          responsavelNome: null,
+          concluida,
+        });
+      }
+    }
+  }
+
+  return [...eventosEtapas, ...eventosLocacao, ...eventosTarefas].sort((a, b) => a.data.localeCompare(b.data));
 }
