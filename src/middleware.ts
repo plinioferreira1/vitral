@@ -2,7 +2,15 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 const PUBLIC_PATHS = ["/login", "/auth", "/redefinir-senha", "/assinar", "/visita"];
-const ROTAS_CORRETOR = ["/", "/cartorio", "/calculadora", "/perfil", "/onboarding"];
+const ROTAS_CORRETOR = [
+  "/",
+  "/cartorio",
+  "/calculadora",
+  "/perfil",
+  "/onboarding",
+  "/termos-visita",
+  "/autorizacoes",
+];
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
@@ -51,7 +59,10 @@ export async function middleware(request: NextRequest) {
       .eq("id", user.id)
       .single();
 
-    if (usuario?.nivel_acesso === "corretor" && !ROTAS_CORRETOR.includes(request.nextUrl.pathname)) {
+    const rotaPermitida = ROTAS_CORRETOR.some(
+      (r) => request.nextUrl.pathname === r || request.nextUrl.pathname.startsWith(`${r}/`)
+    );
+    if (usuario?.nivel_acesso === "corretor" && !rotaPermitida) {
       const url = request.nextUrl.clone();
       url.pathname = "/cartorio";
       return NextResponse.redirect(url);
