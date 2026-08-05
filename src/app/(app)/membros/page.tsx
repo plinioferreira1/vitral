@@ -1,5 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
-import { adicionarMembro, atualizarCategoriasMembro } from "./actions";
+import {
+  adicionarMembro,
+  atualizarCategoriasMembro,
+  editarEmailMembro,
+  excluirMembro,
+} from "./actions";
+import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { CATEGORIA_LABEL, NIVEL_ACESSO_LABEL, type CategoriaProcesso, type NivelAcesso } from "@/lib/types";
 
 const PERFIS = [
@@ -137,6 +143,41 @@ export default async function MembrosPage({
                     {m.cargo && <span className="ml-2 text-xs font-normal text-ink-muted">{m.cargo}</span>}
                   </p>
                   <p className="text-xs text-ink-muted">{m.email}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <details key={`${m.id}-${m.email}`} className="relative">
+                    <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
+                      Editar e-mail
+                    </summary>
+                    <form
+                      action={editarEmailMembro}
+                      className="absolute right-0 z-10 mt-1 flex w-64 gap-1.5 rounded-md border border-border bg-surface p-2 shadow-md"
+                    >
+                      <input type="hidden" name="usuario_id" value={m.id} />
+                      <input
+                        name="novo_email"
+                        type="email"
+                        required
+                        defaultValue={m.email}
+                        className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                      />
+                      <button
+                        type="submit"
+                        className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                      >
+                        Salvar
+                      </button>
+                    </form>
+                  </details>
+                  <form action={excluirMembro}>
+                    <input type="hidden" name="usuario_id" value={m.id} />
+                    <BotaoComConfirmacao
+                      mensagem={`Excluir o acesso de ${m.nome}? Essa ação não pode ser desfeita — a pessoa não vai mais conseguir entrar no sistema.`}
+                      className="text-xs font-medium text-ink-muted hover:text-rose-600"
+                    >
+                      Excluir acesso
+                    </BotaoComConfirmacao>
+                  </form>
                 </div>
               </div>
               <form action={atualizarCategoriasMembro} className="flex flex-wrap items-center gap-3">
