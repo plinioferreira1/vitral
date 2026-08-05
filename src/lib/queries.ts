@@ -167,7 +167,10 @@ export async function getEventosCalendario(): Promise<EventoCalendario[]> {
 
   const hoje = new Date(`${hojeISO()}T00:00:00`);
   const eventosTarefas: EventoCalendario[] = [];
-  for (let deslocamento = -2; deslocamento <= 3; deslocamento++) {
+  // Só do mês atual em diante — meses passados não geram ocorrência
+  // (uma tarefa recorrente "atrasada" de um mês que já virou não faz
+  // sentido ficar acumulando; o que importa é o período atual).
+  for (let deslocamento = 0; deslocamento <= 3; deslocamento++) {
     const mesReferencia = addMonths(hoje, deslocamento);
     for (const tarefa of (tarefasRaw ?? []) as unknown as RegraTarefa[]) {
       for (const ocorrencia of ocorrenciasDaTarefa(tarefa, mesReferencia)) {

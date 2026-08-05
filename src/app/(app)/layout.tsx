@@ -32,8 +32,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         { href: "/", label: "Início" },
         { href: "/calculadora", label: "Calculadora de Proporcionalidade" },
         { href: "/cartorio", label: "Simulação de Custas" },
-        { href: "/termos-visita", label: "Termos de Visita" },
-        { href: "/autorizacoes", label: "Autorizações de Venda" },
+        { href: "/termos-visita", label: "Termo de Visita" },
+        { href: "/autorizacoes", label: "Autorização de Venda" },
       ]
     : [
         { href: "/", label: "Início" },
@@ -44,8 +44,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             { href: "/processos?categoria=financiamento", label: "Financiamentos" },
           ],
         },
-        { href: "/termos-visita", label: "Termos de Visita" },
-        { href: "/autorizacoes", label: "Autorizações de Venda" },
+        { href: "/termos-visita", label: "Termo de Visita" },
+        { href: "/autorizacoes", label: "Autorização de Venda" },
         {
           label: "Locação",
           children: [

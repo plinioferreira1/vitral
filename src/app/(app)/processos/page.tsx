@@ -165,8 +165,8 @@ export default async function ProcessosPage({
   }
 
   const rows = (processos ?? []) as unknown as Row[];
-  const emAndamento = rows.filter((p) => p.status !== "concluido");
-  const concluidos = rows.filter((p) => p.status === "concluido");
+  const emAndamento = rows.filter((p) => p.status !== "concluido" && p.status !== "cancelado");
+  const concluidos = rows.filter((p) => p.status === "concluido" || p.status === "cancelado");
   const ehFinanciamento = categoria === "financiamento";
 
   const eventos = (await getEventosCalendario()).filter((e) => e.categoria === categoria);
@@ -208,7 +208,7 @@ export default async function ProcessosPage({
         <details className="overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
           <summary className="cursor-pointer select-none px-5 py-3 text-sm font-medium text-ink-muted hover:text-ink">
             {concluidos.length} processo{concluidos.length > 1 ? "s" : ""} concluído
-            {concluidos.length > 1 ? "s" : ""}
+            {concluidos.length > 1 ? "s" : ""} ou cancelado{concluidos.length > 1 ? "s" : ""}
           </summary>
           <div className="border-t border-border">
             <TabelaProcessos rows={concluidos} ehFinanciamento={ehFinanciamento} />
