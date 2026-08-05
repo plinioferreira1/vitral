@@ -61,6 +61,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           label: "Configurações",
           children: [
             { href: "/etapas-padrao", label: "Etapas padrão" },
+            { href: "/tarefas-recorrentes", label: "Tarefas recorrentes" },
             { href: "/membros", label: "Membros/Permissões" },
           ],
         },
