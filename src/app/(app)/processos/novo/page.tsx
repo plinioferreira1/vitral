@@ -49,7 +49,7 @@ export default async function NovoProcessoPage({
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <VoltarLink href="/processos" label="Processos" />
+        <VoltarLink href="/" label="Início" />
         <h1 className="text-2xl font-semibold tracking-tight text-ink">Novo processo</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Escolha um modelo e marque quais etapas fazem parte desse processo específico.

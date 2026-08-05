@@ -91,7 +91,8 @@ export async function concluirEtapa(formData: FormData) {
     if (todasConcluidas) {
       await supabase.from("processos").update({ status: "concluido" }).eq("id", processoId);
       revalidatePath(`/processos/${processoId}`);
-      revalidatePath("/processos");
+      revalidatePath("/vendas");
+      revalidatePath("/financiamentos");
     }
   }
 }
@@ -116,7 +117,8 @@ export async function reabrirEtapa(formData: FormData) {
 
   if (processoAtual?.status === "concluido") {
     await supabase.from("processos").update({ status: "ativo" }).eq("id", processoId);
-    revalidatePath("/processos");
+    revalidatePath("/vendas");
+      revalidatePath("/financiamentos");
   }
 
   revalidatePath(`/processos/${processoId}`);

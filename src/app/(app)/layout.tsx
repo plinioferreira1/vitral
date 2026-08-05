@@ -38,10 +38,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     : [
         { href: "/", label: "Início" },
         {
-          label: "Processos",
+          label: "Vendas",
           children: [
-            { href: "/processos?categoria=venda", label: "Vendas" },
-            { href: "/processos?categoria=financiamento", label: "Financiamentos" },
+            { href: "/vendas?aba=resumo", label: "Resumo" },
+            { href: "/vendas?aba=andamento", label: "Em andamento" },
+          ],
+        },
+        {
+          label: "Financiamentos",
+          children: [
+            { href: "/financiamentos?aba=resumo", label: "Resumo" },
+            { href: "/financiamentos?aba=andamento", label: "Em andamento" },
+            { href: "/financiamentos?aba=processos", label: "Processos" },
           ],
         },
         { href: "/termos-visita", label: "Termo de Visita" },

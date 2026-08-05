@@ -179,10 +179,16 @@ export default async function DashboardPage({
           + Novo processo
         </Link>
         <Link
-          href="/processos"
+          href="/vendas?aba=andamento"
           className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-background"
         >
-          Ver todos os processos
+          Ver vendas
+        </Link>
+        <Link
+          href="/financiamentos?aba=andamento"
+          className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-background"
+        >
+          Ver financiamentos
         </Link>
       </div>
     </div>

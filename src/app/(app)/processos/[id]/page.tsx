@@ -108,7 +108,7 @@ export default async function ProcessoDetalhePage({
     <div className="max-w-3xl space-y-8 lg:max-w-5xl">
       <div>
         <VoltarLink
-          href={`/processos?categoria=${p.categoria}`}
+          href={p.categoria === "financiamento" ? "/financiamentos?aba=andamento" : "/vendas?aba=andamento"}
           label={p.categoria === "financiamento" ? "Financiamentos" : "Vendas"}
         />
         <p className="font-mono text-xs text-ink-muted">{p.numero_processo}</p>
