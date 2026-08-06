@@ -88,7 +88,17 @@ export async function editarEmailMembro(formData: FormData) {
 
   const { supabase } = await exigirPermissaoSobreMembro(usuarioId);
 
-  const admin = createAdminClient();
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    redirect(
+      `/membros?erro=${encodeURIComponent(
+        "A chave de administrador ainda não está configurada no servidor. Confirme se o redeploy no Vercel já pegou a SUPABASE_SERVICE_ROLE_KEY."
+      )}`
+    );
+  }
+
   const { error: errAuth } = await admin.auth.admin.updateUserById(usuarioId, {
     email: novoEmail,
     email_confirm: true,
@@ -114,7 +124,17 @@ export async function alterarSenhaMembro(formData: FormData) {
 
   await exigirPermissaoSobreMembro(usuarioId);
 
-  const admin = createAdminClient();
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    redirect(
+      `/membros?erro=${encodeURIComponent(
+        "A chave de administrador ainda não está configurada no servidor. Confirme se o redeploy no Vercel já pegou a SUPABASE_SERVICE_ROLE_KEY."
+      )}`
+    );
+  }
+
   const { error } = await admin.auth.admin.updateUserById(usuarioId, { password: novaSenha });
 
   if (error) {
@@ -134,7 +154,18 @@ export async function excluirMembro(formData: FormData) {
     redirect(`/membros?erro=${encodeURIComponent("Você não pode excluir seu próprio acesso.")}`);
   }
 
-  const admin = createAdminClient();
+  const admin = (() => {
+    try {
+      return createAdminClient();
+    } catch {
+      redirect(
+        `/membros?erro=${encodeURIComponent(
+          "A chave de administrador ainda não está configurada no servidor. Confirme se o redeploy no Vercel já pegou a SUPABASE_SERVICE_ROLE_KEY."
+        )}`
+      );
+    }
+  })();
+
   const { error } = await admin.auth.admin.deleteUser(usuarioId);
 
   if (error) {
