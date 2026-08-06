@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { traduzirErroAuth } from "@/lib/erros-auth";
 import {
   adicionarMembro,
   atualizarCategoriasMembro,
@@ -66,7 +67,7 @@ export default async function MembrosPage({
 
       {erro && (
         <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
-          {erro}
+          {traduzirErroAuth(erro)}
         </p>
       )}
 
