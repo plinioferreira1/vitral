@@ -3,6 +3,7 @@ import {
   adicionarMembro,
   atualizarCategoriasMembro,
   editarEmailMembro,
+  alterarSenhaMembro,
   excluirMembro,
 } from "./actions";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
@@ -159,6 +160,31 @@ export default async function MembrosPage({
                         type="email"
                         required
                         defaultValue={m.email}
+                        className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                      />
+                      <button
+                        type="submit"
+                        className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                      >
+                        Salvar
+                      </button>
+                    </form>
+                  </details>
+                  <details className="relative">
+                    <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
+                      Trocar senha
+                    </summary>
+                    <form
+                      action={alterarSenhaMembro}
+                      className="absolute right-0 z-10 mt-1 flex w-64 gap-1.5 rounded-md border border-border bg-surface p-2 shadow-md"
+                    >
+                      <input type="hidden" name="usuario_id" value={m.id} />
+                      <input
+                        name="nova_senha"
+                        type="text"
+                        required
+                        minLength={6}
+                        placeholder="Nova senha (mín. 6 caracteres)"
                         className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                       />
                       <button

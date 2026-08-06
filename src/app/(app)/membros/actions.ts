@@ -103,6 +103,27 @@ export async function editarEmailMembro(formData: FormData) {
   revalidatePath("/membros");
 }
 
+export async function alterarSenhaMembro(formData: FormData) {
+  const usuarioId = String(formData.get("usuario_id") ?? "");
+  const novaSenha = String(formData.get("nova_senha") ?? "");
+  if (!usuarioId || !novaSenha) return;
+
+  if (novaSenha.length < 6) {
+    redirect(`/membros?erro=${encodeURIComponent("A senha precisa ter pelo menos 6 caracteres.")}`);
+  }
+
+  await exigirPermissaoSobreMembro(usuarioId);
+
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(usuarioId, { password: novaSenha });
+
+  if (error) {
+    redirect(`/membros?erro=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/membros");
+}
+
 export async function excluirMembro(formData: FormData) {
   const usuarioId = String(formData.get("usuario_id") ?? "");
   if (!usuarioId) return;
