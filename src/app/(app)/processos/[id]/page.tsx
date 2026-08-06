@@ -5,6 +5,7 @@ import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { VoltarLink } from "@/components/voltar-link";
 import { CampoMoeda } from "@/components/campo-moeda";
+import { BotaoExportarLinhaTempo } from "@/components/botao-exportar-linha-tempo";
 import {
   concluirEtapa,
   reabrirEtapa,
@@ -167,7 +168,14 @@ export default async function ProcessoDetalhePage({
 
       {/* Timeline */}
       <section className="rounded-2xl border border-border bg-surface p-5 md:p-8">
-        <h2 className="mb-5 text-base font-semibold text-ink md:mb-8">Linha do tempo</h2>
+        <div className="mb-5 flex items-center justify-between md:mb-8">
+          <h2 className="text-base font-semibold text-ink">Linha do tempo</h2>
+          <BotaoExportarLinhaTempo
+            titulo={p.modelos_processo?.nome ?? "Processo"}
+            subtitulo={`${p.imoveis?.endereco ?? "—"} — ${p.comprador?.nome ?? "Sem comprador"}`}
+            etapas={etapasSequenciais.map((e) => ({ nome: e.nome, status: e.status }))}
+          />
+        </div>
         <div className="overflow-x-auto pb-1 md:overflow-visible">
           <div
             className="grid"
