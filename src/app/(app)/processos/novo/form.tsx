@@ -129,10 +129,10 @@ export function NovoProcessoForm({
           </select>
         </div>
         <CampoTexto
-          label="Indicação"
+          label={ehFinanciamento ? "Indicação" : "Corretor"}
           name="corretor_nome"
           listId="lista-corretores"
-          placeholder="Quem indicou o cliente"
+          placeholder={ehFinanciamento ? "Quem indicou o cliente" : "Corretor responsável"}
         />
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">Responsável</label>
