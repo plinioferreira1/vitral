@@ -2,6 +2,36 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+async function resolverOuCriar(
+  supabase: SupabaseClient,
+  tabela: string,
+  campoNome: string,
+  tenantId: string,
+  valorDigitado: string
+): Promise<string | null> {
+  const nome = valorDigitado.trim();
+  if (!nome) return null;
+
+  const { data: existente } = await supabase
+    .from(tabela)
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .ilike(campoNome, nome)
+    .limit(1)
+    .maybeSingle();
+
+  if (existente) return existente.id;
+
+  const { data: criado } = await supabase
+    .from(tabela)
+    .insert({ tenant_id: tenantId, [campoNome]: nome })
+    .select("id")
+    .single();
+
+  return criado?.id ?? null;
+}
 
 export async function criarContratoLocacao(formData: FormData) {
   const supabase = await createClient();
@@ -17,16 +47,16 @@ export async function criarContratoLocacao(formData: FormData) {
     .single();
   if (!usuario?.tenant_id) redirect("/onboarding");
 
-  const imovelId = String(formData.get("imovel_id") ?? "") || null;
-  const locadorId = String(formData.get("locador_id") ?? "") || null;
-  const locatarioId = String(formData.get("locatario_id") ?? "") || null;
+  const imovelNome = String(formData.get("imovel") ?? "");
+  const locadorNome = String(formData.get("locador") ?? "");
+  const locatarioNome = String(formData.get("locatario") ?? "");
   const emiteNf = formData.get("emite_nf") === "on";
 
-  let numero = `Contrato ${Date.now().toString().slice(-6)}`;
-  if (imovelId) {
-    const { data: imovel } = await supabase.from("imoveis").select("endereco").eq("id", imovelId).single();
-    if (imovel?.endereco) numero = imovel.endereco;
-  }
+  const imovelId = await resolverOuCriar(supabase, "imoveis", "endereco", usuario.tenant_id, imovelNome);
+  const locadorId = await resolverOuCriar(supabase, "clientes", "nome", usuario.tenant_id, locadorNome);
+  const locatarioId = await resolverOuCriar(supabase, "clientes", "nome", usuario.tenant_id, locatarioNome);
+
+  const numero = imovelNome.trim() || `Contrato ${Date.now().toString().slice(-6)}`;
 
   const { data: contrato, error } = await supabase
     .from("contratos_locacao")

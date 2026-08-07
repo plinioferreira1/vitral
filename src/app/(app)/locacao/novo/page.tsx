@@ -36,16 +36,23 @@ export default async function NovoContratoLocacaoPage({
         action={criarContratoLocacao}
         className="space-y-4 rounded-xl border border-border/60 bg-surface shadow-sm p-6"
       >
-        <Select label="Imóvel" name="imovel_id" options={(imoveis.data ?? []).map((i) => [i.id, i.endereco])} />
-        <Select
-          label="Locador"
-          name="locador_id"
-          options={(clientes.data ?? []).map((c) => [c.id, c.nome])}
+        <CampoTexto
+          label="Imóvel"
+          name="imovel"
+          listId="lista-imoveis"
+          placeholder="Endereço do imóvel"
         />
-        <Select
+        <CampoTexto
+          label="Locador"
+          name="locador"
+          listId="lista-clientes"
+          placeholder="Nome do locador"
+        />
+        <CampoTexto
           label="Locatário"
-          name="locatario_id"
-          options={(clientes.data ?? []).map((c) => [c.id, c.nome])}
+          name="locatario"
+          listId="lista-clientes"
+          placeholder="Nome do locatário"
         />
         <label className="flex items-center gap-2 text-sm text-ink">
           <input type="checkbox" name="emite_nf" defaultChecked className="accent-brand" />
@@ -59,34 +66,43 @@ export default async function NovoContratoLocacaoPage({
           Criar contrato
         </button>
       </form>
+
+      <datalist id="lista-imoveis">
+        {(imoveis.data ?? []).map((i) => (
+          <option key={i.id} value={i.endereco} />
+        ))}
+      </datalist>
+      <datalist id="lista-clientes">
+        {(clientes.data ?? []).map((c) => (
+          <option key={c.id} value={c.nome} />
+        ))}
+      </datalist>
     </div>
   );
 }
 
-function Select({
+function CampoTexto({
   label,
   name,
-  options,
+  listId,
+  placeholder,
 }: {
   label: string;
   name: string;
-  options: [string, string][];
+  listId: string;
+  placeholder: string;
 }) {
   return (
     <div>
       <label className="mb-1 block text-xs font-medium text-ink-muted">{label}</label>
-      <select
+      <input
         name={name}
+        list={listId}
+        placeholder={placeholder}
+        autoComplete="off"
         className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-        defaultValue=""
-      >
-        <option value="">—</option>
-        {options.map(([id, nome]) => (
-          <option key={id} value={id}>
-            {nome}
-          </option>
-        ))}
-      </select>
+      />
+      <p className="mt-1 text-[11px] text-ink-muted">Digite ou escolha um já cadastrado</p>
     </div>
   );
 }
