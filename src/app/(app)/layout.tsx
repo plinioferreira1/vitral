@@ -27,6 +27,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const ehCorretor = usuario.nivel_acesso === "corretor";
   const nivelComAcessoTotal = ["diretor", "gerente", "auxiliar"].includes(usuario.nivel_acesso);
+  const podeConfigurar = ["diretor", "gerente"].includes(usuario.nivel_acesso);
 
   let categorias: string[] = [];
   if (!ehCorretor && !nivelComAcessoTotal) {
@@ -88,12 +89,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               },
             ]
           : []),
-        ...(temVenda ? [{ href: "/autorizacoes", label: "Autorização de Venda" }] : []),
-        ...(temVenda || temLocacao ? [{ href: "/termos-visita", label: "Termo de Visita" }] : []),
+        { href: "/autorizacoes", label: "Autorização de Venda" },
+        { href: "/termos-visita", label: "Termo de Visita" },
         { href: "/calculadora", label: "Calculadora de Proporcionalidade" },
         { href: "/cartorio", label: "Simulação de Custas" },
         { href: "/corretor", label: "Corretor" },
-        ...(nivelComAcessoTotal
+        ...(podeConfigurar
           ? [
               {
                 label: "Configurações",
