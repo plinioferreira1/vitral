@@ -52,8 +52,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             { href: "/financiamentos?aba=processos", label: "Processos" },
           ],
         },
-        { href: "/termos-visita", label: "Termo de Visita" },
-        { href: "/autorizacoes", label: "Autorização de Venda" },
         {
           label: "Locação",
           children: [
@@ -62,9 +60,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             { href: "/locacao?aba=inadimplencias", label: "Inadimplências" },
           ],
         },
-        { href: "/calendario", label: "Calendário" },
+        { href: "/autorizacoes", label: "Autorização de Venda" },
+        { href: "/termos-visita", label: "Termo de Visita" },
         { href: "/calculadora", label: "Calculadora de Proporcionalidade" },
         { href: "/cartorio", label: "Simulação de Custas" },
+        { href: "/corretor", label: "Corretor" },
         {
           label: "Configurações",
           children: [
