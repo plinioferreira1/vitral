@@ -33,7 +33,7 @@ export function gerarLinhaDoTempoPNG(opcoes: {
   const margem = 40;
   const escala = 2;
   const largura = margem * 2 + opcoes.etapas.length * larguraPorEtapa;
-  const altura = 300;
+  const altura = 320;
 
   const canvas = document.createElement("canvas");
   canvas.width = largura * escala;
@@ -127,9 +127,9 @@ export function gerarLinhaDoTempoPNG(opcoes: {
     ctx.textAlign = "left";
   });
 
-  ctx.fillStyle = "#a8a29e";
+  ctx.fillStyle = "#78716c";
   ctx.font = "400 11px Arial, sans-serif";
-  ctx.fillText("Gerado pelo Vitral — Sacra Netimóveis.", margem, altura - 20);
+  ctx.fillText("Gerado pelo Vitral — Sacra Netimóveis.", margem, altura - 35);
 
   const url = canvas.toDataURL("image/png");
   const link = document.createElement("a");
