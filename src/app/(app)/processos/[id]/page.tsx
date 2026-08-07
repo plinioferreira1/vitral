@@ -176,7 +176,7 @@ export default async function ProcessoDetalhePage({
             etapas={etapasSequenciais.map((e) => ({ nome: e.nome, status: e.status }))}
           />
         </div>
-        <div className="overflow-x-auto pb-1 md:overflow-visible">
+        <div className="overflow-x-auto pb-1">
           <div
             className="grid"
             style={{
