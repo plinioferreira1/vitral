@@ -6,6 +6,8 @@ import { ptBR } from "date-fns/locale";
 import { VoltarLink } from "@/components/voltar-link";
 import { CampoMoeda } from "@/components/campo-moeda";
 import { BotaoExportarLinhaTempo } from "@/components/botao-exportar-linha-tempo";
+import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
+import { apagarProcesso } from "../bulk-actions";
 import {
   concluirEtapa,
   reabrirEtapa,
@@ -577,6 +579,16 @@ export default async function ProcessoDetalhePage({
           )}
         </div>
       </details>
+
+      <form action={apagarProcesso}>
+        <input type="hidden" name="id" value={p.id} />
+        <BotaoComConfirmacao
+          mensagem="Apagar este processo? Essa ação não pode ser desfeita."
+          className="text-xs font-medium text-ink-muted hover:text-rose-600"
+        >
+          Apagar processo
+        </BotaoComConfirmacao>
+      </form>
     </div>
   );
 }

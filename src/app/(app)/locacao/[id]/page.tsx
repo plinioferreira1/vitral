@@ -26,6 +26,8 @@ import { SucessoBanner } from "@/components/banners";
 import { VoltarLink } from "@/components/voltar-link";
 import { CampoMoeda } from "@/components/campo-moeda";
 import { hojeISO } from "@/lib/data-br";
+import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
+import { apagarContrato } from "../bulk-actions";
 
 const MESES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez",
@@ -746,6 +748,16 @@ export default async function ContratoLocacaoPage({
           )}
         </div>
       </section>
+
+      <form action={apagarContrato}>
+        <input type="hidden" name="id" value={id} />
+        <BotaoComConfirmacao
+          mensagem="Apagar este contrato? Essa ação não pode ser desfeita."
+          className="text-xs font-medium text-ink-muted hover:text-rose-600"
+        >
+          Apagar contrato
+        </BotaoComConfirmacao>
+      </form>
     </div>
   );
 }

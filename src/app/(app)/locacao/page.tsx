@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { alternarTarefaMensal } from "./actions";
+import { apagarContratosSelecionados } from "./bulk-actions";
+import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { TIPO_CONTA_LABEL } from "@/lib/types";
 import { calcularUrgencia, URGENCIA_COR } from "@/lib/alertas";
 import { Icones } from "@/components/icone-badge";
@@ -46,12 +48,12 @@ export default async function LocacaoPage({
   const { data: contratos } = await supabase
     .from("contratos_locacao")
     .select(
-      `id, numero, ativo,
+      `id, numero, ativo, criado_em,
        imoveis ( endereco ),
        locador:clientes!contratos_locacao_locador_id_fkey ( nome ),
        locatario:clientes!contratos_locacao_locatario_id_fkey ( nome )`
     )
-    .order("numero", { ascending: true });
+    .order("criado_em", { ascending: false });
 
   const { data: contasPendentesRaw } = await supabase
     .from("contas_locacao")
@@ -154,7 +156,17 @@ export default async function LocacaoPage({
       </div>
 
       {aba === "contratos" ? (
-        <div className="space-y-6">
+        <form action={apagarContratosSelecionados} className="space-y-6">
+          {listaContratos.length > 0 && (
+            <div className="flex justify-end">
+              <BotaoComConfirmacao
+                mensagem="Apagar os contratos selecionados? Essa ação não pode ser desfeita."
+                className="rounded-md border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
+              >
+                Apagar selecionados
+              </BotaoComConfirmacao>
+            </div>
+          )}
           <div className="overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
             {listaContratos.length === 0 ? (
               <p className="p-8 text-center text-sm text-ink-muted">
@@ -195,7 +207,7 @@ export default async function LocacaoPage({
               </div>
             </details>
           )}
-        </div>
+        </form>
       ) : aba === "resumo" ? (
         <div className="space-y-6">
           {/* Visão geral do mês */}
@@ -383,10 +395,11 @@ function TabelaContratos({
       {contratos.map((c) => {
         const pendentes = pendentesPorContrato.get(c.id) ?? 0;
         return (
-          <li key={c.id}>
+          <li key={c.id} className="flex items-center gap-3 px-5 py-3.5">
+            <input type="checkbox" name="ids" value={c.id} className="accent-brand" />
             <Link
               href={`/locacao/${c.id}`}
-              className="flex items-center justify-between gap-4 px-5 py-3.5 transition hover:bg-background"
+              className="flex flex-1 items-center justify-between gap-4 transition hover:opacity-80"
             >
               <div className="min-w-0">
                 <p className="truncate font-medium text-ink">{c.imoveis?.endereco ?? c.numero}</p>

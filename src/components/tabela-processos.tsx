@@ -48,6 +48,7 @@ export function TabelaProcessos({
     <table className="w-full text-sm">
       <thead>
         <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
+          <th className="w-8 px-5 py-3"></th>
           <th className="px-5 py-3 font-medium">Imóvel</th>
           {ehFinanciamento ? (
             <>
@@ -69,6 +70,9 @@ export function TabelaProcessos({
       <tbody className="divide-y divide-border">
         {rows.map((p) => (
           <tr key={p.id} className="transition hover:bg-background">
+            <td className="px-5 py-3">
+              <input type="checkbox" name="ids" value={p.id} className="accent-brand" />
+            </td>
             <td className="px-5 py-3">
               <Link href={`/processos/${p.id}`} className="hover:underline">
                 <span className="block font-medium text-ink">{p.imoveis?.endereco ?? "—"}</span>

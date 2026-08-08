@@ -5,6 +5,8 @@ import { ResumoPrazos } from "@/components/resumo-prazos";
 import { CalendarioGrid } from "@/components/calendario-grid";
 import { TabelaProcessos, type ProcessoRow } from "@/components/tabela-processos";
 import { hojeISO } from "@/lib/data-br";
+import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
+import { apagarProcessosSelecionados } from "../processos/bulk-actions";
 
 type Aba = "resumo" | "andamento" | "processos";
 
@@ -83,33 +85,6 @@ export default async function FinanciamentosPage({
         </Link>
       </div>
 
-      <div className="flex gap-1 rounded-lg bg-background p-1 text-sm w-fit">
-        <Link
-          href="/financiamentos?aba=resumo"
-          className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
-            aba === "resumo" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
-          }`}
-        >
-          Resumo
-        </Link>
-        <Link
-          href="/financiamentos?aba=andamento"
-          className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
-            aba === "andamento" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
-          }`}
-        >
-          Em andamento
-        </Link>
-        <Link
-          href="/financiamentos?aba=processos"
-          className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
-            aba === "processos" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
-          }`}
-        >
-          Processos
-        </Link>
-      </div>
-
       {aba === "resumo" ? (
         <div className="space-y-6">
           <ResumoPrazos eventos={eventos} hrefEmAberto="/calendario?categoria=financiamento" />
@@ -127,7 +102,17 @@ export default async function FinanciamentosPage({
           </div>
         </div>
       ) : aba === "andamento" ? (
-        <div className="space-y-6">
+        <form action={apagarProcessosSelecionados} className="space-y-6">
+          {(emAndamento.length > 0 || concluidos.length > 0) && (
+            <div className="flex justify-end">
+              <BotaoComConfirmacao
+                mensagem="Apagar os processos selecionados? Essa ação não pode ser desfeita."
+                className="rounded-md border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
+              >
+                Apagar selecionados
+              </BotaoComConfirmacao>
+            </div>
+          )}
           <div className="overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
             {emAndamento.length === 0 && concluidos.length === 0 ? (
               <p className="p-8 text-center text-sm text-ink-muted">
@@ -153,7 +138,7 @@ export default async function FinanciamentosPage({
               </div>
             </details>
           )}
-        </div>
+        </form>
       ) : (
         <div className="max-w-2xl space-y-6">
           <p className="text-sm text-ink-muted">
