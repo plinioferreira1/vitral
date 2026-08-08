@@ -16,6 +16,7 @@ import {
   alternarEtapaPadrao,
   salvarComissao,
   adicionarComentario,
+  moverEtapa,
 } from "./actions";
 
 export default async function ProcessoDetalhePage({
@@ -172,11 +173,59 @@ export default async function ProcessoDetalhePage({
       <section className="rounded-2xl border border-border bg-surface p-5 md:p-8">
         <div className="mb-5 flex items-center justify-between md:mb-8">
           <h2 className="text-base font-semibold text-ink">Linha do tempo</h2>
-          <BotaoExportarLinhaTempo
-            titulo={p.modelos_processo?.nome ?? "Processo"}
-            subtitulo={`${p.imoveis?.endereco ?? "—"} — ${p.comprador?.nome ?? "Sem comprador"}`}
-            etapas={etapasSequenciais.map((e) => ({ nome: e.nome, status: e.status }))}
-          />
+          <div className="flex items-center gap-2">
+            <details className="relative">
+              <summary className="cursor-pointer list-none rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background">
+                Editar linha do tempo
+              </summary>
+              <div className="absolute right-0 z-10 mt-1 w-72 space-y-1 rounded-md border border-border bg-surface p-2 shadow-md">
+                <p className="px-1 pb-1 text-[11px] text-ink-muted">
+                  Use as setas pra reordenar as etapas desse processo.
+                </p>
+                {etapasSequenciais.map((e, i) => (
+                  <div
+                    key={e.id}
+                    className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs text-ink hover:bg-background"
+                  >
+                    <span className="truncate">{e.nome}</span>
+                    <div className="flex shrink-0 gap-1">
+                      <form action={moverEtapa}>
+                        <input type="hidden" name="processo_id" value={p.id} />
+                        <input type="hidden" name="etapa_id" value={e.id} />
+                        <input type="hidden" name="direcao" value="cima" />
+                        <button
+                          type="submit"
+                          disabled={i === 0}
+                          className="rounded px-1.5 py-0.5 text-ink-muted hover:bg-surface hover:text-ink disabled:opacity-30"
+                          aria-label={`Mover ${e.nome} pra cima`}
+                        >
+                          ↑
+                        </button>
+                      </form>
+                      <form action={moverEtapa}>
+                        <input type="hidden" name="processo_id" value={p.id} />
+                        <input type="hidden" name="etapa_id" value={e.id} />
+                        <input type="hidden" name="direcao" value="baixo" />
+                        <button
+                          type="submit"
+                          disabled={i === etapasSequenciais.length - 1}
+                          className="rounded px-1.5 py-0.5 text-ink-muted hover:bg-surface hover:text-ink disabled:opacity-30"
+                          aria-label={`Mover ${e.nome} pra baixo`}
+                        >
+                          ↓
+                        </button>
+                      </form>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </details>
+            <BotaoExportarLinhaTempo
+              titulo={p.modelos_processo?.nome ?? "Processo"}
+              subtitulo={`${p.imoveis?.endereco ?? "—"} — ${p.comprador?.nome ?? "Sem comprador"}`}
+              etapas={etapasSequenciais.map((e) => ({ nome: e.nome, status: e.status }))}
+            />
+          </div>
         </div>
         <div className="overflow-x-auto pb-1">
           <div

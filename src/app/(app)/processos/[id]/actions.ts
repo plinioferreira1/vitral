@@ -6,6 +6,52 @@ import { revalidatePath } from "next/cache";
 import { parseISO } from "date-fns";
 import { hojeISO } from "@/lib/data-br";
 
+export async function moverEtapa(formData: FormData) {
+  const supabase = await createClient();
+  const processoId = String(formData.get("processo_id") ?? "");
+  const etapaId = String(formData.get("etapa_id") ?? "");
+  const direcao = String(formData.get("direcao") ?? "");
+  if (!processoId || !etapaId) return;
+
+  const { data: processo } = await supabase
+    .from("processos")
+    .select("categoria, tenant_id")
+    .eq("id", processoId)
+    .single();
+  if (!processo) return;
+
+  const { data: especiais } = await supabase
+    .from("etapas_padrao")
+    .select("nome")
+    .eq("tenant_id", processo.tenant_id)
+    .eq("categoria", processo.categoria)
+    .eq("tipo", "especial");
+  const nomesEspeciais = new Set((especiais ?? []).map((e) => e.nome));
+
+  const { data: todasEtapas } = await supabase
+    .from("etapas")
+    .select("id, ordem, nome")
+    .eq("processo_id", processoId)
+    .order("ordem", { ascending: true });
+
+  if (!todasEtapas) return;
+  const etapas = todasEtapas.filter((e) => !nomesEspeciais.has(e.nome));
+
+  const indice = etapas.findIndex((e) => e.id === etapaId);
+  if (indice === -1) return;
+
+  const indiceVizinho = direcao === "cima" ? indice - 1 : indice + 1;
+  if (indiceVizinho < 0 || indiceVizinho >= etapas.length) return;
+
+  const atual = etapas[indice];
+  const vizinha = etapas[indiceVizinho];
+
+  await supabase.from("etapas").update({ ordem: vizinha.ordem }).eq("id", atual.id);
+  await supabase.from("etapas").update({ ordem: atual.ordem }).eq("id", vizinha.id);
+
+  revalidatePath(`/processos/${processoId}`);
+}
+
 export async function concluirEtapa(formData: FormData) {
   const supabase = await createClient();
   const {
