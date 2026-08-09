@@ -37,9 +37,11 @@ export type ProcessoRow = {
 export function TabelaProcessos({
   rows,
   ehFinanciamento,
+  atrasosPorProcesso,
 }: {
   rows: ProcessoRow[];
   ehFinanciamento: boolean;
+  atrasosPorProcesso?: Map<string, number>;
 }) {
   if (rows.length === 0) {
     return <p className="p-8 text-center text-sm text-ink-muted">Nenhum processo aqui.</p>;
@@ -65,6 +67,7 @@ export function TabelaProcessos({
           <th className="px-5 py-3 font-medium">Modelo</th>
           <th className="px-5 py-3 font-medium">Banco</th>
           <th className="px-5 py-3 font-medium">Status</th>
+          {atrasosPorProcesso && <th className="px-5 py-3 font-medium">Atrasos</th>}
         </tr>
       </thead>
       <tbody className="divide-y divide-border">
@@ -112,6 +115,17 @@ export function TabelaProcessos({
                 {STATUS_LABEL[p.status]}
               </span>
             </td>
+            {atrasosPorProcesso && (
+              <td className="px-5 py-3">
+                {(atrasosPorProcesso.get(p.id) ?? 0) > 0 ? (
+                  <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-700">
+                    {atrasosPorProcesso.get(p.id)} atraso{(atrasosPorProcesso.get(p.id) ?? 0) > 1 ? "s" : ""}
+                  </span>
+                ) : (
+                  <span className="text-xs text-ink-muted">—</span>
+                )}
+              </td>
+            )}
           </tr>
         ))}
       </tbody>

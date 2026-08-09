@@ -5,6 +5,7 @@ import { ResumoPrazos } from "@/components/resumo-prazos";
 import { CalendarioGrid } from "@/components/calendario-grid";
 import { TabelaProcessos, type ProcessoRow } from "@/components/tabela-processos";
 import { hojeISO } from "@/lib/data-br";
+import { calcularUrgencia } from "@/lib/alertas";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { apagarProcessosSelecionados } from "../processos/bulk-actions";
 
@@ -67,6 +68,26 @@ export default async function FinanciamentosPage({
   const emAndamento = rows.filter((p) => p.status !== "concluido" && p.status !== "cancelado");
   const concluidos = rows.filter((p) => p.status === "concluido" || p.status === "cancelado");
 
+  const idsEmAndamento = emAndamento.map((p) => p.id);
+  const { data: etapasRaw } =
+    idsEmAndamento.length > 0
+      ? await supabase
+          .from("etapas")
+          .select("processo_id, status, data_prevista")
+          .in("processo_id", idsEmAndamento)
+      : { data: [] as { processo_id: string; status: string; data_prevista: string | null }[] };
+
+  const atrasosPorProcesso = new Map<string, number>();
+  (etapasRaw ?? []).forEach((e) => {
+    const { urgencia } = calcularUrgencia({
+      status: e.status as "pendente" | "em_andamento" | "concluida" | "bloqueada",
+      data_prevista: e.data_prevista,
+    });
+    if (urgencia === "atrasada") {
+      atrasosPorProcesso.set(e.processo_id, (atrasosPorProcesso.get(e.processo_id) ?? 0) + 1);
+    }
+  });
+
   const eventos = (await getEventosCalendario()).filter((e) => e.categoria === "financiamento");
   const referencia = new Date(`${hojeISO()}T00:00:00`);
 
@@ -123,7 +144,7 @@ export default async function FinanciamentosPage({
                 .
               </p>
             ) : (
-              <TabelaProcessos rows={emAndamento} ehFinanciamento={true} />
+              <TabelaProcessos rows={emAndamento} ehFinanciamento={true} atrasosPorProcesso={atrasosPorProcesso} />
             )}
           </div>
 
