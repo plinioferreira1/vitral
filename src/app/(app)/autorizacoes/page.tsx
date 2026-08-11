@@ -17,7 +17,7 @@ export default async function AutorizacoesPage() {
   const supabase = await createClient();
   const { data: autorizacoes } = await supabase
     .from("autorizacoes_venda")
-    .select("id, status, criado_em, imoveis ( endereco ), clientes ( nome )")
+    .select("id, status, criado_em, imoveis ( endereco ), clientes!autorizacoes_venda_vendedor_id_fkey ( nome )")
     .order("criado_em", { ascending: false });
 
   const rows = (autorizacoes ?? []) as unknown as {

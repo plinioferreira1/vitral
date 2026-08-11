@@ -32,7 +32,7 @@ export default async function AutorizacaoDetalhePage({
 
   const { data: autorizacao } = await supabase
     .from("autorizacoes_venda")
-    .select("*, imoveis ( endereco ), clientes ( nome )")
+    .select("*, imoveis ( endereco ), clientes!autorizacoes_venda_vendedor_id_fkey ( nome )")
     .eq("id", id)
     .single();
 
