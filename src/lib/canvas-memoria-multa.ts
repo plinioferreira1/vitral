@@ -48,9 +48,17 @@ export async function gerarMemoriaMultaPNG(dados: DadosMemoriaMulta) {
   ];
 
   const alturaLinha = 34;
-  const topoLinhas = 260;
-  const alturaResultado = 90;
-  const alturaTotal = topoLinhas + linhas.length * alturaLinha + alturaResultado + 60;
+  const topoLinhas = 210;
+  const gapAntesFormula = 4;
+  const gapFormulaAteBox = 30;
+  const alturaBoxResultado = 78;
+  const gapBoxAteRodape = 34;
+  const espacoAposRodape = 28; // até a borda inferior do cartão
+
+  const yFimLinhas = topoLinhas + linhas.length * alturaLinha;
+  const yBox = yFimLinhas + gapAntesFormula + gapFormulaAteBox;
+  const yRodape = yBox + alturaBoxResultado + gapBoxAteRodape;
+  const alturaTotal = yRodape + espacoAposRodape + margem;
 
   canvas.width = largura * escala;
   canvas.height = alturaTotal * escala;
@@ -118,40 +126,34 @@ export async function gerarMemoriaMultaPNG(dados: DadosMemoriaMulta) {
   });
 
   // fórmula
-  y += 4;
+  y += gapAntesFormula;
   ctx.fillStyle = "#a8a29e";
   ctx.font = "italic 11px Arial, sans-serif";
   ctx.fillText("multa proporcional = multa cheia × (meses restantes ÷ meses totais)", xEsq, y);
-  y += 30;
 
   // resultado em destaque
   ctx.fillStyle = "#fdf4e7";
   ctx.beginPath();
   const raioResultado = 14;
-  const alturaBoxResultado = 70;
-  ctx.moveTo(xEsq + raioResultado, y);
-  ctx.arcTo(xDir, y, xDir, y + alturaBoxResultado, raioResultado);
-  ctx.arcTo(xDir, y + alturaBoxResultado, xEsq, y + alturaBoxResultado, raioResultado);
-  ctx.arcTo(xEsq, y + alturaBoxResultado, xEsq, y, raioResultado);
-  ctx.arcTo(xEsq, y, xDir, y, raioResultado);
+  ctx.moveTo(xEsq + raioResultado, yBox);
+  ctx.arcTo(xDir, yBox, xDir, yBox + alturaBoxResultado, raioResultado);
+  ctx.arcTo(xDir, yBox + alturaBoxResultado, xEsq, yBox + alturaBoxResultado, raioResultado);
+  ctx.arcTo(xEsq, yBox + alturaBoxResultado, xEsq, yBox, raioResultado);
+  ctx.arcTo(xEsq, yBox, xDir, yBox, raioResultado);
   ctx.closePath();
   ctx.fill();
 
   ctx.fillStyle = "#92400e";
   ctx.font = "600 12px Arial, sans-serif";
-  ctx.fillText("MULTA PROPORCIONAL", xEsq + 20, y + 26);
+  ctx.fillText("MULTA PROPORCIONAL", xEsq + 20, yBox + 24);
   ctx.fillStyle = "#731515";
   ctx.font = "700 30px Arial, sans-serif";
-  ctx.fillText(brl(dados.multaProporcional), xEsq + 20, y + 56);
+  ctx.fillText(brl(dados.multaProporcional), xEsq + 20, yBox + 58);
 
   // rodapé
-  ctx.fillStyle = "#a8a29e";
+  ctx.fillStyle = "#78716c";
   ctx.font = "400 11px Arial, sans-serif";
-  ctx.fillText(
-    "Cálculo gerado eletronicamente pelo Vitral — Sacra Netimóveis.",
-    xEsq,
-    alturaTotal - margem - 15
-  );
+  ctx.fillText("Cálculo gerado eletronicamente pelo Vitral — Sacra Netimóveis.", xEsq, yRodape);
 
   const url = canvas.toDataURL("image/png");
   const link = document.createElement("a");
