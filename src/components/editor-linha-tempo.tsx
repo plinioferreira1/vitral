@@ -33,13 +33,14 @@ export function EditorLinhaTempo({
     setEtapas(novaLista);
   }
 
-  async function salvar() {
+  async function salvar(evento: React.MouseEvent<HTMLButtonElement>) {
     setSalvando(true);
     try {
       await salvarOrdemEtapas(
         processoId,
         etapas.map((e) => e.id)
       );
+      evento.currentTarget.closest("details")?.removeAttribute("open");
     } finally {
       setSalvando(false);
     }
