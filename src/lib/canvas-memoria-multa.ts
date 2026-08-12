@@ -52,7 +52,7 @@ export async function gerarMemoriaMultaPNG(dados: DadosMemoriaMulta) {
   const gapAntesFormula = 4;
   const gapFormulaAteBox = 30;
   const alturaBoxResultado = 78;
-  const gapBoxAteRodape = 34;
+  const gapBoxAteRodape = 45;
   const espacoAposRodape = 28; // até a borda inferior do cartão
 
   const yFimLinhas = topoLinhas + linhas.length * alturaLinha;
