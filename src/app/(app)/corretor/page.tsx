@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { alternarEtapaOnboarding } from "./actions";
+import { MateriaisCorretor } from "@/components/materiais-corretor";
 
 export default async function CorretorPage() {
   const supabase = await createClient();
@@ -102,6 +103,8 @@ export default async function CorretorPage() {
           })
         )}
       </div>
+
+      <MateriaisCorretor />
     </div>
   );
 }
