@@ -102,6 +102,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 children: [
                   { href: "/etapas-padrao", label: "Etapas padrão" },
                   { href: "/tarefas-recorrentes", label: "Tarefas recorrentes" },
+                  { href: "/onboarding-corretor", label: "Onboarding do Corretor" },
                   { href: "/membros", label: "Membros/Permissões" },
                 ],
               },
