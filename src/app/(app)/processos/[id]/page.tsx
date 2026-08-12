@@ -16,8 +16,8 @@ import {
   alternarEtapaPadrao,
   salvarComissao,
   adicionarComentario,
-  moverEtapa,
 } from "./actions";
+import { EditorLinhaTempo } from "@/components/editor-linha-tempo";
 
 export default async function ProcessoDetalhePage({
   params,
@@ -178,46 +178,15 @@ export default async function ProcessoDetalhePage({
               <summary className="cursor-pointer list-none rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background">
                 Editar linha do tempo
               </summary>
-              <div className="absolute right-0 z-10 mt-1 w-72 space-y-1 rounded-md border border-border bg-surface p-2 shadow-md">
-                <p className="px-1 pb-1 text-[11px] text-ink-muted">
-                  Use as setas pra reordenar as etapas desse processo.
-                </p>
-                {etapasSequenciais.map((e, i) => (
-                  <div
-                    key={e.id}
-                    className="flex items-center justify-between gap-2 rounded-md px-2 py-1.5 text-xs text-ink hover:bg-background"
-                  >
-                    <span className="truncate">{e.nome}</span>
-                    <div className="flex shrink-0 gap-1">
-                      <form action={moverEtapa}>
-                        <input type="hidden" name="processo_id" value={p.id} />
-                        <input type="hidden" name="etapa_id" value={e.id} />
-                        <input type="hidden" name="direcao" value="cima" />
-                        <button
-                          type="submit"
-                          disabled={i === 0}
-                          className="rounded px-1.5 py-0.5 text-ink-muted hover:bg-surface hover:text-ink disabled:opacity-30"
-                          aria-label={`Mover ${e.nome} pra cima`}
-                        >
-                          ↑
-                        </button>
-                      </form>
-                      <form action={moverEtapa}>
-                        <input type="hidden" name="processo_id" value={p.id} />
-                        <input type="hidden" name="etapa_id" value={e.id} />
-                        <input type="hidden" name="direcao" value="baixo" />
-                        <button
-                          type="submit"
-                          disabled={i === etapasSequenciais.length - 1}
-                          className="rounded px-1.5 py-0.5 text-ink-muted hover:bg-surface hover:text-ink disabled:opacity-30"
-                          aria-label={`Mover ${e.nome} pra baixo`}
-                        >
-                          ↓
-                        </button>
-                      </form>
-                    </div>
-                  </div>
-                ))}
+              <div className="absolute right-0 z-10 mt-1 w-72 rounded-md border border-border bg-surface p-2 shadow-md">
+                <EditorLinhaTempo
+                  processoId={p.id}
+                  etapasIniciais={etapasSequenciais.map((e) => ({
+                    id: e.id,
+                    nome: e.nome,
+                    status: e.status,
+                  }))}
+                />
               </div>
             </details>
             <BotaoExportarLinhaTempo
