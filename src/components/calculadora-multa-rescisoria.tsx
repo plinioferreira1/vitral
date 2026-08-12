@@ -26,8 +26,8 @@ export function CalculadoraMultaRescisoria() {
 
   let resultado: {
     multaTotal: number;
-    diasTotais: number;
-    diasRestantes: number;
+    mesesTotais: number;
+    mesesRestantes: number;
     multaProporcional: number;
   } | null = null;
   let aviso: string | null = null;
@@ -35,6 +35,8 @@ export function CalculadoraMultaRescisoria() {
   if (dInicio && dFim && dRescisao && !isNaN(valorAluguel) && !isNaN(qtdMeses)) {
     const diasTotais = diasEntre(dInicio, dFim);
     const diasRestantes = diasEntre(dRescisao, dFim);
+    const mesesTotais = diasTotais / 30;
+    const mesesRestantes = diasRestantes / 30;
     const multaTotal = valorAluguel * qtdMeses;
 
     if (diasTotais <= 0) {
@@ -42,11 +44,11 @@ export function CalculadoraMultaRescisoria() {
     } else if (dRescisao < dInicio) {
       aviso = "A data de rescisão não pode ser antes do início do contrato.";
     } else if (diasRestantes <= 0) {
-      resultado = { multaTotal, diasTotais, diasRestantes: 0, multaProporcional: 0 };
+      resultado = { multaTotal, mesesTotais, mesesRestantes: 0, multaProporcional: 0 };
       aviso = "O contrato já venceu na data de rescisão informada — sem multa proporcional.";
     } else {
-      const multaProporcional = multaTotal * (diasRestantes / diasTotais);
-      resultado = { multaTotal, diasTotais, diasRestantes, multaProporcional };
+      const multaProporcional = multaTotal * (mesesRestantes / mesesTotais);
+      resultado = { multaTotal, mesesTotais, mesesRestantes, multaProporcional };
     }
   }
 
@@ -154,8 +156,8 @@ export function CalculadoraMultaRescisoria() {
                     fim: formatarDataCurta(fim),
                     rescisao: formatarDataCurta(rescisao),
                     multaTotal: resultado.multaTotal,
-                    diasTotais: resultado.diasTotais,
-                    diasRestantes: resultado.diasRestantes,
+                    mesesTotais: resultado.mesesTotais,
+                    mesesRestantes: resultado.mesesRestantes,
                     multaProporcional: resultado.multaProporcional,
                   });
                 } finally {
@@ -174,12 +176,12 @@ export function CalculadoraMultaRescisoria() {
               <p className="font-medium text-ink">{brl(resultado.multaTotal)}</p>
             </div>
             <div>
-              <p className="text-xs text-ink-muted">Dias totais do contrato</p>
-              <p className="font-medium text-ink">{resultado.diasTotais}</p>
+              <p className="text-xs text-ink-muted">Meses totais do contrato</p>
+              <p className="font-medium text-ink">{resultado.mesesTotais.toFixed(1)}</p>
             </div>
             <div>
-              <p className="text-xs text-ink-muted">Dias restantes na rescisão</p>
-              <p className="font-medium text-ink">{resultado.diasRestantes}</p>
+              <p className="text-xs text-ink-muted">Meses restantes na rescisão</p>
+              <p className="font-medium text-ink">{resultado.mesesRestantes.toFixed(1)}</p>
             </div>
           </div>
         </div>

@@ -17,8 +17,8 @@ export interface DadosMemoriaMulta {
   fim: string;
   rescisao: string;
   multaTotal: number;
-  diasTotais: number;
-  diasRestantes: number;
+  mesesTotais: number;
+  mesesRestantes: number;
   multaProporcional: number;
 }
 
@@ -43,8 +43,8 @@ export async function gerarMemoriaMultaPNG(dados: DadosMemoriaMulta) {
     { label: "Início do contrato", valor: dados.inicio },
     { label: "Término do contrato", valor: dados.fim },
     { label: "Data da rescisão", valor: dados.rescisao },
-    { label: "Dias totais do contrato", valor: `${dados.diasTotais} dias` },
-    { label: "Dias restantes na rescisão", valor: `${dados.diasRestantes} dias` },
+    { label: "Meses totais do contrato", valor: `${dados.mesesTotais.toFixed(1)} meses` },
+    { label: "Meses restantes na rescisão", valor: `${dados.mesesRestantes.toFixed(1)} meses` },
   ];
 
   const alturaLinha = 34;
@@ -121,7 +121,7 @@ export async function gerarMemoriaMultaPNG(dados: DadosMemoriaMulta) {
   y += 4;
   ctx.fillStyle = "#a8a29e";
   ctx.font = "italic 11px Arial, sans-serif";
-  ctx.fillText("multa proporcional = multa cheia × (dias restantes ÷ dias totais)", xEsq, y);
+  ctx.fillText("multa proporcional = multa cheia × (meses restantes ÷ meses totais)", xEsq, y);
   y += 30;
 
   // resultado em destaque
