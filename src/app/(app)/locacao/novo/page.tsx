@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { criarContratoLocacao } from "./actions";
 import { VoltarLink } from "@/components/voltar-link";
+import { BotaoSubmit } from "@/components/botao-submit";
 
 export default async function NovoContratoLocacaoPage({
   searchParams,
@@ -59,12 +60,9 @@ export default async function NovoContratoLocacaoPage({
           Emite nota fiscal
         </label>
 
-        <button
-          type="submit"
-          className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white hover:opacity-90"
-        >
+        <BotaoSubmit className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white hover:opacity-90">
           Criar contrato
-        </button>
+        </BotaoSubmit>
       </form>
 
       <datalist id="lista-imoveis">

@@ -39,18 +39,18 @@ type EstadoVisual = "pago" | "em_dia" | "vencido" | "nao_aplicavel";
 
 const ESTADO_CHECKBOX: Record<EstadoVisual, string> = {
   pago: "border-emerald-500 bg-emerald-500 text-white",
-  em_dia: "border-amber-400 bg-surface text-amber-400",
-  vencido: "border-rose-500 bg-surface text-rose-500",
-  nao_aplicavel: "border-border-strong bg-surface text-transparent",
+  em_dia: "border-amber-400 border-2 bg-surface text-amber-400",
+  vencido: "border-rose-500 border-2 bg-surface text-rose-500",
+  nao_aplicavel: "border-border-strong border-2 bg-surface text-transparent",
 };
 
 function IconeContaCheck() {
   return (
-    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+    <svg width="13" height="13" viewBox="0 0 12 12" fill="none">
       <path
         d="M2 6.5L4.5 9L10 3"
         stroke="currentColor"
-        strokeWidth="2"
+        strokeWidth="2.3"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -438,10 +438,10 @@ export default async function ContratoLocacaoPage({
                               title={`${TIPO_CONTA_LABEL[tipo]} — ${MESES[mesIdx]}/${ano}${
                                 estado === "em_dia" ? " (em dia)" : estado === "vencido" ? " (vencido)" : ""
                               }`}
-                              className="flex h-9 w-full items-center justify-center rounded-md transition hover:bg-background"
+                              className="flex h-10 w-full items-center justify-center rounded-md transition hover:bg-background active:scale-95"
                             >
                               <span
-                                className={`flex h-[18px] w-[18px] items-center justify-center rounded border ${ESTADO_CHECKBOX[estado]}`}
+                                className={`flex h-5 w-5 items-center justify-center rounded-[5px] transition-colors ${ESTADO_CHECKBOX[estado]}`}
                               >
                                 {estado === "pago" && <IconeContaCheck />}
                               </span>

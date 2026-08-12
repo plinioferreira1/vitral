@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { criarProcesso } from "./actions";
 import type { CategoriaProcesso } from "@/lib/types";
 import { CampoMoeda } from "@/components/campo-moeda";
+import { BotaoSubmit } from "@/components/botao-submit";
 
 interface EtapaPadraoBasica {
   id: string;
@@ -246,12 +247,9 @@ export function NovoProcessoForm({
         )
       )}
 
-      <button
-        type="submit"
-        className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white hover:opacity-90"
-      >
+      <BotaoSubmit className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white hover:opacity-90">
         Criar processo
-      </button>
+      </BotaoSubmit>
     </form>
   );
 }

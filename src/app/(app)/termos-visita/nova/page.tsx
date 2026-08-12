@@ -1,5 +1,6 @@
 import { VoltarLink } from "@/components/voltar-link";
 import { CampoMoeda } from "@/components/campo-moeda";
+import { BotaoSubmit } from "@/components/botao-submit";
 import { hojeISO } from "@/lib/data-br";
 import { criarTermoVisita } from "../actions";
 
@@ -109,12 +110,9 @@ export default function NovoTermoVisitaPage() {
           </p>
         </div>
 
-        <button
-          type="submit"
-          className="w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
-        >
+        <BotaoSubmit className="w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:opacity-90">
           Criar termo de visita
-        </button>
+        </BotaoSubmit>
       </form>
     </div>
   );

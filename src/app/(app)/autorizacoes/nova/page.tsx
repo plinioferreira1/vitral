@@ -1,5 +1,6 @@
 import { VoltarLink } from "@/components/voltar-link";
 import { CampoMoeda } from "@/components/campo-moeda";
+import { BotaoSubmit } from "@/components/botao-submit";
 import { REGIOES_ADMINISTRATIVAS_DF } from "@/lib/circunscricoes-df";
 import { criarAutorizacao } from "../actions";
 
@@ -207,12 +208,9 @@ export default function NovaAutorizacaoPage() {
           />
         </div>
 
-        <button
-          type="submit"
-          className="w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:opacity-90"
-        >
+        <BotaoSubmit className="w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:opacity-90">
           Criar autorização
-        </button>
+        </BotaoSubmit>
       </form>
     </div>
   );
