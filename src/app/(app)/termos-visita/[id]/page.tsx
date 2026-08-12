@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { VoltarLink } from "@/components/voltar-link";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
 import { BotaoCertificadoVisita } from "@/components/botao-certificado-visita";
+import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { cancelarTermoVisita, atualizarFeedbackVisita } from "../actions";
+import { apagarTermoVisita } from "../bulk-actions";
 
 const STATUS_COR: Record<string, string> = {
   pendente: "bg-amber-50 text-amber-700 border-amber-100",
@@ -213,6 +215,16 @@ export default async function TermoVisitaDetalhePage({
           </button>
         </form>
       )}
+
+      <form action={apagarTermoVisita}>
+        <input type="hidden" name="id" value={t.id} />
+        <BotaoComConfirmacao
+          mensagem="Apagar este termo de visita? Essa ação não pode ser desfeita."
+          className="text-xs font-medium text-ink-muted hover:text-rose-600"
+        >
+          Apagar termo
+        </BotaoComConfirmacao>
+      </form>
     </div>
   );
 }

@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { VoltarLink } from "@/components/voltar-link";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
 import { BotaoCertificadoAutorizacao } from "@/components/botao-certificado-autorizacao";
+import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { cancelarAutorizacao } from "../actions";
+import { apagarAutorizacao } from "../bulk-actions";
 
 const STATUS_COR: Record<string, string> = {
   pendente: "bg-amber-50 text-amber-700 border-amber-100",
@@ -183,6 +185,16 @@ export default async function AutorizacaoDetalhePage({
           </button>
         </form>
       )}
+
+      <form action={apagarAutorizacao}>
+        <input type="hidden" name="id" value={a.id} />
+        <BotaoComConfirmacao
+          mensagem="Apagar esta autorização? Essa ação não pode ser desfeita."
+          className="text-xs font-medium text-ink-muted hover:text-rose-600"
+        >
+          Apagar autorização
+        </BotaoComConfirmacao>
+      </form>
     </div>
   );
 }
