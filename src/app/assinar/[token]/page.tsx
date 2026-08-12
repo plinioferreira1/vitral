@@ -140,7 +140,8 @@ export default async function AssinarPage({
             <p>
               <strong>Tipo de autorização:</strong>{" "}
               {data.exclusividade ? "COM exclusividade" : "SEM exclusividade"} ·{" "}
-              <strong>Valor de anúncio:</strong> {brl(data.valor_imovel)}
+              <strong>Valor de anúncio:</strong> {brl(data.valor_imovel)} ·{" "}
+              <strong>Comissão:</strong> {data.comissao_percentual}%
             </p>
 
             <div className="space-y-2 border-t border-border pt-3">
