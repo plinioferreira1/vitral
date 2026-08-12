@@ -3,6 +3,12 @@
 import { useState } from "react";
 import { brl, parseBR, formatarEntradaBR, parseDataISO, diasEntre } from "@/lib/proporcionalidade";
 import { hojeISO } from "@/lib/data-br";
+import { gerarMemoriaMultaPNG } from "@/lib/canvas-memoria-multa";
+
+function formatarDataCurta(iso: string): string {
+  if (!iso) return "—";
+  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR");
+}
 
 export function CalculadoraMultaRescisoria() {
   const [aluguel, setAluguel] = useState("");
@@ -10,6 +16,7 @@ export function CalculadoraMultaRescisoria() {
   const [inicio, setInicio] = useState("");
   const [fim, setFim] = useState("");
   const [rescisao, setRescisao] = useState(hojeISO());
+  const [exportando, setExportando] = useState(false);
 
   const valorAluguel = parseBR(aluguel);
   const qtdMeses = parseBR(meses);
@@ -129,8 +136,37 @@ export function CalculadoraMultaRescisoria() {
 
       {resultado && (
         <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-          <p className="text-xs text-ink-muted">Multa proporcional</p>
-          <p className="font-mono text-3xl font-semibold text-ink">{brl(resultado.multaProporcional)}</p>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs text-ink-muted">Multa proporcional</p>
+              <p className="font-mono text-3xl font-semibold text-ink">{brl(resultado.multaProporcional)}</p>
+            </div>
+            <button
+              type="button"
+              disabled={exportando}
+              onClick={async () => {
+                setExportando(true);
+                try {
+                  await gerarMemoriaMultaPNG({
+                    aluguel: valorAluguel,
+                    meses: qtdMeses,
+                    inicio: formatarDataCurta(inicio),
+                    fim: formatarDataCurta(fim),
+                    rescisao: formatarDataCurta(rescisao),
+                    multaTotal: resultado.multaTotal,
+                    diasTotais: resultado.diasTotais,
+                    diasRestantes: resultado.diasRestantes,
+                    multaProporcional: resultado.multaProporcional,
+                  });
+                } finally {
+                  setExportando(false);
+                }
+              }}
+              className="shrink-0 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background disabled:opacity-60"
+            >
+              {exportando ? "Gerando..." : "Exportar memória de cálculo"}
+            </button>
+          </div>
 
           <div className="mt-4 grid grid-cols-3 gap-4 border-t border-border pt-4 text-sm">
             <div>
