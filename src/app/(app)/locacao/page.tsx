@@ -6,6 +6,7 @@ import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { TIPO_CONTA_LABEL } from "@/lib/types";
 import { calcularUrgencia, URGENCIA_COR } from "@/lib/alertas";
 import { Icones } from "@/components/icone-badge";
+import { CalculadoraMultaRescisoria } from "@/components/calculadora-multa-rescisoria";
 import { hojeISO } from "@/lib/data-br";
 import { addMonths, format, parseISO, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -18,7 +19,7 @@ function segundaFeiraDaSemana(): string {
   return format(startOfWeek(parseISO(hojeISO()), { weekStartsOn: 1 }), "yyyy-MM-dd");
 }
 
-type Aba = "resumo" | "contratos" | "inadimplencias";
+type Aba = "resumo" | "contratos" | "inadimplencias" | "multa";
 type Filtro = "mes" | "atrasadas" | "pagas" | undefined;
 
 export default async function LocacaoPage({
@@ -28,7 +29,13 @@ export default async function LocacaoPage({
 }) {
   const { mes, aba: abaParam, filtro: filtroParam } = await searchParams;
   const aba: Aba =
-    abaParam === "contratos" ? "contratos" : abaParam === "inadimplencias" ? "inadimplencias" : "resumo";
+    abaParam === "contratos"
+      ? "contratos"
+      : abaParam === "inadimplencias"
+        ? "inadimplencias"
+        : abaParam === "multa"
+          ? "multa"
+          : "resumo";
   const filtro: Filtro =
     filtroParam === "mes" || filtroParam === "atrasadas" || filtroParam === "pagas"
       ? filtroParam
@@ -313,7 +320,7 @@ export default async function LocacaoPage({
             </div>
           </div>
         </div>
-      ) : (
+      ) : aba === "inadimplencias" ? (
         <div className="space-y-6">
           <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
             <div className="mb-3 flex items-center justify-between">
@@ -371,7 +378,9 @@ export default async function LocacaoPage({
             )}
           </div>
         </div>
-      )}
+      ) : aba === "multa" ? (
+        <CalculadoraMultaRescisoria />
+      ) : null}
     </div>
   );
 }
