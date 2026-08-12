@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { foroPorRegiaoAdministrativa } from "@/lib/circunscricoes-df";
+import { objetoParcial, objetoVazio } from "@/lib/objeto-parcial";
 
 async function resolverOuCriar(
   supabase: SupabaseClient,
@@ -66,45 +67,45 @@ export async function criarAutorizacao(formData: FormData) {
   // (o resolverOuCriar só preenche o nome/endereço na criação; os
   // demais campos do formulário são salvos aqui, sempre que
   // informados).
-  await supabase
-    .from("clientes")
-    .update({
-      cpf_cnpj: campo("vendedor_cpf"),
-      rg: campo("vendedor_rg"),
-      telefone: campo("vendedor_telefone"),
-      endereco: campo("vendedor_endereco"),
-    })
-    .eq("id", vendedorId);
+  const dadosVendedor = objetoParcial({
+    cpf_cnpj: campo("vendedor_cpf"),
+    rg: campo("vendedor_rg"),
+    telefone: campo("vendedor_telefone"),
+    endereco: campo("vendedor_endereco"),
+  });
+  if (!objetoVazio(dadosVendedor)) {
+    await supabase.from("clientes").update(dadosVendedor).eq("id", vendedorId);
+  }
 
   const regiaoAdministrativa = campo("regiao_administrativa");
 
-  await supabase
-    .from("imoveis")
-    .update({
-      cep: campo("cep"),
-      matricula: campo("matricula"),
-      area_construida: campo("area_construida"),
-      area_lote: campo("area_lote"),
-      inscricao_iptu: campo("inscricao_iptu"),
-      valor_condominio: formData.get("valor_condominio") ? Number(formData.get("valor_condominio")) : null,
-      regiao_administrativa: regiaoAdministrativa,
-    })
-    .eq("id", imovelId);
+  const dadosImovel = objetoParcial({
+    cep: campo("cep"),
+    matricula: campo("matricula"),
+    area_construida: campo("area_construida"),
+    area_lote: campo("area_lote"),
+    inscricao_iptu: campo("inscricao_iptu"),
+    valor_condominio: formData.get("valor_condominio") ? Number(formData.get("valor_condominio")) : null,
+    regiao_administrativa: regiaoAdministrativa,
+  });
+  if (!objetoVazio(dadosImovel)) {
+    await supabase.from("imoveis").update(dadosImovel).eq("id", imovelId);
+  }
 
   let conjugeId: string | null = null;
   const conjugeNome = campo("conjuge_nome");
   if (conjugeNome) {
     conjugeId = await resolverOuCriar(supabase, "clientes", "nome", tenantId, conjugeNome);
     if (conjugeId) {
-      await supabase
-        .from("clientes")
-        .update({
-          cpf_cnpj: campo("conjuge_cpf"),
-          rg: campo("conjuge_rg"),
-          telefone: campo("conjuge_telefone"),
-          endereco: campo("conjuge_endereco"),
-        })
-        .eq("id", conjugeId);
+      const dadosConjuge = objetoParcial({
+        cpf_cnpj: campo("conjuge_cpf"),
+        rg: campo("conjuge_rg"),
+        telefone: campo("conjuge_telefone"),
+        endereco: campo("conjuge_endereco"),
+      });
+      if (!objetoVazio(dadosConjuge)) {
+        await supabase.from("clientes").update(dadosConjuge).eq("id", conjugeId);
+      }
     }
   }
 

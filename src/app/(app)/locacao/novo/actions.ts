@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { objetoParcial, objetoVazio } from "@/lib/objeto-parcial";
 
 async function resolverOuCriar(
   supabase: SupabaseClient,
@@ -52,9 +53,24 @@ export async function criarContratoLocacao(formData: FormData) {
   const locatarioNome = String(formData.get("locatario") ?? "");
   const emiteNf = formData.get("emite_nf") === "on";
 
+  const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
+
   const imovelId = await resolverOuCriar(supabase, "imoveis", "endereco", usuario.tenant_id, imovelNome);
   const locadorId = await resolverOuCriar(supabase, "clientes", "nome", usuario.tenant_id, locadorNome);
   const locatarioId = await resolverOuCriar(supabase, "clientes", "nome", usuario.tenant_id, locatarioNome);
+
+  if (locadorId) {
+    const dadosLocador = objetoParcial({ telefone: campo("locador_telefone"), email: campo("locador_email") });
+    if (!objetoVazio(dadosLocador)) {
+      await supabase.from("clientes").update(dadosLocador).eq("id", locadorId);
+    }
+  }
+  if (locatarioId) {
+    const dadosLocatario = objetoParcial({ telefone: campo("locatario_telefone"), email: campo("locatario_email") });
+    if (!objetoVazio(dadosLocatario)) {
+      await supabase.from("clientes").update(dadosLocatario).eq("id", locatarioId);
+    }
+  }
 
   const numero = imovelNome.trim() || `Contrato ${Date.now().toString().slice(-6)}`;
 

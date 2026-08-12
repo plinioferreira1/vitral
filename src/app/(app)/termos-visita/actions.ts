@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { objetoParcial, objetoVazio } from "@/lib/objeto-parcial";
 import { hojeISO } from "@/lib/data-br";
 
 async function resolverOuCriar(
@@ -62,10 +63,10 @@ export async function criarTermoVisita(formData: FormData) {
 
   if (!imovelId || !clienteId) return;
 
-  await supabase
-    .from("clientes")
-    .update({ telefone: campo("cliente_telefone"), email: campo("cliente_email") })
-    .eq("id", clienteId);
+  const dadosCliente = objetoParcial({ telefone: campo("cliente_telefone"), email: campo("cliente_email") });
+  if (!objetoVazio(dadosCliente)) {
+    await supabase.from("clientes").update(dadosCliente).eq("id", clienteId);
+  }
 
   let corretorId: string | null = null;
   const corretorNome = campo("corretor_nome");

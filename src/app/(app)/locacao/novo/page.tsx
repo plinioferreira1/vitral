@@ -43,18 +43,56 @@ export default async function NovoContratoLocacaoPage({
           listId="lista-imoveis"
           placeholder="Endereço do imóvel"
         />
-        <CampoTexto
-          label="Locador"
-          name="locador"
-          listId="lista-clientes"
-          placeholder="Nome do locador"
-        />
-        <CampoTexto
-          label="Locatário"
-          name="locatario"
-          listId="lista-clientes"
-          placeholder="Nome do locatário"
-        />
+
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            Locador
+          </p>
+          <div className="space-y-3">
+            <CampoTexto label="Nome" name="locador" listId="lista-clientes" placeholder="Nome do locador" />
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                name="locador_telefone"
+                placeholder="Telefone"
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+              <input
+                name="locador_email"
+                type="email"
+                placeholder="E-mail"
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            Locatário
+          </p>
+          <div className="space-y-3">
+            <CampoTexto
+              label="Nome"
+              name="locatario"
+              listId="lista-clientes"
+              placeholder="Nome do locatário"
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <input
+                name="locatario_telefone"
+                placeholder="Telefone"
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+              <input
+                name="locatario_email"
+                type="email"
+                placeholder="E-mail"
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </div>
+          </div>
+        </div>
+
         <label className="flex items-center gap-2 text-sm text-ink">
           <input type="checkbox" name="emite_nf" defaultChecked className="accent-brand" />
           Emite nota fiscal
