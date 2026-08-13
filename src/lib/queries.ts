@@ -59,6 +59,7 @@ export interface EventoCalendario {
   href: string;
   responsavelNome: string | null;
   concluida: boolean;
+  recorrente?: boolean;
 }
 
 /**
@@ -167,29 +168,26 @@ export async function getEventosCalendario(): Promise<EventoCalendario[]> {
 
   const hoje = new Date(`${hojeISO()}T00:00:00`);
   const eventosTarefas: EventoCalendario[] = [];
-  // Só do mês atual em diante — meses passados não geram ocorrência
-  // (uma tarefa recorrente "atrasada" de um mês que já virou não faz
-  // sentido ficar acumulando; o que importa é o período atual).
+  // Só do mês atual em diante — meses passados não geram ocorrência.
   for (let deslocamento = 0; deslocamento <= 3; deslocamento++) {
     const mesReferencia = addMonths(hoje, deslocamento);
     for (const tarefa of (tarefasRaw ?? []) as unknown as RegraTarefa[]) {
       for (const ocorrencia of ocorrenciasDaTarefa(tarefa, mesReferencia)) {
         const dataStr = ocorrencia.data.toISOString().slice(0, 10);
         const concluida = statusPorChave.get(`${tarefa.id}-${ocorrencia.competencia}`) ?? false;
-        const { urgencia, dias_para_vencer } = calcularUrgencia({
-          status: concluida ? "concluida" : "pendente",
-          data_prevista: dataStr,
-        });
+        // Tarefa recorrente não é "pendência" — é só um lembrete visual
+        // no calendário, sem status de atraso/vencimento.
         eventosTarefas.push({
           id: `tarefa-${tarefa.id}-${ocorrencia.competencia}`,
           data: dataStr,
           titulo: tarefa.nome,
           categoria: "locacao",
-          urgencia,
-          diasParaVencer: dias_para_vencer,
+          urgencia: "no_prazo",
+          diasParaVencer: null,
           href: "/locacao?aba=resumo",
           responsavelNome: null,
           concluida,
+          recorrente: true,
         });
       }
     }

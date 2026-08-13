@@ -68,7 +68,9 @@ export function DiaCelula({
           {eventos.slice(0, 6).map((e) => (
             <span
               key={e.id}
-              className={`h-2 w-2 shrink-0 rounded-full ${CATEGORIA_PONTO[e.categoria]}`}
+              className={`h-2 w-2 shrink-0 rounded-full ${
+                e.recorrente ? "bg-violet-400" : CATEGORIA_PONTO[e.categoria]
+              }`}
             />
           ))}
           {eventos.length > 6 && (
@@ -107,7 +109,11 @@ export function DiaCelula({
                   href={e.href}
                   onClick={() => setAberto(false)}
                   className={`flex items-start gap-1.5 rounded border px-1.5 py-1.5 text-xs leading-tight ${
-                    e.concluida ? "border-stone-200 bg-stone-100 text-stone-500" : URGENCIA_COR[e.urgencia]
+                    e.concluida
+                      ? "border-stone-200 bg-stone-100 text-stone-500"
+                      : e.recorrente
+                        ? "border-violet-200 bg-violet-50 text-violet-700"
+                        : URGENCIA_COR[e.urgencia]
                   }`}
                 >
                   <span className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${CATEGORIA_PONTO[e.categoria]}`} />

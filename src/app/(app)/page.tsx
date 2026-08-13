@@ -4,6 +4,8 @@ import { getEventosCalendario } from "@/lib/queries";
 import { CalendarioGrid } from "@/components/calendario-grid";
 import { getPermissoesUsuario } from "@/lib/permissoes";
 import { hojeISO } from "@/lib/data-br";
+import { ocorrenciasDaTarefa, type RegraTarefa } from "@/lib/tarefas-recorrentes";
+import { alternarTarefaMensal } from "@/app/(app)/locacao/actions";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -52,6 +54,49 @@ export default async function DashboardPage() {
     { href: "/termos-visita/nova", label: "Novo termo de visita" },
   ];
 
+  let tarefasHoje: {
+    tarefaId: string;
+    nome: string;
+    competencia: string;
+    statusId: string | null;
+    concluida: boolean;
+  }[] = [];
+
+  if (temLocacao) {
+    const { data: tarefasRaw } = await supabase
+      .from("tarefas_mensais")
+      .select("id, nome, tipo_regra, dia_fixo, periodicidade");
+
+    const ocorrenciasHoje = (tarefasRaw ?? []).flatMap((t) =>
+      ocorrenciasDaTarefa(t as unknown as RegraTarefa, referencia)
+        .filter((oc) => oc.data.toISOString().slice(0, 10) === hojeISO())
+        .map((oc) => ({ tarefa: t, ocorrencia: oc }))
+    );
+
+    if (ocorrenciasHoje.length > 0) {
+      const { data: statusRaw } = await supabase
+        .from("tarefas_mensais_status")
+        .select("id, tarefa_id, competencia, concluida")
+        .in(
+          "tarefa_id",
+          ocorrenciasHoje.map((o) => o.tarefa.id)
+        );
+
+      tarefasHoje = ocorrenciasHoje.map(({ tarefa, ocorrencia }) => {
+        const status = (statusRaw ?? []).find(
+          (s) => s.tarefa_id === tarefa.id && s.competencia === ocorrencia.competencia
+        );
+        return {
+          tarefaId: tarefa.id,
+          nome: tarefa.nome,
+          competencia: ocorrencia.competencia,
+          statusId: status?.id ?? null,
+          concluida: status?.concluida ?? false,
+        };
+      });
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -72,6 +117,42 @@ export default async function DashboardPage() {
           </Link>
         ))}
       </div>
+
+      {tarefasHoje.length > 0 && (
+        <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+          <p className="mb-3 text-sm font-semibold text-ink">Tarefas do dia</p>
+          <div className="space-y-2">
+            {tarefasHoje.map((t) => (
+              <form key={`${t.tarefaId}-${t.competencia}`} action={alternarTarefaMensal}>
+                <input type="hidden" name="tarefa_id" value={t.tarefaId} />
+                <input type="hidden" name="competencia" value={t.competencia} />
+                <input type="hidden" name="concluida_atual" value={String(t.concluida)} />
+                {t.statusId && <input type="hidden" name="status_id" value={t.statusId} />}
+                <button type="submit" className="flex w-full items-center gap-2.5 text-left text-sm">
+                  <span
+                    className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
+                      t.concluida ? "border-brand bg-brand text-white" : "border-border-strong bg-surface"
+                    }`}
+                  >
+                    {t.concluida && (
+                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                        <path
+                          d="M2 6.5L4.5 9L10 3"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                  </span>
+                  <span className={t.concluida ? "text-ink-muted line-through" : "text-ink"}>{t.nome}</span>
+                </button>
+              </form>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
         <p className="mb-3 text-sm font-semibold text-ink">Calendário</p>
