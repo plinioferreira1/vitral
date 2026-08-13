@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { sair } from "@/app/login/actions";
 import { AppShell } from "./app-shell";
+import { getPermissoesUsuario } from "@/lib/permissoes";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -25,22 +26,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .eq("id", usuario.tenant_id)
     .single();
 
-  const ehCorretor = usuario.nivel_acesso === "corretor";
-  const nivelComAcessoTotal = ["diretor", "gerente", "auxiliar"].includes(usuario.nivel_acesso);
-  const podeConfigurar = ["diretor", "gerente"].includes(usuario.nivel_acesso);
-
-  let categorias: string[] = [];
-  if (!ehCorretor && !nivelComAcessoTotal) {
-    const { data: cats } = await supabase
-      .from("usuario_categorias")
-      .select("categoria")
-      .eq("usuario_id", user.id);
-    categorias = (cats ?? []).map((c) => c.categoria);
-  }
-
-  const temVenda = nivelComAcessoTotal || categorias.includes("venda");
-  const temFinanciamento = nivelComAcessoTotal || categorias.includes("financiamento");
-  const temLocacao = nivelComAcessoTotal || categorias.includes("locacao");
+  const { ehCorretor, podeConfigurar, temVenda, temFinanciamento, temLocacao } =
+    await getPermissoesUsuario(supabase, user.id, usuario.nivel_acesso);
 
   type ItemMenu = { href: string; label: string } | { label: string; children: { href: string; label: string }[] };
 
