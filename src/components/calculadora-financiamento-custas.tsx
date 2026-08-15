@@ -86,7 +86,7 @@ export function CalculadoraFinanciamento() {
         `▫️ Escritura: ${brl(resultado.escritura)}`,
         `▫️ Registro: ${brl(resultado.registro)}`,
         `▫️ ITBI: ${brl(resultado.itbi)}`,
-        `▫️ Taxa Bancária: ${brl(taxaBancaria)}`,
+        `▫️ Taxa Bancária: ${brl(taxaBancaria)} _(vistoria, tarifas bancárias, relacionamento e análise jurídica — valor aproximado)_`,
         `*Total: ${brl(resultado.total)}*`,
         "",
         "💢 Esses valores fazem parte de qualquer operação de compra e venda financiada. Para facilitar, temos duas opções:",
@@ -143,6 +143,10 @@ export function CalculadoraFinanciamento() {
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Taxa bancária</label>
             <CampoMoeda onValorChange={setTaxaBancaria} />
+            <p className="mt-1 text-[11px] text-ink-muted">
+              Inclui vistoria, tarifas bancárias, relacionamento e análise jurídica. Valor
+              aproximado, pode variar.
+            </p>
           </div>
         </div>
 
@@ -238,7 +242,12 @@ export function CalculadoraFinanciamento() {
                 <span className="font-mono text-ink">{brl(resultado.itbi)}</span>
               </li>
               <li className="flex items-center justify-between py-2">
-                <span className="text-ink">Taxa bancária</span>
+                <span className="text-ink">
+                  Taxa bancária
+                  <span className="block text-xs text-ink-muted">
+                    Vistoria, tarifas bancárias, relacionamento e análise jurídica
+                  </span>
+                </span>
                 <span className="font-mono text-ink">{brl(taxaBancaria)}</span>
               </li>
             </ul>
