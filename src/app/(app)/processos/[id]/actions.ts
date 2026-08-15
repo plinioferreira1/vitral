@@ -156,6 +156,17 @@ export async function alterarDataPrevista(formData: FormData) {
   revalidatePath("/calendario");
 }
 
+export async function salvarNumeroRegistro(formData: FormData) {
+  const supabase = await createClient();
+  const etapaId = String(formData.get("etapa_id") ?? "");
+  const processoId = String(formData.get("processo_id") ?? "");
+  const numeroRegistro = String(formData.get("numero_registro") ?? "").trim() || null;
+
+  await supabase.from("etapas").update({ numero_registro: numeroRegistro }).eq("id", etapaId);
+
+  revalidatePath(`/processos/${processoId}`);
+}
+
 export async function alternarChecklistItem(formData: FormData) {
   const supabase = await createClient();
   const {

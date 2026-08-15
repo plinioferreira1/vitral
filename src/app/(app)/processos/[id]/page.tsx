@@ -16,6 +16,7 @@ import {
   alternarEtapaPadrao,
   salvarComissao,
   adicionarComentario,
+  salvarNumeroRegistro,
 } from "./actions";
 import { EditorLinhaTempo } from "@/components/editor-linha-tempo";
 
@@ -352,6 +353,30 @@ export default async function ProcessoDetalhePage({
                     </li>
                   ))}
                 </ul>
+              )}
+
+              {etapa.nome === "Registro" && (
+                <div className="mt-3 border-t border-border pt-3">
+                  <form action={salvarNumeroRegistro} className="flex items-center gap-1.5">
+                    <input type="hidden" name="etapa_id" value={etapa.id} />
+                    <input type="hidden" name="processo_id" value={p.id} />
+                    <input
+                      type="text"
+                      name="numero_registro"
+                      defaultValue={
+                        (etapa as unknown as { numero_registro: string | null }).numero_registro ?? ""
+                      }
+                      placeholder="Número do registro (ex: TJDFT20260310047259GSXO)"
+                      className="w-full max-w-sm rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
+                    />
+                    <button
+                      type="submit"
+                      className="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-ink-muted hover:bg-background"
+                    >
+                      Salvar
+                    </button>
+                  </form>
+                </div>
               )}
 
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
