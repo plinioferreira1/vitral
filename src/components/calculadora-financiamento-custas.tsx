@@ -71,23 +71,25 @@ export function CalculadoraFinanciamento() {
 
   const textoWhatsapp = resultado
     ? [
-        `💸 Valores do Imóvel — ${brl(valor)}`,
+        `💸 *Valores do Imóvel* — ${brl(valor)}`,
         `▫️ Escritura: ${brl(resultado.escritura)}`,
         `▫️ Registro: ${brl(resultado.registro)}`,
         `▫️ ITBI: ${brl(resultado.itbi)}`,
         `▫️ Taxa Bancária: ${brl(taxaBancaria)}`,
-        `Total: ${brl(resultado.total)}`,
+        `*Total: ${brl(resultado.total)}*`,
         "",
         "💢 Esses valores fazem parte de qualquer operação de compra e venda financiada. Para facilitar, temos duas opções:",
-        `▫️ ITBI: pode ser parcelado em até ${numParcelasItbi} cotas de igual valor.`,
-        `▫️ Escritura: é possível assinar o contrato emitido pelo banco, que tem força de escritura. Nesse caso, eu cuido da lavratura, da organização das assinaturas e de todo o traslado para registro (exigências, etc.). Esse é um serviço particular no valor de ${brl(valorInstrumentoParticular)}, que substitui o valor da escritura em cartório.`,
+        `▫️ *ITBI:* pode ser parcelado em até ${numParcelasItbi} cotas de igual valor.`,
+        `▫️ *Escritura:* é possível assinar o contrato emitido pelo banco, que tem força de escritura. Nesse caso, eu cuido da lavratura, da organização das assinaturas e de todo o traslado para registro (exigências, etc.). Esse é um serviço particular no valor de ${brl(valorInstrumentoParticular)}, que substitui o valor da escritura em cartório.`,
         "",
-        `Total à vista: ${brl(resultado.totalAVista)}`,
+        `*Total à vista: ${brl(resultado.totalAVista)}*`,
         ...(resultado.cotasRestantes > 0
           ? [
               `+ ${resultado.cotasRestantes} cota${resultado.cotasRestantes > 1 ? "s" : ""} mensa${resultado.cotasRestantes > 1 ? "is" : "l"} do ITBI de ${brl(resultado.cotaItbi)}`,
             ]
           : []),
+        "",
+        "_Valores aproximados, sujeitos a alteração sem aviso prévio._",
       ].join("\n")
     : "";
 
@@ -244,6 +246,11 @@ export function CalculadoraFinanciamento() {
               {brl(valorInstrumentoParticular)}) é cobrado à parte, direto com o despachante.
             </p>
           </div>
+
+          <p className="text-xs text-ink-muted">
+            Valores estimados com base na tabela ANOREG-DF e podem sofrer alterações sem aviso
+            prévio.
+          </p>
         </>
       )}
     </div>
