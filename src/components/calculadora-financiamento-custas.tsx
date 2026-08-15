@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { brl } from "@/lib/proporcionalidade";
 import { CampoMoeda } from "@/components/campo-moeda";
+import { BotaoCopiarLink } from "@/components/botao-copiar-link";
 import { FAIXAS_ESCRITURA, FAIXAS_REGISTRO, buscarFaixa } from "@/lib/emolumentos-cartorio";
 
 export function CalculadoraFinanciamento() {
@@ -67,6 +68,28 @@ export function CalculadoraFinanciamento() {
       cotasRestantes: numParcelasItbi - 1,
     };
   }
+
+  const textoWhatsapp = resultado
+    ? [
+        `💸 Valores do Imóvel — ${brl(valor)}`,
+        `▫️ Escritura: ${brl(resultado.escritura)}`,
+        `▫️ Registro: ${brl(resultado.registro)}`,
+        `▫️ ITBI: ${brl(resultado.itbi)}`,
+        `▫️ Taxa Bancária: ${brl(taxaBancaria)}`,
+        `Total: ${brl(resultado.total)}`,
+        "",
+        "💢 Esses valores fazem parte de qualquer operação de compra e venda financiada. Para facilitar, temos duas opções:",
+        `▫️ ITBI: pode ser parcelado em até ${numParcelasItbi} cotas de igual valor.`,
+        `▫️ Escritura: é possível assinar o contrato emitido pelo banco, que tem força de escritura. Nesse caso, eu cuido da lavratura, da organização das assinaturas e de todo o traslado para registro (exigências, etc.). Esse é um serviço particular no valor de ${brl(valorInstrumentoParticular)}, que substitui o valor da escritura em cartório.`,
+        "",
+        `Total à vista: ${brl(resultado.totalAVista)}`,
+        ...(resultado.cotasRestantes > 0
+          ? [
+              `+ ${resultado.cotasRestantes} cota${resultado.cotasRestantes > 1 ? "s" : ""} mensa${resultado.cotasRestantes > 1 ? "is" : "l"} do ITBI de ${brl(resultado.cotaItbi)}`,
+            ]
+          : []),
+      ].join("\n")
+    : "";
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -202,8 +225,13 @@ export function CalculadoraFinanciamento() {
           </div>
 
           <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-            <p className="text-xs text-ink-muted">Total à vista (com instrumento particular)</p>
-            <p className="font-mono text-3xl font-semibold text-ink">{brl(resultado.totalAVista)}</p>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs text-ink-muted">Total à vista (com instrumento particular)</p>
+                <p className="font-mono text-3xl font-semibold text-ink">{brl(resultado.totalAVista)}</p>
+              </div>
+              <BotaoCopiarLink texto={textoWhatsapp} rotulo="Copiar como texto" />
+            </div>
             {resultado.cotasRestantes > 0 && (
               <p className="mt-1 text-sm text-ink-muted">
                 + {resultado.cotasRestantes} cota{resultado.cotasRestantes > 1 ? "s" : ""} mensa
