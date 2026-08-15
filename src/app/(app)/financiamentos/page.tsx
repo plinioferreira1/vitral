@@ -8,8 +8,9 @@ import { hojeISO } from "@/lib/data-br";
 import { calcularUrgencia } from "@/lib/alertas";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { apagarProcessosSelecionados } from "../processos/bulk-actions";
+import { CalculadoraFinanciamento } from "@/components/calculadora-financiamento-custas";
 
-type Aba = "resumo" | "andamento" | "processos";
+type Aba = "resumo" | "andamento" | "processos" | "custas";
 
 const CHECKLIST_COMPRADORES = [
   "Documento com foto (RG, CNH, CIN, etc)",
@@ -42,7 +43,13 @@ export default async function FinanciamentosPage({
 }) {
   const { aba: abaParam } = await searchParams;
   const aba: Aba =
-    abaParam === "andamento" ? "andamento" : abaParam === "processos" ? "processos" : "resumo";
+    abaParam === "andamento"
+      ? "andamento"
+      : abaParam === "processos"
+        ? "processos"
+        : abaParam === "custas"
+          ? "custas"
+          : "resumo";
 
   const supabase = await createClient();
 
@@ -160,7 +167,7 @@ export default async function FinanciamentosPage({
             </details>
           )}
         </form>
-      ) : (
+      ) : aba === "processos" ? (
         <div className="max-w-2xl space-y-6">
           <p className="text-sm text-ink-muted">
             Checklist de documentação pra abertura e conformidade do processo de financiamento.
@@ -178,6 +185,8 @@ export default async function FinanciamentosPage({
 
           <ChecklistConformidade titulo="Imóvel" itens={CHECKLIST_IMOVEL} />
         </div>
+      ) : (
+        <CalculadoraFinanciamento />
       )}
     </div>
   );

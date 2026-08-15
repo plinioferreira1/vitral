@@ -37,7 +37,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         { href: "/calculadora", label: "Calculadora de Proporcionalidade" },
         { href: "/cartorio", label: "Simulação de Custas" },
         { href: "/avaliacao-imovel", label: "Avaliação de Imóvel" },
-        { href: "/custas-financiamento", label: "Custas de Financiamento" },
         { href: "/termos-visita", label: "Termo de Visita" },
         { href: "/autorizacoes", label: "Autorização de Venda" },
       ]
@@ -62,6 +61,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   { href: "/financiamentos?aba=resumo", label: "Resumo" },
                   { href: "/financiamentos?aba=andamento", label: "Em andamento" },
                   { href: "/financiamentos?aba=processos", label: "Processos" },
+            { href: "/financiamentos?aba=custas", label: "Custas de Financiamento" },
                 ],
               },
             ]
@@ -84,7 +84,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         { href: "/calculadora", label: "Calculadora de Proporcionalidade" },
         { href: "/cartorio", label: "Simulação de Custas" },
         { href: "/avaliacao-imovel", label: "Avaliação de Imóvel" },
-        { href: "/custas-financiamento", label: "Custas de Financiamento" },
         { href: "/corretor", label: "Corretor" },
         ...(podeConfigurar
           ? [
