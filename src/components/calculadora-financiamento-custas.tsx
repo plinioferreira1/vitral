@@ -11,6 +11,7 @@ export function CalculadoraFinanciamento() {
   const [valorFinanciado, setValorFinanciado] = useState(0);
   const [tipoImovel, setTipoImovel] = useState<"usado" | "novo">("usado");
   const [primeiroImovel, setPrimeiroImovel] = useState(false);
+  const [minhaCasaMinhaVida, setMinhaCasaMinhaVida] = useState(false);
   const [taxaBancaria, setTaxaBancaria] = useState(0);
   const [parcelasItbi, setParcelasItbi] = useState("10");
   const [valorInstrumentoParticular, setValorInstrumentoParticular] = useState(2500);
@@ -24,6 +25,7 @@ export function CalculadoraFinanciamento() {
     escritura: number;
     registroCompraVendaCheio: number;
     registroCompraVenda: number;
+    registroAlienacaoCheio: number;
     registroAlienacao: number;
     registro: number;
     total: number;
@@ -40,9 +42,17 @@ export function CalculadoraFinanciamento() {
     const escrituraAlienacao = buscarFaixa(valorFinanciado, FAIXAS_ESCRITURA);
     const escritura = escrituraCompraVenda + escrituraAlienacao;
 
+    // Desconto de 50% no registro da compra e venda: só quando é o
+    // primeiro imóvel do cliente.
     const registroCompraVendaCheio = buscarFaixa(valor, FAIXAS_REGISTRO);
     const registroCompraVenda = primeiroImovel ? registroCompraVendaCheio / 2 : registroCompraVendaCheio;
-    const registroAlienacao = buscarFaixa(valorFinanciado, FAIXAS_REGISTRO);
+
+    // Desconto de 50% no registro da alienação fiduciária: só no
+    // financiamento pelo Minha Casa Minha Vida — é um desconto
+    // diferente do de primeiro imóvel, e incide só sobre essa parte.
+    const registroAlienacaoCheio = buscarFaixa(valorFinanciado, FAIXAS_REGISTRO);
+    const registroAlienacao = minhaCasaMinhaVida ? registroAlienacaoCheio / 2 : registroAlienacaoCheio;
+
     const registro = registroCompraVenda + registroAlienacao;
 
     const total = itbi + escritura + registro + taxaBancaria;
@@ -60,6 +70,7 @@ export function CalculadoraFinanciamento() {
       escritura,
       registroCompraVendaCheio,
       registroCompraVenda,
+      registroAlienacaoCheio,
       registroAlienacao,
       registro,
       total,
@@ -80,7 +91,7 @@ export function CalculadoraFinanciamento() {
         "",
         "💢 Esses valores fazem parte de qualquer operação de compra e venda financiada. Para facilitar, temos duas opções:",
         `▫️ *ITBI:* pode ser parcelado em até ${numParcelasItbi} cotas de igual valor.`,
-        `▫️ *Escritura:* é possível assinar o contrato emitido pelo banco, que tem força de escritura. Nesse caso, eu cuido da lavratura, da organização das assinaturas e de todo o traslado para registro (exigências, etc.). Esse é um serviço particular no valor de ${brl(valorInstrumentoParticular)}, que substitui o valor da escritura em cartório.`,
+        `▫️ *Escritura:* é possível reduzir esse valor de ${brl(resultado.escritura)}, cobrado pelo Cartório de Notas, para ${brl(valorInstrumentoParticular)}. Para isso, temos o serviço de despachante: emitimos o contrato particular com força de escritura, não sendo aplicadas nesse caso as custas referentes ao cartório. Vale ressaltar que, em ambos os casos, os documentos possuem a mesma validade legal.`,
         "",
         `*Total à vista: ${brl(resultado.totalAVista)}*`,
         ...(resultado.cotasRestantes > 0
@@ -145,6 +156,16 @@ export function CalculadoraFinanciamento() {
           É o primeiro imóvel do cliente (desconto de 50% no registro da compra e venda)
         </label>
 
+        <label className="flex items-center gap-2 text-sm text-ink">
+          <input
+            type="checkbox"
+            checked={minhaCasaMinhaVida}
+            onChange={(e) => setMinhaCasaMinhaVida(e.target.checked)}
+            className="accent-brand"
+          />
+          Financiamento pelo Minha Casa Minha Vida (desconto de 50% no registro da alienação)
+        </label>
+
         <div className="grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">
@@ -176,14 +197,35 @@ export function CalculadoraFinanciamento() {
                 <span className="font-mono text-ink">{brl(resultado.escritura)}</span>
               </li>
               <li className="flex items-center justify-between py-2">
-                <span className="text-ink">Registro</span>
+                <span className="text-ink">
+                  Registro da Compra e Venda
+                  {primeiroImovel && (
+                    <span className="block text-xs text-ink-muted">50% de desconto (primeiro imóvel)</span>
+                  )}
+                </span>
                 <span className="text-right font-mono text-ink">
                   {primeiroImovel && (
                     <span className="mr-1.5 text-xs text-ink-muted line-through">
-                      {brl(resultado.registroCompraVendaCheio + resultado.registroAlienacao)}
+                      {brl(resultado.registroCompraVendaCheio)}
                     </span>
                   )}
-                  {brl(resultado.registro)}
+                  {brl(resultado.registroCompraVenda)}
+                </span>
+              </li>
+              <li className="flex items-center justify-between py-2">
+                <span className="text-ink">
+                  Registro da Alienação
+                  {minhaCasaMinhaVida && (
+                    <span className="block text-xs text-ink-muted">50% de desconto (Minha Casa Minha Vida)</span>
+                  )}
+                </span>
+                <span className="text-right font-mono text-ink">
+                  {minhaCasaMinhaVida && (
+                    <span className="mr-1.5 text-xs text-ink-muted line-through">
+                      {brl(resultado.registroAlienacaoCheio)}
+                    </span>
+                  )}
+                  {brl(resultado.registroAlienacao)}
                 </span>
               </li>
               <li className="flex items-center justify-between py-2">
@@ -217,11 +259,12 @@ export function CalculadoraFinanciamento() {
                 igual valor.
               </li>
               <li>
-                ▫️ <strong>Escritura:</strong> é possível assinar o contrato emitido pelo banco,
-                que tem força de escritura. Nesse caso, cuidamos da lavratura, da organização das
-                assinaturas e de todo o traslado para registro (exigências, etc.). Esse é um
-                serviço particular no valor de {brl(valorInstrumentoParticular)}, que substitui o
-                valor da escritura em cartório.
+                ▫️ <strong>Escritura:</strong> é possível reduzir esse valor de{" "}
+                {brl(resultado.escritura)}, cobrado pelo Cartório de Notas, para{" "}
+                {brl(valorInstrumentoParticular)}. Para isso, temos o serviço de despachante:
+                emitimos o contrato particular com força de escritura, não sendo aplicadas nesse
+                caso as custas referentes ao cartório. Vale ressaltar que, em ambos os casos, os
+                documentos possuem a mesma validade legal.
               </li>
             </ul>
           </div>

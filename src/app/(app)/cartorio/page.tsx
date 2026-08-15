@@ -17,8 +17,10 @@ interface ResultadoCartorio {
   instrumentoParticular: boolean;
   registroCompraVendaCheio: number;
   registroCompraVenda: number;
+  registroAlienacaoCheio: number;
   registroAlienacao: number;
   primeiroImovel: boolean;
+  minhaCasaMinhaVida: boolean;
   total: number;
 }
 
@@ -28,10 +30,18 @@ function computarResultado(params: {
   valorFinanciado: number;
   tipoImovel: "usado" | "novo";
   primeiroImovel: boolean;
+  minhaCasaMinhaVida: boolean;
   instrumentoParticular: boolean;
 }): { resultado: ResultadoCartorio | null; erro: string | null } {
-  const { valor, temFinanciamento, valorFinanciado, tipoImovel, primeiroImovel, instrumentoParticular } =
-    params;
+  const {
+    valor,
+    temFinanciamento,
+    valorFinanciado,
+    tipoImovel,
+    primeiroImovel,
+    minhaCasaMinhaVida,
+    instrumentoParticular,
+  } = params;
 
   if (!valor || valor <= 0) {
     return { resultado: null, erro: "Informe o valor do imóvel/venda antes de calcular." };
@@ -72,8 +82,13 @@ function computarResultado(params: {
   const registroCompraVenda = primeiroImovel ? registroCompraVendaCheio / 2 : registroCompraVendaCheio;
   // Quando tem financiamento, o registro da alienação fiduciária
   // (garantia do banco) é um registro à parte, incidindo só sobre
-  // o valor financiado — não sobre o valor total do imóvel.
-  const registroAlienacao = temFinanciamento ? buscarFaixa(valorFinanciado, FAIXAS_REGISTRO) : 0;
+  // o valor financiado — não sobre o valor total do imóvel. O
+  // Minha Casa Minha Vida dá 50% de desconto só nesse registro
+  // (desconto diferente do de primeiro imóvel, que é só na compra
+  // e venda).
+  const registroAlienacaoCheio = temFinanciamento ? buscarFaixa(valorFinanciado, FAIXAS_REGISTRO) : 0;
+  const registroAlienacao =
+    temFinanciamento && minhaCasaMinhaVida ? registroAlienacaoCheio / 2 : registroAlienacaoCheio;
 
   return {
     resultado: {
@@ -86,8 +101,10 @@ function computarResultado(params: {
       instrumentoParticular: temFinanciamento && instrumentoParticular,
       registroCompraVendaCheio,
       registroCompraVenda,
+      registroAlienacaoCheio,
       registroAlienacao,
       primeiroImovel,
+      minhaCasaMinhaVida: temFinanciamento && minhaCasaMinhaVida,
       total: itbi + escritura + registroCompraVenda + registroAlienacao,
     },
     erro: null,
@@ -103,6 +120,7 @@ export default function CartorioPage() {
   const [valorFinanciado, setValorFinanciado] = useState(0);
   const [tipoImovel, setTipoImovel] = useState<"usado" | "novo">("usado");
   const [primeiroImovel, setPrimeiroImovel] = useState(false);
+  const [minhaCasaMinhaVida, setMinhaCasaMinhaVida] = useState(false);
   // Atalho vindo do Início (corretor): ?valor=300000 já chega calculado.
   const [resultado, setResultado] = useState<ResultadoCartorio | null>(() =>
     valorInicialParam
@@ -112,6 +130,7 @@ export default function CartorioPage() {
           valorFinanciado: 0,
           tipoImovel: "usado",
           primeiroImovel: false,
+          minhaCasaMinhaVida: false,
           instrumentoParticular: false,
         }).resultado
       : null
@@ -126,6 +145,7 @@ export default function CartorioPage() {
       valorFinanciado,
       tipoImovel,
       primeiroImovel,
+      minhaCasaMinhaVida,
       instrumentoParticular,
     });
     setErro(novoErro);
@@ -204,6 +224,18 @@ export default function CartorioPage() {
             />
             É o primeiro imóvel do cliente (desconto de 50% no registro da compra e venda)
           </label>
+
+          {temFinanciamento && (
+            <label className="mt-2 flex items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={minhaCasaMinhaVida}
+                onChange={(e) => setMinhaCasaMinhaVida(e.target.checked)}
+                className="accent-brand"
+              />
+              Financiamento pelo Minha Casa Minha Vida (desconto de 50% no registro da alienação)
+            </label>
+          )}
 
           {temFinanciamento && (
             <div className="mt-3">
@@ -294,10 +326,17 @@ export default function CartorioPage() {
                     Registro da Alienação Fiduciária
                     <span className="block text-xs text-ink-muted">
                       Aplicado sobre o montante alienado (pode chegar até 80% do valor da compra
-                      e venda)
+                      e venda){resultado.minhaCasaMinhaVida && " — 50% de desconto (Minha Casa Minha Vida)"}
                     </span>
                   </span>
-                  <span className="font-mono text-ink">{brl(resultado.registroAlienacao)}</span>
+                  <span className="text-right font-mono text-ink">
+                    {resultado.minhaCasaMinhaVida && (
+                      <span className="mr-1.5 text-xs text-ink-muted line-through">
+                        {brl(resultado.registroAlienacaoCheio)}
+                      </span>
+                    )}
+                    {brl(resultado.registroAlienacao)}
+                  </span>
                 </li>
               )}
             </ul>
@@ -443,8 +482,10 @@ async function baixarImagemResultado(
       linhas.push({
         label: "Registro da Alienação Fiduciária",
         sublabel:
-          "Aplicado sobre o montante alienado (pode chegar até 80% do valor da compra e venda)",
+          "Aplicado sobre o montante alienado (pode chegar até 80% do valor da compra e venda)" +
+          (r.minhaCasaMinhaVida ? " — 50% de desconto (Minha Casa Minha Vida)" : ""),
         valor: brl(r.registroAlienacao),
+        valorRiscado: r.minhaCasaMinhaVida ? brl(r.registroAlienacaoCheio) : undefined,
       });
     }
 
