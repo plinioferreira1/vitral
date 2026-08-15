@@ -55,6 +55,8 @@ interface ResultadoCartorio {
   valorFinanciado: number;
   itbi: number;
   escritura: number;
+  escrituraCompraVenda: number;
+  escrituraAlienacao: number;
   instrumentoParticular: boolean;
   registroCompraVendaCheio: number;
   registroCompraVenda: number;
@@ -97,9 +99,16 @@ function computarResultado(params: {
   const itbi = valor * aliquotaItbi;
   // Quando o financiamento é feito por instrumento particular com força
   // de escritura pública, o próprio contrato do banco substitui a
-  // escritura — não se paga escritura à parte nesse caso.
+  // escritura — não se paga escritura à parte nesse caso (nem a da
+  // compra e venda, nem a da alienação fiduciária).
+  // Escritura da compra e venda incide sobre o valor total do imóvel.
+  const escrituraCompraVenda = buscarFaixa(valor, FAIXAS_ESCRITURA);
+  // Quando tem financiamento, a escritura da alienação fiduciária
+  // (garantia do banco) também precisa ser lavrada, incidindo só
+  // sobre o valor financiado — mesma lógica já aplicada no registro.
+  const escrituraAlienacao = temFinanciamento ? buscarFaixa(valorFinanciado, FAIXAS_ESCRITURA) : 0;
   const escritura =
-    temFinanciamento && instrumentoParticular ? 0 : buscarFaixa(valor, FAIXAS_ESCRITURA);
+    temFinanciamento && instrumentoParticular ? 0 : escrituraCompraVenda + escrituraAlienacao;
   // Registro da compra e venda incide sobre o valor total do imóvel.
   // Primeiro imóvel dá direito a 50% de desconto nesse registro.
   const registroCompraVendaCheio = buscarFaixa(valor, FAIXAS_REGISTRO);
@@ -115,6 +124,8 @@ function computarResultado(params: {
       valorFinanciado,
       itbi,
       escritura,
+      escrituraCompraVenda,
+      escrituraAlienacao,
       instrumentoParticular: temFinanciamento && instrumentoParticular,
       registroCompraVendaCheio,
       registroCompraVenda,
@@ -283,14 +294,26 @@ export default function CartorioPage() {
               </li>
               <li className="flex items-center justify-between py-2">
                 <span className="text-ink">
-                  Escritura (Emolumentos + Impostos)
+                  Escritura da Compra e Venda
                   <span className="block text-xs text-ink-muted">
                     Caso seja Instrumento Particular com Força de Escritura, o cliente não tem
                     esse custo
                   </span>
                 </span>
-                <span className="font-mono text-ink">{brl(resultado.escritura)}</span>
+                <span className="font-mono text-ink">{brl(resultado.escrituraCompraVenda)}</span>
               </li>
+              {resultado.escrituraAlienacao > 0 && !resultado.instrumentoParticular && (
+                <li className="flex items-center justify-between py-2">
+                  <span className="text-ink">
+                    Escritura da Alienação Fiduciária
+                    <span className="block text-xs text-ink-muted">
+                      Aplicado sobre o montante financiado, junto com a escritura da compra e
+                      venda
+                    </span>
+                  </span>
+                  <span className="font-mono text-ink">{brl(resultado.escrituraAlienacao)}</span>
+                </li>
+              )}
               <li className="flex items-center justify-between py-2">
                 <span className="text-ink">
                   Registro da Compra e Venda
@@ -439,10 +462,10 @@ async function baixarImagemResultado(
         valor: brl(r.itbi),
       },
       {
-        label: "Escritura (Emolumentos + Impostos)",
+        label: "Escritura da Compra e Venda",
         sublabel:
           "Caso seja Instrumento Particular com Força de Escritura, o cliente não tem esse custo",
-        valor: brl(r.escritura),
+        valor: brl(r.escrituraCompraVenda),
       },
       {
         label: "Registro da Compra e Venda",
@@ -452,6 +475,13 @@ async function baixarImagemResultado(
         valorRiscado: r.primeiroImovel ? brl(r.registroCompraVendaCheio) : undefined,
       },
     ];
+    if (r.escrituraAlienacao > 0 && !r.instrumentoParticular) {
+      linhas.push({
+        label: "Escritura da Alienação Fiduciária",
+        sublabel: "Aplicado sobre o montante financiado, junto com a escritura da compra e venda",
+        valor: brl(r.escrituraAlienacao),
+      });
+    }
     if (r.registroAlienacao > 0) {
       linhas.push({
         label: "Registro da Alienação Fiduciária",
