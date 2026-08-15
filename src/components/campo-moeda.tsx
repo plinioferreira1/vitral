@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function formatarCentavos(centavos: number): string {
   if (!centavos) return "";
@@ -37,6 +37,13 @@ export function CampoMoeda({
   const [centavos, setCentavos] = useState(() =>
     defaultValue ? Math.round(defaultValue * 100) : 0
   );
+
+  // só na montagem — evita que o pai fique com um valor "fantasma" (mostrado
+  // no campo, mas não recebido em seu próprio estado) quando defaultValue é usado
+  useEffect(() => {
+    if (defaultValue) onValorChange?.(defaultValue);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const aoDigitar = (e: React.ChangeEvent<HTMLInputElement>) => {
     const somenteDigitos = e.target.value.replace(/\D/g, "");

@@ -13,7 +13,7 @@ export function CalculadoraFinanciamento() {
   const [primeiroImovel, setPrimeiroImovel] = useState(false);
   const [taxaBancaria, setTaxaBancaria] = useState(0);
   const [parcelasItbi, setParcelasItbi] = useState("10");
-  const [valorInstrumentoParticular, setValorInstrumentoParticular] = useState(0);
+  const [valorInstrumentoParticular, setValorInstrumentoParticular] = useState(2500);
 
   const numParcelasItbi = Math.max(1, Math.round(Number(parcelasItbi) || 10));
 
