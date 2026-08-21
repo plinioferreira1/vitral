@@ -55,7 +55,7 @@ export function TabelaProcessos({
   }
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[900px] text-sm">
+      <table className="w-full min-w-[820px] text-sm">
         <thead>
           <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
             <th className="w-8 px-5 py-3"></th>
