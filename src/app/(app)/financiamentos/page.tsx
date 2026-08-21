@@ -104,7 +104,7 @@ export default async function FinanciamentosPage({
 
   let cardsKanban: CardKanban[] = [];
   let colunas: string[] = [];
-  if (aba === "kanban" && emAndamento.length > 0) {
+  if (aba === "kanban") {
     const {
       data: { user },
     } = await supabase.auth.getUser();
