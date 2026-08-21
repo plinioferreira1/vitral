@@ -60,7 +60,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 children: [
                   { href: "/financiamentos?aba=resumo", label: "Resumo" },
                   { href: "/financiamentos?aba=andamento", label: "Em andamento" },
-                  { href: "/financiamentos?aba=processos", label: "Processos" },
+                  { href: "/financiamentos?aba=processos", label: "Checklists" },
                   { href: "/financiamentos?aba=custas", label: "Custas de Financiamento" },
                 ],
               },
@@ -93,6 +93,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   { href: "/etapas-padrao", label: "Etapas padrão" },
                   { href: "/tarefas-recorrentes", label: "Tarefas recorrentes" },
                   { href: "/onboarding-corretor", label: "Onboarding do Corretor" },
+                  { href: "/checklists-financiamento", label: "Checklists de Financiamento" },
                   { href: "/membros", label: "Membros/Permissões" },
                 ],
               },

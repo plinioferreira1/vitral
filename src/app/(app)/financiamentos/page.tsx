@@ -11,33 +11,10 @@ import { apagarProcessosSelecionados } from "../processos/bulk-actions";
 import { CalculadoraFinanciamento } from "@/components/calculadora-financiamento-custas";
 import { KanbanProcessos, type CardKanban } from "@/components/kanban-processos";
 import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
+import { ExibicaoChecklists, type ChecklistExibicao } from "@/components/exibicao-checklists";
 
 type Aba = "resumo" | "andamento" | "processos" | "custas";
 type Vista = "calendario" | "kanban";
-
-const CHECKLIST_COMPRADORES = [
-  "Documento com foto (RG, CNH, CIN, etc)",
-  "Certidões de Nada Consta",
-  "Comprovante de Endereço",
-  "Comprovante de Estado Civil",
-  "Consulta Cadastral SICAQ/CAIXA AQUI",
-  "Consulta Cadastral CADMUT/CIWEB",
-  "Comprovante de Renda (Contracheque, IRPF, etc)",
-  "Formulário de Cadastro SICAQ/CAIXA AQUI",
-  "Formulário Cliente Habitação MO30844",
-  "Dossiê Habitacional MO30825",
-  "Caso o cliente vá abrir Conta Corrente, incluir também a proposta de adesão",
-];
-
-const CHECKLIST_VENDEDORES = [
-  "Documento com foto (RG, CNH, CIN, etc)",
-  "Certidões de Nada Consta",
-  "Comprovante de Endereço",
-  "Comprovante de Estado Civil",
-  "Consulta Cadastral SICAQ/CAIXA AQUI",
-];
-
-const CHECKLIST_IMOVEL = ["Certidão de Ônus", "Ficha Cadastral junto ao GDF"];
 
 export default async function FinanciamentosPage({
   searchParams,
@@ -135,6 +112,48 @@ export default async function FinanciamentosPage({
     }
   }
 
+  let checklists: ChecklistExibicao[] = [];
+  if (aba === "processos") {
+    const { data: checklistsRaw } = await supabase
+      .from("checklists_modelo")
+      .select(
+        "id, nome, descricao, ordem, checklist_grupos ( id, nome, observacao, ordem, checklist_grupo_itens ( id, texto, ordem ) )"
+      )
+      .eq("categoria", "financiamento")
+      .order("ordem", { ascending: true });
+
+    type GrupoBruto = {
+      id: string;
+      nome: string;
+      observacao: string | null;
+      ordem: number;
+      checklist_grupo_itens: { id: string; texto: string; ordem: number }[];
+    };
+    type ChecklistBruto = {
+      id: string;
+      nome: string;
+      descricao: string | null;
+      ordem: number;
+      checklist_grupos: GrupoBruto[];
+    };
+
+    checklists = ((checklistsRaw ?? []) as unknown as ChecklistBruto[]).map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      descricao: c.descricao,
+      checklist_grupos: [...c.checklist_grupos]
+        .sort((a, b) => a.ordem - b.ordem)
+        .map((g) => ({
+          id: g.id,
+          nome: g.nome,
+          observacao: g.observacao,
+          checklist_grupo_itens: [...g.checklist_grupo_itens]
+            .sort((a, b) => a.ordem - b.ordem)
+            .map((i) => ({ id: i.id, texto: i.texto })),
+        })),
+    }));
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -230,44 +249,10 @@ export default async function FinanciamentosPage({
           )}
         </form>
       ) : aba === "processos" ? (
-        <div className="max-w-2xl space-y-6">
-          <p className="text-sm text-ink-muted">
-            Checklist de documentação pra abertura e conformidade do processo de financiamento.
-            Reúna esses itens antes de enviar pro correspondente/banco.
-          </p>
-
-          <ChecklistConformidade titulo="Compradores" itens={CHECKLIST_COMPRADORES} />
-          <p className="-mt-4 text-xs text-ink-muted">
-            Essa checklist vale pra cada proponente comprador, exceto os formulários — que são
-            assinados por todos os proponentes juntos.
-          </p>
-
-          <ChecklistConformidade titulo="Vendedores" itens={CHECKLIST_VENDEDORES} />
-          <p className="-mt-4 text-xs text-ink-muted">Essa checklist vale pra cada vendedor.</p>
-
-          <ChecklistConformidade titulo="Imóvel" itens={CHECKLIST_IMOVEL} />
-        </div>
+        <ExibicaoChecklists checklists={checklists} />
       ) : (
         <CalculadoraFinanciamento />
       )}
-    </div>
-  );
-}
-
-function ChecklistConformidade({ titulo, itens }: { titulo: string; itens: string[] }) {
-  return (
-    <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-      <p className="mb-3 text-sm font-semibold text-ink">{titulo}</p>
-      <ul className="space-y-2">
-        {itens.map((item, i) => (
-          <li key={i} className="flex items-start gap-2 text-sm text-ink">
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-border-strong text-[11px] text-ink-muted">
-              {i + 1}
-            </span>
-            {item}
-          </li>
-        ))}
-      </ul>
     </div>
   );
 }
