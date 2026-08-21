@@ -49,7 +49,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 children: [
                   { href: "/vendas?aba=resumo", label: "Resumo" },
                   { href: "/vendas?aba=andamento", label: "Em andamento" },
-                  { href: "/vendas?aba=kanban", label: "Quadro" },
                 ],
               },
             ]
@@ -61,7 +60,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 children: [
                   { href: "/financiamentos?aba=resumo", label: "Resumo" },
                   { href: "/financiamentos?aba=andamento", label: "Em andamento" },
-                  { href: "/financiamentos?aba=kanban", label: "Quadro" },
                   { href: "/financiamentos?aba=processos", label: "Processos" },
                   { href: "/financiamentos?aba=custas", label: "Custas de Financiamento" },
                 ],

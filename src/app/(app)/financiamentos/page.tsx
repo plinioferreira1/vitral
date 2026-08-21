@@ -12,7 +12,8 @@ import { CalculadoraFinanciamento } from "@/components/calculadora-financiamento
 import { KanbanProcessos, type CardKanban } from "@/components/kanban-processos";
 import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
 
-type Aba = "resumo" | "andamento" | "processos" | "custas" | "kanban";
+type Aba = "resumo" | "andamento" | "processos" | "custas";
+type Vista = "calendario" | "kanban";
 
 const CHECKLIST_COMPRADORES = [
   "Documento com foto (RG, CNH, CIN, etc)",
@@ -41,9 +42,9 @@ const CHECKLIST_IMOVEL = ["Certidão de Ônus", "Ficha Cadastral junto ao GDF"];
 export default async function FinanciamentosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ aba?: string }>;
+  searchParams: Promise<{ aba?: string; vista?: string }>;
 }) {
-  const { aba: abaParam } = await searchParams;
+  const { aba: abaParam, vista: vistaParam } = await searchParams;
   const aba: Aba =
     abaParam === "andamento"
       ? "andamento"
@@ -51,9 +52,8 @@ export default async function FinanciamentosPage({
         ? "processos"
         : abaParam === "custas"
           ? "custas"
-          : abaParam === "kanban"
-            ? "kanban"
-            : "resumo";
+          : "resumo";
+  const vista: Vista = vistaParam === "kanban" ? "kanban" : "calendario";
 
   const supabase = await createClient();
 
@@ -104,7 +104,7 @@ export default async function FinanciamentosPage({
 
   let cardsKanban: CardKanban[] = [];
   let colunas: string[] = [];
-  if (aba === "kanban") {
+  if (aba === "resumo" && vista === "kanban") {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -153,18 +153,43 @@ export default async function FinanciamentosPage({
       {aba === "resumo" ? (
         <div className="space-y-6">
           <ResumoPrazos eventos={eventos} hrefEmAberto="/calendario?categoria=financiamento" />
-          <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-semibold text-ink">Calendário</p>
+
+          <div className="flex items-center justify-between">
+            <div className="flex gap-1 rounded-lg bg-background p-1 text-sm w-fit">
+              <Link
+                href="/financiamentos?aba=resumo&vista=calendario"
+                className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
+                  vista === "calendario" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
+                }`}
+              >
+                Calendário
+              </Link>
+              <Link
+                href="/financiamentos?aba=resumo&vista=kanban"
+                className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
+                  vista === "kanban" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
+                }`}
+              >
+                Quadro
+              </Link>
+            </div>
+            {vista === "calendario" && (
               <Link
                 href="/calendario?categoria=financiamento"
                 className="text-xs font-medium text-brand hover:underline"
               >
                 Abrir calendário completo →
               </Link>
-            </div>
-            <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={2} />
+            )}
           </div>
+
+          {vista === "calendario" ? (
+            <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+              <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={2} />
+            </div>
+          ) : (
+            <KanbanProcessos colunas={colunas} cards={cardsKanban} />
+          )}
         </div>
       ) : aba === "andamento" ? (
         <form action={apagarProcessosSelecionados} className="space-y-6">
@@ -204,8 +229,6 @@ export default async function FinanciamentosPage({
             </details>
           )}
         </form>
-      ) : aba === "kanban" ? (
-        <KanbanProcessos colunas={colunas} cards={cardsKanban} />
       ) : aba === "processos" ? (
         <div className="max-w-2xl space-y-6">
           <p className="text-sm text-ink-muted">
