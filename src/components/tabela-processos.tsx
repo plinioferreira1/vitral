@@ -71,8 +71,12 @@ export function TabelaProcessos({
               <th className="px-5 py-3 font-medium">Vendedor</th>
             </>
           )}
-          <th className="px-5 py-3 font-medium">Modelo</th>
-          <th className="px-5 py-3 font-medium">Banco</th>
+          {ehFinanciamento && (
+            <>
+              <th className="px-5 py-3 font-medium">Modelo</th>
+              <th className="px-5 py-3 font-medium">Banco</th>
+            </>
+          )}
           <th className="px-5 py-3 font-medium">Assinatura</th>
           <th className="px-5 py-3 font-medium">Prazo final</th>
           <th className="px-5 py-3 font-medium">Status</th>
@@ -115,8 +119,12 @@ export function TabelaProcessos({
                 <td className="px-5 py-3 text-ink-muted">{p.vendedor?.nome ?? "—"}</td>
               </>
             )}
-            <td className="px-5 py-3 text-ink-muted">{p.modelos_processo?.nome ?? "—"}</td>
-            <td className="px-5 py-3 text-ink-muted">{p.bancos?.nome ?? "—"}</td>
+            {ehFinanciamento && (
+              <>
+                <td className="px-5 py-3 text-ink-muted">{p.modelos_processo?.nome ?? "—"}</td>
+                <td className="px-5 py-3 text-ink-muted">{p.bancos?.nome ?? "—"}</td>
+              </>
+            )}
             <td className="px-5 py-3 text-ink-muted">{formatarDataCurta(p.data_assinatura)}</td>
             <td className="px-5 py-3 text-ink-muted">{formatarDataCurta(p.data_final_contrato)}</td>
             <td className="px-5 py-3">
