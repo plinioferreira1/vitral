@@ -240,6 +240,7 @@ export interface Etapa {
   status: StatusEtapa;
   ordem: number;
   etapa_dependencia_id: string | null;
+  especial: boolean;
 }
 
 export interface ChecklistItem {

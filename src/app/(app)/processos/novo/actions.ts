@@ -157,13 +157,14 @@ export async function criarProcesso(formData: FormData) {
           responsavel_id: responsavelId,
           status: "pendente",
           ordem: ep.ordem,
+          especial: false,
         }))
       );
     }
   } else if (etapasSelecionadas.length > 0) {
     const { data: etapasPadrao } = await supabase
       .from("etapas_padrao")
-      .select("id, nome, ordem")
+      .select("id, nome, ordem, tipo")
       .in("id", etapasSelecionadas);
 
     if (etapasPadrao && etapasPadrao.length > 0) {
@@ -174,6 +175,7 @@ export async function criarProcesso(formData: FormData) {
           responsavel_id: responsavelId,
           status: "pendente",
           ordem: ep.ordem,
+          especial: ep.tipo === "especial",
         }))
       );
     }

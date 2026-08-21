@@ -23,27 +23,19 @@ export async function moverProcessoParaEtapa(processoId: string, etapaNomeAlvo: 
 
   const { data: processo } = await supabase
     .from("processos")
-    .select("categoria, tenant_id, status")
+    .select("status")
     .eq("id", processoId)
     .single();
   if (!processo) return;
 
-  const { data: especiaisRaw } = await supabase
-    .from("etapas_padrao")
-    .select("nome")
-    .eq("tenant_id", processo.tenant_id)
-    .eq("categoria", processo.categoria)
-    .eq("tipo", "especial");
-  const nomesEspeciais = new Set((especiaisRaw ?? []).map((e) => e.nome));
-
   const { data: todasEtapas } = await supabase
     .from("etapas")
-    .select("id, nome, status, ordem, data_realizada")
+    .select("id, nome, status, ordem, data_realizada, especial")
     .eq("processo_id", processoId)
     .order("ordem", { ascending: true });
   if (!todasEtapas) return;
 
-  const sequenciais = todasEtapas.filter((e) => !nomesEspeciais.has(e.nome));
+  const sequenciais = todasEtapas.filter((e) => !e.especial);
   const ordemAlvo = etapaNomeAlvo
     ? (sequenciais.find((e) => e.nome === etapaNomeAlvo)?.ordem ?? null)
     : null;

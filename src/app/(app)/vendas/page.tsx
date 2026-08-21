@@ -87,8 +87,6 @@ export default async function VendasPage({
         colunasKanban(supabase, usuario.tenant_id, "venda"),
         etapaAtualPorProcesso(
           supabase,
-          usuario.tenant_id,
-          "venda",
           emAndamento.map((p) => p.id)
         ),
       ]);

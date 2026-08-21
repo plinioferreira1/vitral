@@ -104,10 +104,9 @@ export default async function ProcessoDetalhePage({
 
   const etapasPadraoSequencial = (etapasPadrao ?? []).filter((ep) => ep.tipo === "sequencial");
   const etapasPadraoEspecial = (etapasPadrao ?? []).filter((ep) => ep.tipo === "especial");
-  const nomesEspeciais = new Set(etapasPadraoEspecial.map((ep) => ep.nome));
 
-  const etapasSequenciais = etapas.filter((e) => !nomesEspeciais.has(e.nome));
-  const etapasEspeciaisAtivas = etapas.filter((e) => nomesEspeciais.has(e.nome));
+  const etapasSequenciais = etapas.filter((e) => !e.especial);
+  const etapasEspeciaisAtivas = etapas.filter((e) => e.especial);
 
   return (
     <div className="max-w-3xl space-y-8 lg:max-w-5xl">
@@ -524,7 +523,7 @@ export default async function ProcessoDetalhePage({
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {etapasPadraoSequencial.map((ep) => {
-                  const etapaExistente = etapas.find((e) => e.nome === ep.nome);
+                  const etapaExistente = etapas.find((e) => e.nome === ep.nome && !e.especial);
                   const aplicada = Boolean(etapaExistente);
                   return (
                     <form key={ep.id} action={alternarEtapaPadrao}>
@@ -576,7 +575,7 @@ export default async function ProcessoDetalhePage({
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {etapasPadraoEspecial.map((ep) => {
-                  const etapaExistente = etapas.find((e) => e.nome === ep.nome);
+                  const etapaExistente = etapas.find((e) => e.nome === ep.nome && e.especial);
                   const aplicada = Boolean(etapaExistente);
                   return (
                     <form key={ep.id} action={alternarEtapaPadrao}>

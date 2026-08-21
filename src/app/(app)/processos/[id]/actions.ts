@@ -211,6 +211,7 @@ export async function alternarEtapaPadrao(formData: FormData) {
       responsavel_id: user?.id ?? null,
       status: "pendente",
       ordem: ordemCatalogo,
+      especial: true,
     });
   }
 

@@ -96,8 +96,6 @@ export default async function FinanciamentosPage({
         colunasKanban(supabase, usuario.tenant_id, "financiamento"),
         etapaAtualPorProcesso(
           supabase,
-          usuario.tenant_id,
-          "financiamento",
           emAndamento.map((p) => p.id)
         ),
       ]);

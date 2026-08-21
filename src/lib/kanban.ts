@@ -32,35 +32,24 @@ export async function colunasKanban(
  */
 export async function etapaAtualPorProcesso(
   supabase: SupabaseClient,
-  tenantId: string,
-  categoria: string,
   processoIds: string[]
 ): Promise<Map<string, string | null>> {
   const resultado = new Map<string, string | null>();
   if (processoIds.length === 0) return resultado;
 
-  const { data: especiais } = await supabase
-    .from("etapas_padrao")
-    .select("nome")
-    .eq("tenant_id", tenantId)
-    .eq("categoria", categoria)
-    .eq("tipo", "especial");
-  const nomesEspeciais = new Set((especiais ?? []).map((e) => e.nome));
-
   const { data: etapasRaw } = await supabase
     .from("etapas")
-    .select("processo_id, nome, status, ordem")
+    .select("processo_id, nome, status, ordem, especial")
     .in("processo_id", processoIds)
+    .eq("especial", false)
     .order("ordem", { ascending: true });
 
   const etapasPorProcesso = new Map<string, { nome: string; status: string }[]>();
-  (etapasRaw ?? [])
-    .filter((e) => !nomesEspeciais.has(e.nome))
-    .forEach((e) => {
-      const lista = etapasPorProcesso.get(e.processo_id) ?? [];
-      lista.push({ nome: e.nome, status: e.status });
-      etapasPorProcesso.set(e.processo_id, lista);
-    });
+  (etapasRaw ?? []).forEach((e) => {
+    const lista = etapasPorProcesso.get(e.processo_id) ?? [];
+    lista.push({ nome: e.nome, status: e.status });
+    etapasPorProcesso.set(e.processo_id, lista);
+  });
 
   processoIds.forEach((id) => {
     const etapas = etapasPorProcesso.get(id) ?? [];
