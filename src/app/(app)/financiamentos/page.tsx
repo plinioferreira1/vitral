@@ -9,8 +9,10 @@ import { calcularUrgencia } from "@/lib/alertas";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { apagarProcessosSelecionados } from "../processos/bulk-actions";
 import { CalculadoraFinanciamento } from "@/components/calculadora-financiamento-custas";
+import { KanbanProcessos, type CardKanban } from "@/components/kanban-processos";
+import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
 
-type Aba = "resumo" | "andamento" | "processos" | "custas";
+type Aba = "resumo" | "andamento" | "processos" | "custas" | "kanban";
 
 const CHECKLIST_COMPRADORES = [
   "Documento com foto (RG, CNH, CIN, etc)",
@@ -49,7 +51,9 @@ export default async function FinanciamentosPage({
         ? "processos"
         : abaParam === "custas"
           ? "custas"
-          : "resumo";
+          : abaParam === "kanban"
+            ? "kanban"
+            : "resumo";
 
   const supabase = await createClient();
 
@@ -97,6 +101,39 @@ export default async function FinanciamentosPage({
 
   const eventos = (await getEventosCalendario()).filter((e) => e.categoria === "financiamento");
   const referencia = new Date(`${hojeISO()}T00:00:00`);
+
+  let cardsKanban: CardKanban[] = [];
+  let colunas: string[] = [];
+  if (aba === "kanban" && emAndamento.length > 0) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { data: usuario } = await supabase
+      .from("usuarios")
+      .select("tenant_id")
+      .eq("id", user?.id ?? "")
+      .single();
+
+    if (usuario?.tenant_id) {
+      const [colunasResult, etapaAtualMap] = await Promise.all([
+        colunasKanban(supabase, usuario.tenant_id, "financiamento"),
+        etapaAtualPorProcesso(
+          supabase,
+          usuario.tenant_id,
+          "financiamento",
+          emAndamento.map((p) => p.id)
+        ),
+      ]);
+      colunas = colunasResult;
+      cardsKanban = emAndamento.map((p) => ({
+        id: p.id,
+        titulo: p.imoveis?.endereco ?? p.numero_processo,
+        subtitulo: `${p.comprador?.nome ?? "—"} / ${p.vendedor?.nome ?? "—"}`,
+        etapaAtual: etapaAtualMap.get(p.id) ?? null,
+        atrasos: atrasosPorProcesso.get(p.id) ?? 0,
+      }));
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -167,6 +204,8 @@ export default async function FinanciamentosPage({
             </details>
           )}
         </form>
+      ) : aba === "kanban" ? (
+        <KanbanProcessos colunas={colunas} cards={cardsKanban} />
       ) : aba === "processos" ? (
         <div className="max-w-2xl space-y-6">
           <p className="text-sm text-ink-muted">

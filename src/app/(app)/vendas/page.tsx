@@ -8,8 +8,10 @@ import { hojeISO } from "@/lib/data-br";
 import { calcularUrgencia } from "@/lib/alertas";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { apagarProcessosSelecionados } from "../processos/bulk-actions";
+import { KanbanProcessos, type CardKanban } from "@/components/kanban-processos";
+import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
 
-type Aba = "resumo" | "andamento";
+type Aba = "resumo" | "andamento" | "kanban";
 
 export default async function VendasPage({
   searchParams,
@@ -17,7 +19,7 @@ export default async function VendasPage({
   searchParams: Promise<{ aba?: string }>;
 }) {
   const { aba: abaParam } = await searchParams;
-  const aba: Aba = abaParam === "andamento" ? "andamento" : "resumo";
+  const aba: Aba = abaParam === "andamento" ? "andamento" : abaParam === "kanban" ? "kanban" : "resumo";
 
   const supabase = await createClient();
 
@@ -66,6 +68,39 @@ export default async function VendasPage({
   const eventos = (await getEventosCalendario()).filter((e) => e.categoria === "venda");
   const referencia = new Date(`${hojeISO()}T00:00:00`);
 
+  let cardsKanban: CardKanban[] = [];
+  let colunas: string[] = [];
+  if (aba === "kanban" && emAndamento.length > 0) {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    const { data: usuario } = await supabase
+      .from("usuarios")
+      .select("tenant_id")
+      .eq("id", user?.id ?? "")
+      .single();
+
+    if (usuario?.tenant_id) {
+      const [colunasResult, etapaAtualMap] = await Promise.all([
+        colunasKanban(supabase, usuario.tenant_id, "venda"),
+        etapaAtualPorProcesso(
+          supabase,
+          usuario.tenant_id,
+          "venda",
+          emAndamento.map((p) => p.id)
+        ),
+      ]);
+      colunas = colunasResult;
+      cardsKanban = emAndamento.map((p) => ({
+        id: p.id,
+        titulo: p.imoveis?.endereco ?? p.numero_processo,
+        subtitulo: `${p.comprador?.nome ?? "—"} / ${p.vendedor?.nome ?? "—"}`,
+        etapaAtual: etapaAtualMap.get(p.id) ?? null,
+        atrasos: atrasosPorProcesso.get(p.id) ?? 0,
+      }));
+    }
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
@@ -94,6 +129,8 @@ export default async function VendasPage({
             <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={2} />
           </div>
         </div>
+      ) : aba === "kanban" ? (
+        <KanbanProcessos colunas={colunas} cards={cardsKanban} />
       ) : (
         <form action={apagarProcessosSelecionados} className="space-y-6">
           {(emAndamento.length > 0 || concluidos.length > 0) && (
