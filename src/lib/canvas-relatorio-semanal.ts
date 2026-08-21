@@ -70,7 +70,7 @@ export async function gerarRelatorioSemanalPNG(dados: DadosRelatorioSemanal) {
     return altura;
   }
 
-  const topoConteudo = 240;
+  const topoConteudo = 280;
   const alturaAtrasados = dados.atrasados.length > 0 ? 34 + alturaLista(dados.atrasados) + 16 : 0;
   const alturaVencendo = dados.vencendo.length > 0 ? 34 + alturaLista(dados.vencendo) + 16 : 0;
   const alturaVazio = dados.atrasados.length === 0 && dados.vencendo.length === 0 ? 50 : 0;
