@@ -22,6 +22,8 @@ export type ProcessoRow = {
   tipo: string | null;
   status: string;
   data_criacao: string;
+  data_assinatura: string | null;
+  data_final_contrato: string | null;
   valor_total: number | null;
   valor_financiado: number | null;
   origem: string | null;
@@ -33,6 +35,11 @@ export type ProcessoRow = {
   indicacao: { nome: string } | null;
   modelos_processo: { nome: string } | null;
 };
+
+function formatarDataCurta(iso: string | null): string {
+  if (!iso) return "—";
+  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR");
+}
 
 export function TabelaProcessos({
   rows,
@@ -66,6 +73,8 @@ export function TabelaProcessos({
           )}
           <th className="px-5 py-3 font-medium">Modelo</th>
           <th className="px-5 py-3 font-medium">Banco</th>
+          <th className="px-5 py-3 font-medium">Assinatura</th>
+          <th className="px-5 py-3 font-medium">Prazo final</th>
           <th className="px-5 py-3 font-medium">Status</th>
           {atrasosPorProcesso && <th className="px-5 py-3 font-medium">Atrasos</th>}
         </tr>
@@ -108,6 +117,8 @@ export function TabelaProcessos({
             )}
             <td className="px-5 py-3 text-ink-muted">{p.modelos_processo?.nome ?? "—"}</td>
             <td className="px-5 py-3 text-ink-muted">{p.bancos?.nome ?? "—"}</td>
+            <td className="px-5 py-3 text-ink-muted">{formatarDataCurta(p.data_assinatura)}</td>
+            <td className="px-5 py-3 text-ink-muted">{formatarDataCurta(p.data_final_contrato)}</td>
             <td className="px-5 py-3">
               <span
                 className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COR[p.status]}`}

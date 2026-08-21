@@ -28,7 +28,7 @@ export default async function VendasPage({
   const { data: processos, error } = await supabase
     .from("processos")
     .select(
-      `id, numero_processo, tipo, status, data_criacao, valor_total, valor_financiado, origem,
+      `id, numero_processo, tipo, status, data_criacao, data_assinatura, data_final_contrato, valor_total, valor_financiado, origem,
        imoveis ( endereco ),
        comprador:clientes!processos_comprador_id_fkey ( nome ),
        vendedor:clientes!processos_vendedor_id_fkey ( nome ),

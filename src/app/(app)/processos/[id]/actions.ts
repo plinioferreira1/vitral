@@ -143,6 +143,25 @@ export async function reabrirEtapa(formData: FormData) {
   revalidatePath("/calendario");
 }
 
+export async function salvarDatasContrato(formData: FormData) {
+  const supabase = await createClient();
+  const processoId = String(formData.get("processo_id") ?? "");
+  const dataAssinatura = String(formData.get("data_assinatura") ?? "");
+  const dataFinalContrato = String(formData.get("data_final_contrato") ?? "");
+
+  await supabase
+    .from("processos")
+    .update({
+      data_assinatura: dataAssinatura || null,
+      data_final_contrato: dataFinalContrato || null,
+    })
+    .eq("id", processoId);
+
+  revalidatePath(`/processos/${processoId}`);
+  revalidatePath("/vendas");
+  revalidatePath("/financiamentos");
+}
+
 export async function alterarDataPrevista(formData: FormData) {
   const supabase = await createClient();
   const etapaId = String(formData.get("etapa_id") ?? "");

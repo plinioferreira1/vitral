@@ -17,6 +17,7 @@ import {
   salvarComissao,
   adicionarComentario,
   salvarNumeroRegistro,
+  salvarDatasContrato,
 } from "./actions";
 import { EditorLinhaTempo } from "@/components/editor-linha-tempo";
 
@@ -32,6 +33,7 @@ export default async function ProcessoDetalhePage({
     .from("processos")
     .select(
       `id, numero_processo, status, valor_total, valor_financiado, origem, categoria, data_criacao,
+       data_assinatura, data_final_contrato,
        comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
        vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
        imoveis ( endereco ), bancos ( nome ),
@@ -98,6 +100,8 @@ export default async function ProcessoDetalhePage({
     categoria: string;
     valor_financiado: number | null;
     origem: string | null;
+    data_assinatura: string | null;
+    data_final_contrato: string | null;
   };
   const p = processo as unknown as P;
   const ehFinanciamento = p.categoria === "financiamento";
@@ -148,6 +152,34 @@ export default async function ProcessoDetalhePage({
             value={format(parseISO(p.data_criacao), "dd/MM/yyyy", { locale: ptBR })}
           />
         </div>
+
+        <form action={salvarDatasContrato} className="mt-4 flex flex-wrap items-end gap-3">
+          <input type="hidden" name="processo_id" value={p.id} />
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Data de assinatura</label>
+            <input
+              type="date"
+              name="data_assinatura"
+              defaultValue={p.data_assinatura ?? ""}
+              className="rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-brand"
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Data final do contrato</label>
+            <input
+              type="date"
+              name="data_final_contrato"
+              defaultValue={p.data_final_contrato ?? ""}
+              className="rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-brand"
+            />
+          </div>
+          <button
+            type="submit"
+            className="rounded-md border border-border px-3 py-1.5 text-sm text-ink-muted hover:bg-background"
+          >
+            Salvar
+          </button>
+        </form>
       </div>
 
       {/* Situação especial ativa (se houver) */}
