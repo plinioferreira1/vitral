@@ -239,36 +239,36 @@ export default async function LocacaoPage({
             <div className="grid grid-cols-3 gap-4">
               <Link
                 href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=mes`}
-                className="rounded-xl p-5 text-white transition hover:opacity-90"
-                style={{ backgroundColor: "#F59E0B" }}
+                className="rounded-2xl p-5 text-white shadow-sm transition hover:brightness-110"
+                style={{ backgroundColor: "#d97706" }}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
                   {Icones.relogio}
                 </div>
-                <p className="mt-3 font-mono text-2xl font-semibold">{pendentesNoMes.length}</p>
-                <p className="mt-0.5 text-xs text-white/80">Contas pendentes no mês</p>
+                <p className="mt-3 font-mono text-4xl font-bold tracking-tight">{pendentesNoMes.length}</p>
+                <p className="mt-1 text-sm font-medium text-white/85">Contas pendentes no mês</p>
               </Link>
               <Link
                 href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=pagas`}
-                className="rounded-xl p-5 text-white transition hover:opacity-90"
-                style={{ backgroundColor: "#0F7A4E" }}
+                className="rounded-2xl p-5 text-white shadow-sm transition hover:brightness-110"
+                style={{ backgroundColor: "#0f7a4e" }}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
                   {Icones.check}
                 </div>
-                <p className="mt-3 font-mono text-2xl font-semibold">{contasPagasNoMes.length}</p>
-                <p className="mt-0.5 text-xs text-white/80">Contas pagas no mês</p>
+                <p className="mt-3 font-mono text-4xl font-bold tracking-tight">{contasPagasNoMes.length}</p>
+                <p className="mt-1 text-sm font-medium text-white/85">Contas pagas no mês</p>
               </Link>
               <Link
                 href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=atrasadas`}
-                className="rounded-xl p-5 text-white transition hover:opacity-90"
-                style={{ backgroundColor: "#DC2626" }}
+                className="rounded-2xl p-5 text-white shadow-sm transition hover:brightness-110"
+                style={{ backgroundColor: "#e11d48" }}
               >
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/15">
+                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
                   {Icones.alerta}
                 </div>
-                <p className="mt-3 font-mono text-2xl font-semibold">{atrasadasLista.length}</p>
-                <p className="mt-0.5 text-xs text-white/80">Atrasadas (todos os meses)</p>
+                <p className="mt-3 font-mono text-4xl font-bold tracking-tight">{atrasadasLista.length}</p>
+                <p className="mt-1 text-sm font-medium text-white/85">Atrasadas (todos os meses)</p>
               </Link>
             </div>
           </div>

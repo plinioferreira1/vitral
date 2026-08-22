@@ -81,24 +81,26 @@ export function RelatorioSemanal({ dados }: { dados: DadosRelatorio }) {
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
         <p className="mb-3 text-sm font-semibold text-ink">Panorama</p>
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div>
-            <p className="text-xl font-semibold text-ink">{dados.totalAtivosVenda}</p>
-            <p className="text-xs text-ink-muted">ativos em Vendas</p>
+          <div className="rounded-xl border border-border/60 p-4">
+            <p className="font-mono text-3xl font-bold tracking-tight text-ink">{dados.totalAtivosVenda}</p>
+            <p className="mt-1 text-sm text-ink-muted">ativos em Vendas</p>
           </div>
-          <div>
-            <p className="text-xl font-semibold text-ink">{dados.totalAtivosFinanciamento}</p>
-            <p className="text-xs text-ink-muted">ativos em Financiamentos</p>
+          <div className="rounded-xl border border-border/60 p-4">
+            <p className="font-mono text-3xl font-bold tracking-tight text-ink">
+              {dados.totalAtivosFinanciamento}
+            </p>
+            <p className="mt-1 text-sm text-ink-muted">ativos em Financiamentos</p>
           </div>
-          <div>
-            <p className="text-xl font-semibold text-rose-700">{dados.atrasados.length}</p>
-            <p className="text-xs text-ink-muted">atrasados</p>
+          <div className="rounded-xl p-4 text-white" style={{ backgroundColor: "#e11d48" }}>
+            <p className="font-mono text-3xl font-bold tracking-tight">{dados.atrasados.length}</p>
+            <p className="mt-1 text-sm text-white/85">atrasados</p>
           </div>
-          <div>
-            <p className="text-xl font-semibold text-amber-700">{dados.vencendo.length}</p>
-            <p className="text-xs text-ink-muted">vencendo essa semana</p>
+          <div className="rounded-xl p-4 text-white" style={{ backgroundColor: "#d97706" }}>
+            <p className="font-mono text-3xl font-bold tracking-tight">{dados.vencendo.length}</p>
+            <p className="mt-1 text-sm text-white/85">vencendo essa semana</p>
           </div>
         </div>
       </div>
