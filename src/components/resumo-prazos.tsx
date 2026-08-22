@@ -9,6 +9,7 @@ export function StatCardLink({
   icone,
   ativo,
   detalhe,
+  hero,
 }: {
   href: string;
   label: string;
@@ -17,28 +18,47 @@ export function StatCardLink({
   icone: React.ReactNode;
   ativo?: boolean;
   detalhe?: string;
+  hero?: boolean;
 }) {
+  if (hero) {
+    return (
+      <Link
+        href={href}
+        className={`block rounded-2xl p-5 text-white shadow-sm transition hover:brightness-110 ${
+          ativo ? "ring-2 ring-offset-2 ring-offset-background" : ""
+        }`}
+        style={{
+          backgroundColor: accent,
+          ...(ativo ? ({ ["--tw-ring-color" as string]: accent }) : {}),
+        }}
+      >
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
+          {icone}
+        </div>
+        <p className="mt-3 font-mono text-4xl font-bold tracking-tight">{value}</p>
+        <p className="mt-1 text-sm font-medium text-white/85">{label}</p>
+        {detalhe && <p className="mt-1 text-xs text-white/60">{detalhe}</p>}
+      </Link>
+    );
+  }
+
   return (
     <Link
       href={href}
-      className={`block rounded-xl border border-border bg-surface p-5 transition hover:border-border-strong ${
+      className={`block rounded-2xl border border-border bg-surface p-5 shadow-sm transition hover:border-border-strong hover:shadow-md ${
         ativo ? "ring-2 ring-offset-2 ring-offset-background" : ""
       }`}
-      style={{
-        borderLeftColor: accent,
-        borderLeftWidth: "3px",
-        ...(ativo ? ({ ["--tw-ring-color" as string]: accent }) : {}),
-      }}
+      style={ativo ? ({ ["--tw-ring-color" as string]: accent } as React.CSSProperties) : undefined}
     >
       <div
         className="flex h-9 w-9 items-center justify-center rounded-lg"
-        style={{ backgroundColor: `${accent}1a`, color: accent }}
+        style={{ backgroundColor: accent, color: "#fff" }}
       >
         {icone}
       </div>
-      <p className="mt-3 font-mono text-2xl font-semibold text-ink">{value}</p>
-      <p className="mt-0.5 text-xs text-ink-muted">{label}</p>
-      {detalhe && <p className="mt-1 text-[10px] text-ink-muted/70">{detalhe}</p>}
+      <p className="mt-3 font-mono text-3xl font-bold tracking-tight text-ink">{value}</p>
+      <p className="mt-1 text-sm text-ink-muted">{label}</p>
+      {detalhe && <p className="mt-1 text-xs text-ink-muted/70">{detalhe}</p>}
     </Link>
   );
 }
@@ -78,7 +98,7 @@ export function ResumoPrazos({
         href={hrefEmAberto}
         label="Em aberto"
         value={pendentes.length}
-        accent="#a8a29e"
+        accent="#78716c"
         icone={Icones.relogio}
         ativo={filtroAtivo === "em_aberto"}
       />
@@ -86,15 +106,16 @@ export function ResumoPrazos({
         href={hrefPara("atrasada")}
         label="Atrasados"
         value={atrasados.length}
-        accent="#fb7185"
+        accent="#e11d48"
         icone={Icones.alerta}
         ativo={filtroAtivo === "atrasada"}
+        hero
       />
       <StatCardLink
         href={hrefPara("vence_hoje")}
         label="Vencendo hoje"
         value={venceHoje.length}
-        accent="#fbbf24"
+        accent="#d97706"
         icone={Icones.calendario}
         ativo={filtroAtivo === "vence_hoje"}
       />
@@ -102,7 +123,7 @@ export function ResumoPrazos({
         href={hrefPara("vence_em_breve")}
         label="Vencendo em 7 dias"
         value={venceEmBreve.length}
-        accent="#fcd34d"
+        accent="#b9822c"
         icone={Icones.calendario}
         ativo={filtroAtivo === "vence_em_breve"}
       />
