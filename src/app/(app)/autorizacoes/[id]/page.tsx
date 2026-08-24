@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { VoltarLink } from "@/components/voltar-link";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
@@ -34,7 +35,9 @@ export default async function AutorizacaoDetalhePage({
 
   const { data: autorizacao } = await supabase
     .from("autorizacoes_venda")
-    .select("*, imoveis ( endereco ), clientes!autorizacoes_venda_vendedor_id_fkey ( nome )")
+    .select(
+      "*, imoveis ( endereco ), clientes!autorizacoes_venda_vendedor_id_fkey ( nome ), usuarios ( nome )"
+    )
     .eq("id", id)
     .single();
 
@@ -51,6 +54,7 @@ export default async function AutorizacaoDetalhePage({
     foro: string;
     imoveis: { endereco: string } | null;
     clientes: { nome: string } | null;
+    usuarios: { nome: string } | null;
   };
 
   const { data: signatarios } = await supabase
@@ -74,8 +78,17 @@ export default async function AutorizacaoDetalhePage({
           >
             {STATUS_LABEL[a.status]}
           </span>
+          {a.status === "pendente" && (
+            <Link
+              href={`/autorizacoes/${a.id}/editar`}
+              className="text-xs font-medium text-brand hover:underline"
+            >
+              Editar
+            </Link>
+          )}
         </div>
         <p className="mt-1 text-sm text-ink-muted">Proprietário: {a.clientes?.nome ?? "—"}</p>
+        <p className="mt-0.5 text-xs text-ink-muted">Criado por: {a.usuarios?.nome ?? "—"}</p>
         {a.status === "assinado" && (
           <div className="mt-3">
             <BotaoCertificadoAutorizacao

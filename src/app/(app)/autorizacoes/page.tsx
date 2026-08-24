@@ -19,7 +19,9 @@ export default async function AutorizacoesPage() {
   const supabase = await createClient();
   const { data: autorizacoes } = await supabase
     .from("autorizacoes_venda")
-    .select("id, status, criado_em, imoveis ( endereco ), clientes!autorizacoes_venda_vendedor_id_fkey ( nome )")
+    .select(
+      "id, status, criado_em, imoveis ( endereco ), clientes!autorizacoes_venda_vendedor_id_fkey ( nome ), usuarios ( nome )"
+    )
     .order("criado_em", { ascending: false });
 
   const rows = (autorizacoes ?? []) as unknown as {
@@ -28,6 +30,7 @@ export default async function AutorizacoesPage() {
     criado_em: string;
     imoveis: { endereco: string } | null;
     clientes: { nome: string } | null;
+    usuarios: { nome: string } | null;
   }[];
 
   return (
@@ -74,6 +77,7 @@ export default async function AutorizacoesPage() {
                   <th className="w-8 px-5 py-3"></th>
                   <th className="px-5 py-3 font-medium">Imóvel</th>
                   <th className="px-5 py-3 font-medium">Proprietário</th>
+                  <th className="px-5 py-3 font-medium">Criado por</th>
                   <th className="px-5 py-3 font-medium">Status</th>
                 </tr>
               </thead>
@@ -89,12 +93,23 @@ export default async function AutorizacoesPage() {
                       </Link>
                     </td>
                     <td className="px-5 py-3 text-ink-muted">{a.clientes?.nome ?? "—"}</td>
+                    <td className="px-5 py-3 text-ink-muted">{a.usuarios?.nome ?? "—"}</td>
                     <td className="px-5 py-3">
-                      <span
-                        className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COR[a.status]}`}
-                      >
-                        {STATUS_LABEL[a.status]}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COR[a.status]}`}
+                        >
+                          {STATUS_LABEL[a.status]}
+                        </span>
+                        {a.status === "pendente" && (
+                          <Link
+                            href={`/autorizacoes/${a.id}/editar`}
+                            className="text-xs font-medium text-brand hover:underline"
+                          >
+                            Editar
+                          </Link>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

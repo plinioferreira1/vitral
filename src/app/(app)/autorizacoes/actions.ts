@@ -149,6 +149,122 @@ export async function criarAutorizacao(formData: FormData) {
   redirect(`/autorizacoes/${autorizacao.id}`);
 }
 
+export async function atualizarAutorizacao(formData: FormData) {
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  const { data: existente } = await supabase
+    .from("autorizacoes_venda")
+    .select("id, status, imovel_id, vendedor_id, conjuge_id")
+    .eq("id", id)
+    .single();
+
+  // Só permite editar enquanto ninguém assinou.
+  if (!existente || existente.status !== "pendente") return;
+
+  const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
+
+  const dadosVendedor = objetoParcial({
+    nome: campo("vendedor_nome"),
+    cpf_cnpj: campo("vendedor_cpf"),
+    rg: campo("vendedor_rg"),
+    telefone: campo("vendedor_telefone"),
+    endereco: campo("vendedor_endereco"),
+  });
+  if (!objetoVazio(dadosVendedor)) {
+    await supabase.from("clientes").update(dadosVendedor).eq("id", existente.vendedor_id);
+  }
+
+  const regiaoAdministrativa = campo("regiao_administrativa");
+
+  const dadosImovel = objetoParcial({
+    endereco: campo("imovel"),
+    cep: campo("cep"),
+    matricula: campo("matricula"),
+    area_construida: campo("area_construida"),
+    area_lote: campo("area_lote"),
+    inscricao_iptu: campo("inscricao_iptu"),
+    valor_condominio: formData.get("valor_condominio") ? Number(formData.get("valor_condominio")) : null,
+    regiao_administrativa: regiaoAdministrativa,
+  });
+  if (!objetoVazio(dadosImovel)) {
+    await supabase.from("imoveis").update(dadosImovel).eq("id", existente.imovel_id);
+  }
+
+  // Cônjuge / segundo proprietário.
+  let conjugeId = existente.conjuge_id as string | null;
+  const conjugeNome = campo("conjuge_nome");
+  const tenantAtual = await supabase
+    .from("autorizacoes_venda")
+    .select("tenant_id")
+    .eq("id", id)
+    .single();
+  const tenantId = tenantAtual.data?.tenant_id as string | undefined;
+
+  if (conjugeNome && tenantId) {
+    if (!conjugeId) {
+      conjugeId = await resolverOuCriar(supabase, "clientes", "nome", tenantId, conjugeNome);
+    }
+    if (conjugeId) {
+      const dadosConjuge = objetoParcial({
+        nome: conjugeNome,
+        cpf_cnpj: campo("conjuge_cpf"),
+        rg: campo("conjuge_rg"),
+        telefone: campo("conjuge_telefone"),
+        endereco: campo("conjuge_endereco"),
+      });
+      if (!objetoVazio(dadosConjuge)) {
+        await supabase.from("clientes").update(dadosConjuge).eq("id", conjugeId);
+      }
+    }
+  } else if (!conjugeNome) {
+    conjugeId = null;
+  }
+
+  const valorImovel = formData.get("valor_imovel");
+  const comissaoPercentual = formData.get("comissao_percentual");
+  const prazoDias = formData.get("prazo_dias");
+  const exclusividade = formData.get("exclusividade") === "on";
+  const observacoes = campo("observacoes");
+  const foro = foroPorRegiaoAdministrativa(regiaoAdministrativa ?? "");
+
+  await supabase
+    .from("autorizacoes_venda")
+    .update({
+      conjuge_id: conjugeId,
+      valor_imovel: valorImovel ? Number(valorImovel) : null,
+      comissao_percentual: comissaoPercentual ? Number(comissaoPercentual) : null,
+      prazo_dias: prazoDias ? Number(prazoDias) : null,
+      exclusividade,
+      observacoes,
+      foro,
+    })
+    .eq("id", id);
+
+  // Ajusta os signatários: garante que exista (ou não) o segundo
+  // proprietário, sem mexer no signatário 1.
+  const querSegundoProprietario = formData.get("segundo_proprietario") === "on";
+  const { data: signatarios } = await supabase
+    .from("autorizacao_signatarios")
+    .select("id, ordem, assinado_em")
+    .eq("autorizacao_id", id);
+
+  const signatario2 = (signatarios ?? []).find((s) => s.ordem === 2);
+
+  if (querSegundoProprietario && !signatario2) {
+    await supabase
+      .from("autorizacao_signatarios")
+      .insert({ autorizacao_id: id, nome_esperado: "Proprietário 2", ordem: 2 });
+  } else if (!querSegundoProprietario && signatario2 && !signatario2.assinado_em) {
+    await supabase.from("autorizacao_signatarios").delete().eq("id", signatario2.id);
+  }
+
+  revalidatePath(`/autorizacoes/${id}`);
+  revalidatePath("/autorizacoes");
+  redirect(`/autorizacoes/${id}`);
+}
+
 export async function cancelarAutorizacao(formData: FormData) {
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
