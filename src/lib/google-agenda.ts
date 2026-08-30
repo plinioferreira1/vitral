@@ -21,9 +21,9 @@ import type { CategoriaProcesso } from "@/lib/types";
 // =========================================================
 
 const CALENDAR_IDS: Record<CategoriaProcesso, string | undefined> = {
-  venda: process.env.GOOGLE_CALENDAR_ID_VENDA,
-  financiamento: process.env.GOOGLE_CALENDAR_ID_FINANCIAMENTO,
-  locacao: process.env.GOOGLE_CALENDAR_ID_LOCACAO,
+  venda: process.env.GOOGLE_CALENDAR_ID_VENDA?.trim(),
+  financiamento: process.env.GOOGLE_CALENDAR_ID_FINANCIAMENTO?.trim(),
+  locacao: process.env.GOOGLE_CALENDAR_ID_LOCACAO?.trim(),
 };
 
 function base64url(input: Buffer | string): string {
@@ -46,8 +46,8 @@ export async function diagnosticarCredenciaisGoogle(): Promise<{
   tokenOk: boolean;
   detalhe?: string;
 }> {
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const chavePrivada = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim();
+  const chavePrivada = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n").trim();
   const calendarios = {
     venda: !!CALENDAR_IDS.venda,
     financiamento: !!CALENDAR_IDS.financiamento,
@@ -110,8 +110,8 @@ export async function diagnosticarCredenciaisGoogle(): Promise<{
 let tokenCache: { token: string; expiraEm: number } | null = null;
 
 async function obterAccessToken(): Promise<string | null> {
-  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
-  const chavePrivada = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim();
+  const chavePrivada = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n").trim();
   if (!email || !chavePrivada) return null;
 
   if (tokenCache && tokenCache.expiraEm > Date.now() + 30_000) {
