@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hojeISO } from "@/lib/data-br";
+import { reconciliarAgendaProcesso } from "@/lib/google-agenda";
 
 /**
  * Acha um registro pelo nome (exato, sem diferenciar maiúsculas)
@@ -187,6 +188,8 @@ export async function criarProcesso(formData: FormData) {
     acao: "criou o processo",
     detalhe: { modelo: modeloProcesso?.nome },
   });
+
+  await reconciliarAgendaProcesso(supabase, processo.id);
 
   redirect(`/processos/${processo.id}`);
 }

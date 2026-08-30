@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { hojeISO } from "@/lib/data-br";
+import { reconciliarAgendaProcesso, removerEventosDeEtapas, reconciliarAlertaContratoFinal, removerAlertasContratoDeProcessos } from "@/lib/google-agenda";
 
 /**
  * Move um processo pra outra etapa arrastando no quadro (kanban).
@@ -67,6 +68,9 @@ export async function moverProcessoParaEtapa(processoId: string, etapaNomeAlvo: 
     await supabase.from("processos").update({ status: "ativo" }).eq("id", processoId);
   }
 
+  await reconciliarAgendaProcesso(supabase, processoId);
+  await reconciliarAlertaContratoFinal(supabase, processoId);
+
   revalidatePath("/vendas");
   revalidatePath("/financiamentos");
   revalidatePath(`/processos/${processoId}`);
@@ -77,6 +81,13 @@ export async function apagarProcessosSelecionados(formData: FormData) {
   if (ids.length === 0) return;
 
   const supabase = await createClient();
+  const { data: etapas } = await supabase.from("etapas").select("id").in("processo_id", ids);
+  await removerEventosDeEtapas(
+    supabase,
+    (etapas ?? []).map((e) => e.id)
+  );
+  await removerAlertasContratoDeProcessos(supabase, ids);
+
   await supabase.from("processos").delete().in("id", ids);
 
   revalidatePath("/vendas");
@@ -93,6 +104,13 @@ export async function apagarProcesso(formData: FormData) {
     .select("categoria")
     .eq("id", id)
     .single();
+
+  const { data: etapas } = await supabase.from("etapas").select("id").eq("processo_id", id);
+  await removerEventosDeEtapas(
+    supabase,
+    (etapas ?? []).map((e) => e.id)
+  );
+  await removerAlertasContratoDeProcessos(supabase, [id]);
 
   await supabase.from("processos").delete().eq("id", id);
 

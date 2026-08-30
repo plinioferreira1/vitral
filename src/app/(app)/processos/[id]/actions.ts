@@ -5,6 +5,7 @@ import { recalcularDataDependente } from "@/lib/motor-processos";
 import { revalidatePath } from "next/cache";
 import { parseISO } from "date-fns";
 import { hojeISO } from "@/lib/data-br";
+import { reconciliarAgendaProcesso, removerEventosDeEtapas, reconciliarAlertaContratoFinal } from "@/lib/google-agenda";
 
 export async function salvarOrdemEtapas(processoId: string, etapaIdsEmOrdem: string[]) {
   const supabase = await createClient();
@@ -82,6 +83,8 @@ export async function concluirEtapa(formData: FormData) {
     }
   }
 
+  await reconciliarAgendaProcesso(supabase, processoId);
+
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/");
   revalidatePath("/calendario");
@@ -107,6 +110,7 @@ export async function concluirEtapa(formData: FormData) {
 
     if (todasConcluidas) {
       await supabase.from("processos").update({ status: "concluido" }).eq("id", processoId);
+      await reconciliarAlertaContratoFinal(supabase, processoId);
       revalidatePath(`/processos/${processoId}`);
       revalidatePath("/vendas");
       revalidatePath("/financiamentos");
@@ -134,9 +138,12 @@ export async function reabrirEtapa(formData: FormData) {
 
   if (processoAtual?.status === "concluido") {
     await supabase.from("processos").update({ status: "ativo" }).eq("id", processoId);
+    await reconciliarAlertaContratoFinal(supabase, processoId);
     revalidatePath("/vendas");
       revalidatePath("/financiamentos");
   }
+
+  await reconciliarAgendaProcesso(supabase, processoId);
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/");
@@ -157,6 +164,8 @@ export async function salvarDatasContrato(formData: FormData) {
     })
     .eq("id", processoId);
 
+  await reconciliarAlertaContratoFinal(supabase, processoId);
+
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/vendas");
   revalidatePath("/financiamentos");
@@ -169,6 +178,8 @@ export async function alterarDataPrevista(formData: FormData) {
   const novaData = String(formData.get("data_prevista") ?? "");
 
   await supabase.from("etapas").update({ data_prevista: novaData || null }).eq("id", etapaId);
+
+  await reconciliarAgendaProcesso(supabase, processoId);
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/");
@@ -222,6 +233,7 @@ export async function alternarEtapaPadrao(formData: FormData) {
 
   if (aplicada && etapaId) {
     // já existe -> remove (destrava a etapa desse processo)
+    await removerEventosDeEtapas(supabase, [etapaId]);
     await supabase.from("etapas").delete().eq("id", etapaId);
   } else if (!aplicada) {
     await supabase.from("etapas").insert({
@@ -233,6 +245,8 @@ export async function alternarEtapaPadrao(formData: FormData) {
       especial: true,
     });
   }
+
+  await reconciliarAgendaProcesso(supabase, processoId);
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/");
