@@ -95,6 +95,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   { href: "/tarefas-recorrentes", label: "Tarefas recorrentes" },
                   { href: "/onboarding-corretor", label: "Onboarding do Corretor" },
                   { href: "/checklists-financiamento", label: "Checklists de Financiamento" },
+                  { href: "/google-agenda", label: "Google Agenda" },
                   { href: "/membros", label: "Membros/Permissões" },
                 ],
               },
