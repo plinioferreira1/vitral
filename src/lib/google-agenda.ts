@@ -34,6 +34,79 @@ function base64url(input: Buffer | string): string {
     .replace(/=+$/, "");
 }
 
+/**
+ * Diagnóstico das credenciais/config do Google Agenda — usado
+ * só pela tela de configuração, pra mostrar exatamente o que
+ * está faltando sem expor nenhum segredo.
+ */
+export async function diagnosticarCredenciaisGoogle(): Promise<{
+  emailConfigurado: boolean;
+  chaveConfigurada: boolean;
+  calendarios: Record<CategoriaProcesso, boolean>;
+  tokenOk: boolean;
+  detalhe?: string;
+}> {
+  const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+  const chavePrivada = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const calendarios = {
+    venda: !!CALENDAR_IDS.venda,
+    financiamento: !!CALENDAR_IDS.financiamento,
+    locacao: !!CALENDAR_IDS.locacao,
+  };
+
+  if (!email || !chavePrivada) {
+    return { emailConfigurado: !!email, chaveConfigurada: !!chavePrivada, calendarios, tokenOk: false };
+  }
+
+  try {
+    const agora = Math.floor(Date.now() / 1000);
+    const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+    const claims = base64url(
+      JSON.stringify({
+        iss: email,
+        scope: "https://www.googleapis.com/auth/calendar",
+        aud: "https://oauth2.googleapis.com/token",
+        iat: agora,
+        exp: agora + 3600,
+      })
+    );
+    const assinatura = base64url(
+      crypto.sign("RSA-SHA256", Buffer.from(`${header}.${claims}`), chavePrivada)
+    );
+    const jwt = `${header}.${claims}.${assinatura}`;
+
+    const resposta = await fetch("https://oauth2.googleapis.com/token", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+        assertion: jwt,
+      }),
+    });
+
+    if (!resposta.ok) {
+      const texto = await resposta.text();
+      return {
+        emailConfigurado: true,
+        chaveConfigurada: true,
+        calendarios,
+        tokenOk: false,
+        detalhe: texto.slice(0, 400),
+      };
+    }
+
+    return { emailConfigurado: true, chaveConfigurada: true, calendarios, tokenOk: true };
+  } catch (erro) {
+    return {
+      emailConfigurado: true,
+      chaveConfigurada: true,
+      calendarios,
+      tokenOk: false,
+      detalhe: erro instanceof Error ? erro.message : String(erro),
+    };
+  }
+}
+
 let tokenCache: { token: string; expiraEm: number } | null = null;
 
 async function obterAccessToken(): Promise<string | null> {

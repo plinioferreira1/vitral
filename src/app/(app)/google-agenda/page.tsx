@@ -1,10 +1,27 @@
 import { createClient } from "@/lib/supabase/server";
+import { diagnosticarCredenciaisGoogle } from "@/lib/google-agenda";
 import { SincronizarAgendaClient } from "./sincronizar-agenda-client";
 
 export const maxDuration = 60;
 
+function Selo({ ok, texto }: { ok: boolean; texto: string }) {
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
+        ok
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : "border-red-200 bg-red-50 text-red-700"
+      }`}
+    >
+      <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-emerald-500" : "bg-red-500"}`} />
+      {texto}
+    </span>
+  );
+}
+
 export default async function GoogleAgendaPage() {
   const supabase = await createClient();
+  const diagnostico = await diagnosticarCredenciaisGoogle();
 
   const { data: processosRaw } = await supabase
     .from("processos")
@@ -30,6 +47,30 @@ export default async function GoogleAgendaPage() {
           integração — ele passa por todos e cria/atualiza/limpa os eventos que estiverem
           faltando ou desatualizados. Pode rodar de novo quando quiser, sem duplicar nada.
         </p>
+      </div>
+
+      <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+          Status da configuração
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Selo ok={diagnostico.emailConfigurado} texto="E-mail da conta de serviço" />
+          <Selo ok={diagnostico.chaveConfigurada} texto="Chave privada" />
+          <Selo ok={diagnostico.calendarios.venda} texto="Agenda de Vendas" />
+          <Selo ok={diagnostico.calendarios.financiamento} texto="Agenda de Financiamento" />
+          <Selo ok={diagnostico.calendarios.locacao} texto="Agenda de Locação" />
+          <Selo ok={diagnostico.tokenOk} texto="Conexão com o Google" />
+        </div>
+        {diagnostico.detalhe && (
+          <p className="mt-3 rounded-md bg-red-50 p-3 text-xs text-red-700">
+            O Google recusou a conexão: {diagnostico.detalhe}
+          </p>
+        )}
+        {!diagnostico.tokenOk && diagnostico.emailConfigurado && diagnostico.chaveConfigurada && !diagnostico.detalhe && (
+          <p className="mt-3 text-xs text-ink-muted">
+            Credenciais configuradas, mas não foi possível confirmar a conexão agora.
+          </p>
+        )}
       </div>
 
       <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
