@@ -254,7 +254,7 @@ export async function reconciliarAgendaProcesso(
 
       const corpoEvento = {
         summary: `${identificador} — ${etapa.nome}`,
-        description: `Etapa "${etapa.nome}" do processo ${processo.numero_processo} (Vitral).`,
+        description: `Etapa "${etapa.nome}" do processo ${identificador} (Vitral).`,
         start: { date: etapa.data_prevista },
         end: { date: etapa.data_prevista },
       };
@@ -422,7 +422,7 @@ export async function reconciliarAlertaContratoFinal(
 
       const criado = await chamarGoogleCalendar("POST", agendaId, "", {
         summary: titulo,
-        description: `Prazo final do contrato do processo ${processo.numero_processo} (Vitral).`,
+        description: `Prazo final do contrato de ${identificador} (Vitral).`,
         start: { date: data },
         end: { date: somarDias(data, 1) }, // eventos de dia inteiro usam data final exclusiva
         colorId: "11", // vermelho (Tomato)
