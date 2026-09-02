@@ -386,7 +386,7 @@ export default async function ProcessoDetalhePage({
                 </ul>
               )}
 
-              {etapa.nome === "Registro" && (
+              {(etapa.nome === "Registro" || etapa.nome === "Conclusão do Registro") && (
                 <div className="mt-3 border-t border-border pt-3">
                   <form action={salvarNumeroRegistro} className="flex items-center gap-1.5">
                     <input type="hidden" name="etapa_id" value={etapa.id} />
