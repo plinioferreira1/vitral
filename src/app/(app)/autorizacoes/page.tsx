@@ -20,7 +20,7 @@ export default async function AutorizacoesPage() {
   const { data: autorizacoes } = await supabase
     .from("autorizacoes_venda")
     .select(
-      "id, status, criado_em, imoveis ( endereco ), clientes!autorizacoes_venda_vendedor_id_fkey ( nome ), usuarios ( nome )"
+      "id, status, criado_em, imoveis ( endereco ), clientes!autorizacoes_venda_vendedor_id_fkey ( nome ), usuarios!autorizacoes_venda_criado_por_fkey ( nome )"
     )
     .order("criado_em", { ascending: false });
 

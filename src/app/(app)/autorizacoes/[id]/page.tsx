@@ -5,7 +5,7 @@ import { VoltarLink } from "@/components/voltar-link";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
 import { BotaoCertificadoAutorizacao } from "@/components/botao-certificado-autorizacao";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
-import { cancelarAutorizacao } from "../actions";
+import { cancelarAutorizacao, salvarResponsavelAutorizacao } from "../actions";
 import { apagarAutorizacao } from "../bulk-actions";
 
 const STATUS_COR: Record<string, string> = {
@@ -36,7 +36,7 @@ export default async function AutorizacaoDetalhePage({
   const { data: autorizacao } = await supabase
     .from("autorizacoes_venda")
     .select(
-      "*, imoveis ( endereco ), clientes!autorizacoes_venda_vendedor_id_fkey ( nome ), usuarios ( nome )"
+      "*, imoveis ( endereco ), clientes!autorizacoes_venda_vendedor_id_fkey ( nome ), usuarios!autorizacoes_venda_criado_por_fkey ( nome ), responsavel:usuarios!autorizacoes_venda_responsavel_id_fkey ( id, nome )"
     )
     .eq("id", id)
     .single();
@@ -55,7 +55,14 @@ export default async function AutorizacaoDetalhePage({
     imoveis: { endereco: string } | null;
     clientes: { nome: string } | null;
     usuarios: { nome: string } | null;
+    responsavel: { id: string; nome: string } | null;
   };
+
+  const { data: membros } = await supabase
+    .from("usuarios")
+    .select("id, nome")
+    .eq("ativo", true)
+    .order("nome");
 
   const { data: signatarios } = await supabase
     .from("autorizacao_signatarios")
@@ -89,6 +96,31 @@ export default async function AutorizacaoDetalhePage({
         </div>
         <p className="mt-1 text-sm text-ink-muted">Proprietário: {a.clientes?.nome ?? "—"}</p>
         <p className="mt-0.5 text-xs text-ink-muted">Criado por: {a.usuarios?.nome ?? "—"}</p>
+        <form action={salvarResponsavelAutorizacao} className="mt-1.5 flex items-center gap-1.5">
+          <input type="hidden" name="id" value={a.id} />
+          <label className="text-xs text-ink-muted">Responsável:</label>
+          <select
+            name="responsavel_id"
+            defaultValue={a.responsavel?.id ?? ""}
+            className="rounded-md border border-border bg-background px-2 py-1 text-xs text-ink outline-none focus:border-brand"
+          >
+            <option value="">Ninguém</option>
+            {(membros ?? []).map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.nome}
+              </option>
+            ))}
+          </select>
+          <button
+            type="submit"
+            className="rounded-md border border-border px-2 py-1 text-xs font-medium text-ink hover:opacity-80"
+          >
+            Salvar
+          </button>
+        </form>
+        <p className="mt-0.5 text-[11px] text-ink-muted">
+          Só quem criou ou o responsável enxerga o formulário completo desta autorização.
+        </p>
         {a.status === "assinado" && (
           <div className="mt-3">
             <BotaoCertificadoAutorizacao

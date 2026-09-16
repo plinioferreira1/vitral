@@ -130,6 +130,7 @@ export async function criarAutorizacao(formData: FormData) {
       observacoes,
       foro,
       criado_por: user?.id ?? null,
+      responsavel_id: user?.id ?? null,
     })
     .select("id")
     .single();
@@ -270,6 +271,18 @@ export async function cancelarAutorizacao(formData: FormData) {
   const id = String(formData.get("id") ?? "");
 
   await supabase.from("autorizacoes_venda").update({ status: "cancelado" }).eq("id", id);
+
+  revalidatePath(`/autorizacoes/${id}`);
+  revalidatePath("/autorizacoes");
+}
+
+export async function salvarResponsavelAutorizacao(formData: FormData) {
+  const supabase = await createClient();
+  const id = String(formData.get("id") ?? "");
+  const responsavelId = String(formData.get("responsavel_id") ?? "").trim() || null;
+  if (!id) return;
+
+  await supabase.from("autorizacoes_venda").update({ responsavel_id: responsavelId }).eq("id", id);
 
   revalidatePath(`/autorizacoes/${id}`);
   revalidatePath("/autorizacoes");
