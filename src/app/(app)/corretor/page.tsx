@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { alternarEtapaOnboarding } from "./actions";
 import { MateriaisCorretor } from "@/components/materiais-corretor";
+import { TutoriaisSistema } from "@/components/tutoriais-sistema";
 
 export default async function CorretorPage() {
   const supabase = await createClient();
@@ -19,6 +20,12 @@ export default async function CorretorPage() {
     .select("id, etapa_id, concluida")
     .eq("usuario_id", user?.id ?? "");
 
+  const { data: tutoriais } = await supabase
+    .from("tutoriais")
+    .select("id, categoria, tipo, titulo, descricao, conteudo, link, ordem")
+    .order("categoria", { ascending: true })
+    .order("ordem", { ascending: true });
+
   const statusPorEtapa = new Map((statusRaw ?? []).map((s) => [s.etapa_id, s]));
   const total = etapas?.length ?? 0;
   const concluidas = (etapas ?? []).filter((e) => statusPorEtapa.get(e.id)?.concluida).length;
@@ -26,9 +33,9 @@ export default async function CorretorPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Corretor</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">Onboarding</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Primeiros passos pra começar a usar o sistema.
+          Primeiros passos, tutoriais de como usar o sistema e materiais de referência.
         </p>
       </div>
 
@@ -103,6 +110,8 @@ export default async function CorretorPage() {
           })
         )}
       </div>
+
+      <TutoriaisSistema tutoriais={tutoriais ?? []} />
 
       <MateriaisCorretor />
     </div>

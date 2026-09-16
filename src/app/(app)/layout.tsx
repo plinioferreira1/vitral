@@ -84,7 +84,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         { href: "/calculadora", label: "Calculadora de Proporcionalidade" },
         { href: "/cartorio", label: "Simulação de Custas" },
         { href: "/avaliacao-imovel", label: "Avaliação de Imóvel" },
-        { href: "/corretor", label: "Corretor" },
+        { href: "/corretor", label: "Onboarding" },
         ...(podeConfigurar ? [{ href: "/relatorio-semanal", label: "Relatório Semanal" }] : []),
         ...(podeConfigurar
           ? [
@@ -96,6 +96,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   { href: "/onboarding-corretor", label: "Onboarding do Corretor" },
                   { href: "/checklists-financiamento", label: "Checklists de Financiamento" },
                   { href: "/google-agenda", label: "Google Agenda" },
+                  { href: "/tutoriais", label: "Tutoriais" },
                   { href: "/membros", label: "Membros/Permissões" },
                 ],
               },
