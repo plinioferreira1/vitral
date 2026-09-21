@@ -3,7 +3,6 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { VoltarLink } from "@/components/voltar-link";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
-import { BotaoCertificadoProposta } from "@/components/botao-certificado-proposta";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { cancelarCartaProposta, salvarResponsavelCartaProposta } from "../actions";
 import { apagarCartaProposta } from "../bulk-actions";
@@ -124,22 +123,14 @@ export default async function PropostaDetalhePage({
         </p>
         {p.status === "assinado" && (
           <div className="mt-3">
-            <BotaoCertificadoProposta
-              imovelEndereco={p.imoveis?.endereco ?? "—"}
-              proponenteNome={p.clientes?.nome ?? "—"}
-              valorTotal={p.valor_total}
-              prazoDiasValidade={p.prazo_dias_validade}
-              condicoes={condicoes ?? []}
-              assinaturas={(signatarios ?? [])
-                .filter((s) => s.assinado_em)
-                .map((s) => ({
-                  titulo: s.nome_esperado,
-                  nome: s.nome_digitado ?? "",
-                  assinaturaImagem: s.assinatura_imagem ?? "",
-                  assinadoEm: s.assinado_em,
-                  ip: s.ip_assinatura,
-                }))}
-            />
+            <a
+              href={`/propostas/${p.id}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-block rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-background"
+            >
+              Baixar PDF da proposta assinada
+            </a>
           </div>
         )}
       </div>
