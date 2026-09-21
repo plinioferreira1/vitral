@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { VoltarLink } from "@/components/voltar-link";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
+import { obterSiteUrl } from "@/lib/site-url";
 import { cancelarCartaProposta, salvarResponsavelCartaProposta } from "../actions";
 import { apagarCartaProposta } from "../bulk-actions";
 
@@ -72,7 +73,7 @@ export default async function PropostaDetalhePage({
     .eq("carta_proposta_id", id)
     .order("ordem", { ascending: true });
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const siteUrl = await obterSiteUrl();
 
   return (
     <div className="max-w-2xl space-y-6">

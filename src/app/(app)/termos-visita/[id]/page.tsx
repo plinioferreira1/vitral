@@ -4,6 +4,7 @@ import { VoltarLink } from "@/components/voltar-link";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
 import { BotaoCertificadoVisita } from "@/components/botao-certificado-visita";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
+import { obterSiteUrl } from "@/lib/site-url";
 import { cancelarTermoVisita, atualizarFeedbackVisita } from "../actions";
 import { apagarTermoVisita } from "../bulk-actions";
 
@@ -68,7 +69,7 @@ export default async function TermoVisitaDetalhePage({
     corretores: { nome: string } | null;
   };
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "";
+  const siteUrl = await obterSiteUrl();
 
   return (
     <div className="max-w-2xl space-y-6">
