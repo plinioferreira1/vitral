@@ -25,6 +25,7 @@ interface DadosAssinatura {
   nome_esperado: string;
   ja_assinado: boolean;
   imovel_endereco: string;
+  codigo_san: string | null;
   proponente_nome: string;
   proponente_cpf: string | null;
   segundo_proponente_nome: string | null;
@@ -83,6 +84,7 @@ export default async function AssinarPropostaPage({
             <p>
               Ref.: Proposta de compra – {data.imovel_endereco}
             </p>
+            {data.codigo_san && <p>Código SAN: {data.codigo_san}</p>}
 
             <p>
               Eu, <strong>{data.proponente_nome}</strong>

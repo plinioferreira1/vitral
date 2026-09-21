@@ -35,6 +35,7 @@ export default async function EditarCartaPropostaPage({
     valor_total: number | null;
     prazo_dias_validade: number | null;
     observacoes: string | null;
+    codigo_san: string | null;
     imoveis: { endereco: string } | null;
     proponente: { nome: string; cpf_cnpj: string | null } | null;
     segundo_proponente: { nome: string; cpf_cnpj: string | null } | null;
@@ -120,6 +121,16 @@ export default async function EditarCartaPropostaPage({
             name="imovel"
             required
             defaultValue={p.imoveis?.endereco ?? ""}
+            className={campoClasse}
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-muted">Código SAN</label>
+          <input
+            name="codigo_san"
+            defaultValue={p.codigo_san ?? ""}
+            placeholder="Opcional"
             className={campoClasse}
           />
         </div>

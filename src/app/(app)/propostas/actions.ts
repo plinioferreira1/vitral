@@ -97,6 +97,7 @@ export async function criarCartaProposta(formData: FormData) {
   const valorTotal = formData.get("valor_total");
   const prazoDiasValidade = formData.get("prazo_dias_validade");
   const observacoes = campo("observacoes");
+  const codigoSan = campo("codigo_san");
 
   const { data: proposta, error } = await supabase
     .from("cartas_proposta")
@@ -108,6 +109,7 @@ export async function criarCartaProposta(formData: FormData) {
       valor_total: valorTotal ? Number(valorTotal) : null,
       prazo_dias_validade: prazoDiasValidade ? Number(prazoDiasValidade) : 5,
       observacoes,
+      codigo_san: codigoSan,
       criado_por: user?.id ?? null,
       responsavel_id: user?.id ?? null,
     })
@@ -190,6 +192,7 @@ export async function atualizarCartaProposta(formData: FormData) {
   const valorTotal = formData.get("valor_total");
   const prazoDiasValidade = formData.get("prazo_dias_validade");
   const observacoes = campo("observacoes");
+  const codigoSan = campo("codigo_san");
 
   await supabase
     .from("cartas_proposta")
@@ -198,6 +201,7 @@ export async function atualizarCartaProposta(formData: FormData) {
       valor_total: valorTotal ? Number(valorTotal) : null,
       prazo_dias_validade: prazoDiasValidade ? Number(prazoDiasValidade) : 5,
       observacoes,
+      codigo_san: codigoSan,
     })
     .eq("id", id);
 

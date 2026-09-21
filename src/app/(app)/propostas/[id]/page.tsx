@@ -49,6 +49,7 @@ export default async function PropostaDetalhePage({
     valor_total: number | null;
     prazo_dias_validade: number | null;
     observacoes: string | null;
+    codigo_san: string | null;
     imoveis: { endereco: string } | null;
     clientes: { nome: string; cpf_cnpj: string | null } | null;
     usuarios: { nome: string } | null;
@@ -136,7 +137,7 @@ export default async function PropostaDetalhePage({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <div className="grid grid-cols-2 gap-4 rounded-xl border border-border/60 bg-surface p-5 shadow-sm sm:grid-cols-3">
         <div>
           <p className="text-xs text-ink-muted">Valor total da proposta</p>
           <p className="text-sm font-medium text-ink">{brl(p.valor_total)}</p>
@@ -146,6 +147,10 @@ export default async function PropostaDetalhePage({
           <p className="text-sm font-medium text-ink">
             {p.prazo_dias_validade ? `${p.prazo_dias_validade} dias úteis` : "—"}
           </p>
+        </div>
+        <div>
+          <p className="text-xs text-ink-muted">Código SAN</p>
+          <p className="text-sm font-medium text-ink">{p.codigo_san || "—"}</p>
         </div>
       </div>
 

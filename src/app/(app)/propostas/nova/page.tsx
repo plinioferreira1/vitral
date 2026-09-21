@@ -67,6 +67,11 @@ export default function NovaCartaPropostaPage() {
         </div>
 
         <div>
+          <label className="mb-1 block text-xs font-medium text-ink-muted">Código SAN</label>
+          <input name="codigo_san" placeholder="Opcional" className={campoClasse} />
+        </div>
+
+        <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">
             Valor total da proposta
           </label>

@@ -37,6 +37,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     valor_total: number | null;
     prazo_dias_validade: number | null;
     observacoes: string | null;
+    codigo_san: string | null;
     criado_em: string;
     imoveis: { endereco: string } | null;
     proponente: { nome: string; cpf_cnpj: string | null } | null;
@@ -122,7 +123,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   escreverParagrafo("À");
   escreverParagrafo("Sacra Imóveis", { espacoDepois: 12 });
 
-  escreverParagrafo(`Ref.: Proposta de compra – ${p.imoveis?.endereco ?? "—"}`, { espacoDepois: 12 });
+  escreverParagrafo(`Ref.: Proposta de compra – ${p.imoveis?.endereco ?? "—"}`, { espacoDepois: p.codigo_san ? 2 : 12 });
+  if (p.codigo_san) {
+    escreverParagrafo(`Código SAN: ${p.codigo_san}`, { espacoDepois: 12 });
+  }
 
   const nomeProponente = p.proponente?.nome ?? "—";
   const cpfProponente = p.proponente?.cpf_cnpj ? `, inscrito(a) no CPF ${p.proponente.cpf_cnpj}` : "";
