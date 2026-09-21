@@ -1,5 +1,6 @@
 import { VoltarLink } from "@/components/voltar-link";
 import { CampoMoeda } from "@/components/campo-moeda";
+import { CampoCPF } from "@/components/campo-cpf";
 import { BotaoSubmit } from "@/components/botao-submit";
 import { criarCartaProposta } from "../actions";
 
@@ -35,7 +36,7 @@ export default function NovaCartaPropostaPage() {
               placeholder="Nome completo"
               className={campoClasse}
             />
-            <input name="proponente_cpf" placeholder="CPF" className={campoClasse} />
+            <CampoCPF name="proponente_cpf" className={campoClasse} />
           </div>
         </div>
 
@@ -49,7 +50,7 @@ export default function NovaCartaPropostaPage() {
               placeholder="Nome completo"
               className={campoClasse}
             />
-            <input name="segundo_proponente_cpf" placeholder="CPF" className={campoClasse} />
+            <CampoCPF name="segundo_proponente_cpf" className={campoClasse} />
           </div>
         </details>
 

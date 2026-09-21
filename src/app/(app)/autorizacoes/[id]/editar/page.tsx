@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { VoltarLink } from "@/components/voltar-link";
 import { CampoMoeda } from "@/components/campo-moeda";
+import { CampoCPF } from "@/components/campo-cpf";
 import { BotaoSubmit } from "@/components/botao-submit";
 import { REGIOES_ADMINISTRATIVAS_DF } from "@/lib/circunscricoes-df";
 import { atualizarAutorizacao } from "../../actions";
@@ -102,10 +103,9 @@ export default async function EditarAutorizacaoPage({
               className={campoClasse}
             />
             <div className="grid grid-cols-2 gap-3">
-              <input
+              <CampoCPF
                 name="vendedor_cpf"
                 defaultValue={a.vendedor?.cpf_cnpj ?? ""}
-                placeholder="CPF"
                 className={campoClasse}
               />
               <input
@@ -144,10 +144,9 @@ export default async function EditarAutorizacaoPage({
               className={campoClasse}
             />
             <div className="grid grid-cols-2 gap-3">
-              <input
+              <CampoCPF
                 name="conjuge_cpf"
                 defaultValue={a.conjuge?.cpf_cnpj ?? ""}
-                placeholder="CPF"
                 className={campoClasse}
               />
               <input

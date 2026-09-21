@@ -2,6 +2,7 @@ import { VoltarLink } from "@/components/voltar-link";
 import { CampoMoeda } from "@/components/campo-moeda";
 import { BotaoSubmit } from "@/components/botao-submit";
 import { REGIOES_ADMINISTRATIVAS_DF } from "@/lib/circunscricoes-df";
+import { CampoCPF } from "@/components/campo-cpf";
 import { criarAutorizacao } from "../actions";
 
 export default function NovaAutorizacaoPage() {
@@ -29,11 +30,7 @@ export default function NovaAutorizacaoPage() {
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
             <div className="grid grid-cols-2 gap-3">
-              <input
-                name="vendedor_cpf"
-                placeholder="CPF"
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-              />
+              <CampoCPF name="vendedor_cpf" />
               <input
                 name="vendedor_rg"
                 placeholder="RG"
@@ -66,11 +63,7 @@ export default function NovaAutorizacaoPage() {
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
             <div className="grid grid-cols-2 gap-3">
-              <input
-                name="conjuge_cpf"
-                placeholder="CPF"
-                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-              />
+              <CampoCPF name="conjuge_cpf" />
               <input
                 name="conjuge_rg"
                 placeholder="RG"

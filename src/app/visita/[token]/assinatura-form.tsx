@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CanvasAssinatura } from "@/components/canvas-assinatura";
+import { CampoCPF } from "@/components/campo-cpf";
 import { registrarAssinaturaVisita } from "./actions";
 
 export function AssinaturaVisitaForm({ token }: { token: string }) {
@@ -50,11 +51,7 @@ export function AssinaturaVisitaForm({ token }: { token: string }) {
       <div className="mb-4 grid grid-cols-2 gap-3">
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">CPF (opcional)</label>
-          <input
-            value={cpf}
-            onChange={(e) => setCpf(e.target.value)}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-          />
+          <CampoCPF value={cpf} onChange={setCpf} />
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">RG (opcional)</label>

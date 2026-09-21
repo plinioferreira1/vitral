@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { VoltarLink } from "@/components/voltar-link";
 import { CampoMoeda } from "@/components/campo-moeda";
+import { CampoCPF } from "@/components/campo-cpf";
 import { BotaoSubmit } from "@/components/botao-submit";
 import { atualizarCartaProposta } from "../../actions";
 
@@ -84,10 +85,9 @@ export default async function EditarCartaPropostaPage({
               placeholder="Nome completo"
               className={campoClasse}
             />
-            <input
+            <CampoCPF
               name="proponente_cpf"
               defaultValue={p.proponente?.cpf_cnpj ?? ""}
-              placeholder="CPF"
               className={campoClasse}
             />
           </div>
@@ -104,10 +104,9 @@ export default async function EditarCartaPropostaPage({
               placeholder="Nome completo"
               className={campoClasse}
             />
-            <input
+            <CampoCPF
               name="segundo_proponente_cpf"
               defaultValue={p.segundo_proponente?.cpf_cnpj ?? ""}
-              placeholder="CPF"
               className={campoClasse}
             />
           </div>
