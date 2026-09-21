@@ -203,16 +203,23 @@ export default function CartorioPage() {
           </label>
 
           {temFinanciamento && (
-            <label className="mt-2 ml-6 flex items-center gap-2 text-sm text-ink">
-              <input
-                type="checkbox"
-                checked={instrumentoParticular}
-                onChange={(e) => setInstrumentoParticular(e.target.checked)}
-                className="accent-brand"
-              />
-              Financiamento por instrumento particular com força de escritura (não paga
-              escritura)
-            </label>
+            <>
+              <label className="mt-2 ml-6 flex items-center gap-2 text-sm text-ink">
+                <input
+                  type="checkbox"
+                  checked={instrumentoParticular}
+                  onChange={(e) => setInstrumentoParticular(e.target.checked)}
+                  className="accent-brand"
+                />
+                Financiamento por instrumento particular com força de escritura
+              </label>
+              {instrumentoParticular && (
+                <p className="ml-6 mt-1 text-xs text-ink-muted">
+                  Não paga o valor total da escritura, mas podem ter custos a ser considerado, de
+                  acordo com o agente financiador.
+                </p>
+              )}
+            </>
           )}
 
           <label className="mt-2 flex items-center gap-2 text-sm text-ink">

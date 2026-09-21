@@ -39,6 +39,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         { href: "/avaliacao-imovel", label: "Avaliação de Imóvel" },
         { href: "/termos-visita", label: "Termo de Visita" },
         { href: "/autorizacoes", label: "Autorização de Venda" },
+        { href: "/propostas", label: "Carta Proposta" },
       ]
     : [
         { href: "/", label: "Início" },
@@ -80,6 +81,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             ]
           : []),
         { href: "/autorizacoes", label: "Autorização de Venda" },
+        { href: "/propostas", label: "Carta Proposta" },
         { href: "/termos-visita", label: "Termo de Visita" },
         { href: "/calculadora", label: "Calculadora de Proporcionalidade" },
         { href: "/cartorio", label: "Simulação de Custas" },
