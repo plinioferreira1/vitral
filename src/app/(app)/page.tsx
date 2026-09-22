@@ -2,12 +2,16 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getEventosCalendario } from "@/lib/queries";
 import { CalendarioGrid } from "@/components/calendario-grid";
+import { KanbanProcessos, type CardKanban } from "@/components/kanban-processos";
+import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
 import { getPermissoesUsuario } from "@/lib/permissoes";
 import { hojeISO } from "@/lib/data-br";
 import { ocorrenciasDaTarefa, type RegraTarefa } from "@/lib/tarefas-recorrentes";
 import { alternarTarefaMensal } from "@/app/(app)/locacao/actions";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import type { CategoriaProcesso } from "@/lib/types";
+import { calcularUrgencia } from "@/lib/alertas";
 
 function saudacao(): string {
   const horaBrasilia = new Date().toLocaleString("en-US", {
@@ -28,11 +32,13 @@ export default async function DashboardPage() {
   } = await supabase.auth.getUser();
   const { data: usuario } = await supabase
     .from("usuarios")
-    .select("nome, nivel_acesso")
+    .select("nome, nivel_acesso, perfil, tenant_id")
     .eq("id", user?.id ?? "")
     .single();
 
   if (!usuario) return null;
+
+  const ehAdmin = usuario.perfil === "admin";
 
   const { temVenda, temFinanciamento, temLocacao } = await getPermissoesUsuario(
     supabase,
@@ -97,6 +103,72 @@ export default async function DashboardPage() {
     }
   }
 
+  let quadrosKanban: { categoria: CategoriaProcesso; titulo: string; colunas: string[]; cards: CardKanban[] }[] = [];
+
+  if (ehAdmin && usuario.tenant_id) {
+    const tenantId = usuario.tenant_id;
+    async function montarQuadro(categoria: "venda" | "financiamento", titulo: string) {
+      const { data: processosRaw } = await supabase
+        .from("processos")
+        .select(
+          "id, numero_processo, status, imoveis ( endereco ), comprador:clientes!processos_comprador_id_fkey ( nome ), vendedor:clientes!processos_vendedor_id_fkey ( nome )"
+        )
+        .eq("categoria", categoria)
+        .not("status", "in", "(concluido,cancelado)");
+
+      const processos = (processosRaw ?? []) as unknown as {
+        id: string;
+        numero_processo: string;
+        imoveis: { endereco: string } | null;
+        comprador: { nome: string } | null;
+        vendedor: { nome: string } | null;
+      }[];
+
+      const idsProcessos = processos.map((p) => p.id);
+      const { data: etapasRaw } =
+        idsProcessos.length > 0
+          ? await supabase
+              .from("etapas")
+              .select("processo_id, status, data_prevista")
+              .in("processo_id", idsProcessos)
+          : { data: [] as { processo_id: string; status: string; data_prevista: string | null }[] };
+
+      const atrasosPorProcesso = new Map<string, number>();
+      (etapasRaw ?? []).forEach((e) => {
+        const { urgencia } = calcularUrgencia({
+          status: e.status as "pendente" | "em_andamento" | "concluida" | "bloqueada",
+          data_prevista: e.data_prevista,
+        });
+        if (urgencia === "atrasada") {
+          atrasosPorProcesso.set(e.processo_id, (atrasosPorProcesso.get(e.processo_id) ?? 0) + 1);
+        }
+      });
+
+      const [colunas, etapaAtualMap] = await Promise.all([
+        colunasKanban(supabase, tenantId, categoria),
+        etapaAtualPorProcesso(supabase, idsProcessos),
+      ]);
+
+      return {
+        categoria,
+        titulo,
+        colunas,
+        cards: processos.map((p) => ({
+          id: p.id,
+          titulo: p.imoveis?.endereco ?? p.numero_processo,
+          subtitulo: `${p.comprador?.nome ?? "—"} / ${p.vendedor?.nome ?? "—"}`,
+          etapaAtual: etapaAtualMap.get(p.id) ?? null,
+          atrasos: atrasosPorProcesso.get(p.id) ?? 0,
+        })),
+      };
+    }
+
+    quadrosKanban = await Promise.all([
+      ...(temVenda ? [montarQuadro("venda", "Vendas")] : []),
+      ...(temFinanciamento ? [montarQuadro("financiamento", "Financiamento")] : []),
+    ]);
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -154,10 +226,25 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-        <p className="mb-3 text-sm font-semibold text-ink">Calendário</p>
-        <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={3} />
-      </div>
+      {ehAdmin && (
+        <>
+          {quadrosKanban.length > 0 && (
+            <div className="space-y-6">
+              {quadrosKanban.map((q) => (
+                <div key={q.categoria} className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+                  <p className="mb-3 text-sm font-semibold text-ink">Quadro — {q.titulo}</p>
+                  <KanbanProcessos colunas={q.colunas} cards={q.cards} />
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+            <p className="mb-3 text-sm font-semibold text-ink">Calendário</p>
+            <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={3} />
+          </div>
+        </>
+      )}
     </div>
   );
 }

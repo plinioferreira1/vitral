@@ -6,11 +6,14 @@ import { URGENCIA_COR } from "@/lib/alertas";
 import { type CategoriaProcesso } from "@/lib/types";
 import type { EventoCalendario } from "@/lib/queries";
 
+// Cores alinhadas com as agendas do Google Agenda usadas pela
+// imobiliária: Vendas = vermelho (Tomato), Financiamento = azul
+// claro/lavanda (Sacra Cred), Locação = azul (Peacock).
 const CATEGORIA_PONTO: Record<CategoriaProcesso, string> = {
-  venda: "bg-brand",
-  financiamento: "bg-gold",
-  locacao: "bg-stone-500",
-  marketing: "bg-violet-500",
+  venda: "bg-red-600",
+  financiamento: "bg-indigo-300",
+  locacao: "bg-blue-600",
+  marketing: "bg-emerald-500",
 };
 
 export function DiaCelula({
