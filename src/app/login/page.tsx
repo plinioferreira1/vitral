@@ -1,3 +1,4 @@
+import { createClient } from "@/lib/supabase/server";
 import { entrar, cadastrar, esqueciSenha } from "./actions";
 
 export default async function LoginPage({
@@ -8,12 +9,26 @@ export default async function LoginPage({
     modo?: string;
     enviado?: string;
     redefinida?: string;
+    convite?: string;
   }>;
 }) {
   const params = await searchParams;
-  const modoCadastro = params.modo === "cadastro";
   const modoEsqueci = params.modo === "esqueci";
   const erro = params.erro;
+
+  let convite: { email: string; valido: boolean; nomeEmpresa: string } | null = null;
+  if (params.convite) {
+    const supabase = await createClient();
+    const { data } = await supabase
+      .rpc("convite_validar", { p_token: params.convite })
+      .maybeSingle();
+    const conviteData = data as { email: string; valido: boolean; nome_empresa: string } | null;
+    if (conviteData) {
+      convite = { email: conviteData.email, valido: conviteData.valido, nomeEmpresa: conviteData.nome_empresa };
+    }
+  }
+
+  const modoCadastro = !!params.convite;
 
   return (
     <div className="flex min-h-screen flex-1 items-center justify-center px-4">
@@ -73,24 +88,13 @@ export default async function LoginPage({
             </>
           ) : (
             <>
-              <div className="mb-5 flex gap-1 rounded-lg bg-background p-1 text-sm">
-                <a
-                  href="/login"
-                  className={`flex-1 rounded-md py-1.5 text-center transition ${
-                    !modoCadastro ? "bg-surface font-medium shadow-sm" : "text-ink-muted"
-                  }`}
-                >
-                  Entrar
-                </a>
-                <a
-                  href="/login?modo=cadastro"
-                  className={`flex-1 rounded-md py-1.5 text-center transition ${
-                    modoCadastro ? "bg-surface font-medium shadow-sm" : "text-ink-muted"
-                  }`}
-                >
-                  Criar conta
-                </a>
-              </div>
+              {modoCadastro ? (
+                <p className="mb-5 text-sm font-medium text-ink">
+                  Criar conta {convite?.nomeEmpresa ? `— ${convite.nomeEmpresa}` : ""}
+                </p>
+              ) : (
+                <p className="mb-5 text-sm font-medium text-ink">Entrar</p>
+              )}
 
               {params.redefinida && (
                 <p className="mb-4 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
@@ -104,62 +108,78 @@ export default async function LoginPage({
                 </p>
               )}
 
-              <form action={modoCadastro ? cadastrar : entrar} className="space-y-3">
-                {modoCadastro && (
+              {modoCadastro && !convite?.valido ? (
+                <>
+                  <p className="mb-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                    Esse link de convite não é válido ou já expirou. Peça um novo link pra quem já
+                    usa o sistema.
+                  </p>
+                  <a href="/login" className="text-xs text-brand hover:underline">
+                    ← Ir pro login
+                  </a>
+                </>
+              ) : (
+                <form action={modoCadastro ? cadastrar : entrar} className="space-y-3">
+                  {modoCadastro && <input type="hidden" name="convite" value={params.convite} />}
+                  {modoCadastro && (
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-ink-muted">Nome</label>
+                      <input
+                        name="nome"
+                        required
+                        className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                        placeholder="Seu nome"
+                      />
+                    </div>
+                  )}
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-ink-muted">Nome</label>
+                    <label className="mb-1 block text-xs font-medium text-ink-muted">E-mail</label>
                     <input
-                      name="nome"
+                      type="email"
+                      name="email"
                       required
-                      className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                      placeholder="Seu nome"
+                      readOnly={modoCadastro}
+                      defaultValue={modoCadastro ? (convite?.email ?? "") : undefined}
+                      className={`w-full rounded-md border border-border px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand ${
+                        modoCadastro ? "bg-background text-ink-muted" : "bg-surface"
+                      }`}
+                      placeholder="voce@empresa.com"
                     />
                   </div>
-                )}
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-muted">E-mail</label>
-                  <input
-                    type="email"
-                    name="email"
-                    required
-                    className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                    placeholder="voce@empresa.com"
-                  />
-                </div>
-                <div>
-                  <div className="mb-1 flex items-center justify-between">
-                    <label className="block text-xs font-medium text-ink-muted">Senha</label>
-                    {!modoCadastro && (
-                      <a href="/login?modo=esqueci" className="text-xs text-brand hover:underline">
-                        Esqueci minha senha
-                      </a>
-                    )}
+                  <div>
+                    <div className="mb-1 flex items-center justify-between">
+                      <label className="block text-xs font-medium text-ink-muted">Senha</label>
+                      {!modoCadastro && (
+                        <a href="/login?modo=esqueci" className="text-xs text-brand hover:underline">
+                          Esqueci minha senha
+                        </a>
+                      )}
+                    </div>
+                    <input
+                      type="password"
+                      name="senha"
+                      required
+                      minLength={6}
+                      className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                      placeholder="••••••••"
+                    />
                   </div>
-                  <input
-                    type="password"
-                    name="senha"
-                    required
-                    minLength={6}
-                    className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                    placeholder="••••••••"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  className="w-full rounded-md bg-brand py-2 text-sm font-medium text-white transition hover:opacity-90"
-                >
-                  {modoCadastro ? "Criar conta" : "Entrar"}
-                </button>
-              </form>
+                  <button
+                    type="submit"
+                    className="w-full rounded-md bg-brand py-2 text-sm font-medium text-white transition hover:opacity-90"
+                  >
+                    {modoCadastro ? "Criar conta" : "Entrar"}
+                  </button>
+                </form>
+              )}
             </>
           )}
         </div>
 
-        {!modoEsqueci && (
+        {!modoEsqueci && modoCadastro && convite?.valido && (
           <p className="mt-4 text-center text-xs text-ink-muted">
-            {modoCadastro
-              ? "Depois de criar sua conta, quem já usa o sistema pode te adicionar à organização."
-              : 'Ainda não tem conta? Use "Criar conta" acima.'}
+            Esse convite é só pra você usar essa vez — depois de criar a conta, o link não
+            funciona mais.
           </p>
         )}
       </div>

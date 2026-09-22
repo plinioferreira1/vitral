@@ -176,3 +176,49 @@ export async function excluirMembro(formData: FormData) {
   // em usuarios já some sozinha quando a conta é excluída.
   revalidatePath("/membros");
 }
+
+export async function criarConvite(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const { data: eu } = await supabase
+    .from("usuarios")
+    .select("tenant_id")
+    .eq("id", user?.id ?? "")
+    .single();
+
+  if (!eu?.tenant_id) return;
+
+  const email = String(formData.get("email") ?? "").trim().toLowerCase();
+  const perfil = String(formData.get("perfil") ?? "corretor");
+  const nivelAcesso = String(formData.get("nivel_acesso") ?? "supervisor");
+  const categorias = formData.getAll("categorias") as CategoriaProcesso[];
+
+  if (!email) return;
+
+  const { error } = await supabase.from("convites").insert({
+    tenant_id: eu.tenant_id,
+    email,
+    perfil,
+    nivel_acesso: nivelAcesso,
+    categorias,
+    criado_por: user?.id ?? null,
+  });
+
+  if (error) {
+    redirect(`/membros?erro=${encodeURIComponent(error.message)}`);
+  }
+
+  revalidatePath("/membros");
+}
+
+export async function cancelarConvite(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  const supabase = await createClient();
+  await supabase.from("convites").delete().eq("id", id);
+
+  revalidatePath("/membros");
+}

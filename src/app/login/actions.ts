@@ -22,8 +22,27 @@ export async function cadastrar(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const senha = String(formData.get("senha") ?? "");
   const nome = String(formData.get("nome") ?? "").trim();
+  const conviteToken = String(formData.get("convite") ?? "").trim();
 
   const supabase = await createClient();
+
+  if (!conviteToken) {
+    redirect(`/login?erro=${encodeURIComponent("Você precisa de um link de convite pra criar conta.")}`);
+  }
+
+  const { data: conviteRaw } = await supabase
+    .rpc("convite_validar", { p_token: conviteToken })
+    .maybeSingle();
+  const convite = conviteRaw as { email: string; valido: boolean; nome_empresa: string } | null;
+
+  if (!convite || !convite.valido || convite.email.toLowerCase() !== email.toLowerCase()) {
+    redirect(
+      `/login?convite=${encodeURIComponent(conviteToken)}&erro=${encodeURIComponent(
+        "Esse link de convite não é válido ou já expirou. Peça um novo link pra quem já usa o sistema."
+      )}`
+    );
+  }
+
   const { error } = await supabase.auth.signUp({
     email,
     password: senha,
@@ -31,7 +50,9 @@ export async function cadastrar(formData: FormData) {
   });
 
   if (error) {
-    redirect(`/login?erro=${encodeURIComponent(traduzirErroAuth(error.message))}`);
+    redirect(
+      `/login?convite=${encodeURIComponent(conviteToken)}&erro=${encodeURIComponent(traduzirErroAuth(error.message))}`
+    );
   }
 
   redirect("/");

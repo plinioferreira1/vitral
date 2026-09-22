@@ -1,13 +1,16 @@
 import { createClient } from "@/lib/supabase/server";
 import { traduzirErroAuth } from "@/lib/erros-auth";
 import {
-  adicionarMembro,
   atualizarCategoriasMembro,
   editarEmailMembro,
   alterarSenhaMembro,
   excluirMembro,
+  criarConvite,
+  cancelarConvite,
 } from "./actions";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
+import { BotaoCopiarLink } from "@/components/botao-copiar-link";
+import { obterSiteUrl } from "@/lib/site-url";
 import { CATEGORIA_LABEL, NIVEL_ACESSO_LABEL, type CategoriaProcesso, type NivelAcesso } from "@/lib/types";
 
 const PERFIS = [
@@ -50,14 +53,22 @@ export default async function MembrosPage({
     categoriasPorUsuario.get(c.usuario_id)!.add(c.categoria);
   });
 
+  const { data: convites } = await supabase
+    .from("convites")
+    .select("id, email, perfil, nivel_acesso, token, criado_em, expira_em, usado_em")
+    .is("usado_em", null)
+    .order("criado_em", { ascending: false });
+
+  const siteUrl = await obterSiteUrl();
+
   return (
     <div className="max-w-3xl space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight text-ink">Membros</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Adicione a diretora e os outros gerentes ao mesmo espaço de trabalho. A pessoa
-          precisa primeiro criar uma conta em <code className="text-xs">/login</code> — depois
-          disso, adicione o e-mail dela aqui.
+          Convide a diretora e os outros gerentes pro mesmo espaço de trabalho. Só é possível
+          criar conta no Vitral com um link de convite — ninguém de fora consegue se cadastrar
+          sozinho.
         </p>
         <p className="mt-2 text-xs text-ink-muted">
           <b>Nível de acesso</b>: Diretor e Gerente veem e editam tudo · Supervisor só vê/edita
@@ -71,7 +82,7 @@ export default async function MembrosPage({
         </p>
       )}
 
-      <form action={adicionarMembro} className="space-y-3 rounded-xl border border-border/60 bg-surface shadow-sm p-5">
+      <form action={criarConvite} className="space-y-3 rounded-xl border border-border/60 bg-surface shadow-sm p-5">
         <div className="flex flex-wrap items-end gap-2">
           <div className="flex-1 min-w-[200px]">
             <label className="mb-1 block text-xs font-medium text-ink-muted">E-mail</label>
@@ -129,9 +140,58 @@ export default async function MembrosPage({
           type="submit"
           className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
-          Adicionar
+          Convidar
         </button>
       </form>
+
+      {(convites ?? []).length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            Convites pendentes
+          </p>
+          {(convites ?? []).map((c) => {
+            const expirado = new Date(c.expira_em).getTime() < Date.now();
+            return (
+              <div
+                key={c.id}
+                className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm"
+              >
+                <div>
+                  <p className="text-sm font-medium text-ink">{c.email}</p>
+                  <p className="text-xs text-ink-muted">
+                    {c.perfil} · {NIVEL_ACESSO_LABEL[c.nivel_acesso as NivelAcesso]}
+                    {expirado ? " · expirado" : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {!expirado && (
+                    <>
+                      <BotaoCopiarLink url={`${siteUrl}/login?convite=${c.token}`} />
+                      <a
+                        href={`/login?convite=${c.token}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-medium text-brand hover:underline"
+                      >
+                        Abrir →
+                      </a>
+                    </>
+                  )}
+                  <form action={cancelarConvite}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <button
+                      type="submit"
+                      className="text-xs font-medium text-ink-muted hover:text-rose-600"
+                    >
+                      Cancelar
+                    </button>
+                  </form>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="space-y-2">
         {(membros ?? []).map((m) => {
