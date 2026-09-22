@@ -7,11 +7,14 @@ import {
   excluirMembro,
   criarConvite,
   cancelarConvite,
+  reenviarRedefinicaoParaTodos,
 } from "./actions";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
 import { obterSiteUrl } from "@/lib/site-url";
 import { CATEGORIA_LABEL, NIVEL_ACESSO_LABEL, type CategoriaProcesso, type NivelAcesso } from "@/lib/types";
+
+export const maxDuration = 60;
 
 const PERFIS = [
   ["admin", "Administrador"],
@@ -35,10 +38,10 @@ const NIVEIS: NivelAcesso[] = [
 export default async function MembrosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ erro?: string }>;
+  searchParams: Promise<{ erro?: string; sucesso?: string }>;
 }) {
   const supabase = await createClient();
-  const { erro } = await searchParams;
+  const { erro, sucesso } = await searchParams;
 
   const { data: membros } = await supabase
     .from("usuarios")
@@ -76,11 +79,26 @@ export default async function MembrosPage({
         </p>
       </div>
 
+      {sucesso && (
+        <p className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+          Link de redefinição de senha enviado pra {sucesso} pessoa{sucesso === "1" ? "" : "s"}.
+        </p>
+      )}
+
       {erro && (
         <p className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
           {traduzirErroAuth(erro)}
         </p>
       )}
+
+      <form action={reenviarRedefinicaoParaTodos}>
+        <BotaoComConfirmacao
+          mensagem="Enviar um link de redefinição de senha por e-mail pra todos os membros ativos? Pode levar alguns minutos."
+          className="rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-background"
+        >
+          Reenviar redefinição de senha pra todos
+        </BotaoComConfirmacao>
+      </form>
 
       <form action={criarConvite} className="space-y-3 rounded-xl border border-border/60 bg-surface shadow-sm p-5">
         <div className="flex flex-wrap items-end gap-2">

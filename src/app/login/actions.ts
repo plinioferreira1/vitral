@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { traduzirErroAuth } from "@/lib/erros-auth";
+import { obterSiteUrl } from "@/lib/site-url";
 
 export async function entrar(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
@@ -61,9 +62,10 @@ export async function cadastrar(formData: FormData) {
 export async function esqueciSenha(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim();
   const supabase = await createClient();
+  const siteUrl = await obterSiteUrl();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/auth/callback?next=/redefinir-senha`,
+    redirectTo: `${siteUrl}/auth/callback?next=/redefinir-senha`,
   });
 
   if (error) {

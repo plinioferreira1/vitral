@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { obterSiteUrl } from "@/lib/site-url";
 import type { CategoriaProcesso, NivelAcesso } from "@/lib/types";
 
 /**
@@ -221,4 +222,41 @@ export async function cancelarConvite(formData: FormData) {
   await supabase.from("convites").delete().eq("id", id);
 
   revalidatePath("/membros");
+}
+
+export async function reenviarRedefinicaoParaTodos() {
+  const supabase = await createClient();
+  const siteUrl = await obterSiteUrl();
+
+  const { data: membrosAtivos } = await supabase
+    .from("usuarios")
+    .select("email")
+    .eq("ativo", true);
+
+  let enviados = 0;
+  const falhas: string[] = [];
+
+  for (const m of membrosAtivos ?? []) {
+    const { error } = await supabase.auth.resetPasswordForEmail(m.email, {
+      redirectTo: `${siteUrl}/auth/callback?next=/redefinir-senha`,
+    });
+    if (error) {
+      falhas.push(m.email);
+    } else {
+      enviados++;
+    }
+    // Pequena pausa entre envios pra não estourar o limite de
+    // e-mails por minuto do provedor padrão do Supabase.
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+  }
+
+  const msg =
+    falhas.length === 0
+      ? `sucesso=${enviados}`
+      : `erro=${encodeURIComponent(
+          `Enviado pra ${enviados}, mas falhou pra: ${falhas.join(", ")} (provavelmente limite de envio do Supabase — tenta de novo em alguns minutos).`
+        )}`;
+
+  revalidatePath("/membros");
+  redirect(`/membros?${msg}`);
 }
