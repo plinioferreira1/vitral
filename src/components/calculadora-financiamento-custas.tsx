@@ -58,10 +58,10 @@ export function CalculadoraFinanciamento() {
     const total = itbi + escritura + registro + taxaBancaria;
     const cotaItbi = itbi / numParcelasItbi;
     // Total à vista: escolhendo o instrumento particular (sem escritura de
-    // cartório) e parcelando o ITBI, só entram registro + taxa bancária +
-    // a 1ª cota do ITBI. O serviço de instrumento particular é cobrado à
-    // parte (ver observação abaixo).
-    const totalAVista = registro + taxaBancaria + cotaItbi;
+    // cartório) e parcelando o ITBI, entram registro + taxa bancária + a 1ª
+    // cota do ITBI + o valor do serviço de instrumento particular (cobrado
+    // junto, não mais à parte).
+    const totalAVista = registro + taxaBancaria + cotaItbi + valorInstrumentoParticular;
 
     resultado = {
       itbi,
@@ -83,22 +83,27 @@ export function CalculadoraFinanciamento() {
   const textoWhatsapp = resultado
     ? [
         `💸 *Valores do Imóvel* — ${brl(valor)}`,
+        "",
+        `*Opção 1 — Escritura Pública + ITBI à vista*`,
         `▫️ Escritura: ${brl(resultado.escritura)}`,
         `▫️ Registro: ${brl(resultado.registro)}`,
-        `▫️ ITBI: ${brl(resultado.itbi)}`,
+        `▫️ ITBI (à vista): ${brl(resultado.itbi)}`,
         `▫️ Taxa Bancária: ${brl(taxaBancaria)} _(vistoria, tarifas bancárias, relacionamento e análise jurídica — valor aproximado)_`,
         `*Total: ${brl(resultado.total)}*`,
         "",
-        "💢 Esses valores fazem parte de qualquer operação de compra e venda financiada. Para facilitar, temos duas opções:",
-        `▫️ *ITBI:* pode ser parcelado em até ${numParcelasItbi} cotas de igual valor.`,
-        `▫️ *Escritura:* é possível reduzir esse valor de ${brl(resultado.escritura)}, cobrado pelo Cartório de Notas, para ${brl(valorInstrumentoParticular)}. Para isso, temos o serviço de despachante: emitimos o contrato particular com força de escritura, não sendo aplicadas nesse caso as custas referentes ao cartório. Vale ressaltar que, em ambos os casos, os documentos possuem a mesma validade legal.`,
-        "",
+        `*Opção 2 — Instrumento Particular + ITBI parcelado*`,
+        `▫️ Instrumento particular (com despachante, no lugar da escritura de cartório): ${brl(valorInstrumentoParticular)}`,
+        `▫️ Registro: ${brl(resultado.registro)}`,
+        `▫️ 1ª cota do ITBI (em até ${numParcelasItbi}x): ${brl(resultado.cotaItbi)}`,
+        `▫️ Taxa Bancária: ${brl(taxaBancaria)} _(vistoria, tarifas bancárias, relacionamento e análise jurídica — valor aproximado)_`,
         `*Total à vista: ${brl(resultado.totalAVista)}*`,
         ...(resultado.cotasRestantes > 0
           ? [
               `+ ${resultado.cotasRestantes} cota${resultado.cotasRestantes > 1 ? "s" : ""} mensa${resultado.cotasRestantes > 1 ? "is" : "l"} do ITBI de ${brl(resultado.cotaItbi)}`,
             ]
           : []),
+        "",
+        "💢 Nos dois casos, os documentos têm a mesma validade legal — a diferença é só no formato (escritura de cartório x instrumento particular com força de escritura) e em quanto sai do bolso logo de início.",
         "",
         "_Valores aproximados, sujeitos a alteração sem aviso prévio._",
       ].join("\n")
@@ -259,44 +264,84 @@ export function CalculadoraFinanciamento() {
 
           <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 shadow-sm">
             <p className="mb-2 font-semibold">
-              💢 Esses valores fazem parte de qualquer operação de compra e venda financiada. Pra
-              facilitar, temos duas opções:
+              💢 Nos dois casos, os documentos têm a mesma validade legal — a diferença é só no
+              formato (escritura de cartório x instrumento particular com força de escritura) e
+              em quanto sai do bolso logo de início.
             </p>
-            <ul className="space-y-2">
-              <li>
-                ▫️ <strong>ITBI:</strong> pode ser parcelado em até {numParcelasItbi} cotas de
-                igual valor.
-              </li>
-              <li>
-                ▫️ <strong>Escritura:</strong> é possível reduzir esse valor de{" "}
-                {brl(resultado.escritura)}, cobrado pelo Cartório de Notas, para{" "}
-                {brl(valorInstrumentoParticular)}. Para isso, temos o serviço de despachante:
-                emitimos o contrato particular com força de escritura, não sendo aplicadas nesse
-                caso as custas referentes ao cartório. Vale ressaltar que, em ambos os casos, os
-                documentos possuem a mesma validade legal.
-              </li>
-            </ul>
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs text-ink-muted">Total à vista (com instrumento particular)</p>
-                <p className="font-mono text-3xl font-semibold text-ink">{brl(resultado.totalAVista)}</p>
-              </div>
-              <BotaoCopiarLink texto={textoWhatsapp} rotulo="Copiar como texto" />
-            </div>
-            {resultado.cotasRestantes > 0 && (
-              <p className="mt-1 text-sm text-ink-muted">
-                + {resultado.cotasRestantes} cota{resultado.cotasRestantes > 1 ? "s" : ""} mensa
-                {resultado.cotasRestantes > 1 ? "is" : "l"} do ITBI de {brl(resultado.cotaItbi)}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                Opção 1
               </p>
-            )}
-            <p className="mt-2 text-xs text-ink-muted">
-              Registro ({brl(resultado.registro)}) + Taxa bancária ({brl(taxaBancaria)}) + 1ª cota
-              do ITBI ({brl(resultado.cotaItbi)}). O serviço de instrumento particular (
-              {brl(valorInstrumentoParticular)}) é cobrado à parte, direto com o despachante.
-            </p>
+              <p className="mb-3 text-sm font-medium text-ink">Escritura Pública + ITBI à vista</p>
+              <ul className="space-y-1.5 text-sm">
+                <li className="flex items-center justify-between">
+                  <span className="text-ink-muted">Escritura</span>
+                  <span className="font-mono text-ink">{brl(resultado.escritura)}</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="text-ink-muted">Registro</span>
+                  <span className="font-mono text-ink">{brl(resultado.registro)}</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="text-ink-muted">ITBI (à vista)</span>
+                  <span className="font-mono text-ink">{brl(resultado.itbi)}</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="text-ink-muted">Taxa bancária</span>
+                  <span className="font-mono text-ink">{brl(taxaBancaria)}</span>
+                </li>
+              </ul>
+              <div className="mt-3 border-t border-border pt-3">
+                <p className="text-xs text-ink-muted">Total</p>
+                <p className="font-mono text-xl font-semibold text-ink">{brl(resultado.total)}</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                Opção 2
+              </p>
+              <p className="mb-3 text-sm font-medium text-ink">
+                Instrumento Particular + ITBI parcelado
+              </p>
+              <ul className="space-y-1.5 text-sm">
+                <li className="flex items-center justify-between">
+                  <span className="text-ink-muted">Instrumento particular</span>
+                  <span className="font-mono text-ink">{brl(valorInstrumentoParticular)}</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="text-ink-muted">Registro</span>
+                  <span className="font-mono text-ink">{brl(resultado.registro)}</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="text-ink-muted">1ª cota do ITBI (em até {numParcelasItbi}x)</span>
+                  <span className="font-mono text-ink">{brl(resultado.cotaItbi)}</span>
+                </li>
+                <li className="flex items-center justify-between">
+                  <span className="text-ink-muted">Taxa bancária</span>
+                  <span className="font-mono text-ink">{brl(taxaBancaria)}</span>
+                </li>
+              </ul>
+              <div className="mt-3 flex items-end justify-between border-t border-border pt-3">
+                <div>
+                  <p className="text-xs text-ink-muted">Total à vista</p>
+                  <p className="font-mono text-xl font-semibold text-brand">
+                    {brl(resultado.totalAVista)}
+                  </p>
+                  {resultado.cotasRestantes > 0 && (
+                    <p className="mt-1 text-xs text-ink-muted">
+                      + {resultado.cotasRestantes} cota{resultado.cotasRestantes > 1 ? "s" : ""}{" "}
+                      mensa{resultado.cotasRestantes > 1 ? "is" : "l"} do ITBI de{" "}
+                      {brl(resultado.cotaItbi)}
+                    </p>
+                  )}
+                </div>
+                <BotaoCopiarLink texto={textoWhatsapp} rotulo="Copiar como texto" />
+              </div>
+            </div>
           </div>
 
           <p className="text-xs text-ink-muted">
