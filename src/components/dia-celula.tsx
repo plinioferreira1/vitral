@@ -10,6 +10,7 @@ const CATEGORIA_PONTO: Record<CategoriaProcesso, string> = {
   venda: "bg-brand",
   financiamento: "bg-gold",
   locacao: "bg-stone-500",
+  marketing: "bg-violet-500",
 };
 
 export function DiaCelula({

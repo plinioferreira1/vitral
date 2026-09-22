@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { traduzirErroAuth } from "@/lib/erros-auth";
 import {
   atualizarCategoriasMembro,
+  editarNomeMembro,
   editarEmailMembro,
   alterarSenhaMembro,
   excluirMembro,
@@ -25,7 +26,7 @@ const PERFIS = [
   ["financeiro", "Financeiro"],
 ] as const;
 
-const CATEGORIAS: CategoriaProcesso[] = ["venda", "financiamento", "locacao"];
+const CATEGORIAS: CategoriaProcesso[] = ["venda", "financiamento", "locacao", "marketing"];
 const NIVEIS: NivelAcesso[] = [
   "diretor",
   "gerente",
@@ -225,6 +226,29 @@ export default async function MembrosPage({
                   <p className="text-xs text-ink-muted">{m.email}</p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <details className="relative">
+                    <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
+                      Editar nome
+                    </summary>
+                    <form
+                      action={editarNomeMembro}
+                      className="absolute right-0 z-10 mt-1 flex w-64 gap-1.5 rounded-md border border-border bg-surface p-2 shadow-md"
+                    >
+                      <input type="hidden" name="usuario_id" value={m.id} />
+                      <input
+                        name="novo_nome"
+                        required
+                        defaultValue={m.nome}
+                        className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                      />
+                      <button
+                        type="submit"
+                        className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                      >
+                        Salvar
+                      </button>
+                    </form>
+                  </details>
                   <details key={`${m.id}-${m.email}`} className="relative">
                     <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
                       Editar e-mail

@@ -109,12 +109,13 @@ export interface ModeloChecklistItem {
 
 export type StatusComissao = "0% pago" | "50% pago" | "100% pago" | "cancelada";
 
-export type CategoriaProcesso = "venda" | "financiamento" | "locacao";
+export type CategoriaProcesso = "venda" | "financiamento" | "locacao" | "marketing";
 
 export const CATEGORIA_LABEL: Record<CategoriaProcesso, string> = {
   venda: "Venda",
   financiamento: "Financiamento",
   locacao: "Locação",
+  marketing: "Marketing",
 };
 
 export interface Processo {

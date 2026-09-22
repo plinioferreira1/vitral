@@ -24,6 +24,7 @@ const CALENDAR_IDS: Record<CategoriaProcesso, string | undefined> = {
   venda: process.env.GOOGLE_CALENDAR_ID_VENDA?.trim(),
   financiamento: process.env.GOOGLE_CALENDAR_ID_FINANCIAMENTO?.trim(),
   locacao: process.env.GOOGLE_CALENDAR_ID_LOCACAO?.trim(),
+  marketing: process.env.GOOGLE_CALENDAR_ID_MARKETING?.trim(),
 };
 
 function base64url(input: Buffer | string): string {
@@ -52,6 +53,7 @@ export async function diagnosticarCredenciaisGoogle(): Promise<{
     venda: !!CALENDAR_IDS.venda,
     financiamento: !!CALENDAR_IDS.financiamento,
     locacao: !!CALENDAR_IDS.locacao,
+    marketing: !!CALENDAR_IDS.marketing,
   };
 
   if (!email || !chavePrivada) {

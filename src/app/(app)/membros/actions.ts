@@ -82,6 +82,18 @@ export async function atualizarCategoriasMembro(formData: FormData) {
   revalidatePath("/membros");
 }
 
+export async function editarNomeMembro(formData: FormData) {
+  const usuarioId = String(formData.get("usuario_id") ?? "");
+  const novoNome = String(formData.get("novo_nome") ?? "").trim();
+  if (!usuarioId || !novoNome) return;
+
+  const { supabase } = await exigirPermissaoSobreMembro(usuarioId);
+
+  await supabase.from("usuarios").update({ nome: novoNome }).eq("id", usuarioId);
+
+  revalidatePath("/membros");
+}
+
 export async function editarEmailMembro(formData: FormData) {
   const usuarioId = String(formData.get("usuario_id") ?? "");
   const novoEmail = String(formData.get("novo_email") ?? "").trim();
