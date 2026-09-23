@@ -18,6 +18,7 @@ import {
   adicionarComentario,
   salvarNumeroRegistro,
   salvarEnderecoImovel,
+  salvarCodigoSanProcesso,
   salvarDatasContrato,
 } from "./actions";
 import { EditorLinhaTempo } from "@/components/editor-linha-tempo";
@@ -33,7 +34,7 @@ export default async function ProcessoDetalhePage({
   const { data: processo } = await supabase
     .from("processos")
     .select(
-      `id, numero_processo, status, valor_total, valor_financiado, origem, categoria, data_criacao,
+      `id, numero_processo, codigo_san, status, valor_total, valor_financiado, origem, categoria, data_criacao,
        data_assinatura, data_final_contrato, imovel_id,
        comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
        vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
@@ -104,6 +105,7 @@ export default async function ProcessoDetalhePage({
     data_assinatura: string | null;
     data_final_contrato: string | null;
     imovel_id: string | null;
+    codigo_san: string | null;
   };
   const p = processo as unknown as P;
   const ehFinanciamento = p.categoria === "financiamento";
@@ -159,6 +161,32 @@ export default async function ProcessoDetalhePage({
           <Info label="Banco" value={p.bancos?.nome} />
           <Info label="Corretor" value={p.corretores?.nome} />
           <Info label="Responsável" value={p.usuarios?.nome} />
+          <div className="flex items-center gap-1.5">
+            <Info label="Código SAN" value={p.codigo_san} />
+            <details className="relative">
+              <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
+                editar
+              </summary>
+              <form
+                action={salvarCodigoSanProcesso}
+                className="absolute left-0 z-10 mt-1 flex w-56 gap-1.5 rounded-md border border-border bg-surface p-2 shadow-md"
+              >
+                <input type="hidden" name="processo_id" value={p.id} />
+                <input
+                  name="codigo_san"
+                  defaultValue={p.codigo_san ?? ""}
+                  placeholder="Código SAN"
+                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                />
+                <button
+                  type="submit"
+                  className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                >
+                  Salvar
+                </button>
+              </form>
+            </details>
+          </div>
           {ehFinanciamento && (
             <>
               <Info

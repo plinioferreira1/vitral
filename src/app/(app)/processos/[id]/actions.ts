@@ -213,6 +213,20 @@ export async function salvarEnderecoImovel(formData: FormData) {
   revalidatePath("/");
 }
 
+export async function salvarCodigoSanProcesso(formData: FormData) {
+  const supabase = await createClient();
+  const processoId = String(formData.get("processo_id") ?? "");
+  const codigoSan = String(formData.get("codigo_san") ?? "").trim() || null;
+
+  if (!processoId) return;
+
+  await supabase.from("processos").update({ codigo_san: codigoSan }).eq("id", processoId);
+
+  revalidatePath(`/processos/${processoId}`);
+  revalidatePath("/vendas");
+  revalidatePath("/financiamentos");
+}
+
 export async function alternarChecklistItem(formData: FormData) {
   const supabase = await createClient();
   const {

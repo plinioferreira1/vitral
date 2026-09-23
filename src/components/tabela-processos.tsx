@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { salvarCodigoSanProcesso } from "@/app/(app)/processos/[id]/actions";
 
 export const STATUS_LABEL: Record<string, string> = {
   ativo: "Ativo",
@@ -19,6 +20,7 @@ export const STATUS_COR: Record<string, string> = {
 export type ProcessoRow = {
   id: string;
   numero_processo: string;
+  codigo_san: string | null;
   tipo: string | null;
   status: string;
   data_criacao: string;
@@ -95,8 +97,30 @@ export function TabelaProcessos({
                   <span className="block whitespace-nowrap font-medium text-ink">
                     {p.imoveis?.endereco ?? "—"}
                   </span>
-                  <span className="block font-mono text-xs text-ink-muted">{p.numero_processo}</span>
                 </Link>
+                <details className="relative" onClick={(e) => e.stopPropagation()}>
+                  <summary className="cursor-pointer list-none font-mono text-xs text-ink-muted hover:text-brand">
+                    {p.codigo_san || "+ Código SAN"}
+                  </summary>
+                  <form
+                    action={salvarCodigoSanProcesso}
+                    className="absolute left-0 z-10 mt-1 flex w-52 gap-1.5 rounded-md border border-border bg-surface p-2 shadow-md"
+                  >
+                    <input type="hidden" name="processo_id" value={p.id} />
+                    <input
+                      name="codigo_san"
+                      defaultValue={p.codigo_san ?? ""}
+                      placeholder="Código SAN"
+                      className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                    />
+                    <button
+                      type="submit"
+                      className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                    >
+                      Salvar
+                    </button>
+                  </form>
+                </details>
               </td>
               {ehFinanciamento ? (
                 <>
