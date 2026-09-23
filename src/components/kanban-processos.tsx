@@ -12,19 +12,44 @@ export interface CardKanban {
   atrasos: number;
 }
 
+export interface CardPrazo {
+  id: string;
+  titulo: string;
+  subtitulo: string;
+  cor: "vermelho" | "amarelo" | "verde";
+}
+
+const COR_PRAZO: Record<CardPrazo["cor"], string> = {
+  vermelho: "border-rose-200 bg-rose-50",
+  amarelo: "border-amber-200 bg-amber-50",
+  verde: "border-emerald-200 bg-emerald-50",
+};
+
+const COR_PRAZO_TEXTO: Record<CardPrazo["cor"], string> = {
+  vermelho: "text-rose-700",
+  amarelo: "text-amber-700",
+  verde: "text-emerald-700",
+};
+
 /**
  * Agrupa processos em colunas pela etapa atual (a primeira etapa
  * sequencial ainda não concluída). Processos sem etapa em aberto
  * (todas concluídas, mas o processo ainda não foi marcado como
  * concluído) caem numa coluna "Sem etapa em aberto". Arrastar um
  * card pra outra coluna avança (ou volta) o processo de verdade.
+ *
+ * `colunaPrazos`, se passada, aparece como uma coluna extra fixa
+ * no final — só pra consulta (não dá pra arrastar cards pra
+ * dentro/fora dela), mostrando o prazo final de cada processo.
  */
 export function KanbanProcessos({
   colunas,
   cards,
+  colunaPrazos,
 }: {
   colunas: string[];
   cards: CardKanban[];
+  colunaPrazos?: { titulo: string; cards: CardPrazo[] };
 }) {
   const colunaExtra = "Sem etapa em aberto";
   const [cardArrastando, setCardArrastando] = useState<string | null>(null);
@@ -132,6 +157,39 @@ export function KanbanProcessos({
           </div>
         );
       })}
+
+      {colunaPrazos && (
+        <div className="w-72 shrink-0">
+          <div className="mb-2 flex items-center justify-between px-1">
+            <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+              {colunaPrazos.titulo}
+            </p>
+            <span className="rounded-full bg-background px-2 py-0.5 text-xs text-ink-muted">
+              {colunaPrazos.cards.length}
+            </span>
+          </div>
+          <div className="space-y-2 p-1">
+            {colunaPrazos.cards.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border p-3 text-center text-xs text-ink-muted">
+                Nenhum prazo cadastrado
+              </div>
+            ) : (
+              colunaPrazos.cards.map((card) => (
+                <Link
+                  key={card.id}
+                  href={`/processos/${card.id}`}
+                  className={`block rounded-xl border p-3 shadow-sm transition hover:opacity-80 ${COR_PRAZO[card.cor]}`}
+                >
+                  <p className="text-sm font-medium text-ink">{card.titulo}</p>
+                  <p className={`mt-0.5 text-xs font-medium ${COR_PRAZO_TEXTO[card.cor]}`}>
+                    {card.subtitulo}
+                  </p>
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

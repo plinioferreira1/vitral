@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getEventosCalendario } from "@/lib/queries";
 import { CalendarioGrid } from "@/components/calendario-grid";
-import { KanbanProcessos, type CardKanban } from "@/components/kanban-processos";
+import { KanbanProcessos, type CardKanban, type CardPrazo } from "@/components/kanban-processos";
 import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
 import { getPermissoesUsuario } from "@/lib/permissoes";
 import { hojeISO } from "@/lib/data-br";
@@ -103,7 +103,13 @@ export default async function DashboardPage() {
     }
   }
 
-  let quadrosKanban: { categoria: CategoriaProcesso; titulo: string; colunas: string[]; cards: CardKanban[] }[] = [];
+  let quadrosKanban: {
+    categoria: CategoriaProcesso;
+    titulo: string;
+    colunas: string[];
+    cards: CardKanban[];
+    colunaPrazos?: { titulo: string; cards: CardPrazo[] };
+  }[] = [];
 
   if (ehAdmin && usuario.tenant_id) {
     const tenantId = usuario.tenant_id;
@@ -111,7 +117,7 @@ export default async function DashboardPage() {
       const { data: processosRaw } = await supabase
         .from("processos")
         .select(
-          "id, numero_processo, status, imoveis ( endereco ), comprador:clientes!processos_comprador_id_fkey ( nome ), vendedor:clientes!processos_vendedor_id_fkey ( nome )"
+          "id, numero_processo, status, data_final_contrato, imoveis ( endereco ), comprador:clientes!processos_comprador_id_fkey ( nome ), vendedor:clientes!processos_vendedor_id_fkey ( nome )"
         )
         .eq("categoria", categoria)
         .not("status", "in", "(concluido,cancelado)");
@@ -119,6 +125,7 @@ export default async function DashboardPage() {
       const processos = (processosRaw ?? []) as unknown as {
         id: string;
         numero_processo: string;
+        data_final_contrato: string | null;
         imoveis: { endereco: string } | null;
         comprador: { nome: string } | null;
         vendedor: { nome: string } | null;
@@ -149,6 +156,37 @@ export default async function DashboardPage() {
         etapaAtualPorProcesso(supabase, idsProcessos),
       ]);
 
+      // Só pra Venda: coluna extra fixa com o prazo final do contrato
+      // de cada processo, colorida por urgência.
+      let colunaPrazos: { titulo: string; cards: CardPrazo[] } | undefined;
+      if (categoria === "venda") {
+        const hoje = new Date(`${hojeISO()}T00:00:00`);
+        const cardsPrazo = processos
+          .filter((p) => p.data_final_contrato)
+          .map((p) => {
+            const dataFinal = new Date(`${p.data_final_contrato}T00:00:00`);
+            const diasRestantes = Math.round((dataFinal.getTime() - hoje.getTime()) / 86_400_000);
+            const cor: CardPrazo["cor"] =
+              diasRestantes <= 15 ? "vermelho" : diasRestantes <= 60 ? "amarelo" : "verde";
+            const subtitulo =
+              diasRestantes < 0
+                ? `Venceu há ${Math.abs(diasRestantes)} dia${Math.abs(diasRestantes) === 1 ? "" : "s"}`
+                : diasRestantes === 0
+                  ? "Vence hoje"
+                  : `Vence em ${diasRestantes} dia${diasRestantes === 1 ? "" : "s"}`;
+            return {
+              id: p.id,
+              titulo: p.imoveis?.endereco ?? p.numero_processo,
+              subtitulo,
+              cor,
+              diasRestantes,
+            };
+          })
+          .sort((a, b) => a.diasRestantes - b.diasRestantes);
+
+        colunaPrazos = { titulo: "Prazo final do contrato", cards: cardsPrazo };
+      }
+
       return {
         categoria,
         titulo,
@@ -160,6 +198,7 @@ export default async function DashboardPage() {
           etapaAtual: etapaAtualMap.get(p.id) ?? null,
           atrasos: atrasosPorProcesso.get(p.id) ?? 0,
         })),
+        colunaPrazos,
       };
     }
 
@@ -233,7 +272,7 @@ export default async function DashboardPage() {
               {quadrosKanban.map((q) => (
                 <div key={q.categoria} className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
                   <p className="mb-3 text-sm font-semibold text-ink">Quadro — {q.titulo}</p>
-                  <KanbanProcessos colunas={q.colunas} cards={q.cards} />
+                  <KanbanProcessos colunas={q.colunas} cards={q.cards} colunaPrazos={q.colunaPrazos} />
                 </div>
               ))}
             </div>
