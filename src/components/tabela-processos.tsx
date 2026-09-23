@@ -98,7 +98,7 @@ export function TabelaProcessos({
                     {p.imoveis?.endereco ?? "—"}
                   </span>
                 </Link>
-                <details className="relative" onClick={(e) => e.stopPropagation()}>
+                <details className="relative">
                   <summary className="cursor-pointer list-none font-mono text-xs text-ink-muted hover:text-brand">
                     {p.codigo_san || "+ Código SAN"}
                   </summary>
