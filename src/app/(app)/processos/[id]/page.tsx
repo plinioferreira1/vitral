@@ -7,6 +7,7 @@ import { VoltarLink } from "@/components/voltar-link";
 import { CampoMoeda } from "@/components/campo-moeda";
 import { BotaoExportarLinhaTempo } from "@/components/botao-exportar-linha-tempo";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
+import { BotaoSubmit } from "@/components/botao-submit";
 import { apagarProcesso } from "../bulk-actions";
 import {
   concluirEtapa,
@@ -17,9 +18,7 @@ import {
   salvarComissao,
   adicionarComentario,
   salvarNumeroRegistro,
-  salvarEnderecoImovel,
-  salvarCodigoSanProcesso,
-  salvarDatasContrato,
+  salvarDadosProcesso,
 } from "./actions";
 import { EditorLinhaTempo } from "@/components/editor-linha-tempo";
 
@@ -62,6 +61,13 @@ export default async function ProcessoDetalhePage({
   const { data: corretoresLista } = await supabase
     .from("corretores")
     .select("id, nome")
+    .order("nome");
+
+  const { data: bancosLista } = await supabase.from("bancos").select("id, nome").order("nome");
+  const { data: usuariosLista } = await supabase
+    .from("usuarios")
+    .select("id, nome")
+    .eq("ativo", true)
     .order("nome");
 
   const { data: etapasRaw } = await supabase
@@ -118,75 +124,146 @@ export default async function ProcessoDetalhePage({
 
   return (
     <div className="max-w-3xl space-y-8 lg:max-w-5xl">
-      <div>
+      <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm md:p-6">
         <VoltarLink
           href={p.categoria === "financiamento" ? "/financiamentos?aba=andamento" : "/vendas?aba=andamento"}
           label={p.categoria === "financiamento" ? "Financiamentos" : "Vendas"}
         />
-        <p className="font-mono text-xs text-ink-muted">{p.numero_processo}</p>
-        <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
-          {p.modelos_processo?.nome} — {p.comprador?.nome ?? "Sem comprador"}
-        </h1>
-        <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-ink-muted sm:grid-cols-3">
-          {!ehFinanciamento && <Info label="Vendedor" value={p.vendedor?.nome} />}
-          <div className="flex items-center gap-1.5">
-            <Info label="Imóvel" value={p.imoveis?.endereco} />
-            {p.imovel_id && (
-              <details className="relative">
-                <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
-                  editar
-                </summary>
-                <form
-                  action={salvarEnderecoImovel}
-                  className="absolute left-0 z-10 mt-1 flex w-64 gap-1.5 rounded-md border border-border bg-surface p-2 shadow-md"
-                >
-                  <input type="hidden" name="processo_id" value={p.id} />
-                  <input type="hidden" name="imovel_id" value={p.imovel_id} />
-                  <input
-                    name="endereco"
-                    required
-                    defaultValue={p.imoveis?.endereco ?? ""}
-                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                  />
-                  <button
-                    type="submit"
-                    className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                  >
-                    Salvar
-                  </button>
-                </form>
-              </details>
-            )}
+        <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="font-mono text-xs text-ink-muted">{p.numero_processo}</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
+              {p.modelos_processo?.nome} — {p.comprador?.nome ?? "Sem comprador"}
+            </h1>
           </div>
+
+          <details className="relative">
+            <summary className="cursor-pointer list-none rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background">
+              ✎ Editar processo
+            </summary>
+            <form
+              action={salvarDadosProcesso}
+              className="absolute right-0 z-20 mt-2 max-h-[80vh] w-[min(92vw,480px)] space-y-3 overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lg"
+            >
+              <input type="hidden" name="processo_id" value={p.id} />
+
+              <div className="grid grid-cols-2 gap-3">
+                <CampoTexto label="Comprador" name="comprador_nome" defaultValue={p.comprador?.nome} />
+                <CampoTexto label="Telefone" name="comprador_telefone" defaultValue={p.comprador?.telefone} />
+              </div>
+
+              {!ehFinanciamento && (
+                <div className="grid grid-cols-2 gap-3">
+                  <CampoTexto label="Vendedor" name="vendedor_nome" defaultValue={p.vendedor?.nome} />
+                  <CampoTexto label="Telefone" name="vendedor_telefone" defaultValue={p.vendedor?.telefone} />
+                </div>
+              )}
+
+              <CampoTexto label="Imóvel" name="imovel_endereco" defaultValue={p.imoveis?.endereco} />
+
+              <div className="grid grid-cols-2 gap-3">
+                <CampoTexto label="Banco" name="banco_nome" defaultValue={p.bancos?.nome} listaId="lista-bancos" />
+                <CampoTexto
+                  label="Corretor"
+                  name="corretor_nome"
+                  defaultValue={p.corretores?.nome}
+                  listaId="lista-corretores"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <CampoTexto
+                  label="Responsável"
+                  name="responsavel_nome"
+                  defaultValue={p.usuarios?.nome}
+                  listaId="lista-usuarios"
+                />
+                <CampoTexto label="Código SAN" name="codigo_san" defaultValue={p.codigo_san} />
+              </div>
+
+              {ehFinanciamento && (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="mb-1 block text-xs font-medium text-ink-muted">
+                        Valor financiado
+                      </label>
+                      <CampoMoeda name="valor_financiado" defaultValue={p.valor_financiado} />
+                    </div>
+                    <CampoTexto label="Origem" name="origem" defaultValue={p.origem} />
+                  </div>
+                  <CampoTexto
+                    label="Indicação"
+                    name="indicacao_nome"
+                    defaultValue={p.indicacao?.nome}
+                    listaId="lista-corretores"
+                  />
+                </>
+              )}
+
+              <div>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">
+                  {ehFinanciamento ? "Valor do imóvel" : "Valor"}
+                </label>
+                <CampoMoeda name="valor_total" defaultValue={p.valor_total} />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ink-muted">
+                    Data de assinatura
+                  </label>
+                  <input
+                    type="date"
+                    name="data_assinatura"
+                    defaultValue={p.data_assinatura ?? ""}
+                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-brand"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ink-muted">
+                    Data final do contrato
+                  </label>
+                  <input
+                    type="date"
+                    name="data_final_contrato"
+                    defaultValue={p.data_final_contrato ?? ""}
+                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-brand"
+                  />
+                </div>
+              </div>
+
+              <datalist id="lista-bancos">
+                {(bancosLista ?? []).map((b) => (
+                  <option key={b.id} value={b.nome} />
+                ))}
+              </datalist>
+              <datalist id="lista-corretores">
+                {(corretoresLista ?? []).map((c) => (
+                  <option key={c.id} value={c.nome} />
+                ))}
+              </datalist>
+              <datalist id="lista-usuarios">
+                {(usuariosLista ?? []).map((u) => (
+                  <option key={u.id} value={u.nome} />
+                ))}
+              </datalist>
+
+              <BotaoSubmit className="w-full rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+                Salvar alterações
+              </BotaoSubmit>
+            </form>
+          </details>
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 md:grid-cols-4">
+          <Info label="Comprador" value={p.comprador?.nome} />
+          {!ehFinanciamento && <Info label="Vendedor" value={p.vendedor?.nome} />}
+          <Info label="Imóvel" value={p.imoveis?.endereco} />
           <Info label="Banco" value={p.bancos?.nome} />
           <Info label="Corretor" value={p.corretores?.nome} />
           <Info label="Responsável" value={p.usuarios?.nome} />
-          <div className="flex items-center gap-1.5">
-            <Info label="Código SAN" value={p.codigo_san} />
-            <details className="relative">
-              <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
-                editar
-              </summary>
-              <form
-                action={salvarCodigoSanProcesso}
-                className="absolute left-0 z-10 mt-1 flex w-56 gap-1.5 rounded-md border border-border bg-surface p-2 shadow-md"
-              >
-                <input type="hidden" name="processo_id" value={p.id} />
-                <input
-                  name="codigo_san"
-                  defaultValue={p.codigo_san ?? ""}
-                  placeholder="Código SAN"
-                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                />
-                <button
-                  type="submit"
-                  className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                >
-                  Salvar
-                </button>
-              </form>
-            </details>
-          </div>
+          <Info label="Código SAN" value={p.codigo_san} />
           {ehFinanciamento && (
             <>
               <Info
@@ -206,38 +283,22 @@ export default async function ProcessoDetalhePage({
             value={p.valor_total ? `R$ ${Number(p.valor_total).toLocaleString("pt-BR")}` : undefined}
           />
           <Info
+            label="Data de assinatura"
+            value={p.data_assinatura ? format(parseISO(p.data_assinatura), "dd/MM/yyyy", { locale: ptBR }) : undefined}
+          />
+          <Info
+            label="Prazo final do contrato"
+            value={
+              p.data_final_contrato
+                ? format(parseISO(p.data_final_contrato), "dd/MM/yyyy", { locale: ptBR })
+                : undefined
+            }
+          />
+          <Info
             label="Criado em"
             value={format(parseISO(p.data_criacao), "dd/MM/yyyy", { locale: ptBR })}
           />
         </div>
-
-        <form action={salvarDatasContrato} className="mt-4 flex flex-wrap items-end gap-3">
-          <input type="hidden" name="processo_id" value={p.id} />
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Data de assinatura</label>
-            <input
-              type="date"
-              name="data_assinatura"
-              defaultValue={p.data_assinatura ?? ""}
-              className="rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-brand"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Data final do contrato</label>
-            <input
-              type="date"
-              name="data_final_contrato"
-              defaultValue={p.data_final_contrato ?? ""}
-              className="rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-brand"
-            />
-          </div>
-          <button
-            type="submit"
-            className="rounded-md border border-border px-3 py-1.5 text-sm text-ink-muted hover:bg-background"
-          >
-            Salvar
-          </button>
-        </form>
       </div>
 
       {/* Situação especial ativa (se houver) */}
@@ -726,12 +787,35 @@ export default async function ProcessoDetalhePage({
 }
 
 function Info({ label, value }: { label: string; value?: string | null }) {
-  if (!value) return null;
   return (
-    <p>
-      <span className="text-ink-muted">{label}: </span>
-      <span className="text-ink">{value}</span>
-    </p>
+    <div>
+      <p className="text-xs text-ink-muted">{label}</p>
+      <p className="mt-0.5 text-sm font-medium text-ink">{value || "—"}</p>
+    </div>
+  );
+}
+
+function CampoTexto({
+  label,
+  name,
+  defaultValue,
+  listaId,
+}: {
+  label: string;
+  name: string;
+  defaultValue?: string | null;
+  listaId?: string;
+}) {
+  return (
+    <div>
+      <label className="mb-1 block text-xs font-medium text-ink-muted">{label}</label>
+      <input
+        name={name}
+        defaultValue={defaultValue ?? ""}
+        list={listaId}
+        className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-sm outline-none focus:border-brand"
+      />
+    </div>
   );
 }
 

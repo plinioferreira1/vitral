@@ -6,6 +6,36 @@ import { revalidatePath } from "next/cache";
 import { parseISO } from "date-fns";
 import { hojeISO } from "@/lib/data-br";
 import { reconciliarAgendaProcesso, removerEventosDeEtapas, reconciliarAlertaContratoFinal } from "@/lib/google-agenda";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+async function resolverOuCriar(
+  supabase: SupabaseClient,
+  tabela: string,
+  campoNome: string,
+  tenantId: string,
+  valorDigitado: string
+): Promise<string | null> {
+  const nome = valorDigitado.trim();
+  if (!nome) return null;
+
+  const { data: existente } = await supabase
+    .from(tabela)
+    .select("id")
+    .eq("tenant_id", tenantId)
+    .ilike(campoNome, nome)
+    .limit(1)
+    .maybeSingle();
+
+  if (existente) return existente.id;
+
+  const { data: criado } = await supabase
+    .from(tabela)
+    .insert({ tenant_id: tenantId, [campoNome]: nome })
+    .select("id")
+    .single();
+
+  return criado?.id ?? null;
+}
 
 export async function salvarOrdemEtapas(processoId: string, etapaIdsEmOrdem: string[]) {
   const supabase = await createClient();
@@ -225,6 +255,96 @@ export async function salvarCodigoSanProcesso(formData: FormData) {
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/vendas");
   revalidatePath("/financiamentos");
+}
+
+export async function salvarDadosProcesso(formData: FormData) {
+  const supabase = await createClient();
+  const processoId = String(formData.get("processo_id") ?? "");
+  if (!processoId) return;
+
+  const { data: existente } = await supabase
+    .from("processos")
+    .select("tenant_id, categoria, comprador_id, vendedor_id, imovel_id")
+    .eq("id", processoId)
+    .single();
+
+  if (!existente) return;
+  const tenantId = existente.tenant_id as string;
+  const ehFinanciamento = existente.categoria === "financiamento";
+
+  const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
+
+  // Comprador
+  const compradorNome = campo("comprador_nome");
+  if (compradorNome && existente.comprador_id) {
+    await supabase
+      .from("clientes")
+      .update({ nome: compradorNome, telefone: campo("comprador_telefone") })
+      .eq("id", existente.comprador_id);
+  }
+
+  // Vendedor (só faz sentido em venda)
+  const vendedorNome = campo("vendedor_nome");
+  if (!ehFinanciamento && vendedorNome && existente.vendedor_id) {
+    await supabase
+      .from("clientes")
+      .update({ nome: vendedorNome, telefone: campo("vendedor_telefone") })
+      .eq("id", existente.vendedor_id);
+  }
+
+  // Imóvel
+  const enderecoImovel = campo("imovel_endereco");
+  if (enderecoImovel && existente.imovel_id) {
+    await supabase.from("imoveis").update({ endereco: enderecoImovel }).eq("id", existente.imovel_id);
+  }
+
+  // Banco / Corretor / Indicação — resolve por nome (cria se não existir)
+  const bancoId = await resolverOuCriar(supabase, "bancos", "nome", tenantId, campo("banco_nome") ?? "");
+  const corretorId = await resolverOuCriar(supabase, "corretores", "nome", tenantId, campo("corretor_nome") ?? "");
+  const indicacaoId = ehFinanciamento
+    ? await resolverOuCriar(supabase, "corretores", "nome", tenantId, campo("indicacao_nome") ?? "")
+    : null;
+
+  // Responsável — resolve por nome contra os usuários do tenant
+  let responsavelId: string | null = null;
+  const responsavelNome = campo("responsavel_nome");
+  if (responsavelNome) {
+    const { data: usuarioEncontrado } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("tenant_id", tenantId)
+      .ilike("nome", responsavelNome)
+      .limit(1)
+      .maybeSingle();
+    responsavelId = usuarioEncontrado?.id ?? null;
+  }
+
+  const dadosProcesso: Record<string, unknown> = {
+    codigo_san: campo("codigo_san"),
+    valor_total: formData.get("valor_total") ? Number(formData.get("valor_total")) : null,
+    data_assinatura: campo("data_assinatura"),
+    data_final_contrato: campo("data_final_contrato"),
+  };
+  if (bancoId) dadosProcesso.banco_id = bancoId;
+  if (corretorId) dadosProcesso.corretor_id = corretorId;
+  if (responsavelId) dadosProcesso.responsavel_id = responsavelId;
+  if (ehFinanciamento) {
+    if (indicacaoId) dadosProcesso.indicacao_id = indicacaoId;
+    dadosProcesso.valor_financiado = formData.get("valor_financiado")
+      ? Number(formData.get("valor_financiado"))
+      : null;
+    dadosProcesso.origem = campo("origem");
+  }
+
+  await supabase.from("processos").update(dadosProcesso).eq("id", processoId);
+
+  await reconciliarAgendaProcesso(supabase, processoId);
+  await reconciliarAlertaContratoFinal(supabase, processoId);
+
+  revalidatePath(`/processos/${processoId}`);
+  revalidatePath("/vendas");
+  revalidatePath("/financiamentos");
+  revalidatePath("/");
 }
 
 export async function alternarChecklistItem(formData: FormData) {
