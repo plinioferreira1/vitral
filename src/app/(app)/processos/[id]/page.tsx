@@ -17,6 +17,7 @@ import {
   salvarComissao,
   adicionarComentario,
   salvarNumeroRegistro,
+  salvarEnderecoImovel,
   salvarDatasContrato,
 } from "./actions";
 import { EditorLinhaTempo } from "@/components/editor-linha-tempo";
@@ -33,7 +34,7 @@ export default async function ProcessoDetalhePage({
     .from("processos")
     .select(
       `id, numero_processo, status, valor_total, valor_financiado, origem, categoria, data_criacao,
-       data_assinatura, data_final_contrato,
+       data_assinatura, data_final_contrato, imovel_id,
        comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
        vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
        imoveis ( endereco ), bancos ( nome ),
@@ -102,6 +103,7 @@ export default async function ProcessoDetalhePage({
     origem: string | null;
     data_assinatura: string | null;
     data_final_contrato: string | null;
+    imovel_id: string | null;
   };
   const p = processo as unknown as P;
   const ehFinanciamento = p.categoria === "financiamento";
@@ -125,7 +127,35 @@ export default async function ProcessoDetalhePage({
         </h1>
         <div className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1 text-sm text-ink-muted sm:grid-cols-3">
           {!ehFinanciamento && <Info label="Vendedor" value={p.vendedor?.nome} />}
-          <Info label="Imóvel" value={p.imoveis?.endereco} />
+          <div className="flex items-center gap-1.5">
+            <Info label="Imóvel" value={p.imoveis?.endereco} />
+            {p.imovel_id && (
+              <details className="relative">
+                <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
+                  editar
+                </summary>
+                <form
+                  action={salvarEnderecoImovel}
+                  className="absolute left-0 z-10 mt-1 flex w-64 gap-1.5 rounded-md border border-border bg-surface p-2 shadow-md"
+                >
+                  <input type="hidden" name="processo_id" value={p.id} />
+                  <input type="hidden" name="imovel_id" value={p.imovel_id} />
+                  <input
+                    name="endereco"
+                    required
+                    defaultValue={p.imoveis?.endereco ?? ""}
+                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                  />
+                  <button
+                    type="submit"
+                    className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                  >
+                    Salvar
+                  </button>
+                </form>
+              </details>
+            )}
+          </div>
           <Info label="Banco" value={p.bancos?.nome} />
           <Info label="Corretor" value={p.corretores?.nome} />
           <Info label="Responsável" value={p.usuarios?.nome} />

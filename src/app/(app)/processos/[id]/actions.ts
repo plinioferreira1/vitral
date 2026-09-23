@@ -197,6 +197,22 @@ export async function salvarNumeroRegistro(formData: FormData) {
   revalidatePath(`/processos/${processoId}`);
 }
 
+export async function salvarEnderecoImovel(formData: FormData) {
+  const supabase = await createClient();
+  const imovelId = String(formData.get("imovel_id") ?? "");
+  const processoId = String(formData.get("processo_id") ?? "");
+  const endereco = String(formData.get("endereco") ?? "").trim();
+
+  if (!imovelId || !endereco) return;
+
+  await supabase.from("imoveis").update({ endereco }).eq("id", imovelId);
+
+  revalidatePath(`/processos/${processoId}`);
+  revalidatePath("/vendas");
+  revalidatePath("/financiamentos");
+  revalidatePath("/");
+}
+
 export async function alternarChecklistItem(formData: FormData) {
   const supabase = await createClient();
   const {
