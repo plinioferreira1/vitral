@@ -91,8 +91,9 @@ export function KanbanProcessos({
   }
 
   return (
-    <div className={`flex gap-4 overflow-x-auto pb-2 ${pendente ? "opacity-60" : ""}`}>
-      {colunasParaMostrar.map((coluna) => {
+    <div className="flex gap-4">
+      <div className={`flex flex-1 gap-4 overflow-x-auto pb-2 ${pendente ? "opacity-60" : ""}`}>
+        {colunasParaMostrar.map((coluna) => {
         const cardsColuna = cardsPorColuna.get(coluna) ?? [];
         return (
           <div
@@ -157,6 +158,7 @@ export function KanbanProcessos({
           </div>
         );
       })}
+      </div>
 
       {colunaPrazos && (
         <div className="w-72 shrink-0">
@@ -168,7 +170,7 @@ export function KanbanProcessos({
               {colunaPrazos.cards.length}
             </span>
           </div>
-          <div className="space-y-2 p-1">
+          <div className="max-h-[520px] space-y-2 overflow-y-auto p-1">
             {colunaPrazos.cards.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border p-3 text-center text-xs text-ink-muted">
                 Nenhum prazo cadastrado
