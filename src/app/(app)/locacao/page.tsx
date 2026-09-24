@@ -5,7 +5,9 @@ import { apagarContratosSelecionados } from "./bulk-actions";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { TIPO_CONTA_LABEL } from "@/lib/types";
 import { calcularUrgencia, URGENCIA_COR } from "@/lib/alertas";
-import { Icones } from "@/components/icone-badge";
+import { CartaoIndicador } from "@/components/cartao-indicador";
+import { CabecalhoSecao } from "@/components/cabecalho-secao";
+import { Clock, CheckCircle2, AlertTriangle, FileText, ListChecks } from "lucide-react";
 import { CalculadoraMultaRescisoria } from "@/components/calculadora-multa-rescisoria";
 import { hojeISO } from "@/lib/data-br";
 import { addMonths, format, parseISO, startOfWeek } from "date-fns";
@@ -146,7 +148,7 @@ export default async function LocacaoPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">Locação</h1>
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Locação</h1>
           <p className="mt-1 text-sm text-ink-muted">
             {totalContratosAtivos} contratos ativos · {contasPendentes.length} contas
             pendentes
@@ -236,45 +238,39 @@ export default async function LocacaoPage({
                 </Link>
               </div>
             </div>
-            <div className="grid grid-cols-3 gap-4">
-              <Link
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <CartaoIndicador
+                icon={Clock}
+                valor={pendentesNoMes.length}
+                label="Contas pendentes no mês"
+                tom="alerta"
                 href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=mes`}
-                className="rounded-2xl p-5 text-white shadow-sm transition hover:brightness-110"
-                style={{ backgroundColor: "#d97706" }}
-              >
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
-                  {Icones.relogio}
-                </div>
-                <p className="mt-3 font-mono text-4xl font-bold tracking-tight">{pendentesNoMes.length}</p>
-                <p className="mt-1 text-sm font-medium text-white/85">Contas pendentes no mês</p>
-              </Link>
-              <Link
+              />
+              <CartaoIndicador
+                icon={CheckCircle2}
+                valor={contasPagasNoMes.length}
+                label="Contas pagas no mês"
+                tom="sucesso"
                 href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=pagas`}
-                className="rounded-2xl p-5 text-white shadow-sm transition hover:brightness-110"
-                style={{ backgroundColor: "#0f7a4e" }}
-              >
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
-                  {Icones.check}
-                </div>
-                <p className="mt-3 font-mono text-4xl font-bold tracking-tight">{contasPagasNoMes.length}</p>
-                <p className="mt-1 text-sm font-medium text-white/85">Contas pagas no mês</p>
-              </Link>
-              <Link
+              />
+              <CartaoIndicador
+                icon={AlertTriangle}
+                valor={atrasadasLista.length}
+                label="Atrasadas (todos os meses)"
+                tom="perigo"
                 href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=atrasadas`}
-                className="rounded-2xl p-5 text-white shadow-sm transition hover:brightness-110"
-                style={{ backgroundColor: "#e11d48" }}
-              >
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/15">
-                  {Icones.alerta}
-                </div>
-                <p className="mt-3 font-mono text-4xl font-bold tracking-tight">{atrasadasLista.length}</p>
-                <p className="mt-1 text-sm font-medium text-white/85">Atrasadas (todos os meses)</p>
-              </Link>
+              />
+              <CartaoIndicador
+                icon={FileText}
+                valor={listaContratos.filter((c) => c.ativo).length}
+                label="Contratos ativos"
+                href="/locacao?aba=contratos"
+              />
             </div>
           </div>
 
           <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
-            <p className="mb-3 text-sm font-semibold text-ink">Tarefas do mês</p>
+            <CabecalhoSecao icon={ListChecks} titulo="Tarefas do mês" />
             <div className="space-y-2">
               {(tarefas ?? []).map((t) => {
                 const competenciaDaTarefa =
