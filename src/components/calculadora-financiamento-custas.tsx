@@ -5,6 +5,8 @@ import { brl } from "@/lib/proporcionalidade";
 import { CampoMoeda } from "@/components/campo-moeda";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
 import { FAIXAS_ESCRITURA, FAIXAS_REGISTRO, buscarFaixa } from "@/lib/emolumentos-cartorio";
+import { CabecalhoSecao } from "@/components/cabecalho-secao";
+import { Calculator, Receipt } from "lucide-react";
 
 export function CalculadoraFinanciamento() {
   const [valor, setValor] = useState(0);
@@ -111,15 +113,11 @@ export function CalculadoraFinanciamento() {
 
   return (
     <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          Custas de Financiamento
-        </h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Estimativa completa de custas pra passar pro cliente logo no início do processo — já
-          com a opção de instrumento particular, que costuma pesar na decisão dele.
-        </p>
-      </div>
+      <CabecalhoSecao
+        icon={Calculator}
+        titulo="Custas de Financiamento"
+        descricao="Estimativa completa de custas pra passar pro cliente logo no início do processo — já com a opção de instrumento particular, que costuma pesar na decisão dele."
+      />
 
       <div className="space-y-4 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
         <div className="grid gap-4 sm:grid-cols-2">
@@ -199,7 +197,7 @@ export function CalculadoraFinanciamento() {
       {resultado && (
         <>
           <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-            <p className="mb-3 text-sm font-semibold text-ink">💸 Valores do imóvel — {brl(valor)}</p>
+            <CabecalhoSecao icon={Receipt} titulo={`Valores do imóvel — ${brl(valor)}`} />
             <ul className="divide-y divide-border text-sm">
               <li className="flex items-center justify-between py-2">
                 <span className="text-ink">Escritura</span>
