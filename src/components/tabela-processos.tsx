@@ -100,7 +100,7 @@ export function TabelaProcessos({
                 </Link>
                 <details key={`${p.id}-${p.codigo_san ?? ""}`} className="relative">
                   <summary className="cursor-pointer list-none font-mono text-xs text-ink-muted hover:text-brand">
-                    {p.codigo_san || "+ Código SAN"}
+                    {p.codigo_san ? `SAN: ${p.codigo_san}` : "+ Código SAN"}
                   </summary>
                   <form
                     action={salvarCodigoSanProcesso}
