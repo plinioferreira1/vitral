@@ -6,7 +6,14 @@ import { CampoMoeda } from "@/components/campo-moeda";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
 import { FAIXAS_ESCRITURA, FAIXAS_REGISTRO, buscarFaixa } from "@/lib/emolumentos-cartorio";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
-import { Calculator, Receipt } from "lucide-react";
+import { Calculator, FileText, PieChart, Info } from "lucide-react";
+
+const CORES_LINHA = ["bg-rose-500", "bg-blue-500", "bg-amber-500", "bg-emerald-500", "bg-violet-500"];
+
+function pct(parte: number, total: number): string {
+  if (total <= 0) return "0,0%";
+  return `${((parte / total) * 100).toFixed(1).replace(".", ",")}%`;
+}
 
 export function CalculadoraFinanciamento() {
   const [valor, setValor] = useState(0);
@@ -22,27 +29,19 @@ export function CalculadoraFinanciamento() {
 
   let resultado: {
     itbi: number;
-    escrituraCompraVenda: number;
-    escrituraAlienacao: number;
-    escritura: number;
     registroCompraVendaCheio: number;
     registroCompraVenda: number;
     registroAlienacaoCheio: number;
     registroAlienacao: number;
-    registro: number;
-    total: number;
-    cotaItbi: number;
-    totalAVista: number;
-    cotasRestantes: number;
+    taxaBancaria: number;
+    instrumentoParticular: number;
+    custoTotal: number;
+    percentualDoImovel: string;
   } | null = null;
 
   if (valor > 0 && valorFinanciado > 0) {
     const aliquotaItbi = tipoImovel === "novo" ? 0.01 : 0.02;
     const itbi = valor * aliquotaItbi;
-
-    const escrituraCompraVenda = buscarFaixa(valor, FAIXAS_ESCRITURA);
-    const escrituraAlienacao = buscarFaixa(valorFinanciado, FAIXAS_ESCRITURA);
-    const escritura = escrituraCompraVenda + escrituraAlienacao;
 
     // Desconto de 50% no registro da compra e venda: só quando é o
     // primeiro imóvel do cliente.
@@ -50,304 +49,243 @@ export function CalculadoraFinanciamento() {
     const registroCompraVenda = primeiroImovel ? registroCompraVendaCheio / 2 : registroCompraVendaCheio;
 
     // Desconto de 50% no registro da alienação fiduciária: só no
-    // financiamento pelo Minha Casa Minha Vida — é um desconto
-    // diferente do de primeiro imóvel, e incide só sobre essa parte.
+    // financiamento pelo Minha Casa Minha Vida.
     const registroAlienacaoCheio = buscarFaixa(valorFinanciado, FAIXAS_REGISTRO);
     const registroAlienacao = minhaCasaMinhaVida ? registroAlienacaoCheio / 2 : registroAlienacaoCheio;
 
-    const registro = registroCompraVenda + registroAlienacao;
-
-    const total = itbi + escritura + registro + taxaBancaria;
-    const cotaItbi = itbi / numParcelasItbi;
-    // Total à vista: escolhendo o instrumento particular (sem escritura de
-    // cartório) e parcelando o ITBI, entram registro + taxa bancária + a 1ª
-    // cota do ITBI + o valor do serviço de instrumento particular (cobrado
-    // junto, não mais à parte).
-    const totalAVista = registro + taxaBancaria + cotaItbi + valorInstrumentoParticular;
+    const custoTotal = itbi + registroCompraVenda + registroAlienacao + taxaBancaria + valorInstrumentoParticular;
 
     resultado = {
       itbi,
-      escrituraCompraVenda,
-      escrituraAlienacao,
-      escritura,
       registroCompraVendaCheio,
       registroCompraVenda,
       registroAlienacaoCheio,
       registroAlienacao,
-      registro,
-      total,
-      cotaItbi,
-      totalAVista,
-      cotasRestantes: numParcelasItbi - 1,
+      taxaBancaria,
+      instrumentoParticular: valorInstrumentoParticular,
+      custoTotal,
+      percentualDoImovel: valor > 0 ? pct(custoTotal, valor) : "0,0%",
     };
   }
 
   const textoWhatsapp = resultado
     ? [
-        `💸 *Valores do Imóvel* — ${brl(valor)}`,
+        `💸 *Custas estimadas de financiamento* — ${brl(valor)}`,
+        `Instrumento particular (despachante), no lugar da escritura de cartório.`,
         "",
-        `*Opção 1 — Escritura Pública + ITBI à vista*`,
-        `▫️ Escritura: ${brl(resultado.escritura)}`,
-        `▫️ Registro: ${brl(resultado.registro)}`,
-        `▫️ ITBI (à vista): ${brl(resultado.itbi)}`,
-        `▫️ Taxa Bancária: ${brl(taxaBancaria)} _(vistoria, tarifas bancárias, relacionamento e análise jurídica — valor aproximado)_`,
-        `*Total: ${brl(resultado.total)}*`,
+        `▫️ ITBI (${tipoImovel === "novo" ? "1%" : "2%"}): ${brl(resultado.itbi)}`,
+        `▫️ Registro de compra e venda: ${brl(resultado.registroCompraVenda)}`,
+        `▫️ Registro de alienação fiduciária: ${brl(resultado.registroAlienacao)}`,
+        `▫️ Taxa bancária: ${brl(resultado.taxaBancaria)}`,
+        `▫️ Instrumento particular (despachante): ${brl(resultado.instrumentoParticular)}`,
         "",
-        `*Opção 2 — Instrumento Particular + ITBI parcelado*`,
-        `▫️ Instrumento particular (com despachante, no lugar da escritura de cartório): ${brl(valorInstrumentoParticular)}`,
-        `▫️ Registro: ${brl(resultado.registro)}`,
-        `▫️ 1ª cota do ITBI (em até ${numParcelasItbi}x): ${brl(resultado.cotaItbi)}`,
-        `▫️ Taxa Bancária: ${brl(taxaBancaria)} _(vistoria, tarifas bancárias, relacionamento e análise jurídica — valor aproximado)_`,
-        `*Total à vista: ${brl(resultado.totalAVista)}*`,
-        ...(resultado.cotasRestantes > 0
-          ? [
-              `+ ${resultado.cotasRestantes} cota${resultado.cotasRestantes > 1 ? "s" : ""} mensa${resultado.cotasRestantes > 1 ? "is" : "l"} do ITBI de ${brl(resultado.cotaItbi)}`,
-            ]
-          : []),
+        `*Total estimado: ${brl(resultado.custoTotal)}* (${resultado.percentualDoImovel} do valor do imóvel)`,
         "",
-        "💢 Nos dois casos, os documentos têm a mesma validade legal — a diferença é só no formato (escritura de cartório x instrumento particular com força de escritura) e em quanto sai do bolso logo de início.",
-        "",
+        `O ITBI pode ser parcelado em até ${numParcelasItbi}x.`,
         "_Valores aproximados, sujeitos a alteração sem aviso prévio._",
       ].join("\n")
     : "";
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="max-w-5xl space-y-6">
       <CabecalhoSecao
         icon={Calculator}
         titulo="Custas de Financiamento"
         descricao="Estimativa completa de custas pra passar pro cliente logo no início do processo — já com a opção de instrumento particular, que costuma pesar na decisão dele."
       />
 
-      <div className="space-y-4 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Valor do imóvel</label>
-            <CampoMoeda onValorChange={setValor} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Valor financiado</label>
-            <CampoMoeda onValorChange={setValorFinanciado} />
-          </div>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Tipo do imóvel</label>
-            <select
-              value={tipoImovel}
-              onChange={(e) => setTipoImovel(e.target.value as "usado" | "novo")}
-              className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
-            >
-              <option value="usado">Usado (ITBI 2%)</option>
-              <option value="novo">Novo (ITBI 1%)</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Taxa bancária</label>
-            <CampoMoeda onValorChange={setTaxaBancaria} />
-            <p className="mt-1 text-[11px] text-ink-muted">
-              Inclui vistoria, tarifas bancárias, relacionamento e análise jurídica. Valor
-              aproximado, pode variar.
-            </p>
-          </div>
-        </div>
-
-        <label className="flex items-center gap-2 text-sm text-ink">
-          <input
-            type="checkbox"
-            checked={primeiroImovel}
-            onChange={(e) => setPrimeiroImovel(e.target.checked)}
-            className="accent-brand"
-          />
-          É o primeiro imóvel do cliente (desconto de 50% no registro da compra e venda)
-        </label>
-
-        <label className="flex items-center gap-2 text-sm text-ink">
-          <input
-            type="checkbox"
-            checked={minhaCasaMinhaVida}
-            onChange={(e) => setMinhaCasaMinhaVida(e.target.checked)}
-            className="accent-brand"
-          />
-          Financiamento pelo Minha Casa Minha Vida (desconto de 50% no registro da alienação)
-        </label>
-
-        <div className="grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">
-              Parcelas do ITBI (padrão: 10)
-            </label>
-            <input
-              value={parcelasItbi}
-              onChange={(e) => setParcelasItbi(e.target.value)}
-              inputMode="numeric"
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-            />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">
-              Valor do instrumento particular (despachante)
-            </label>
-            <CampoMoeda defaultValue={2500} onValorChange={setValorInstrumentoParticular} />
-          </div>
-        </div>
-      </div>
-
-      {resultado && (
-        <>
-          <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-            <CabecalhoSecao icon={Receipt} titulo={`Valores do imóvel — ${brl(valor)}`} />
-            <ul className="divide-y divide-border text-sm">
-              <li className="flex items-center justify-between py-2">
-                <span className="text-ink">Escritura</span>
-                <span className="font-mono text-ink">{brl(resultado.escritura)}</span>
-              </li>
-              <li className="flex items-center justify-between py-2">
-                <span className="text-ink">
-                  Registro da Compra e Venda
-                  {primeiroImovel && (
-                    <span className="block text-xs text-ink-muted">50% de desconto (primeiro imóvel)</span>
-                  )}
-                </span>
-                <span className="text-right font-mono text-ink">
-                  {primeiroImovel && (
-                    <span className="mr-1.5 text-xs text-ink-muted line-through">
-                      {brl(resultado.registroCompraVendaCheio)}
-                    </span>
-                  )}
-                  {brl(resultado.registroCompraVenda)}
-                </span>
-              </li>
-              <li className="flex items-center justify-between py-2">
-                <span className="text-ink">
-                  Registro da Alienação
-                  {minhaCasaMinhaVida && (
-                    <span className="block text-xs text-ink-muted">50% de desconto (Minha Casa Minha Vida)</span>
-                  )}
-                </span>
-                <span className="text-right font-mono text-ink">
-                  {minhaCasaMinhaVida && (
-                    <span className="mr-1.5 text-xs text-ink-muted line-through">
-                      {brl(resultado.registroAlienacaoCheio)}
-                    </span>
-                  )}
-                  {brl(resultado.registroAlienacao)}
-                </span>
-              </li>
-              <li className="flex items-center justify-between py-2">
-                <span className="text-ink">
-                  ITBI
-                  <span className="block text-xs text-ink-muted">
-                    {tipoImovel === "novo" ? "1%" : "2%"} do valor do imóvel
-                  </span>
-                </span>
-                <span className="font-mono text-ink">{brl(resultado.itbi)}</span>
-              </li>
-              <li className="flex items-center justify-between py-2">
-                <span className="text-ink">
-                  Taxa bancária
-                  <span className="block text-xs text-ink-muted">
-                    Vistoria, tarifas bancárias, relacionamento e análise jurídica
-                  </span>
-                </span>
-                <span className="font-mono text-ink">{brl(taxaBancaria)}</span>
-              </li>
-            </ul>
-            <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-              <span className="text-sm font-semibold text-ink">Total</span>
-              <span className="font-mono text-base font-semibold text-brand">{brl(resultado.total)}</span>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+        <div className="flex-1 space-y-4 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            Dados do imóvel e financiamento
+          </p>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ink-muted">Valor do imóvel</label>
+              <CampoMoeda onValorChange={setValor} />
             </div>
-          </div>
-
-          <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900 shadow-sm">
-            <p className="mb-2 font-semibold">
-              💢 Nos dois casos, os documentos têm a mesma validade legal — a diferença é só no
-              formato (escritura de cartório x instrumento particular com força de escritura) e
-              em quanto sai do bolso logo de início.
-            </p>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ink-muted">Valor financiado</label>
+              <CampoMoeda onValorChange={setValorFinanciado} />
+            </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                Opção 1
-              </p>
-              <p className="mb-3 text-sm font-medium text-ink">Escritura Pública + ITBI à vista</p>
-              <ul className="space-y-1.5 text-sm">
-                <li className="flex items-center justify-between">
-                  <span className="text-ink-muted">Escritura</span>
-                  <span className="font-mono text-ink">{brl(resultado.escritura)}</span>
-                </li>
-                <li className="flex items-center justify-between">
-                  <span className="text-ink-muted">Registro</span>
-                  <span className="font-mono text-ink">{brl(resultado.registro)}</span>
-                </li>
-                <li className="flex items-center justify-between">
-                  <span className="text-ink-muted">ITBI (à vista)</span>
-                  <span className="font-mono text-ink">{brl(resultado.itbi)}</span>
-                </li>
-                <li className="flex items-center justify-between">
-                  <span className="text-ink-muted">Taxa bancária</span>
-                  <span className="font-mono text-ink">{brl(taxaBancaria)}</span>
-                </li>
-              </ul>
-              <div className="mt-3 border-t border-border pt-3">
-                <p className="text-xs text-ink-muted">Total</p>
-                <p className="font-mono text-xl font-semibold text-ink">{brl(resultado.total)}</p>
-              </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ink-muted">Tipo do imóvel</label>
+              <select
+                value={tipoImovel}
+                onChange={(e) => setTipoImovel(e.target.value as "usado" | "novo")}
+                className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
+              >
+                <option value="usado">Usado (ITBI 2%)</option>
+                <option value="novo">Novo (ITBI 1%)</option>
+              </select>
             </div>
-
-            <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-              <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                Opção 2
+            <div>
+              <label className="mb-1 flex items-center gap-1 text-xs font-medium text-ink-muted">
+                Taxa bancária
+              </label>
+              <CampoMoeda onValorChange={setTaxaBancaria} />
+              <p className="mt-1 text-[11px] text-ink-muted">
+                Inclui vistoria, tarifas bancárias, relacionamento e análise jurídica. Valor
+                aproximado, pode variar.
               </p>
-              <p className="mb-3 text-sm font-medium text-ink">
-                Instrumento Particular + ITBI parcelado
-              </p>
-              <ul className="space-y-1.5 text-sm">
-                <li className="flex items-center justify-between">
-                  <span className="text-ink-muted">Instrumento particular</span>
-                  <span className="font-mono text-ink">{brl(valorInstrumentoParticular)}</span>
-                </li>
-                <li className="flex items-center justify-between">
-                  <span className="text-ink-muted">Registro</span>
-                  <span className="font-mono text-ink">{brl(resultado.registro)}</span>
-                </li>
-                <li className="flex items-center justify-between">
-                  <span className="text-ink-muted">1ª cota do ITBI (em até {numParcelasItbi}x)</span>
-                  <span className="font-mono text-ink">{brl(resultado.cotaItbi)}</span>
-                </li>
-                <li className="flex items-center justify-between">
-                  <span className="text-ink-muted">Taxa bancária</span>
-                  <span className="font-mono text-ink">{brl(taxaBancaria)}</span>
-                </li>
-              </ul>
-              <div className="mt-3 flex items-end justify-between border-t border-border pt-3">
-                <div>
-                  <p className="text-xs text-ink-muted">Total à vista</p>
-                  <p className="font-mono text-xl font-semibold text-brand">
-                    {brl(resultado.totalAVista)}
-                  </p>
-                  {resultado.cotasRestantes > 0 && (
-                    <p className="mt-1 text-xs text-ink-muted">
-                      + {resultado.cotasRestantes} cota{resultado.cotasRestantes > 1 ? "s" : ""}{" "}
-                      mensa{resultado.cotasRestantes > 1 ? "is" : "l"} do ITBI de{" "}
-                      {brl(resultado.cotaItbi)}
-                    </p>
-                  )}
-                </div>
-                <BotaoCopiarLink texto={textoWhatsapp} rotulo="Copiar como texto" />
-              </div>
             </div>
           </div>
 
-          <p className="text-xs text-ink-muted">
-            Valores estimados com base na tabela ANOREG-DF e podem sofrer alterações sem aviso
-            prévio.
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={primeiroImovel}
+              onChange={(e) => setPrimeiroImovel(e.target.checked)}
+              className="accent-brand"
+            />
+            É o primeiro imóvel do cliente (desconto de 50% no registro da compra e venda)
+          </label>
+
+          <label className="flex items-center gap-2 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={minhaCasaMinhaVida}
+              onChange={(e) => setMinhaCasaMinhaVida(e.target.checked)}
+              className="accent-brand"
+            />
+            Financiamento pelo Minha Casa Minha Vida (desconto de 50% no registro da alienação)
+          </label>
+
+          <p className="border-t border-border pt-4 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            Instrumento particular e ITBI
           </p>
-        </>
-      )}
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ink-muted">
+                Parcelas do ITBI (padrão: 10)
+              </label>
+              <input
+                value={parcelasItbi}
+                onChange={(e) => setParcelasItbi(e.target.value)}
+                inputMode="numeric"
+                className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ink-muted">
+                Valor do instrumento particular (despachante)
+              </label>
+              <CampoMoeda defaultValue={2500} onValorChange={setValorInstrumentoParticular} />
+            </div>
+          </div>
+
+          <p className="rounded-lg bg-background p-3 text-xs text-ink-muted">
+            Os valores são estimativas e podem variar conforme o cartório, o município e a
+            instituição financeira. Consulte os valores oficiais antes de apresentar ao cliente.
+          </p>
+        </div>
+
+        <div className="w-full shrink-0 space-y-4 lg:w-96">
+          <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+            <CabecalhoSecao
+              icon={FileText}
+              titulo="Resumo das custas estimadas"
+              descricao="Valores aproximados, baseados nas informações acima."
+            />
+
+            {!resultado ? (
+              <p className="text-sm text-ink-muted">Preencha os valores ao lado pra calcular.</p>
+            ) : (
+              <>
+                <div className="flex items-center justify-between gap-3 rounded-xl bg-rose-50 p-4">
+                  <div>
+                    <p className="text-sm font-medium text-rose-700">Custo total estimado</p>
+                    <p className="num text-3xl font-bold text-rose-700">{brl(resultado.custoTotal)}</p>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2 rounded-lg bg-surface px-3 py-2 text-right shadow-sm">
+                    <PieChart size={16} strokeWidth={2} className="text-rose-600" />
+                    <span className="text-xs text-ink-muted">
+                      Equivalente a
+                      <br />
+                      <span className="font-semibold text-ink">{resultado.percentualDoImovel}</span> do valor do
+                      imóvel
+                    </span>
+                  </div>
+                </div>
+
+                <p className="mb-2 mt-4 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                  Detalhamento dos custos
+                </p>
+                <ul className="divide-y divide-border text-sm">
+                  {[
+                    {
+                      label: `ITBI (${tipoImovel === "novo" ? "1%" : "2%"})`,
+                      valor: resultado.itbi,
+                      cor: CORES_LINHA[0],
+                    },
+                    {
+                      label: "Registro de compra e venda",
+                      valor: resultado.registroCompraVenda,
+                      cor: CORES_LINHA[1],
+                    },
+                    {
+                      label: "Registro de alienação fiduciária",
+                      valor: resultado.registroAlienacao,
+                      cor: CORES_LINHA[2],
+                    },
+                    { label: "Taxa bancária", valor: resultado.taxaBancaria, cor: CORES_LINHA[3] },
+                    {
+                      label: "Instrumento particular (despachante)",
+                      valor: resultado.instrumentoParticular,
+                      cor: CORES_LINHA[4],
+                    },
+                  ].map((linha) => (
+                    <li key={linha.label} className="flex items-center gap-2 py-2">
+                      <span className={`h-2 w-2 shrink-0 rounded-full ${linha.cor}`} />
+                      <span className="min-w-0 flex-1 text-ink">{linha.label}</span>
+                      <span className="num shrink-0 font-medium text-ink">{brl(linha.valor)}</span>
+                      <span className="num w-12 shrink-0 text-right text-xs text-ink-muted">
+                        {pct(linha.valor, resultado.custoTotal)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="mt-2 flex items-center justify-between rounded-lg bg-rose-50 px-3 py-2.5">
+                  <span className="text-sm font-semibold text-ink">Total estimado</span>
+                  <span className="num font-semibold text-rose-700">{brl(resultado.custoTotal)}</span>
+                </div>
+
+                <div className="mt-4 flex justify-end">
+                  <BotaoCopiarLink texto={textoWhatsapp} rotulo="Copiar como texto" />
+                </div>
+              </>
+            )}
+          </div>
+
+          {resultado && (
+            <div className="rounded-xl border border-blue-100 bg-blue-50 p-4">
+              <div className="flex items-start gap-2.5">
+                <Info size={16} strokeWidth={2} className="mt-0.5 shrink-0 text-blue-600" />
+                <div>
+                  <p className="text-sm font-semibold text-ink">Informações complementares</p>
+                  <ul className="mt-1 list-disc space-y-1 pl-4 text-xs text-ink-muted">
+                    <li>
+                      O ITBI foi calculado com alíquota de {tipoImovel === "novo" ? "1%" : "2%"} (imóvel{" "}
+                      {tipoImovel}).
+                    </li>
+                    {primeiroImovel && (
+                      <li>Foi aplicado o desconto de 50% no registro da compra e venda (primeiro imóvel).</li>
+                    )}
+                    {minhaCasaMinhaVida && (
+                      <li>Foi aplicado o desconto de 50% no registro da alienação (Minha Casa Minha Vida).</li>
+                    )}
+                    <li>O ITBI pode ser parcelado em até {numParcelasItbi}x.</li>
+                    <li>Valores podem variar conforme o cartório, o município e a instituição financeira.</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
