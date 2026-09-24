@@ -4,6 +4,7 @@ import { getEventosCalendario } from "@/lib/queries";
 import { ResumoPrazos } from "@/components/resumo-prazos";
 import { CalendarioGrid } from "@/components/calendario-grid";
 import { TabelaProcessos, type ProcessoRow } from "@/components/tabela-processos";
+import { BuscaTabelaProcessos } from "@/components/busca-tabela-processos";
 import { hojeISO } from "@/lib/data-br";
 import { calcularUrgencia } from "@/lib/alertas";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
@@ -105,7 +106,7 @@ export default async function VendasPage({
     <div className="space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">Vendas</h1>
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Vendas</h1>
           <p className="mt-1 text-sm text-ink-muted">{rows.length} processos nessa categoria</p>
         </div>
         <Link
@@ -166,9 +167,9 @@ export default async function VendasPage({
               </BotaoComConfirmacao>
             </div>
           )}
-          <div className="overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
+          <div className="space-y-3">
             {emAndamento.length === 0 && concluidos.length === 0 ? (
-              <p className="p-8 text-center text-sm text-ink-muted">
+              <p className="rounded-xl border border-border/60 bg-surface p-8 text-center text-sm text-ink-muted shadow-sm">
                 Nenhum processo nessa categoria ainda.{" "}
                 <Link href="/processos/novo" className="text-brand hover:underline">
                   Criar o primeiro
@@ -176,7 +177,11 @@ export default async function VendasPage({
                 .
               </p>
             ) : (
-              <TabelaProcessos rows={emAndamento} ehFinanciamento={false} atrasosPorProcesso={atrasosPorProcesso} />
+              <BuscaTabelaProcessos
+                rows={emAndamento}
+                ehFinanciamento={false}
+                atrasosPorProcesso={atrasosPorProcesso}
+              />
             )}
           </div>
 
