@@ -4,6 +4,7 @@ import { BotaoSubmit } from "@/components/botao-submit";
 import { REGIOES_ADMINISTRATIVAS_DF } from "@/lib/circunscricoes-df";
 import { CampoCPF } from "@/components/campo-cpf";
 import { criarAutorizacao } from "../actions";
+import { User, Home } from "lucide-react";
 
 export default function NovaAutorizacaoPage() {
   return (
@@ -19,7 +20,8 @@ export default function NovaAutorizacaoPage() {
 
       <form action={criarAutorizacao} className="space-y-5 rounded-xl border border-border bg-surface p-5 shadow-sm">
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            <User size={14} strokeWidth={2} />
             Proprietário(a)
           </p>
           <div className="space-y-3">
@@ -86,7 +88,10 @@ export default function NovaAutorizacaoPage() {
         </details>
 
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">Imóvel</p>
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            <Home size={14} strokeWidth={2} />
+            Imóvel
+          </p>
           <div className="space-y-3">
             <input
               name="imovel"
