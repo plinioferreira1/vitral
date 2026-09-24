@@ -3,6 +3,34 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import {
+  Home,
+  Tag,
+  Landmark,
+  Building2,
+  FileSignature,
+  FileText,
+  ClipboardCheck,
+  Calculator,
+  CalendarDays,
+  TrendingUp,
+  Search,
+  BookOpen,
+  BarChart3,
+  Settings,
+  ListChecks,
+  Repeat,
+  GraduationCap,
+  ClipboardList,
+  CalendarClock,
+  BookMarked,
+  Users,
+  LogOut,
+  Menu,
+  X,
+  ChevronRight,
+  type LucideIcon,
+} from "lucide-react";
 
 interface SubNavItem {
   href: string;
@@ -23,6 +51,39 @@ interface Props {
   userCargo: string | null;
   userFoto: string | null;
   sairAction: () => Promise<void>;
+}
+
+// Ícone por prefixo de rota — cobre os itens de nível superior do
+// menu (os subitens dentro de um grupo não têm ícone próprio, igual
+// na referência visual).
+const ICONES: { prefixo: string; Icone: LucideIcon }[] = [
+  { prefixo: "/vendas", Icone: Tag },
+  { prefixo: "/financiamentos", Icone: Landmark },
+  { prefixo: "/locacao", Icone: Building2 },
+  { prefixo: "/autorizacoes", Icone: FileSignature },
+  { prefixo: "/propostas", Icone: FileText },
+  { prefixo: "/termos-visita", Icone: ClipboardCheck },
+  { prefixo: "/calculadora-data", Icone: CalendarDays },
+  { prefixo: "/calculadora", Icone: Calculator },
+  { prefixo: "/cartorio", Icone: TrendingUp },
+  { prefixo: "/avaliacao-imovel", Icone: Search },
+  { prefixo: "/corretor", Icone: BookOpen },
+  { prefixo: "/relatorio-semanal", Icone: BarChart3 },
+  { prefixo: "/etapas-padrao", Icone: ListChecks },
+  { prefixo: "/tarefas-recorrentes", Icone: Repeat },
+  { prefixo: "/onboarding-corretor", Icone: GraduationCap },
+  { prefixo: "/checklists-financiamento", Icone: ClipboardList },
+  { prefixo: "/google-agenda", Icone: CalendarClock },
+  { prefixo: "/tutoriais", Icone: BookMarked },
+  { prefixo: "/membros", Icone: Users },
+  { prefixo: "/configuracoes", Icone: Settings },
+];
+
+function iconePara(hrefOuLabel: string): LucideIcon {
+  if (hrefOuLabel === "/") return Home;
+  if (hrefOuLabel === "Configurações") return Settings;
+  const achado = ICONES.find((i) => hrefOuLabel.startsWith(i.prefixo));
+  return achado?.Icone ?? FileText;
 }
 
 // Compara caminho E os parâmetros de query presentes no href (ex:
@@ -108,6 +169,7 @@ export function AppShell({
       {navItems.map((item) => {
         if (!item.children) {
           const ativo = ehAtivo(pathname, item.href!, searchParams);
+          const Icone = iconePara(item.href!);
           return (
             <Link
               key={item.label}
@@ -116,41 +178,43 @@ export function AppShell({
                 setMenuAberto(false);
                 setGruposAbertos(new Set());
               }}
-              className={`block rounded-md px-2.5 py-2 text-sm transition ${
+              className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
                 ativo
                   ? "bg-brand-soft font-medium text-brand"
                   : "text-ink-muted hover:bg-background hover:text-ink"
               }`}
             >
-              {item.label}
+              <Icone size={17} strokeWidth={2} className="shrink-0" />
+              <span className="truncate">{item.label}</span>
             </Link>
           );
         }
 
         const aberto = gruposAbertos.has(item.label);
         const algumFilhoAtivo = item.children.some((c) => ehAtivo(pathname, c.href, searchParams));
+        const Icone = iconePara(item.label);
 
         return (
           <div key={item.label}>
             <button
               type="button"
               onClick={() => alternarGrupo(item.label)}
-              className={`flex w-full items-center justify-between rounded-md px-2.5 py-2 text-sm transition ${
-                algumFilhoAtivo ? "font-medium text-brand" : "text-ink-muted hover:bg-background hover:text-ink"
+              className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
+                algumFilhoAtivo
+                  ? "bg-brand-soft font-medium text-brand"
+                  : "text-ink-muted hover:bg-background hover:text-ink"
               }`}
             >
-              {item.label}
-              <svg
-                width="10"
-                height="10"
-                viewBox="0 0 12 12"
-                className={`transition-transform ${aberto ? "rotate-90" : ""}`}
-              >
-                <path d="M4 2l4 4-4 4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
+              <Icone size={17} strokeWidth={2} className="shrink-0" />
+              <span className="min-w-0 flex-1 truncate text-left">{item.label}</span>
+              <ChevronRight
+                size={14}
+                strokeWidth={2}
+                className={`shrink-0 transition-transform ${aberto ? "rotate-90" : ""}`}
+              />
             </button>
             {aberto && (
-              <div className="ml-2 space-y-0.5 border-l border-border pl-2">
+              <div className="ml-[1.15rem] space-y-0.5 border-l border-border pl-3.5 pt-0.5">
                 {item.children.map((child) => {
                   const ativo = ehAtivo(pathname, child.href, searchParams);
                   return (
@@ -158,7 +222,7 @@ export function AppShell({
                       key={child.href}
                       href={child.href}
                       onClick={() => setMenuAberto(false)}
-                      className={`block rounded-md px-2.5 py-1.5 text-sm transition ${
+                      className={`block rounded-lg px-2.5 py-1.5 text-sm transition ${
                         ativo
                           ? "bg-brand-soft font-medium text-brand"
                           : "text-ink-muted hover:bg-background hover:text-ink"
@@ -181,25 +245,26 @@ export function AppShell({
       <Link
         href="/perfil"
         onClick={() => setMenuAberto(false)}
-        className="flex items-center gap-2 rounded-md px-2.5 py-1.5 transition hover:bg-background"
+        className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition hover:bg-background"
       >
         {userFoto ? (
-          <img src={userFoto} alt="" className="h-8 w-8 rounded-full object-cover" />
+          <img src={userFoto} alt="" className="h-9 w-9 shrink-0 rounded-full object-cover" />
         ) : (
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-serif font-semibold text-white">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-semibold text-white">
             {iniciais || "?"}
           </div>
         )}
         <span className="min-w-0">
-          <p className="truncate text-xs font-medium text-ink">{userName}</p>
+          <p className="truncate text-sm font-medium text-ink">{userName}</p>
           <p className="truncate text-xs text-ink-muted">{userCargo || userPerfil}</p>
         </span>
       </Link>
       <form action={sairAction}>
         <button
           type="submit"
-          className="mt-1 w-full rounded-md px-2.5 py-1.5 text-left text-xs text-ink-muted transition hover:bg-background hover:text-ink"
+          className="mt-1 flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs text-ink-muted transition hover:bg-background hover:text-ink"
         >
+          <LogOut size={14} strokeWidth={2} />
           Sair
         </button>
       </form>
@@ -209,7 +274,7 @@ export function AppShell({
   return (
     <>
       {/* Desktop: sidebar fixa */}
-      <aside className="hidden w-56 shrink-0 flex-col border-r border-border bg-surface px-3 py-4 md:flex">
+      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-surface px-3 py-4 md:flex">
         <div className="mb-6">{logo}</div>
         {nav}
         {rodape}
@@ -225,14 +290,7 @@ export function AppShell({
             onClick={() => setMenuAberto(true)}
             className="flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-background"
           >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-              <path
-                d="M2.5 5h15M2.5 10h15M2.5 15h15"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-            </svg>
+            <Menu size={20} strokeWidth={1.75} />
           </button>
         </header>
 
@@ -252,14 +310,7 @@ export function AppShell({
                   onClick={() => setMenuAberto(false)}
                   className="flex h-8 w-8 items-center justify-center rounded-md text-ink-muted hover:bg-background"
                 >
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                    <path
-                      d="M2 2l12 12M14 2L2 14"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeLinecap="round"
-                    />
-                  </svg>
+                  <X size={16} strokeWidth={1.75} />
                 </button>
               </div>
               {nav}
