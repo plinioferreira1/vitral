@@ -31,6 +31,24 @@ const COR_PRAZO_TEXTO: Record<CardPrazo["cor"], string> = {
   verde: "text-emerald-700",
 };
 
+// Paleta de cores das colunas do Kanban — cada coluna (etapa) recebe
+// uma cor diferente, em sequência, só pra facilitar a leitura visual
+// (não tem relação com status/urgência, é só identificação).
+const PALETA_COLUNA = [
+  { borda: "border-t-brand", texto: "text-brand", selo: "bg-brand-soft text-brand" },
+  { borda: "border-t-amber-500", texto: "text-amber-700", selo: "bg-amber-50 text-amber-700" },
+  { borda: "border-t-blue-500", texto: "text-blue-700", selo: "bg-blue-50 text-blue-700" },
+  { borda: "border-t-emerald-500", texto: "text-emerald-700", selo: "bg-emerald-50 text-emerald-700" },
+  { borda: "border-t-violet-500", texto: "text-violet-700", selo: "bg-violet-50 text-violet-700" },
+  { borda: "border-t-rose-400", texto: "text-rose-700", selo: "bg-rose-50 text-rose-700" },
+  { borda: "border-t-cyan-500", texto: "text-cyan-700", selo: "bg-cyan-50 text-cyan-700" },
+  { borda: "border-t-orange-500", texto: "text-orange-700", selo: "bg-orange-50 text-orange-700" },
+  { borda: "border-t-indigo-500", texto: "text-indigo-700", selo: "bg-indigo-50 text-indigo-700" },
+  { borda: "border-t-teal-500", texto: "text-teal-700", selo: "bg-teal-50 text-teal-700" },
+  { borda: "border-t-fuchsia-500", texto: "text-fuchsia-700", selo: "bg-fuchsia-50 text-fuchsia-700" },
+  { borda: "border-t-lime-500", texto: "text-lime-700", selo: "bg-lime-50 text-lime-700" },
+];
+
 /**
  * Agrupa processos em colunas pela etapa atual (a primeira etapa
  * sequencial ainda não concluída). Processos sem etapa em aberto
@@ -93,8 +111,9 @@ export function KanbanProcessos({
   return (
     <div className="flex gap-4">
       <div className={`flex flex-1 gap-4 overflow-x-auto pb-2 ${pendente ? "opacity-60" : ""}`}>
-        {colunasParaMostrar.map((coluna) => {
+        {colunasParaMostrar.map((coluna, indice) => {
         const cardsColuna = cardsPorColuna.get(coluna) ?? [];
+        const cor = PALETA_COLUNA[indice % PALETA_COLUNA.length];
         return (
           <div
             key={coluna}
@@ -111,9 +130,9 @@ export function KanbanProcessos({
               colunaAlvo === coluna ? "bg-brand/5 ring-2 ring-brand/30" : ""
             }`}
           >
-            <div className="mb-2 flex items-center justify-between px-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{coluna}</p>
-              <span className="rounded-full bg-background px-2 py-0.5 text-xs text-ink-muted">
+            <div className={`mb-2 flex items-center justify-between border-t-4 ${cor.borda} px-1 pt-2`}>
+              <p className={`text-xs font-semibold uppercase tracking-wide ${cor.texto}`}>{coluna}</p>
+              <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${cor.selo}`}>
                 {cardsColuna.length}
               </span>
             </div>

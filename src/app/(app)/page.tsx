@@ -343,6 +343,7 @@ export default async function DashboardPage({
                   quadros={quadrosKanban.map((q) => ({
                     id: q.categoria,
                     titulo: q.titulo,
+                    total: q.stats.total,
                     colunas: q.colunas,
                     cards: q.cards,
                   }))}
