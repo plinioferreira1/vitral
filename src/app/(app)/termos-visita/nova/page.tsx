@@ -11,7 +11,7 @@ export default function NovoTermoVisitaPage() {
     <div className="max-w-xl space-y-6">
       <div>
         <VoltarLink href="/termos-visita" label="Termos de Visita" />
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Novo termo de visita</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Novo termo de visita</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Depois de criar, você vai poder copiar o link de assinatura, ou passar o
           celular/tablet pro cliente assinar na hora, ao fim da visita.

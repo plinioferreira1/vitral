@@ -76,7 +76,7 @@ export default async function TermoVisitaDetalhePage({
       <div>
         <VoltarLink href="/termos-visita" label="Termos de Visita" />
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
             {t.imoveis?.endereco ?? "—"}
           </h1>
           <span

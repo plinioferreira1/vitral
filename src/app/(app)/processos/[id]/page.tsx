@@ -133,7 +133,7 @@ export default async function ProcessoDetalhePage({
         <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="font-mono text-xs text-ink-muted">{p.numero_processo}</p>
-            <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">
+            <h1 className="mt-1 text-[28px] font-bold leading-tight tracking-tight text-ink">
               {p.modelos_processo?.nome} — {p.comprador?.nome ?? "Sem comprador"}
             </h1>
           </div>

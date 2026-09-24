@@ -81,7 +81,7 @@ export default async function PropostaDetalhePage({
       <div>
         <VoltarLink href="/propostas" label="Cartas Proposta" />
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
             {p.imoveis?.endereco ?? "—"}
           </h1>
           <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_COR[p.status]}`}>

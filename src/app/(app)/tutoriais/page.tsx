@@ -29,7 +29,7 @@ export default async function TutoriaisPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Tutoriais</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Tutoriais</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Tutoriais de como usar o Vitral, organizados por categoria (ex: Vendas, Financiamento,
           Locação, Google Agenda). Aparecem pra todo mundo na aba Onboarding. Pode ser um vídeo

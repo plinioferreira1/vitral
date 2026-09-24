@@ -14,7 +14,7 @@ export default function NovaCartaPropostaPage() {
     <div className="max-w-xl space-y-6">
       <div>
         <VoltarLink href="/propostas" label="Cartas Proposta" />
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Nova carta proposta</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Nova carta proposta</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Depois de criar, você vai poder copiar o link de assinatura do proponente, ou passar o
           celular/tablet pra assinar na hora.

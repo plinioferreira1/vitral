@@ -34,7 +34,7 @@ export default async function TarefasRecorrentesPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Tarefas recorrentes</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Tarefas recorrentes</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Aparecem na aba Resumo de Locação e no Calendário, recalculadas automaticamente todo
           mês — não precisa recadastrar.

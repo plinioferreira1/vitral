@@ -68,7 +68,7 @@ export default async function MembrosPage({
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Membros</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Membros</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Convide a diretora e os outros gerentes pro mesmo espaço de trabalho. Só é possível
           criar conta no Vitral com um link de convite — ninguém de fora consegue se cadastrar

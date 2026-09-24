@@ -20,7 +20,7 @@ export default async function NovoContratoLocacaoPage({
     <div className="max-w-lg space-y-6">
       <div>
         <VoltarLink href="/locacao" label="Locação" />
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Novo contrato de locação</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Novo contrato de locação</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Depois de criar, você vai poder marcar o status de cada conta (IPTU e condomínio) mês a
           mês.

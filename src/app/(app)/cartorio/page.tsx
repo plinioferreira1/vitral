@@ -155,7 +155,7 @@ export default function CartorioPage() {
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
           Simulação de Custas
         </h1>
         <p className="mt-1 text-sm text-ink-muted">

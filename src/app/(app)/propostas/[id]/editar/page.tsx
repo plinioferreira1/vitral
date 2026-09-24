@@ -62,7 +62,7 @@ export default async function EditarCartaPropostaPage({
     <div className="max-w-xl space-y-6">
       <div>
         <VoltarLink href={`/propostas/${id}`} label="Proposta" />
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Editar carta proposta</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Editar carta proposta</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Só é possível editar enquanto ninguém tiver assinado.
         </p>

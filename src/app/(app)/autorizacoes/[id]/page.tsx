@@ -78,7 +78,7 @@ export default async function AutorizacaoDetalhePage({
       <div>
         <VoltarLink href="/autorizacoes" label="Autorizações" />
         <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
             {a.imoveis?.endereco ?? "—"}
           </h1>
           <span

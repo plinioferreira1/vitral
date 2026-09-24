@@ -33,7 +33,7 @@ export default async function CorretorPage() {
   return (
     <div className="max-w-2xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Onboarding</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Onboarding</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Primeiros passos, tutoriais de como usar o sistema e materiais de referência.
         </p>

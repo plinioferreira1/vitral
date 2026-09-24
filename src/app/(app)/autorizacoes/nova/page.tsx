@@ -10,7 +10,7 @@ export default function NovaAutorizacaoPage() {
     <div className="max-w-xl space-y-6">
       <div>
         <VoltarLink href="/autorizacoes" label="Autorizações" />
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Nova autorização de venda</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Nova autorização de venda</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Depois de criar, você vai poder copiar o link de assinatura de cada proprietário, ou
           passar o celular/tablet pra assinarem na hora.
