@@ -18,6 +18,7 @@ import {
   salvarComissao,
   adicionarComentario,
   salvarNumeroRegistro,
+  salvarCodigoSanProcesso,
   salvarDadosProcesso,
 } from "./actions";
 import { EditorLinhaTempo } from "@/components/editor-linha-tempo";
@@ -263,7 +264,35 @@ export default async function ProcessoDetalhePage({
           <Info label="Banco" value={p.bancos?.nome} />
           <Info label="Corretor" value={p.corretores?.nome} />
           <Info label="Responsável" value={p.usuarios?.nome} />
-          <Info label="Código SAN" value={p.codigo_san} />
+          <div>
+            <p className="text-xs text-ink-muted">Código SAN</p>
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <p className="text-sm font-medium text-ink">{p.codigo_san || "—"}</p>
+              <details className="relative">
+                <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
+                  editar
+                </summary>
+                <form
+                  action={salvarCodigoSanProcesso}
+                  className="absolute left-0 z-10 mt-1 flex w-56 gap-1.5 rounded-md border border-border bg-surface p-2 shadow-md"
+                >
+                  <input type="hidden" name="processo_id" value={p.id} />
+                  <input
+                    name="codigo_san"
+                    defaultValue={p.codigo_san ?? ""}
+                    placeholder="Código SAN"
+                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                  />
+                  <button
+                    type="submit"
+                    className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                  >
+                    Salvar
+                  </button>
+                </form>
+              </details>
+            </div>
+          </div>
           {ehFinanciamento && (
             <>
               <Info
