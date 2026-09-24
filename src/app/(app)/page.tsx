@@ -13,6 +13,18 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import type { CategoriaProcesso } from "@/lib/types";
 import { calcularUrgencia } from "@/lib/alertas";
+import { CabecalhoSecao } from "@/components/cabecalho-secao";
+import { CartaoIndicador } from "@/components/cartao-indicador";
+import {
+  FileText,
+  AlertTriangle,
+  CalendarClock,
+  CalendarDays,
+  ListChecks,
+  Check,
+  Clock,
+  Calendar,
+} from "lucide-react";
 
 const COR_PRAZO_FUNDO: Record<CardPrazo["cor"], string> = {
   vermelho: "border-rose-200 bg-rose-50",
@@ -113,6 +125,7 @@ export default async function DashboardPage() {
     colunas: string[];
     cards: CardKanban[];
     colunaPrazos?: { titulo: string; cards: CardPrazo[] };
+    stats: { total: number; atrasados: number; venceHoje: number; venceEmBreve: number };
   }[] = [];
 
   if (ehAdmin && usuario.tenant_id) {
@@ -153,6 +166,22 @@ export default async function DashboardPage() {
         if (urgencia === "atrasada") {
           atrasosPorProcesso.set(e.processo_id, (atrasosPorProcesso.get(e.processo_id) ?? 0) + 1);
         }
+      });
+
+      // Conta, por processo, se alguma etapa está atrasada, vence
+      // hoje ou vence nos próximos 7 dias — pra alimentar os
+      // indicadores do topo da tela inicial.
+      const processosAtrasados = new Set<string>();
+      const processosVenceHoje = new Set<string>();
+      const processosVenceEmBreve = new Set<string>();
+      (etapasRaw ?? []).forEach((e) => {
+        const { urgencia } = calcularUrgencia({
+          status: e.status as "pendente" | "em_andamento" | "concluida" | "bloqueada",
+          data_prevista: e.data_prevista,
+        });
+        if (urgencia === "atrasada") processosAtrasados.add(e.processo_id);
+        if (urgencia === "vence_hoje") processosVenceHoje.add(e.processo_id);
+        if (urgencia === "vence_em_breve") processosVenceEmBreve.add(e.processo_id);
       });
 
       const [colunas, etapaAtualMap] = await Promise.all([
@@ -203,6 +232,12 @@ export default async function DashboardPage() {
           atrasos: atrasosPorProcesso.get(p.id) ?? 0,
         })),
         colunaPrazos,
+        stats: {
+          total: processos.length,
+          atrasados: processosAtrasados.size,
+          venceHoje: processosVenceHoje.size,
+          venceEmBreve: processosVenceEmBreve.size,
+        },
       };
     }
 
@@ -214,18 +249,47 @@ export default async function DashboardPage() {
 
   const quadroPrazos = quadrosKanban.find((q) => q.colunaPrazos)?.colunaPrazos ?? null;
 
+  const totais = quadrosKanban.reduce(
+    (acc, q) => ({
+      total: acc.total + q.stats.total,
+      atrasados: acc.atrasados + q.stats.atrasados,
+      venceHoje: acc.venceHoje + q.stats.venceHoje,
+      venceEmBreve: acc.venceEmBreve + q.stats.venceEmBreve,
+    }),
+    { total: 0, atrasados: 0, venceHoje: 0, venceEmBreve: 0 }
+  );
+
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
           {saudacao()}, {usuario.nome.split(" ")[0]}
         </h1>
         <p className="mt-1 text-sm text-ink-muted capitalize">{mesCapitalizado}</p>
       </div>
 
+      {ehAdmin && quadrosKanban.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <CartaoIndicador icon={FileText} valor={totais.total} label="Processos em andamento" />
+          <CartaoIndicador
+            icon={AlertTriangle}
+            valor={totais.atrasados}
+            label="Atrasados"
+            tom={totais.atrasados > 0 ? "perigo" : "neutro"}
+          />
+          <CartaoIndicador
+            icon={CalendarClock}
+            valor={totais.venceHoje}
+            label="Vencendo hoje"
+            tom={totais.venceHoje > 0 ? "alerta" : "neutro"}
+          />
+          <CartaoIndicador icon={CalendarDays} valor={totais.venceEmBreve} label="Vencem em 7 dias" />
+        </div>
+      )}
+
       {tarefasHoje.length > 0 && (
         <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-          <p className="mb-3 text-sm font-semibold text-ink">Tarefas do dia</p>
+          <CabecalhoSecao icon={ListChecks} titulo="Tarefas do dia" />
           <div className="space-y-2">
             {tarefasHoje.map((t) => (
               <form key={`${t.tarefaId}-${t.competencia}`} action={alternarTarefaMensal}>
@@ -239,17 +303,7 @@ export default async function DashboardPage() {
                       t.concluida ? "border-brand bg-brand text-white" : "border-border-strong bg-surface"
                     }`}
                   >
-                    {t.concluida && (
-                      <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                        <path
-                          d="M2 6.5L4.5 9L10 3"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    )}
+                    {t.concluida && <Check size={12} strokeWidth={3} />}
                   </span>
                   <span className={t.concluida ? "text-ink-muted line-through" : "text-ink"}>{t.nome}</span>
                 </button>
@@ -276,7 +330,7 @@ export default async function DashboardPage() {
 
               {quadroPrazos && (
                 <div className="w-full shrink-0 rounded-xl border border-border/60 bg-surface p-5 shadow-sm lg:w-72">
-                  <p className="mb-3 text-sm font-semibold text-ink">{quadroPrazos.titulo}</p>
+                  <CabecalhoSecao icon={Clock} titulo={quadroPrazos.titulo} />
                   {quadroPrazos.cards.length === 0 ? (
                     <p className="text-sm text-ink-muted">Nenhum prazo cadastrado.</p>
                   ) : (
@@ -303,7 +357,7 @@ export default async function DashboardPage() {
           )}
 
           <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-            <p className="mb-3 text-sm font-semibold text-ink">Calendário</p>
+            <CabecalhoSecao icon={Calendar} titulo="Calendário" />
             <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={3} />
           </div>
         </>
