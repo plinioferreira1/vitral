@@ -35,6 +35,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     ? [
         { href: "/", label: "Início" },
         { href: "/calculadora", label: "Calculadora de Proporcionalidade" },
+        { href: "/calculadora-data", label: "Calculadora de Datas" },
         { href: "/cartorio", label: "Simulação de Custas" },
         { href: "/avaliacao-imovel", label: "Avaliação de Imóvel" },
         { href: "/termos-visita", label: "Termo de Visita" },
@@ -84,6 +85,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         { href: "/propostas", label: "Carta Proposta" },
         { href: "/termos-visita", label: "Termo de Visita" },
         { href: "/calculadora", label: "Calculadora de Proporcionalidade" },
+        { href: "/calculadora-data", label: "Calculadora de Datas" },
         { href: "/cartorio", label: "Simulação de Custas" },
         { href: "/avaliacao-imovel", label: "Avaliação de Imóvel" },
         { href: "/corretor", label: "Onboarding" },
