@@ -3,6 +3,8 @@ import { createClient } from "@/lib/supabase/server";
 import { alternarEtapaOnboarding } from "./actions";
 import { MateriaisCorretor } from "@/components/materiais-corretor";
 import { TutoriaisSistema } from "@/components/tutoriais-sistema";
+import { CabecalhoSecao } from "@/components/cabecalho-secao";
+import { Sparkles, ListChecks, Check } from "lucide-react";
 
 export default async function CorretorPage() {
   const supabase = await createClient();
@@ -41,12 +43,16 @@ export default async function CorretorPage() {
 
       {total > 0 && (
         <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
-          <div className="mb-2 flex items-center justify-between text-xs text-ink-muted">
-            <span>Progresso</span>
-            <span>
-              {concluidas} de {total}
-            </span>
-          </div>
+          <CabecalhoSecao
+            icon={Sparkles}
+            titulo="Seu progresso"
+            descricao="Conclua os tutoriais e guias para aproveitar todo o potencial do sistema."
+            acao={
+              <span className="shrink-0 text-xs text-ink-muted">
+                {concluidas} de {total}
+              </span>
+            }
+          />
           <div className="h-2 overflow-hidden rounded-full bg-background">
             <div
               className="h-full rounded-full bg-brand transition-all"
@@ -56,9 +62,11 @@ export default async function CorretorPage() {
         </div>
       )}
 
-      <div className="space-y-3">
+      <div>
+        <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink">Primeiros passos</h2>
+        <div className="grid gap-3 sm:grid-cols-2">
         {(etapas ?? []).length === 0 ? (
-          <p className="rounded-xl border border-border/60 bg-surface p-6 text-center text-sm text-ink-muted shadow-sm">
+          <p className="rounded-xl border border-border/60 bg-surface p-6 text-center text-sm text-ink-muted shadow-sm sm:col-span-2">
             Nenhum passo cadastrado ainda.
           </p>
         ) : (
@@ -81,19 +89,12 @@ export default async function CorretorPage() {
                     }`}
                     aria-label={`Marcar ${e.nome} como ${concluida ? "não concluído" : "concluído"}`}
                   >
-                    {concluida && (
-                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                        <path
-                          d="M2 6.5L4.5 9L10 3"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
-                    )}
+                    {concluida && <Check size={12} strokeWidth={3} />}
                   </button>
                 </form>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
+                  <ListChecks size={18} strokeWidth={2} />
+                </div>
                 <div className="min-w-0 flex-1">
                   <p className={`text-sm font-medium ${concluida ? "text-ink-muted line-through" : "text-ink"}`}>
                     {e.nome}
@@ -109,6 +110,7 @@ export default async function CorretorPage() {
             );
           })
         )}
+        </div>
       </div>
 
       <TutoriaisSistema tutoriais={tutoriais ?? []} />
