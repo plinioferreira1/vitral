@@ -2,7 +2,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getEventosCalendario } from "@/lib/queries";
 import { CalendarioGrid } from "@/components/calendario-grid";
-import { KanbanProcessos, type CardKanban, type CardPrazo } from "@/components/kanban-processos";
+import { KanbanComAbas } from "@/components/kanban-com-abas";
+import type { CardKanban, CardPrazo } from "@/components/kanban-processos";
 import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
 import { getPermissoesUsuario } from "@/lib/permissoes";
 import { hojeISO } from "@/lib/data-br";
@@ -62,15 +63,6 @@ export default async function DashboardPage() {
   const referencia = new Date(`${hojeISO()}T00:00:00`);
   const mesLabel = format(referencia, "MMMM 'de' yyyy", { locale: ptBR });
   const mesCapitalizado = mesLabel.charAt(0).toUpperCase() + mesLabel.slice(1);
-
-  const atalhos = [
-    ...(temVenda || temFinanciamento
-      ? [{ href: "/processos/novo", label: "Novo processo" }]
-      : []),
-    ...(temLocacao ? [{ href: "/locacao/novo", label: "Novo contrato de locação" }] : []),
-    { href: "/autorizacoes/nova", label: "Nova autorização de venda" },
-    { href: "/termos-visita/nova", label: "Novo termo de visita" },
-  ];
 
   let tarefasHoje: {
     tarefaId: string;
@@ -220,6 +212,8 @@ export default async function DashboardPage() {
     ]);
   }
 
+  const quadroPrazos = quadrosKanban.find((q) => q.colunaPrazos)?.colunaPrazos ?? null;
+
   return (
     <div className="space-y-8">
       <div>
@@ -227,18 +221,6 @@ export default async function DashboardPage() {
           {saudacao()}, {usuario.nome.split(" ")[0]}
         </h1>
         <p className="mt-1 text-sm text-ink-muted capitalize">{mesCapitalizado}</p>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {atalhos.map((a) => (
-          <Link
-            key={a.href}
-            href={a.href}
-            className="rounded-xl border border-border/60 bg-surface p-4 text-sm font-medium text-ink shadow-sm transition hover:border-brand hover:bg-background"
-          >
-            + {a.label}
-          </Link>
-        ))}
       </div>
 
       {tarefasHoje.length > 0 && (
@@ -280,43 +262,43 @@ export default async function DashboardPage() {
       {ehAdmin && (
         <>
           {quadrosKanban.length > 0 && (
-            <div className="space-y-6">
-              {quadrosKanban.map((q) => (
-                <div key={q.categoria} className="space-y-4">
-                  <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-                    <p className="mb-3 text-sm font-semibold text-ink">Quadro — {q.titulo}</p>
-                    <KanbanProcessos colunas={q.colunas} cards={q.cards} />
-                  </div>
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+              <div className="min-w-0 flex-1 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+                <KanbanComAbas
+                  quadros={quadrosKanban.map((q) => ({
+                    id: q.categoria,
+                    titulo: q.titulo,
+                    colunas: q.colunas,
+                    cards: q.cards,
+                  }))}
+                />
+              </div>
 
-                  {q.colunaPrazos && (
-                    <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-                      <p className="mb-3 text-sm font-semibold text-ink">
-                        Quadro — {q.colunaPrazos.titulo} ({q.titulo})
-                      </p>
-                      {q.colunaPrazos.cards.length === 0 ? (
-                        <p className="text-sm text-ink-muted">Nenhum prazo cadastrado.</p>
-                      ) : (
-                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-                          {q.colunaPrazos.cards.map((card) => (
-                            <Link
-                              key={card.id}
-                              href={`/processos/${card.id}`}
-                              className={`block rounded-xl border p-3 shadow-sm transition hover:opacity-80 ${
-                                COR_PRAZO_FUNDO[card.cor]
-                              }`}
-                            >
-                              <p className="text-sm font-medium text-ink">{card.titulo}</p>
-                              <p className={`mt-0.5 text-xs font-medium ${COR_PRAZO_TEXTO[card.cor]}`}>
-                                {card.subtitulo}
-                              </p>
-                            </Link>
-                          ))}
-                        </div>
-                      )}
+              {quadroPrazos && (
+                <div className="w-full shrink-0 rounded-xl border border-border/60 bg-surface p-5 shadow-sm lg:w-72">
+                  <p className="mb-3 text-sm font-semibold text-ink">{quadroPrazos.titulo}</p>
+                  {quadroPrazos.cards.length === 0 ? (
+                    <p className="text-sm text-ink-muted">Nenhum prazo cadastrado.</p>
+                  ) : (
+                    <div className="max-h-[560px] space-y-2 overflow-y-auto">
+                      {quadroPrazos.cards.map((card) => (
+                        <Link
+                          key={card.id}
+                          href={`/processos/${card.id}`}
+                          className={`block rounded-xl border p-3 shadow-sm transition hover:opacity-80 ${
+                            COR_PRAZO_FUNDO[card.cor]
+                          }`}
+                        >
+                          <p className="text-sm font-medium text-ink">{card.titulo}</p>
+                          <p className={`mt-0.5 text-xs font-medium ${COR_PRAZO_TEXTO[card.cor]}`}>
+                            {card.subtitulo}
+                          </p>
+                        </Link>
+                      ))}
                     </div>
                   )}
                 </div>
-              ))}
+              )}
             </div>
           )}
 
