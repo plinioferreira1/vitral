@@ -28,6 +28,8 @@ import { CampoMoeda } from "@/components/campo-moeda";
 import { hojeISO } from "@/lib/data-br";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { apagarContrato } from "../bulk-actions";
+import { CabecalhoSecao } from "@/components/cabecalho-secao";
+import { FileWarning, FileText, Calendar } from "lucide-react";
 
 const MESES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez",
@@ -162,7 +164,7 @@ export default async function ContratoLocacaoPage({
         <SucessoBanner mostrar={salvo === "1"} texto="Contrato salvo com sucesso." />
         <div className="mt-2 flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-ink">
+            <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
               {c.imoveis?.endereco ?? c.numero ?? "Sem imóvel definido"}
             </h1>
           </div>
@@ -184,8 +186,8 @@ export default async function ContratoLocacaoPage({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div className="rounded-lg border border-border bg-surface p-3">
+        <div className="mt-4 grid gap-4 rounded-xl border border-border/60 bg-surface p-4 shadow-sm sm:grid-cols-3">
+          <div>
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
               Locador
             </p>
@@ -193,7 +195,7 @@ export default async function ContratoLocacaoPage({
             {c.locador?.telefone && <p className="text-xs text-ink-muted">{c.locador.telefone}</p>}
             {c.locador?.email && <p className="text-xs text-ink-muted">{c.locador.email}</p>}
           </div>
-          <div className="rounded-lg border border-border bg-surface p-3">
+          <div>
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
               Locatário
             </p>
@@ -201,21 +203,30 @@ export default async function ContratoLocacaoPage({
             {c.locatario?.telefone && <p className="text-xs text-ink-muted">{c.locatario.telefone}</p>}
             {c.locatario?.email && <p className="text-xs text-ink-muted">{c.locatario.email}</p>}
           </div>
+          <div>
+            <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
+              Emite NF
+            </p>
+            <p className="text-sm font-medium text-ink">{c.emite_nf ? "Sim" : "Não"}</p>
+          </div>
         </div>
-
-        <p className="mt-2 text-xs text-ink-muted">Emite NF: {c.emite_nf ? "Sim" : "Não"}</p>
       </div>
 
       {/* Rescisão */}
       <section>
         {rescisaoAtiva ? (
           <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
-            <div className="mb-1 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-ink">Rescisão do contrato</h2>
-              <span className="text-xs text-ink-muted">
-                {rescisaoEtapas.filter((e) => e.status === "concluida").length} de{" "}
-                {rescisaoEtapas.length} etapas concluídas
-              </span>
+            <div className="mb-1">
+              <CabecalhoSecao
+                icon={FileWarning}
+                titulo="Rescisão do contrato"
+                acao={
+                  <span className="text-xs text-ink-muted">
+                    {rescisaoEtapas.filter((e) => e.status === "concluida").length} de{" "}
+                    {rescisaoEtapas.length} etapas concluídas
+                  </span>
+                }
+              />
             </div>
             <p className="mb-4 text-xs text-ink-muted">
               Aviso recebido em{" "}
@@ -340,12 +351,11 @@ export default async function ContratoLocacaoPage({
           </div>
         ) : (
           <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
-            <h2 className="mb-1 text-sm font-semibold text-ink">Rescisão do contrato</h2>
-            <p className="mb-3 text-xs text-ink-muted">
-              Use quando o inquilino avisar (por e-mail, de preferência) que vai encerrar o
-              contrato. Isso cria o passo a passo completo pra acompanhar, do aviso até a
-              entrega do imóvel.
-            </p>
+            <CabecalhoSecao
+              icon={FileWarning}
+              titulo="Rescisão do contrato"
+              descricao="Use quando o inquilino avisar (por e-mail, de preferência) que vai encerrar o contrato. Isso cria o passo a passo completo pra acompanhar, do aviso até a entrega do imóvel."
+            />
             <form action={iniciarRescisao} className="flex flex-wrap items-end gap-3">
               <input type="hidden" name="contrato_id" value={id} />
               <div>
@@ -372,23 +382,26 @@ export default async function ContratoLocacaoPage({
 
       {/* Grid de contas */}
       <section>
-        <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-ink">Contas — {ano}</h2>
-          <div className="flex gap-1 text-xs">
-            <a
-              href={`/locacao/${id}?ano=${ano - 1}`}
-              className="rounded-md border border-border px-2 py-1 text-ink-muted hover:bg-background"
-            >
-              ← {ano - 1}
-            </a>
-            <a
-              href={`/locacao/${id}?ano=${ano + 1}`}
-              className="rounded-md border border-border px-2 py-1 text-ink-muted hover:bg-background"
-            >
-              {ano + 1} →
-            </a>
-          </div>
-        </div>
+        <CabecalhoSecao
+          icon={Calendar}
+          titulo={`Contas — ${ano}`}
+          acao={
+            <div className="flex gap-1 text-xs">
+              <a
+                href={`/locacao/${id}?ano=${ano - 1}`}
+                className="rounded-md border border-border px-2 py-1 text-ink-muted hover:bg-background"
+              >
+                ← {ano - 1}
+              </a>
+              <a
+                href={`/locacao/${id}?ano=${ano + 1}`}
+                className="rounded-md border border-border px-2 py-1 text-ink-muted hover:bg-background"
+              >
+                {ano + 1} →
+              </a>
+            </div>
+          }
+        />
 
         <p className="mb-3 text-xs text-ink-muted">
           Toque numa célula pra marcar como paga; toque de novo pra desmarcar.
@@ -543,7 +556,7 @@ export default async function ContratoLocacaoPage({
 
       {/* Dados do contrato */}
       <section>
-        <h2 className="mb-3 text-sm font-semibold text-ink">Dados do contrato</h2>
+        <CabecalhoSecao icon={FileText} titulo="Dados do contrato" />
         <form action={atualizarContrato} className="space-y-4 rounded-xl border border-border/60 bg-surface shadow-sm p-5">
           <input type="hidden" name="id" value={id} />
 
