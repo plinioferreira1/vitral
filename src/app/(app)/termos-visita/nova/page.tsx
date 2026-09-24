@@ -3,6 +3,7 @@ import { CampoMoeda } from "@/components/campo-moeda";
 import { BotaoSubmit } from "@/components/botao-submit";
 import { hojeISO } from "@/lib/data-br";
 import { criarTermoVisita } from "../actions";
+import { Home, User } from "lucide-react";
 
 export default function NovoTermoVisitaPage() {
   const hoje = hojeISO();
@@ -23,7 +24,8 @@ export default function NovoTermoVisitaPage() {
         className="space-y-5 rounded-xl border border-border bg-surface p-5 shadow-sm"
       >
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            <Home size={14} strokeWidth={2} />
             Imóvel visitado
           </p>
           <div className="space-y-3">
@@ -45,7 +47,8 @@ export default function NovoTermoVisitaPage() {
         </div>
 
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            <User size={14} strokeWidth={2} />
             Cliente
           </p>
           <div className="space-y-3">
