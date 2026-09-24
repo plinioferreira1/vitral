@@ -121,7 +121,10 @@ export default async function TutoriaisPage() {
                         {t.link && <p className="truncate text-xs text-brand">{t.link}</p>}
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
-                        <details className="relative">
+                        <details
+                          key={`tutorial-${t.id}-${t.titulo}-${t.categoria}-${t.tipo}-${t.descricao}-${t.link}-${t.conteudo}-${t.ordem}`}
+                          className="relative"
+                        >
                           <summary className="cursor-pointer list-none rounded-md p-1.5 text-ink-muted hover:bg-background">
                             ✎
                           </summary>

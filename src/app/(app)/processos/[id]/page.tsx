@@ -138,7 +138,10 @@ export default async function ProcessoDetalhePage({
             </h1>
           </div>
 
-          <details className="relative">
+          <details
+            key={`editar-${p.id}-${p.comprador?.nome}-${p.vendedor?.nome}-${p.imoveis?.endereco}-${p.bancos?.nome}-${p.corretores?.nome}-${p.usuarios?.nome}-${p.codigo_san}-${p.valor_total}-${p.valor_financiado}-${p.origem}-${p.indicacao?.nome}-${p.data_assinatura}-${p.data_final_contrato}`}
+            className="relative"
+          >
             <summary className="cursor-pointer list-none rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background">
               ✎ Editar processo
             </summary>
@@ -268,7 +271,7 @@ export default async function ProcessoDetalhePage({
             <p className="text-xs text-ink-muted">Código SAN</p>
             <div className="mt-0.5 flex items-center gap-1.5">
               <p className="text-sm font-medium text-ink">{p.codigo_san || "—"}</p>
-              <details className="relative">
+              <details key={`san-${p.id}-${p.codigo_san}`} className="relative">
                 <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
                   editar
                 </summary>

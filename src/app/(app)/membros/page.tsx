@@ -226,7 +226,7 @@ export default async function MembrosPage({
                   <p className="text-xs text-ink-muted">{m.email}</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <details className="relative">
+                  <details key={`nome-${m.id}-${m.nome}`} className="relative">
                     <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
                       Editar nome
                     </summary>
