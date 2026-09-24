@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { CabecalhoSecao } from "@/components/cabecalho-secao";
+import { Home, Receipt, Zap, Plus, FileText } from "lucide-react";
 import {
   brl,
   calcularInfoDias,
@@ -384,9 +386,7 @@ function PainelCalculo({
   return (
     <div className="space-y-5">
       <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
-        <p className="mb-3 text-xs font-medium uppercase tracking-wide text-ink-muted">
-          Identificação
-        </p>
+        <CabecalhoSecao icon={Home} titulo="Identificação" descricao="Informe o imóvel/endereço e, se necessário, observações." />
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">
@@ -414,8 +414,11 @@ function PainelCalculo({
 
       {grupos.map((grupo) => (
         <div key={grupo.id} className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
-          <p className="text-sm font-semibold text-ink">{grupo.label}</p>
-          <p className="mb-3 text-xs text-ink-muted">{grupo.descricao}</p>
+          <CabecalhoSecao
+            icon={grupo.label.toLowerCase().includes("iptu") ? Receipt : Zap}
+            titulo={grupo.label}
+            descricao={grupo.descricao}
+          />
 
           <div className="mb-3 grid gap-3 sm:grid-cols-2">
             <CampoData
@@ -485,11 +488,11 @@ function PainelCalculo({
 
       {permiteItensPersonalizados && (
         <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
-          <p className="text-sm font-semibold text-ink">Itens personalizados</p>
-          <p className="mb-3 text-xs text-ink-muted">
-            Taxas extras, móveis, ou qualquer outro valor que precise ser rateado ou atribuído a
-            uma das partes.
-          </p>
+          <CabecalhoSecao
+            icon={Plus}
+            titulo="Itens personalizados"
+            descricao="Taxas extras, móveis, ou qualquer outro valor que precise ser rateado ou atribuído a uma das partes."
+          />
 
           <div className="space-y-4">
             {itensPersonalizados.map((item) => (
@@ -528,7 +531,7 @@ function PainelCalculo({
 
       {resultado && (
         <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
-          <p className="mb-3 text-sm font-semibold text-ink">Resultado</p>
+          <CabecalhoSecao icon={FileText} titulo="Resultado" />
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
