@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface PermissoesUsuario {
   ehCorretor: boolean;
+  ehSocialMedia: boolean;
   nivelComAcessoTotal: boolean;
   podeConfigurar: boolean;
   temVenda: boolean;
@@ -15,11 +16,12 @@ export async function getPermissoesUsuario(
   nivelAcesso: string
 ): Promise<PermissoesUsuario> {
   const ehCorretor = nivelAcesso === "corretor";
+  const ehSocialMedia = nivelAcesso === "social_media";
   const nivelComAcessoTotal = ["diretor", "gerente", "auxiliar"].includes(nivelAcesso);
   const podeConfigurar = ["diretor", "gerente"].includes(nivelAcesso);
 
   let categorias: string[] = [];
-  if (!ehCorretor && !nivelComAcessoTotal) {
+  if (!ehCorretor && !ehSocialMedia && !nivelComAcessoTotal) {
     const { data: cats } = await supabase
       .from("usuario_categorias")
       .select("categoria")
@@ -29,6 +31,7 @@ export async function getPermissoesUsuario(
 
   return {
     ehCorretor,
+    ehSocialMedia,
     nivelComAcessoTotal,
     podeConfigurar,
     temVenda: nivelComAcessoTotal || categorias.includes("venda"),

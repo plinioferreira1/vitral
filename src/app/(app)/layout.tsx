@@ -26,12 +26,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     .eq("id", usuario.tenant_id)
     .single();
 
-  const { ehCorretor, podeConfigurar, temVenda, temFinanciamento, temLocacao } =
+  const { ehCorretor, ehSocialMedia, podeConfigurar, temVenda, temFinanciamento, temLocacao } =
     await getPermissoesUsuario(supabase, user.id, usuario.nivel_acesso);
 
   type ItemMenu = { href: string; label: string } | { label: string; children: { href: string; label: string }[] };
 
-  const navItems: ItemMenu[] = ehCorretor
+  const navItems: ItemMenu[] = ehSocialMedia
+    ? [
+        { href: "/", label: "Início" },
+        { href: "/calculadora", label: "Calculadora de Proporcionalidade" },
+        { href: "/calculadora-data", label: "Calculadora de Datas" },
+        { href: "/cartorio", label: "Simulação de Custas" },
+        { href: "/avaliacao-imovel", label: "Avaliação de Imóvel" },
+        { href: "/corretor", label: "Onboarding" },
+      ]
+    : ehCorretor
     ? [
         { href: "/", label: "Início" },
         { href: "/calculadora", label: "Calculadora de Proporcionalidade" },

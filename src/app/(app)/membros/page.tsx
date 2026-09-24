@@ -30,10 +30,10 @@ const CATEGORIAS: CategoriaProcesso[] = ["venda", "financiamento", "locacao", "m
 const NIVEIS: NivelAcesso[] = [
   "diretor",
   "gerente",
-  "gerente_locacao",
   "supervisor",
   "auxiliar",
   "corretor",
+  "social_media",
 ];
 
 export default async function MembrosPage({
