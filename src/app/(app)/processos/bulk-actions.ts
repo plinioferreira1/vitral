@@ -74,6 +74,7 @@ export async function moverProcessoParaEtapa(processoId: string, etapaNomeAlvo: 
   revalidatePath("/vendas");
   revalidatePath("/financiamentos");
   revalidatePath(`/processos/${processoId}`);
+  revalidatePath("/");
 }
 
 export async function apagarProcessosSelecionados(formData: FormData) {
