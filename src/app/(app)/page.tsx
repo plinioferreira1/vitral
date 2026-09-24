@@ -13,6 +13,18 @@ import { ptBR } from "date-fns/locale";
 import type { CategoriaProcesso } from "@/lib/types";
 import { calcularUrgencia } from "@/lib/alertas";
 
+const COR_PRAZO_FUNDO: Record<CardPrazo["cor"], string> = {
+  vermelho: "border-rose-200 bg-rose-50",
+  amarelo: "border-amber-200 bg-amber-50",
+  verde: "border-emerald-200 bg-emerald-50",
+};
+
+const COR_PRAZO_TEXTO: Record<CardPrazo["cor"], string> = {
+  vermelho: "text-rose-700",
+  amarelo: "text-amber-700",
+  verde: "text-emerald-700",
+};
+
 function saudacao(): string {
   const horaBrasilia = new Date().toLocaleString("en-US", {
     timeZone: "America/Sao_Paulo",
@@ -270,9 +282,39 @@ export default async function DashboardPage() {
           {quadrosKanban.length > 0 && (
             <div className="space-y-6">
               {quadrosKanban.map((q) => (
-                <div key={q.categoria} className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-                  <p className="mb-3 text-sm font-semibold text-ink">Quadro — {q.titulo}</p>
-                  <KanbanProcessos colunas={q.colunas} cards={q.cards} colunaPrazos={q.colunaPrazos} />
+                <div key={q.categoria} className="space-y-4">
+                  <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+                    <p className="mb-3 text-sm font-semibold text-ink">Quadro — {q.titulo}</p>
+                    <KanbanProcessos colunas={q.colunas} cards={q.cards} />
+                  </div>
+
+                  {q.colunaPrazos && (
+                    <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+                      <p className="mb-3 text-sm font-semibold text-ink">
+                        Quadro — {q.colunaPrazos.titulo} ({q.titulo})
+                      </p>
+                      {q.colunaPrazos.cards.length === 0 ? (
+                        <p className="text-sm text-ink-muted">Nenhum prazo cadastrado.</p>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                          {q.colunaPrazos.cards.map((card) => (
+                            <Link
+                              key={card.id}
+                              href={`/processos/${card.id}`}
+                              className={`block rounded-xl border p-3 shadow-sm transition hover:opacity-80 ${
+                                COR_PRAZO_FUNDO[card.cor]
+                              }`}
+                            >
+                              <p className="text-sm font-medium text-ink">{card.titulo}</p>
+                              <p className={`mt-0.5 text-xs font-medium ${COR_PRAZO_TEXTO[card.cor]}`}>
+                                {card.subtitulo}
+                              </p>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
