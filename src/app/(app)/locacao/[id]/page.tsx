@@ -391,8 +391,7 @@ export default async function ContratoLocacaoPage({
         </div>
 
         <p className="mb-3 text-xs text-ink-muted">
-          Toque numa célula pra alternar: sem informação → pendente (fica &quot;em dia&quot; até
-          vencer) → pago → sem informação.
+          Toque numa célula pra marcar como paga; toque de novo pra desmarcar.
         </p>
 
         <div className="overflow-x-auto rounded-xl border border-border/60 bg-surface shadow-sm p-2">

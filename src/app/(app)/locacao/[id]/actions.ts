@@ -8,7 +8,7 @@ import { hojeISO } from "@/lib/data-br";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const PROXIMO_STATUS: Record<StatusContaLocacao, StatusContaLocacao> = {
-  nao_aplicavel: "pendente",
+  nao_aplicavel: "pago",
   pendente: "pago",
   pago: "nao_aplicavel",
 };
