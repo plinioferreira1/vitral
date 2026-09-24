@@ -73,8 +73,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {
                 label: "Vendas",
                 children: [
-                  { href: "/vendas?aba=resumo", label: "Resumo" },
-                  { href: "/vendas?aba=andamento", label: "Em andamento" },
+                  { href: "/vendas?aba=resumo", label: "Visão Geral" },
+                  { href: "/vendas?aba=andamento", label: "Processos" },
                 ],
               },
             ]
@@ -84,10 +84,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {
                 label: "Financiamentos",
                 children: [
-                  { href: "/financiamentos?aba=resumo", label: "Resumo" },
-                  { href: "/financiamentos?aba=andamento", label: "Em andamento" },
+                  { href: "/financiamentos?aba=resumo", label: "Visão Geral" },
+                  { href: "/financiamentos?aba=andamento", label: "Processos" },
                   { href: "/financiamentos?aba=processos", label: "Checklists" },
-                  { href: "/financiamentos?aba=custas", label: "Custas de Financiamento" },
+                  { href: "/financiamentos?aba=custas", label: "Simulação de Custas" },
                 ],
               },
             ]
@@ -97,7 +97,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {
                 label: "Locação",
                 children: [
-                  { href: "/locacao?aba=resumo", label: "Resumo" },
+                  { href: "/locacao?aba=resumo", label: "Visão Geral" },
                   { href: "/locacao?aba=contratos", label: "Contratos" },
                   { href: "/locacao?aba=inadimplencias", label: "Inadimplências" },
                   { href: "/locacao?aba=multa", label: "Multa Rescisória" },
