@@ -63,7 +63,7 @@ export function CalculadoraAvaliacao() {
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Avaliação de Imóvel</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Avaliação de Imóvel</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Sugere um valor de anúncio comparando imóveis parecidos na região. Cada comparável do
           tipo &quot;Venda realizada&quot; é ajustado pra cima pelo percentual de calibragem — o

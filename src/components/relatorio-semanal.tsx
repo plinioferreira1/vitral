@@ -3,6 +3,9 @@
 import { useState } from "react";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
 import { gerarRelatorioSemanalPNG, type ItemRelatorio } from "@/lib/canvas-relatorio-semanal";
+import { CabecalhoSecao } from "@/components/cabecalho-secao";
+import { CartaoIndicador } from "@/components/cartao-indicador";
+import { LayoutGrid, Tag, Landmark, AlertTriangle, CalendarClock } from "lucide-react";
 
 export interface DadosRelatorio {
   dataLabel: string;
@@ -12,11 +15,14 @@ export interface DadosRelatorio {
   vencendo: ItemRelatorio[];
 }
 
-function ListaItens({ titulo, cor, itens }: { titulo: string; cor: string; itens: ItemRelatorio[] }) {
+function ListaItens({ titulo, cor, dot, itens }: { titulo: string; cor: string; dot: string; itens: ItemRelatorio[] }) {
   if (itens.length === 0) return null;
   return (
     <div>
-      <p className={`mb-2 text-sm font-semibold ${cor}`}>{titulo}</p>
+      <p className={`mb-2 flex items-center gap-1.5 text-sm font-semibold ${cor}`}>
+        <span className={`h-2 w-2 rounded-full ${dot}`} />
+        {titulo} ({itens.length})
+      </p>
       <ul className="space-y-2">
         {itens.map((item, i) => (
           <li key={i} className="rounded-lg border border-border/60 bg-surface p-3 text-sm">
@@ -74,7 +80,7 @@ export function RelatorioSemanal({ dados }: { dados: DadosRelatorio }) {
     <div className="max-w-2xl space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-ink">Relatório Semanal</h1>
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Relatório Semanal</h1>
           <p className="mt-1 text-sm text-ink-muted">
             Vendas e Financiamentos em andamento — só o que precisa de atenção.
           </p>
@@ -82,26 +88,26 @@ export function RelatorioSemanal({ dados }: { dados: DadosRelatorio }) {
       </div>
 
       <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
-        <p className="mb-3 text-sm font-semibold text-ink">Panorama</p>
+        <CabecalhoSecao icon={LayoutGrid} titulo="Panorama" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <div className="rounded-xl border border-border/60 p-4">
-            <p className="font-mono text-3xl font-bold tracking-tight text-ink">{dados.totalAtivosVenda}</p>
-            <p className="mt-1 text-sm text-ink-muted">ativos em Vendas</p>
-          </div>
-          <div className="rounded-xl border border-border/60 p-4">
-            <p className="font-mono text-3xl font-bold tracking-tight text-ink">
-              {dados.totalAtivosFinanciamento}
-            </p>
-            <p className="mt-1 text-sm text-ink-muted">ativos em Financiamentos</p>
-          </div>
-          <div className="rounded-xl p-4 text-white" style={{ backgroundColor: "#e11d48" }}>
-            <p className="font-mono text-3xl font-bold tracking-tight">{dados.atrasados.length}</p>
-            <p className="mt-1 text-sm text-white/85">atrasados</p>
-          </div>
-          <div className="rounded-xl p-4 text-white" style={{ backgroundColor: "#d97706" }}>
-            <p className="font-mono text-3xl font-bold tracking-tight">{dados.vencendo.length}</p>
-            <p className="mt-1 text-sm text-white/85">vencendo essa semana</p>
-          </div>
+          <CartaoIndicador icon={Tag} valor={dados.totalAtivosVenda} label="Ativos em Vendas" />
+          <CartaoIndicador
+            icon={Landmark}
+            valor={dados.totalAtivosFinanciamento}
+            label="Ativos em Financiamentos"
+          />
+          <CartaoIndicador
+            icon={AlertTriangle}
+            valor={dados.atrasados.length}
+            label="Atrasados"
+            tom={dados.atrasados.length > 0 ? "perigo" : "neutro"}
+          />
+          <CartaoIndicador
+            icon={CalendarClock}
+            valor={dados.vencendo.length}
+            label="Vencendo essa semana"
+            tom={dados.vencendo.length > 0 ? "alerta" : "neutro"}
+          />
         </div>
       </div>
 
@@ -130,8 +136,8 @@ export function RelatorioSemanal({ dados }: { dados: DadosRelatorio }) {
         </p>
       ) : (
         <div className="space-y-6">
-          <ListaItens titulo="🔴 Atrasados" cor="text-rose-700" itens={dados.atrasados} />
-          <ListaItens titulo="🟡 Vencendo em breve" cor="text-amber-700" itens={dados.vencendo} />
+          <ListaItens titulo="Atrasados" cor="text-rose-700" dot="bg-rose-500" itens={dados.atrasados} />
+          <ListaItens titulo="Vencendo em breve" cor="text-amber-700" dot="bg-amber-500" itens={dados.vencendo} />
         </div>
       )}
     </div>
