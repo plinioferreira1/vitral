@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 
 const TONS = {
   neutro: { bg: "bg-surface", iconBg: "bg-background", iconText: "text-ink-muted", valor: "text-ink" },
   perigo: { bg: "bg-rose-50", iconBg: "bg-rose-100", iconText: "text-rose-700", valor: "text-rose-700" },
-  alerta: { bg: "bg-amber-50", iconBg: "bg-amber-100", iconText: "text-amber-700", valor: "text-amber-700" },
-  sucesso: { bg: "bg-emerald-50", iconBg: "bg-emerald-100", iconText: "text-emerald-700", valor: "text-emerald-700" },
+  alerta: { bg: "bg-surface", iconBg: "bg-amber-100", iconText: "text-amber-700", valor: "text-ink" },
+  sucesso: { bg: "bg-surface", iconBg: "bg-emerald-100", iconText: "text-emerald-700", valor: "text-ink" },
 } as const;
 
 /**
@@ -34,10 +35,11 @@ export function CartaoIndicador({
       <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${cores.iconBg} ${cores.iconText}`}>
         <Icon size={19} strokeWidth={2} />
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className={`num text-2xl font-bold leading-tight ${cores.valor}`}>{valor}</p>
         <p className="truncate text-xs text-ink-muted">{label}</p>
       </div>
+      {href && <ChevronRight size={16} className="shrink-0 text-ink-muted" />}
     </div>
   );
 

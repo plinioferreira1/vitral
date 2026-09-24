@@ -81,7 +81,15 @@ const ICONES: { prefixo: string; Icone: LucideIcon }[] = [
 
 function iconePara(hrefOuLabel: string): LucideIcon {
   if (hrefOuLabel === "/") return Home;
-  if (hrefOuLabel === "Configurações") return Settings;
+  const porLabel: Record<string, LucideIcon> = {
+    Vendas: Tag,
+    Financiamentos: Landmark,
+    Locação: Building2,
+    Documentos: FileSignature,
+    Ferramentas: Calculator,
+    Configurações: Settings,
+  };
+  if (porLabel[hrefOuLabel]) return porLabel[hrefOuLabel];
   const achado = ICONES.find((i) => hrefOuLabel.startsWith(i.prefixo));
   return achado?.Icone ?? FileText;
 }

@@ -15,6 +15,8 @@ import type { CategoriaProcesso } from "@/lib/types";
 import { calcularUrgencia } from "@/lib/alertas";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { CartaoIndicador } from "@/components/cartao-indicador";
+import { TopBar } from "@/components/topbar";
+import { addMonths } from "date-fns";
 import {
   FileText,
   AlertTriangle,
@@ -50,7 +52,12 @@ function saudacao(): string {
   return "Boa noite";
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ mes?: string }>;
+}) {
+  const { mes } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -72,9 +79,12 @@ export default async function DashboardPage() {
   );
 
   const eventos = await getEventosCalendario();
-  const referencia = new Date(`${hojeISO()}T00:00:00`);
-  const mesLabel = format(referencia, "MMMM 'de' yyyy", { locale: ptBR });
-  const mesCapitalizado = mesLabel.charAt(0).toUpperCase() + mesLabel.slice(1);
+  const referencia = mes ? new Date(`${mes}-01T00:00:00`) : new Date(`${hojeISO()}T00:00:00`);
+  const mesAnterior = format(addMonths(referencia, -1), "yyyy-MM");
+  const proximoMes = format(addMonths(referencia, 1), "yyyy-MM");
+  const dataHojeFormatada = format(new Date(`${hojeISO()}T00:00:00`), "EEEE, d 'de' MMMM 'de' yyyy", {
+    locale: ptBR,
+  });
 
   let tarefasHoje: {
     tarefaId: string;
@@ -260,12 +270,14 @@ export default async function DashboardPage() {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
+      <TopBar dataFormatada={dataHojeFormatada} contagemAtrasados={totais.atrasados} />
+
       <div>
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-          {saudacao()}, {usuario.nome.split(" ")[0]}
+          {saudacao()}, {usuario.nome.split(" ")[0]} 👋
         </h1>
-        <p className="mt-1 text-sm text-ink-muted capitalize">{mesCapitalizado}</p>
+        <p className="mt-1 text-sm text-ink-muted">Aqui está o panorama dos seus processos hoje.</p>
       </div>
 
       {ehAdmin && quadrosKanban.length > 0 && (
@@ -318,6 +330,15 @@ export default async function DashboardPage() {
           {quadrosKanban.length > 0 && (
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
               <div className="min-w-0 flex-1 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div />
+                  <Link
+                    href="/vendas?aba=andamento"
+                    className="shrink-0 text-xs font-medium text-brand hover:underline"
+                  >
+                    Ver todos os processos →
+                  </Link>
+                </div>
                 <KanbanComAbas
                   quadros={quadrosKanban.map((q) => ({
                     id: q.categoria,
@@ -329,8 +350,10 @@ export default async function DashboardPage() {
               </div>
 
               {quadroPrazos && (
-                <div className="w-full shrink-0 rounded-xl border border-border/60 bg-surface p-5 shadow-sm lg:w-72">
-                  <CabecalhoSecao icon={Clock} titulo={quadroPrazos.titulo} />
+                <div className="w-full shrink-0 rounded-xl border border-border/60 bg-surface p-5 shadow-sm lg:w-80">
+                  <div className="mb-3 flex items-center justify-between gap-3">
+                    <CabecalhoSecao icon={Clock} titulo="Prazos finais do contrato" />
+                  </div>
                   {quadroPrazos.cards.length === 0 ? (
                     <p className="text-sm text-ink-muted">Nenhum prazo cadastrado.</p>
                   ) : (
@@ -339,14 +362,25 @@ export default async function DashboardPage() {
                         <Link
                           key={card.id}
                           href={`/processos/${card.id}`}
-                          className={`block rounded-xl border p-3 shadow-sm transition hover:opacity-80 ${
+                          className={`flex items-center gap-2.5 rounded-xl border p-3 shadow-sm transition hover:opacity-80 ${
                             COR_PRAZO_FUNDO[card.cor]
                           }`}
                         >
-                          <p className="text-sm font-medium text-ink">{card.titulo}</p>
-                          <p className={`mt-0.5 text-xs font-medium ${COR_PRAZO_TEXTO[card.cor]}`}>
-                            {card.subtitulo}
-                          </p>
+                          <span
+                            className={`h-2 w-2 shrink-0 rounded-full ${
+                              card.cor === "vermelho"
+                                ? "bg-rose-500"
+                                : card.cor === "amarelo"
+                                  ? "bg-amber-500"
+                                  : "bg-emerald-500"
+                            }`}
+                          />
+                          <span className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-ink">{card.titulo}</p>
+                            <p className={`mt-0.5 text-xs font-medium ${COR_PRAZO_TEXTO[card.cor]}`}>
+                              {card.subtitulo}
+                            </p>
+                          </span>
                         </Link>
                       ))}
                     </div>
@@ -357,7 +391,45 @@ export default async function DashboardPage() {
           )}
 
           <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-            <CabecalhoSecao icon={Calendar} titulo="Calendário" />
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+              <CabecalhoSecao icon={Calendar} titulo="Calendário de processos" />
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/?mes=${mesAnterior}`}
+                  className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-background"
+                  aria-label="Mês anterior"
+                >
+                  ←
+                </Link>
+                <Link
+                  href="/"
+                  className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-background"
+                >
+                  Hoje
+                </Link>
+                <Link
+                  href={`/?mes=${proximoMes}`}
+                  className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-background"
+                  aria-label="Próximo mês"
+                >
+                  →
+                </Link>
+              </div>
+            </div>
+            <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-ink-muted">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-red-600" /> Vendas
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-indigo-300" /> Financiamento
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-blue-600" /> Locação
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-violet-400" /> Tarefas recorrentes
+              </span>
+            </div>
             <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={3} />
           </div>
         </>
