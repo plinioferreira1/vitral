@@ -3,6 +3,7 @@ import { CampoMoeda } from "@/components/campo-moeda";
 import { CampoCPF } from "@/components/campo-cpf";
 import { BotaoSubmit } from "@/components/botao-submit";
 import { criarCartaProposta } from "../actions";
+import { User, ListChecks } from "lucide-react";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -26,7 +27,8 @@ export default function NovaCartaPropostaPage() {
         className="space-y-5 rounded-xl border border-border bg-surface p-5 shadow-sm"
       >
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            <User size={14} strokeWidth={2} />
             Proponente (comprador)
           </p>
           <div className="space-y-3">
@@ -79,7 +81,8 @@ export default function NovaCartaPropostaPage() {
         </div>
 
         <div>
-          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+          <p className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-muted">
+            <ListChecks size={14} strokeWidth={2} />
             Condições de pagamento
           </p>
           <p className="mb-2 text-[11px] text-ink-muted">
