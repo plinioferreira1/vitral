@@ -282,20 +282,32 @@ export default async function DashboardPage({
 
       {ehAdmin && quadrosKanban.length > 0 && (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <CartaoIndicador icon={FileText} valor={totais.total} label="Processos em andamento" />
+          <CartaoIndicador
+            icon={FileText}
+            valor={totais.total}
+            label="Processos em andamento"
+            href="/vendas?aba=andamento"
+          />
           <CartaoIndicador
             icon={AlertTriangle}
             valor={totais.atrasados}
             label="Atrasados"
             tom={totais.atrasados > 0 ? "perigo" : "neutro"}
+            href="/vendas?aba=andamento"
           />
           <CartaoIndicador
             icon={CalendarClock}
             valor={totais.venceHoje}
             label="Vencendo hoje"
             tom={totais.venceHoje > 0 ? "alerta" : "neutro"}
+            href="/vendas?aba=andamento"
           />
-          <CartaoIndicador icon={CalendarDays} valor={totais.venceEmBreve} label="Vencem em 7 dias" />
+          <CartaoIndicador
+            icon={CalendarDays}
+            valor={totais.venceEmBreve}
+            label="Vencem em 7 dias"
+            href="/vendas?aba=andamento"
+          />
         </div>
       )}
 
@@ -379,7 +391,7 @@ export default async function DashboardPage({
                           <span className="min-w-0 flex-1">
                             <p className="truncate text-sm font-medium text-ink">{card.titulo}</p>
                             <p className={`mt-0.5 text-xs font-medium ${COR_PRAZO_TEXTO[card.cor]}`}>
-                              {card.subtitulo}
+                              Venda · {card.subtitulo}
                             </p>
                           </span>
                         </Link>
