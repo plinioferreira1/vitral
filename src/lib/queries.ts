@@ -193,5 +193,52 @@ export async function getEventosCalendario(): Promise<EventoCalendario[]> {
     }
   }
 
-  return [...eventosEtapas, ...eventosLocacao, ...eventosTarefas].sort((a, b) => a.data.localeCompare(b.data));
+  // Avisos de contagem regressiva do prazo final do contrato
+  // (Vendas/Financiamentos) — um evento por dia, começando 20 dias
+  // antes do vencimento, pra aparecer no calendário como um aviso
+  // que vai ficando mais urgente a cada dia que passa.
+  const { data: prazosRaw } = await supabase
+    .from("processos")
+    .select("id, categoria, data_final_contrato, imoveis ( endereco )")
+    .in("categoria", ["venda", "financiamento"])
+    .not("status", "in", "(concluido,cancelado)")
+    .not("data_final_contrato", "is", null);
+
+  type PrazoRow = {
+    id: string;
+    categoria: CategoriaProcesso;
+    data_final_contrato: string;
+    imoveis: { endereco: string } | null;
+  };
+
+  const eventosPrazoContrato: EventoCalendario[] = [];
+  const JANELA_AVISO_DIAS = 20;
+  for (const p of (prazosRaw ?? []) as unknown as PrazoRow[]) {
+    const dataFinal = new Date(`${p.data_final_contrato}T00:00:00`);
+    const endereco = p.imoveis?.endereco ?? "Processo";
+    for (let diasRestantes = JANELA_AVISO_DIAS - 1; diasRestantes >= 0; diasRestantes--) {
+      const dataAviso = new Date(dataFinal);
+      dataAviso.setDate(dataAviso.getDate() - diasRestantes);
+      const dataAvisoStr = dataAviso.toISOString().slice(0, 10);
+      const titulo =
+        diasRestantes === 0
+          ? `⚠️ ${endereco} — Prazo do contrato vence hoje!`
+          : `⚠️ ${endereco} — Prazo do contrato em ${diasRestantes} dia${diasRestantes === 1 ? "" : "s"}!`;
+      eventosPrazoContrato.push({
+        id: `prazo-contrato-${p.id}-${dataAvisoStr}`,
+        data: dataAvisoStr,
+        titulo,
+        categoria: p.categoria,
+        urgencia: "atrasada",
+        diasParaVencer: diasRestantes,
+        href: `/processos/${p.id}`,
+        responsavelNome: null,
+        concluida: false,
+      });
+    }
+  }
+
+  return [...eventosEtapas, ...eventosLocacao, ...eventosTarefas, ...eventosPrazoContrato].sort((a, b) =>
+    a.data.localeCompare(b.data)
+  );
 }
