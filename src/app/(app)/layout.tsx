@@ -133,6 +133,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                 label: "Financeiro",
                 children: [
                   { href: "/financeiro", label: "Visão Geral" },
+                  { href: "/financeiro/agenda", label: "Agenda Financeira" },
                   { href: "/financeiro/contas-a-pagar", label: "Contas a Pagar" },
                   { href: "/financeiro/contas-a-receber", label: "Contas a Receber" },
                   { href: "/financeiro/contas-bancarias", label: "Contas Bancárias" },
