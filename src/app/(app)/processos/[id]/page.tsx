@@ -22,6 +22,8 @@ import {
   salvarDadosProcesso,
 } from "./actions";
 import { EditorLinhaTempo } from "@/components/editor-linha-tempo";
+import { CabecalhoSecao } from "@/components/cabecalho-secao";
+import { MessageSquare, History } from "lucide-react";
 
 export default async function ProcessoDetalhePage({
   params,
@@ -627,53 +629,65 @@ export default async function ProcessoDetalhePage({
         )}
       </section>
 
-      {/* Comentários */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold text-ink">Comentários</h2>
-        <form action={adicionarComentario} className="mb-4 flex gap-2">
-          <input type="hidden" name="processo_id" value={p.id} />
-          <input
-            name="texto"
-            placeholder="Escreva uma observação..."
-            className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-          />
-          <button
-            type="submit"
-            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-          >
-            Enviar
-          </button>
-        </form>
-        <ul className="space-y-2">
-          {(comentarios ?? []).map((c) => {
-            const nomeUsuario = (c as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
-            return (
-              <li key={c.id} className="rounded-lg border border-border bg-surface p-3 text-sm">
-                <p className="text-ink">{c.texto}</p>
-                <p className="mt-1 text-xs text-ink-muted">
-                  {nomeUsuario ?? "—"} · {format(parseISO(c.criado_em), "dd/MM HH:mm")}
-                </p>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+          <CabecalhoSecao icon={MessageSquare} titulo="Comentários" descricao="Registre observações sobre o processo." />
+          <form action={adicionarComentario} className="mb-4 flex gap-2">
+            <input type="hidden" name="processo_id" value={p.id} />
+            <input
+              name="texto"
+              placeholder="Escreva uma observação..."
+              className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+            />
+            <button
+              type="submit"
+              className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            >
+              Enviar
+            </button>
+          </form>
+          <ul className="max-h-72 space-y-2 overflow-y-auto">
+            {(comentarios ?? []).length === 0 ? (
+              <p className="text-sm text-ink-muted">Nenhum comentário ainda.</p>
+            ) : (
+              (comentarios ?? []).map((c) => {
+                const nomeUsuario = (c as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
+                return (
+                  <li key={c.id} className="rounded-lg border border-border bg-background p-3 text-sm">
+                    <p className="text-ink">{c.texto}</p>
+                    <p className="mt-1 text-xs text-ink-muted">
+                      {nomeUsuario ?? "—"} · {format(parseISO(c.criado_em), "dd/MM HH:mm")}
+                    </p>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </div>
 
-      {/* Histórico */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold text-ink">Histórico</h2>
-        <ul className="space-y-1.5 text-xs text-ink-muted">
-          {(historico ?? []).map((h) => {
-            const nomeUsuario = (h as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
-            return (
-              <li key={h.id}>
-                {format(parseISO(h.criado_em), "dd/MM HH:mm")} — {nomeUsuario ?? "Sistema"}{" "}
-                {h.acao}
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+        <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+          <CabecalhoSecao icon={History} titulo="Histórico" descricao="Acompanhe todas as movimentações do processo." />
+          <ul className="max-h-72 space-y-2 overflow-y-auto text-xs">
+            {(historico ?? []).length === 0 ? (
+              <p className="text-sm text-ink-muted">Sem movimentações registradas.</p>
+            ) : (
+              (historico ?? []).map((h) => {
+                const nomeUsuario = (h as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
+                return (
+                  <li key={h.id} className="flex items-start gap-2 rounded-lg border border-border bg-background p-3">
+                    <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-brand" />
+                    <span className="text-ink-muted">
+                      <span className="text-ink">{nomeUsuario ?? "Sistema"}</span> {h.acao}
+                      <br />
+                      {format(parseISO(h.criado_em), "dd/MM HH:mm")}
+                    </span>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+        </div>
+      </div>
 
       {/* Personalização de etapas — fica oculta por padrão pra não
           confundir com o acompanhamento normal do processo. */}
