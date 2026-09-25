@@ -24,6 +24,7 @@ export function CalculadoraFinanciamento() {
   const [taxaBancaria, setTaxaBancaria] = useState(0);
   const [parcelasItbi, setParcelasItbi] = useState("10");
   const [valorInstrumentoParticular, setValorInstrumentoParticular] = useState(2500);
+  const [formato, setFormato] = useState<"instrumento" | "escritura">("instrumento");
 
   const numParcelasItbi = Math.max(1, Math.round(Number(parcelasItbi) || 10));
 
@@ -35,6 +36,7 @@ export function CalculadoraFinanciamento() {
     registroAlienacao: number;
     taxaBancaria: number;
     instrumentoParticular: number;
+    escritura: number;
     custoTotal: number;
     percentualDoImovel: string;
   } | null = null;
@@ -53,7 +55,13 @@ export function CalculadoraFinanciamento() {
     const registroAlienacaoCheio = buscarFaixa(valorFinanciado, FAIXAS_REGISTRO);
     const registroAlienacao = minhaCasaMinhaVida ? registroAlienacaoCheio / 2 : registroAlienacaoCheio;
 
-    const custoTotal = itbi + registroCompraVenda + registroAlienacao + taxaBancaria + valorInstrumentoParticular;
+    // Escritura de cartório (só entra no cálculo quando o formato
+    // escolhido é "Escritura Pública" — no instrumento particular
+    // ela não existe, entra o valor do despachante no lugar dela).
+    const escritura = buscarFaixa(valor, FAIXAS_ESCRITURA) + buscarFaixa(valorFinanciado, FAIXAS_ESCRITURA);
+
+    const custoDocumento = formato === "instrumento" ? valorInstrumentoParticular : escritura;
+    const custoTotal = itbi + registroCompraVenda + registroAlienacao + taxaBancaria + custoDocumento;
 
     resultado = {
       itbi,
@@ -63,6 +71,7 @@ export function CalculadoraFinanciamento() {
       registroAlienacao,
       taxaBancaria,
       instrumentoParticular: valorInstrumentoParticular,
+      escritura,
       custoTotal,
       percentualDoImovel: valor > 0 ? pct(custoTotal, valor) : "0,0%",
     };
@@ -71,13 +80,17 @@ export function CalculadoraFinanciamento() {
   const textoWhatsapp = resultado
     ? [
         `💸 *Custas estimadas de financiamento* — ${brl(valor)}`,
-        `Instrumento particular (despachante), no lugar da escritura de cartório.`,
+        formato === "instrumento"
+          ? `Instrumento particular (despachante), no lugar da escritura de cartório.`
+          : `Escritura Pública de Cartório.`,
         "",
         `▫️ ITBI (${tipoImovel === "novo" ? "1%" : "2%"}): ${brl(resultado.itbi)}`,
         `▫️ Registro de compra e venda: ${brl(resultado.registroCompraVenda)}`,
         `▫️ Registro de alienação fiduciária: ${brl(resultado.registroAlienacao)}`,
         `▫️ Taxa bancária: ${brl(resultado.taxaBancaria)}`,
-        `▫️ Instrumento particular (despachante): ${brl(resultado.instrumentoParticular)}`,
+        formato === "instrumento"
+          ? `▫️ Instrumento particular (despachante): ${brl(resultado.instrumentoParticular)}`
+          : `▫️ Escritura: ${brl(resultado.escritura)}`,
         "",
         `*Total estimado: ${brl(resultado.custoTotal)}* (${resultado.percentualDoImovel} do valor do imóvel)`,
         "",
@@ -184,6 +197,27 @@ export function CalculadoraFinanciamento() {
         </div>
 
         <div className="w-full shrink-0 space-y-4 lg:w-[26rem]">
+          <div className="flex gap-1 rounded-lg bg-background p-1 text-sm">
+            <button
+              type="button"
+              onClick={() => setFormato("instrumento")}
+              className={`flex-1 rounded-md py-1.5 text-center text-xs font-medium transition ${
+                formato === "instrumento" ? "bg-surface text-brand shadow-sm" : "text-ink-muted"
+              }`}
+            >
+              Instrumento Particular
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormato("escritura")}
+              className={`flex-1 rounded-md py-1.5 text-center text-xs font-medium transition ${
+                formato === "escritura" ? "bg-surface text-brand shadow-sm" : "text-ink-muted"
+              }`}
+            >
+              Escritura Pública
+            </button>
+          </div>
+
           <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
             <CabecalhoSecao
               icon={FileText}
@@ -230,11 +264,17 @@ export function CalculadoraFinanciamento() {
                       cor: CORES_LINHA[2],
                     },
                     { label: "Taxa bancária", valor: resultado.taxaBancaria, cor: CORES_LINHA[3] },
-                    {
-                      label: "Instrumento particular (despachante)",
-                      valor: resultado.instrumentoParticular,
-                      cor: CORES_LINHA[4],
-                    },
+                    formato === "instrumento"
+                      ? {
+                          label: "Instrumento particular (despachante)",
+                          valor: resultado.instrumentoParticular,
+                          cor: CORES_LINHA[4],
+                        }
+                      : {
+                          label: "Escritura",
+                          valor: resultado.escritura,
+                          cor: CORES_LINHA[4],
+                        },
                   ].map((linha) => (
                     <li key={linha.label} className="flex items-center gap-2 py-2.5">
                       <span className={`h-2 w-2 shrink-0 rounded-full ${linha.cor}`} />
