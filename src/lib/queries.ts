@@ -229,7 +229,7 @@ export async function getEventosCalendario(): Promise<EventoCalendario[]> {
         data: dataAvisoStr,
         titulo,
         categoria: p.categoria,
-        urgencia: "atrasada",
+        urgencia: "aviso_prazo_contrato",
         diasParaVencer: diasRestantes,
         href: `/processos/${p.id}`,
         responsavelNome: null,

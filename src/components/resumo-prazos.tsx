@@ -85,7 +85,9 @@ export function ResumoPrazos({
   hrefFiltro?: (filtro: "atrasada" | "vence_hoje" | "vence_em_breve") => string;
   filtroAtivo?: string;
 }) {
-  const pendentes = eventos.filter((e) => !e.concluida);
+  // Avisos de contagem regressiva do prazo do contrato são só
+  // decorativos no calendário — não contam como pendência real.
+  const pendentes = eventos.filter((e) => !e.concluida && e.urgencia !== "aviso_prazo_contrato");
   const atrasados = pendentes.filter((e) => e.urgencia === "atrasada");
   const venceHoje = pendentes.filter((e) => e.urgencia === "vence_hoje");
   const venceEmBreve = pendentes.filter((e) => e.urgencia === "vence_em_breve");

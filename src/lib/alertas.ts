@@ -13,7 +13,8 @@ export type Urgencia =
   | "vence_hoje"
   | "vence_em_breve" // <= 7 dias
   | "no_prazo" // > 7 dias
-  | "sem_data";
+  | "sem_data"
+  | "aviso_prazo_contrato"; // aviso de contagem regressiva do prazo final do contrato — só decorativo no calendário, não entra nos indicadores de pendência
 
 export interface EtapaComUrgencia extends Etapa {
   urgencia: Urgencia;
@@ -52,6 +53,7 @@ export const URGENCIA_LABEL: Record<Urgencia, string> = {
   vence_em_breve: "Vence em breve",
   no_prazo: "No prazo",
   sem_data: "Sem data definida",
+  aviso_prazo_contrato: "Aviso de prazo do contrato",
 };
 
 export const URGENCIA_COR: Record<Urgencia, string> = {
@@ -61,6 +63,7 @@ export const URGENCIA_COR: Record<Urgencia, string> = {
   vence_em_breve: "bg-amber-50 text-amber-700 border-amber-100",
   no_prazo: "bg-emerald-50 text-emerald-700 border-emerald-100",
   sem_data: "bg-stone-50 text-stone-500 border-stone-200",
+  aviso_prazo_contrato: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
 export function formatarPrazo(dias: number | null): string {
