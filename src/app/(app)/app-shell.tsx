@@ -29,6 +29,7 @@ import {
   Menu,
   X,
   ChevronRight,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -87,6 +88,7 @@ function iconePara(hrefOuLabel: string): LucideIcon {
     Locação: Building2,
     Documentos: FileSignature,
     Ferramentas: Calculator,
+    Financeiro: Wallet,
     Configurações: Settings,
   };
   if (porLabel[hrefOuLabel]) return porLabel[hrefOuLabel];

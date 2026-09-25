@@ -127,6 +127,17 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           ],
         },
         { href: "/corretor", label: "Onboarding" },
+        ...(podeConfigurar
+          ? [
+              {
+                label: "Financeiro",
+                children: [
+                  { href: "/financeiro/pessoas", label: "Clientes e Fornecedores" },
+                  { href: "/financeiro/categorias", label: "Categorias e Centros de Resultado" },
+                ],
+              },
+            ]
+          : []),
         ...(podeConfigurar ? [{ href: "/relatorio-semanal", label: "Relatório Semanal" }] : []),
         ...(podeConfigurar
           ? [
