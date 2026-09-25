@@ -87,7 +87,7 @@ export function CalculadoraFinanciamento() {
     : "";
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="max-w-6xl space-y-6">
       <CabecalhoSecao
         icon={Calculator}
         titulo="Custas de Financiamento"
@@ -183,7 +183,7 @@ export function CalculadoraFinanciamento() {
           </p>
         </div>
 
-        <div className="w-full shrink-0 space-y-4 lg:w-96">
+        <div className="w-full shrink-0 space-y-4 lg:w-[26rem]">
           <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
             <CabecalhoSecao
               icon={FileText}
@@ -195,18 +195,16 @@ export function CalculadoraFinanciamento() {
               <p className="text-sm text-ink-muted">Preencha os valores ao lado pra calcular.</p>
             ) : (
               <>
-                <div className="flex items-center justify-between gap-3 rounded-xl bg-rose-50 p-4">
+                <div className="flex flex-col gap-3 rounded-xl bg-rose-50 p-4 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <p className="text-sm font-medium text-rose-700">Custo total estimado</p>
                     <p className="num text-3xl font-bold text-rose-700">{brl(resultado.custoTotal)}</p>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2 rounded-lg bg-surface px-3 py-2 text-right shadow-sm">
-                    <PieChart size={16} strokeWidth={2} className="text-rose-600" />
-                    <span className="text-xs text-ink-muted">
-                      Equivalente a
-                      <br />
-                      <span className="font-semibold text-ink">{resultado.percentualDoImovel}</span> do valor do
-                      imóvel
+                  <div className="flex w-full shrink-0 items-center gap-2 rounded-lg bg-surface px-3 py-2 shadow-sm sm:w-44">
+                    <PieChart size={18} strokeWidth={2} className="shrink-0 text-rose-600" />
+                    <span className="text-xs leading-snug text-ink-muted">
+                      Equivalente a <span className="font-semibold text-ink">{resultado.percentualDoImovel}</span>{" "}
+                      do valor do imóvel
                     </span>
                   </div>
                 </div>
@@ -238,11 +236,14 @@ export function CalculadoraFinanciamento() {
                       cor: CORES_LINHA[4],
                     },
                   ].map((linha) => (
-                    <li key={linha.label} className="flex items-center gap-2 py-2">
+                    <li key={linha.label} className="flex items-center gap-2 py-2.5">
                       <span className={`h-2 w-2 shrink-0 rounded-full ${linha.cor}`} />
-                      <span className="min-w-0 flex-1 text-ink">{linha.label}</span>
-                      <span className="num shrink-0 font-medium text-ink">{brl(linha.valor)}</span>
-                      <span className="num w-12 shrink-0 text-right text-xs text-ink-muted">
+                      <span className="flex min-w-0 flex-1 items-center gap-1 text-ink">
+                        <span className="truncate">{linha.label}</span>
+                        <Info size={12} strokeWidth={2} className="shrink-0 text-ink-muted/60" />
+                      </span>
+                      <span className="num shrink-0 whitespace-nowrap font-medium text-ink">{brl(linha.valor)}</span>
+                      <span className="num w-14 shrink-0 text-right text-xs text-ink-muted">
                         {pct(linha.valor, resultado.custoTotal)}
                       </span>
                     </li>
