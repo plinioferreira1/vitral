@@ -3,6 +3,10 @@ import { redirect } from "next/navigation";
 import { sair } from "@/app/login/actions";
 import { AppShell } from "./app-shell";
 import { getPermissoesUsuario } from "@/lib/permissoes";
+import { TopBar } from "@/components/topbar";
+import { hojeISO } from "@/lib/data-br";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -142,6 +146,19 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           : []),
       ];
 
+  const hoje = hojeISO();
+  const { count: contagemAtrasados } = await supabase
+    .from("etapas")
+    .select("id, processos!inner(status)", { count: "exact", head: true })
+    .in("status", ["pendente", "em_andamento"])
+    .lt("data_prevista", hoje)
+    .not("processos.status", "in", "(concluido,cancelado)");
+
+  const dataHojeBruta = format(new Date(`${hoje}T00:00:00`), "EEEE, d 'de' MMMM 'de' yyyy", {
+    locale: ptBR,
+  });
+  const dataHojeFormatada = dataHojeBruta.charAt(0).toUpperCase() + dataHojeBruta.slice(1);
+
   return (
     <div className="flex min-h-screen flex-1 flex-col md:flex-row">
       <AppShell
@@ -155,7 +172,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       />
 
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-8 sm:py-8">{children}</div>
+        <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-8 sm:py-8">
+          <div className="mb-6">
+            <TopBar dataFormatada={dataHojeFormatada} contagemAtrasados={contagemAtrasados ?? 0} />
+          </div>
+          {children}
+        </div>
       </main>
     </div>
   );

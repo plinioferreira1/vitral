@@ -41,37 +41,52 @@ function ListaItens({ titulo, cor, dot, itens }: { titulo: string; cor: string; 
 
 export function RelatorioSemanal({ dados }: { dados: DadosRelatorio }) {
   const [exportando, setExportando] = useState(false);
+  const [filtro, setFiltro] = useState<"todos" | "Venda" | "Financiamento">("todos");
+
+  const dadosFiltrados: DadosRelatorio =
+    filtro === "todos"
+      ? dados
+      : {
+          dataLabel: dados.dataLabel,
+          totalAtivosVenda: filtro === "Venda" ? dados.totalAtivosVenda : 0,
+          totalAtivosFinanciamento: filtro === "Financiamento" ? dados.totalAtivosFinanciamento : 0,
+          atrasados: dados.atrasados.filter((i) => i.categoria === filtro),
+          vencendo: dados.vencendo.filter((i) => i.categoria === filtro),
+        };
+
+  const tituloRelatorio =
+    filtro === "todos" ? "Vendas e Financiamentos" : filtro === "Venda" ? "Vendas" : "Financiamentos";
 
   const textoWhatsapp = [
-    "📊 *Relatório Semanal — Vendas e Financiamentos*",
-    dados.dataLabel,
+    `📊 *Relatório Semanal — ${tituloRelatorio}*`,
+    dadosFiltrados.dataLabel,
     "",
     "*Panorama*",
-    `▫️ ${dados.totalAtivosVenda} ativos em Vendas`,
-    `▫️ ${dados.totalAtivosFinanciamento} ativos em Financiamentos`,
-    `▫️ ${dados.atrasados.length} atrasado${dados.atrasados.length !== 1 ? "s" : ""}`,
-    `▫️ ${dados.vencendo.length} vencendo essa semana`,
+    ...(filtro !== "Financiamento" ? [`▫️ ${dadosFiltrados.totalAtivosVenda} ativos em Vendas`] : []),
+    ...(filtro !== "Venda" ? [`▫️ ${dadosFiltrados.totalAtivosFinanciamento} ativos em Financiamentos`] : []),
+    `▫️ ${dadosFiltrados.atrasados.length} atrasado${dadosFiltrados.atrasados.length !== 1 ? "s" : ""}`,
+    `▫️ ${dadosFiltrados.vencendo.length} vencendo essa semana`,
     "",
-    ...(dados.atrasados.length > 0
+    ...(dadosFiltrados.atrasados.length > 0
       ? [
           "🔴 *Atrasados*",
-          ...dados.atrasados.map(
+          ...dadosFiltrados.atrasados.map(
             (item, i) =>
               `${i + 1}. [${item.categoria}] ${item.imovel} — ${item.cliente} — ${item.etapaAtual} _(${item.prazoTexto})_`
           ),
           "",
         ]
       : []),
-    ...(dados.vencendo.length > 0
+    ...(dadosFiltrados.vencendo.length > 0
       ? [
           "🟡 *Vencendo em breve*",
-          ...dados.vencendo.map(
+          ...dadosFiltrados.vencendo.map(
             (item, i) =>
               `${i + 1}. [${item.categoria}] ${item.imovel} — ${item.cliente} — ${item.etapaAtual} _(${item.prazoTexto})_`
           ),
         ]
       : []),
-    ...(dados.atrasados.length === 0 && dados.vencendo.length === 0
+    ...(dadosFiltrados.atrasados.length === 0 && dadosFiltrados.vencendo.length === 0
       ? ["Tudo em dia — nenhum atraso ou vencimento próximo. ✅"]
       : []),
   ].join("\n");
@@ -87,26 +102,45 @@ export function RelatorioSemanal({ dados }: { dados: DadosRelatorio }) {
         </div>
       </div>
 
+      <div className="flex gap-1 rounded-lg bg-background p-1 text-sm w-fit">
+        {(["todos", "Venda", "Financiamento"] as const).map((opcao) => (
+          <button
+            key={opcao}
+            type="button"
+            onClick={() => setFiltro(opcao)}
+            className={`rounded-md px-4 py-1.5 text-center text-xs font-medium transition ${
+              filtro === opcao ? "bg-surface text-brand shadow-sm" : "text-ink-muted"
+            }`}
+          >
+            {opcao === "todos" ? "Todos" : opcao === "Venda" ? "Vendas" : "Financiamentos"}
+          </button>
+        ))}
+      </div>
+
       <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm">
         <CabecalhoSecao icon={LayoutGrid} titulo="Panorama" />
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-          <CartaoIndicador icon={Tag} valor={dados.totalAtivosVenda} label="Ativos em Vendas" />
-          <CartaoIndicador
-            icon={Landmark}
-            valor={dados.totalAtivosFinanciamento}
-            label="Ativos em Financiamentos"
-          />
+          {filtro !== "Financiamento" && (
+            <CartaoIndicador icon={Tag} valor={dadosFiltrados.totalAtivosVenda} label="Ativos em Vendas" />
+          )}
+          {filtro !== "Venda" && (
+            <CartaoIndicador
+              icon={Landmark}
+              valor={dadosFiltrados.totalAtivosFinanciamento}
+              label="Ativos em Financiamentos"
+            />
+          )}
           <CartaoIndicador
             icon={AlertTriangle}
-            valor={dados.atrasados.length}
+            valor={dadosFiltrados.atrasados.length}
             label="Atrasados"
-            tom={dados.atrasados.length > 0 ? "perigo" : "neutro"}
+            tom={dadosFiltrados.atrasados.length > 0 ? "perigo" : "neutro"}
           />
           <CartaoIndicador
             icon={CalendarClock}
-            valor={dados.vencendo.length}
+            valor={dadosFiltrados.vencendo.length}
             label="Vencendo essa semana"
-            tom={dados.vencendo.length > 0 ? "alerta" : "neutro"}
+            tom={dadosFiltrados.vencendo.length > 0 ? "alerta" : "neutro"}
           />
         </div>
       </div>
@@ -119,7 +153,7 @@ export function RelatorioSemanal({ dados }: { dados: DadosRelatorio }) {
           onClick={async () => {
             setExportando(true);
             try {
-              await gerarRelatorioSemanalPNG(dados);
+              await gerarRelatorioSemanalPNG(dadosFiltrados);
             } finally {
               setExportando(false);
             }
@@ -130,14 +164,19 @@ export function RelatorioSemanal({ dados }: { dados: DadosRelatorio }) {
         </button>
       </div>
 
-      {dados.atrasados.length === 0 && dados.vencendo.length === 0 ? (
+      {dadosFiltrados.atrasados.length === 0 && dadosFiltrados.vencendo.length === 0 ? (
         <p className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-center text-sm font-medium text-emerald-700">
           Tudo em dia — nenhum atraso ou vencimento próximo. ✅
         </p>
       ) : (
         <div className="space-y-6">
-          <ListaItens titulo="Atrasados" cor="text-rose-700" dot="bg-rose-500" itens={dados.atrasados} />
-          <ListaItens titulo="Vencendo em breve" cor="text-amber-700" dot="bg-amber-500" itens={dados.vencendo} />
+          <ListaItens titulo="Atrasados" cor="text-rose-700" dot="bg-rose-500" itens={dadosFiltrados.atrasados} />
+          <ListaItens
+            titulo="Vencendo em breve"
+            cor="text-amber-700"
+            dot="bg-amber-500"
+            itens={dadosFiltrados.vencendo}
+          />
         </div>
       )}
     </div>

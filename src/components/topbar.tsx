@@ -44,7 +44,7 @@ export function TopBar({
 
       <div className="hidden shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink-muted sm:flex">
         <Calendar size={15} strokeWidth={2} />
-        <span className="capitalize">{dataFormatada}</span>
+        <span>{dataFormatada}</span>
       </div>
     </div>
   );

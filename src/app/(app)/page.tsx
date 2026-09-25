@@ -15,7 +15,6 @@ import type { CategoriaProcesso } from "@/lib/types";
 import { calcularUrgencia } from "@/lib/alertas";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { CartaoIndicador } from "@/components/cartao-indicador";
-import { TopBar } from "@/components/topbar";
 import { addMonths } from "date-fns";
 import {
   FileText,
@@ -82,9 +81,6 @@ export default async function DashboardPage({
   const referencia = mes ? new Date(`${mes}-01T00:00:00`) : new Date(`${hojeISO()}T00:00:00`);
   const mesAnterior = format(addMonths(referencia, -1), "yyyy-MM");
   const proximoMes = format(addMonths(referencia, 1), "yyyy-MM");
-  const dataHojeFormatada = format(new Date(`${hojeISO()}T00:00:00`), "EEEE, d 'de' MMMM 'de' yyyy", {
-    locale: ptBR,
-  });
 
   let tarefasHoje: {
     tarefaId: string;
@@ -271,7 +267,6 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6">
-      <TopBar dataFormatada={dataHojeFormatada} contagemAtrasados={totais.atrasados} />
 
       <div>
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
