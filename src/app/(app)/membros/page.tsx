@@ -217,13 +217,24 @@ export default async function MembrosPage({
           const categoriasAtuais = categoriasPorUsuario.get(m.id) ?? new Set();
           return (
             <div key={m.id} className="rounded-xl border border-border/60 bg-surface shadow-sm p-4">
-              <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                <div>
-                  <p className="text-sm font-medium text-ink">
-                    {m.nome}
-                    {m.cargo && <span className="ml-2 text-xs font-normal text-ink-muted">{m.cargo}</span>}
-                  </p>
-                  <p className="text-xs text-ink-muted">{m.email}</p>
+              <div className="mb-3 flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-xs font-semibold text-white">
+                    {m.nome
+                      .trim()
+                      .split(/\s+/)
+                      .slice(0, 2)
+                      .map((parte: string) => parte[0])
+                      .join("")
+                      .toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-ink">
+                      {m.nome}
+                      {m.cargo && <span className="ml-2 text-xs font-normal text-ink-muted">{m.cargo}</span>}
+                    </p>
+                    <p className="text-xs text-ink-muted">{m.email}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <details key={`nome-${m.id}-${m.nome}`} className="relative">
