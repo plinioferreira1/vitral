@@ -22,9 +22,10 @@ export async function criarCategoria(formData: FormData) {
 
   const nome = String(formData.get("nome") ?? "").trim();
   const tipo = String(formData.get("tipo") ?? "despesa");
+  const grupo = String(formData.get("grupo") ?? "").trim() || null;
   if (!nome) return;
 
-  await supabase.from("financeiro_categorias").insert({ tenant_id: tenantId, nome, tipo });
+  await supabase.from("financeiro_categorias").insert({ tenant_id: tenantId, nome, tipo, grupo });
   revalidatePath("/financeiro/categorias");
 }
 
