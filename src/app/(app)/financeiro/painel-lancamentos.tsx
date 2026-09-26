@@ -276,6 +276,35 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
               Preencha &quot;repetir até&quot; OU &quot;quantas vezes&quot; — só precisa de um dos dois. As
               ocorrências já são criadas todas de uma vez (limite de 60 lançamentos por recorrência).
             </p>
+
+            <div className="space-y-2 border-t border-border pt-3">
+              <p className="text-xs font-medium text-ink">Vencimento de cada ocorrência</p>
+              <div className="flex flex-wrap gap-4">
+                <label className="flex items-center gap-1.5 text-xs text-ink">
+                  <input type="radio" name="tipo_vencimento" value="fixo" defaultChecked className="accent-brand" />
+                  Sempre no mesmo dia (usa a data da 1ª ocorrência)
+                </label>
+                <label className="flex items-center gap-1.5 text-xs text-ink">
+                  <input type="radio" name="tipo_vencimento" value="dia_util" className="accent-brand" />
+                  Num dia útil do mês
+                </label>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  name="dia_util"
+                  type="number"
+                  min={1}
+                  max={23}
+                  placeholder="Ex: 5"
+                  className={`${campoClasse} max-w-[100px]`}
+                />
+                <span className="text-xs text-ink-muted">
+                  º dia útil do mês (só vale se marcar a opção acima — a data da 1ª ocorrência
+                  serve só pra indicar o mês/ano de início). Vale para mensal, trimestral, semestral
+                  e anual; não se aplica à semanal.
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="space-y-3">

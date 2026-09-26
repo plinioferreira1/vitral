@@ -31,6 +31,42 @@ function proximaData(data: Date, frequencia: string): Date {
   }
 }
 
+/** Quantos meses uma frequência avança — null quando não é "por mês" (ex: semanal). */
+function mesesPorFrequencia(frequencia: string): number | null {
+  switch (frequencia) {
+    case "mensal":
+      return 1;
+    case "trimestral":
+      return 3;
+    case "semestral":
+      return 6;
+    case "anual":
+      return 12;
+    default:
+      return null;
+  }
+}
+
+/**
+ * N-ésimo dia útil (seg a sex, sem considerar feriados) de um mês.
+ * Se o mês não tiver dias úteis suficientes, cai no último dia útil dele.
+ */
+function nEsimoDiaUtil(ano: number, mesIndex0: number, n: number): Date {
+  let contador = 0;
+  let ultimoUtil = new Date(ano, mesIndex0, 1);
+  const dia = new Date(ano, mesIndex0, 1);
+  while (dia.getMonth() === mesIndex0) {
+    const semana = dia.getDay();
+    if (semana !== 0 && semana !== 6) {
+      contador++;
+      ultimoUtil = new Date(dia);
+      if (contador === n) return new Date(dia);
+    }
+    dia.setDate(dia.getDate() + 1);
+  }
+  return ultimoUtil;
+}
+
 const MAX_OCORRENCIAS = 60;
 
 /**
@@ -83,6 +119,12 @@ export async function criarLancamento(formData: FormData) {
     const numeroOcorrencias = numeroOcorrenciasRaw ? Number(numeroOcorrenciasRaw) : null;
     if (!dataInicio || (!dataFim && !numeroOcorrencias)) return;
 
+    const tipoVencimento = String(formData.get("tipo_vencimento") ?? "fixo");
+    const diaUtilRaw = campo("dia_util");
+    const diaUtil = diaUtilRaw ? Number(diaUtilRaw) : null;
+    const mesesStep = mesesPorFrequencia(frequencia);
+    const usaDiaUtil = tipoVencimento === "dia_util" && diaUtil && mesesStep !== null;
+
     const { data: recorrencia, error } = await supabase
       .from("financeiro_recorrencias")
       .insert({
@@ -94,6 +136,8 @@ export async function criarLancamento(formData: FormData) {
         data_inicio: dataInicio,
         data_fim: dataFim,
         numero_ocorrencias: numeroOcorrencias,
+        tipo_vencimento: usaDiaUtil ? "dia_util" : "fixo",
+        dia_util: usaDiaUtil ? diaUtil : null,
         pessoa_id: dadosComuns.pessoa_id,
         categoria_id: dadosComuns.categoria_id,
         centro_custo_id: dadosComuns.centro_custo_id,
@@ -107,22 +151,40 @@ export async function criarLancamento(formData: FormData) {
     if (error || !recorrencia) return;
 
     const limiteData = dataFim ? new Date(`${dataFim}T00:00:00`) : null;
-    let dataAtual = new Date(`${dataInicio}T00:00:00`);
     const ocorrencias: Record<string, unknown>[] = [];
 
-    for (let i = 0; i < MAX_OCORRENCIAS; i++) {
-      if (limiteData && dataAtual > limiteData) break;
-      if (numeroOcorrencias && i >= numeroOcorrencias) break;
+    if (usaDiaUtil && diaUtil && mesesStep) {
+      const base = new Date(`${dataInicio}T00:00:00`);
+      for (let i = 0; i < MAX_OCORRENCIAS; i++) {
+        if (numeroOcorrencias && i >= numeroOcorrencias) break;
+        const alvo = addMonths(base, i * mesesStep);
+        const vencimento = nEsimoDiaUtil(alvo.getFullYear(), alvo.getMonth(), diaUtil);
+        if (limiteData && vencimento > limiteData) break;
 
-      ocorrencias.push({
-        ...dadosComuns,
-        valor,
-        vencimento: dataAtual.toISOString().slice(0, 10),
-        competencia: dataAtual.toISOString().slice(0, 10),
-        recorrencia_id: recorrencia.id,
-      });
+        ocorrencias.push({
+          ...dadosComuns,
+          valor,
+          vencimento: vencimento.toISOString().slice(0, 10),
+          competencia: new Date(alvo.getFullYear(), alvo.getMonth(), 1).toISOString().slice(0, 10),
+          recorrencia_id: recorrencia.id,
+        });
+      }
+    } else {
+      let dataAtual = new Date(`${dataInicio}T00:00:00`);
+      for (let i = 0; i < MAX_OCORRENCIAS; i++) {
+        if (limiteData && dataAtual > limiteData) break;
+        if (numeroOcorrencias && i >= numeroOcorrencias) break;
 
-      dataAtual = proximaData(dataAtual, frequencia);
+        ocorrencias.push({
+          ...dadosComuns,
+          valor,
+          vencimento: dataAtual.toISOString().slice(0, 10),
+          competencia: dataAtual.toISOString().slice(0, 10),
+          recorrencia_id: recorrencia.id,
+        });
+
+        dataAtual = proximaData(dataAtual, frequencia);
+      }
     }
 
     if (ocorrencias.length > 0) {
