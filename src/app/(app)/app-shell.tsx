@@ -34,14 +34,32 @@ import {
 } from "lucide-react";
 
 interface SubNavItem {
-  href: string;
+  href?: string;
   label: string;
+  // Um subitem pode ele mesmo ser um subgrupo (ex: "Movimentações" dentro
+  // de "Financeiro"), daí ter os próprios filhos em vez de um href direto.
+  children?: SubNavItem[];
 }
 
 interface NavItem {
   href?: string;
   label: string;
   children?: SubNavItem[];
+}
+
+// Algum item, no nível informado ou em qualquer subgrupo abaixo dele, bate
+// com a rota atual — usado pra manter o grupo/subgrupo certo destacado e
+// aberto mesmo quando a rota ativa está dois níveis abaixo.
+function algumDescendenteAtivo(
+  itens: SubNavItem[] | undefined,
+  pathname: string,
+  queryAtual: URLSearchParams
+): boolean {
+  if (!itens) return false;
+  return itens.some((item) => {
+    if (item.href && ehAtivo(pathname, item.href, queryAtual)) return true;
+    return algumDescendenteAtivo(item.children, pathname, queryAtual);
+  });
 }
 
 interface Props {
@@ -130,13 +148,33 @@ export function AppShell({
   const [gruposAbertos, setGruposAbertos] = useState<Set<string>>(() => {
     const abertos = new Set<string>();
     navItems.forEach((item) => {
-      if (item.children?.some((c) => ehAtivo(pathname, c.href, searchParams))) abertos.add(item.label);
+      if (algumDescendenteAtivo(item.children, pathname, searchParams)) abertos.add(item.label);
+    });
+    return abertos;
+  });
+
+  // Subgrupos (2º nível, ex: "Movimentações" dentro de "Financeiro"),
+  // identificados por "Pai>Subgrupo" já que o mesmo label de subgrupo
+  // pode em tese existir sob pais diferentes.
+  const [subGruposAbertos, setSubGruposAbertos] = useState<Set<string>>(() => {
+    const abertos = new Set<string>();
+    navItems.forEach((item) => {
+      item.children?.forEach((filho) => {
+        if (filho.children && algumDescendenteAtivo(filho.children, pathname, searchParams)) {
+          abertos.add(`${item.label}>${filho.label}`);
+        }
+      });
     });
     return abertos;
   });
 
   const alternarGrupo = (label: string) => {
     setGruposAbertos((prev) => (prev.has(label) ? new Set() : new Set([label])));
+    setSubGruposAbertos(new Set());
+  };
+
+  const alternarSubGrupo = (chave: string) => {
+    setSubGruposAbertos((prev) => (prev.has(chave) ? new Set() : new Set([chave])));
   };
 
   // Fecha qualquer grupo aberto ao clicar fora do menu de navegação
@@ -146,6 +184,7 @@ export function AppShell({
       const alvo = e.target as Element;
       if (!alvo.closest("[data-nav-root]")) {
         setGruposAbertos(new Set());
+        setSubGruposAbertos(new Set());
       }
     }
     document.addEventListener("mousedown", aoClicarFora);
@@ -201,7 +240,7 @@ export function AppShell({
         }
 
         const aberto = gruposAbertos.has(item.label);
-        const algumFilhoAtivo = item.children.some((c) => ehAtivo(pathname, c.href, searchParams));
+        const algumFilhoAtivo = algumDescendenteAtivo(item.children, pathname, searchParams);
         const Icone = iconePara(item.label);
 
         return (
@@ -226,11 +265,61 @@ export function AppShell({
             {aberto && (
               <div className="ml-[1.15rem] space-y-0.5 border-l border-border pl-3.5 pt-0.5">
                 {item.children.map((child) => {
-                  const ativo = ehAtivo(pathname, child.href, searchParams);
+                  // Subgrupo de 2º nível (ex: "Movimentações"/"Cadastros"
+                  // dentro de "Financeiro") — tem os próprios filhos em vez
+                  // de um href direto.
+                  if (child.children) {
+                    const chaveSubgrupo = `${item.label}>${child.label}`;
+                    const subAberto = subGruposAbertos.has(chaveSubgrupo);
+                    const algumNetoAtivo = algumDescendenteAtivo(child.children, pathname, searchParams);
+                    return (
+                      <div key={child.label}>
+                        <button
+                          type="button"
+                          onClick={() => alternarSubGrupo(chaveSubgrupo)}
+                          className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition ${
+                            algumNetoAtivo
+                              ? "font-medium text-brand"
+                              : "text-ink-muted hover:text-ink"
+                          }`}
+                        >
+                          <span className="min-w-0 flex-1 truncate text-left">{child.label}</span>
+                          <ChevronRight
+                            size={12}
+                            strokeWidth={2}
+                            className={`shrink-0 transition-transform ${subAberto ? "rotate-90" : ""}`}
+                          />
+                        </button>
+                        {subAberto && (
+                          <div className="ml-2 space-y-0.5 border-l border-border pl-3">
+                            {child.children.map((neto) => {
+                              const ativo = ehAtivo(pathname, neto.href!, searchParams);
+                              return (
+                                <Link
+                                  key={neto.href}
+                                  href={neto.href!}
+                                  onClick={() => setMenuAberto(false)}
+                                  className={`block rounded-lg px-2.5 py-1.5 text-sm transition ${
+                                    ativo
+                                      ? "bg-brand-soft font-medium text-brand"
+                                      : "text-ink-muted hover:bg-background hover:text-ink"
+                                  }`}
+                                >
+                                  {neto.label}
+                                </Link>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+
+                  const ativo = ehAtivo(pathname, child.href!, searchParams);
                   return (
                     <Link
                       key={child.href}
-                      href={child.href}
+                      href={child.href!}
                       onClick={() => setMenuAberto(false)}
                       className={`block rounded-lg px-2.5 py-1.5 text-sm transition ${
                         ativo

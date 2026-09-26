@@ -33,7 +33,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { ehCorretor, ehSocialMedia, podeConfigurar, temVenda, temFinanciamento, temLocacao } =
     await getPermissoesUsuario(supabase, user.id, usuario.nivel_acesso);
 
-  type ItemMenu = { href: string; label: string } | { label: string; children: { href: string; label: string }[] };
+  type SubItemMenu = { href: string; label: string } | { label: string; children: { href: string; label: string }[] };
+  type ItemMenu = { href: string; label: string } | { label: string; children: SubItemMenu[] };
 
   const navItems: ItemMenu[] = ehSocialMedia
     ? [
@@ -132,16 +133,26 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {
                 label: "Financeiro",
                 children: [
-                  { href: "/financeiro", label: "Visão Geral" },
-                  { href: "/financeiro/agenda", label: "Agenda Financeira" },
-                  { href: "/financeiro/contas-a-pagar", label: "Contas a Pagar" },
-                  { href: "/financeiro/contas-a-receber", label: "Contas a Receber" },
-                  { href: "/financeiro/contas-bancarias", label: "Contas Bancárias" },
-                  { href: "/financeiro/pessoas", label: "Clientes e Fornecedores" },
-                  { href: "/financeiro/categorias", label: "Categorias e Centros de Resultado" },
-                  { href: "/financeiro/relatorios", label: "Relatórios Financeiros" },
-                  { href: "/financeiro/cartao-corporativo", label: "Cartão Corporativo" },
-                  { href: "/financeiro/configuracoes-email", label: "Configurações de E-mail" },
+                  { href: "/financeiro", label: "Resumo" },
+                  {
+                    label: "Movimentações",
+                    children: [
+                      { href: "/financeiro/contas-a-pagar", label: "Pagar" },
+                      { href: "/financeiro/contas-a-receber", label: "Receber" },
+                      { href: "/financeiro/agenda", label: "Agenda" },
+                    ],
+                  },
+                  {
+                    label: "Cadastros",
+                    children: [
+                      { href: "/financeiro/contas-bancarias", label: "Bancos" },
+                      { href: "/financeiro/pessoas", label: "Contatos" },
+                      { href: "/financeiro/categorias", label: "Categorias" },
+                    ],
+                  },
+                  { href: "/financeiro/relatorios", label: "Relatórios" },
+                  { href: "/financeiro/cartao-corporativo", label: "Cartões" },
+                  { href: "/financeiro/configuracoes-email", label: "E-mails" },
                 ],
               },
             ]
