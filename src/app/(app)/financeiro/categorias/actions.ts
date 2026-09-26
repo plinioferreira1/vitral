@@ -23,9 +23,28 @@ export async function criarCategoria(formData: FormData) {
   const nome = String(formData.get("nome") ?? "").trim();
   const tipo = String(formData.get("tipo") ?? "despesa");
   const grupo = String(formData.get("grupo") ?? "").trim() || null;
+  const centroCustoPadraoId = String(formData.get("centro_custo_padrao_id") ?? "").trim() || null;
   if (!nome) return;
 
-  await supabase.from("financeiro_categorias").insert({ tenant_id: tenantId, nome, tipo, grupo });
+  await supabase
+    .from("financeiro_categorias")
+    .insert({ tenant_id: tenantId, nome, tipo, grupo, centro_custo_padrao_id: centroCustoPadraoId });
+  revalidatePath("/financeiro/categorias");
+}
+
+export async function editarCategoria(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+  const nome = String(formData.get("nome") ?? "").trim();
+  const grupo = String(formData.get("grupo") ?? "").trim() || null;
+  const centroCustoPadraoId = String(formData.get("centro_custo_padrao_id") ?? "").trim() || null;
+  if (!nome) return;
+
+  const supabase = await createClient();
+  await supabase
+    .from("financeiro_categorias")
+    .update({ nome, grupo, centro_custo_padrao_id: centroCustoPadraoId })
+    .eq("id", id);
   revalidatePath("/financeiro/categorias");
 }
 

@@ -3,6 +3,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
+function categoriaFornecedorOuNull(formData: FormData, papel: string): string | null {
+  if (papel === "cliente") return null;
+  const v = String(formData.get("categoria_fornecedor") ?? "").trim();
+  return v === "funcionario" || v === "corretor" || v === "prestador_servico" ? v : null;
+}
+
 export async function criarPessoaFinanceiro(formData: FormData) {
   const supabase = await createClient();
   const {
@@ -17,12 +23,14 @@ export async function criarPessoaFinanceiro(formData: FormData) {
 
   const nome = String(formData.get("nome") ?? "").trim();
   if (!nome) return;
+  const papel = String(formData.get("papel") ?? "fornecedor");
 
   await supabase.from("financeiro_pessoas").insert({
     tenant_id: usuario.tenant_id,
     nome,
     cpf_cnpj: String(formData.get("cpf_cnpj") ?? "").trim() || null,
-    papel: String(formData.get("papel") ?? "fornecedor"),
+    papel,
+    categoria_fornecedor: categoriaFornecedorOuNull(formData, papel),
     telefone: String(formData.get("telefone") ?? "").trim() || null,
     email: String(formData.get("email") ?? "").trim() || null,
     observacoes: String(formData.get("observacoes") ?? "").trim() || null,
@@ -38,13 +46,15 @@ export async function editarPessoaFinanceiro(formData: FormData) {
 
   const nome = String(formData.get("nome") ?? "").trim();
   if (!nome) return;
+  const papel = String(formData.get("papel") ?? "fornecedor");
 
   await supabase
     .from("financeiro_pessoas")
     .update({
       nome,
       cpf_cnpj: String(formData.get("cpf_cnpj") ?? "").trim() || null,
-      papel: String(formData.get("papel") ?? "fornecedor"),
+      papel,
+      categoria_fornecedor: categoriaFornecedorOuNull(formData, papel),
       telefone: String(formData.get("telefone") ?? "").trim() || null,
       email: String(formData.get("email") ?? "").trim() || null,
       observacoes: String(formData.get("observacoes") ?? "").trim() || null,
