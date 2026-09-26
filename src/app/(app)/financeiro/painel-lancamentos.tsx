@@ -690,17 +690,17 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         </form>
       )}
 
-      <div id="lista" className="scroll-mt-4 overflow-x-auto rounded-xl border border-border/60 bg-surface shadow-sm">
+      <div id="lista" className="scroll-mt-4 rounded-xl border border-border/60 bg-surface shadow-sm">
         {lancamentos.length === 0 ? (
           <p className="p-8 text-center text-sm text-ink-muted">
             {temFiltro ? "Nenhum lançamento encontrado com esses filtros." : "Nenhum lançamento ainda."}
           </p>
         ) : (
           <>
-            <table className="w-full text-sm">
+            <table className="w-full table-fixed text-sm">
               <thead>
                 <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
-                  <th className="w-8 px-4 py-2.5">
+                  <th className="w-10 px-2 py-2.5">
                     <SelecionarTodos formId="form-apagar-lote" className="accent-brand" />
                   </th>
                   <th className="px-4 py-2.5 font-medium">
@@ -708,7 +708,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                       Descrição {iconeOrdenacao("descricao")}
                     </Link>
                   </th>
-                  <th className="px-4 py-2.5 font-medium">
+                  <th className="hidden px-4 py-2.5 font-medium md:table-cell">
                     <Link href={linkOrdenar("vencimento")} className="inline-flex items-center gap-1 hover:text-ink">
                       Vencimento {iconeOrdenacao("vencimento")}
                     </Link>
@@ -718,12 +718,12 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                       Valor {iconeOrdenacao("valor")}
                     </Link>
                   </th>
-                  <th className="px-4 py-2.5 font-medium">
+                  <th className="hidden px-4 py-2.5 font-medium md:table-cell">
                     <Link href={linkOrdenar("status")} className="inline-flex items-center gap-1 hover:text-ink">
                       Status {iconeOrdenacao("status")}
                     </Link>
                   </th>
-                  <th className="px-4 py-2.5 font-medium text-right">Ações</th>
+                  <th className="w-24 px-2 py-2.5 font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -747,10 +747,11 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                         <div className="mt-1 text-xs text-ink-muted">
                           {[pessoa?.nome, categoria?.nome ?? "Sem categoria", conta?.nome].filter(Boolean).join(" · ")}
                         </div>
+                        <div className="mt-1 text-xs text-ink-muted md:hidden">{dataBR(l.vencimento)} · {ESTADO_ROTULO[estado]}</div>
                       </td>
-                      <td className="px-4 py-2.5 text-ink-muted">{dataBR(l.vencimento)}</td>
-                      <td className="num px-4 py-2.5 text-ink">{brl(l.valor)}</td>
-                      <td className="px-4 py-2.5">
+                      <td className="hidden px-4 py-2.5 text-ink-muted md:table-cell">{dataBR(l.vencimento)}</td>
+                      <td className="num w-28 px-2 py-2.5 text-right text-xs font-medium text-ink sm:text-sm">{brl(l.valor)}</td>
+                      <td className="hidden px-4 py-2.5 md:table-cell">
                         <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${ESTADO_TEXTO[estado]}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${ESTADO_COR[estado]}`} />
                           {ESTADO_ROTULO[estado]}
