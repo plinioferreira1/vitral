@@ -570,11 +570,27 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         </details>
       </div>
 
-      <form
-        method="get"
-        action={`${rota}#lista`}
-        className="flex flex-wrap items-end gap-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm"
-      >
+      <details className="group rounded-2xl border border-border/70 bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-ink-muted">
+              <SlidersHorizontal size={16} strokeWidth={2} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-ink">Filtros</p>
+              <p className="truncate text-xs text-ink-muted">
+                {temFiltro ? "Há filtros aplicados à lista." : "Refine por status, categoria, pessoa, conta, competência ou unidade."}
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-medium text-brand group-open:hidden">Abrir</span>
+          <span className="hidden text-xs font-medium text-brand group-open:inline">Fechar</span>
+        </summary>
+        <form
+          method="get"
+          action={`${rota}#lista`}
+          className="flex flex-wrap items-end gap-3 border-t border-border/70 px-4 py-4"
+        >
         <input type="hidden" name="q" value={f.q ?? ""} />
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">Status</label>
@@ -648,7 +664,8 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
             Limpar filtros
           </a>
         )}
-      </form>
+        </form>
+      </details>
 
       {lancamentos.length > 0 && (
         <form
