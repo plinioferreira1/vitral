@@ -18,6 +18,7 @@ import {
   Ban,
   Tag,
   MoreHorizontal,
+  SlidersHorizontal,
 } from "lucide-react";
 import { CartaoKpi } from "@/components/cartao-kpi";
 import {
