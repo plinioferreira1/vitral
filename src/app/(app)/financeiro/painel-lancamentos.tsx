@@ -1,26 +1,89 @@
+import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Repeat } from "lucide-react";
-import { CartaoIndicador } from "@/components/cartao-indicador";
-import { Wallet, AlertTriangle, RefreshCcw, CheckCircle2 } from "lucide-react";
+import {
+  Repeat,
+  Wallet,
+  AlertTriangle,
+  RefreshCcw,
+  CheckCircle2,
+  ArrowUp,
+  ArrowDown,
+  ChevronUp,
+  ChevronDown,
+  ChevronsUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Search,
+  Pencil,
+  Ban,
+} from "lucide-react";
+import { CartaoKpi } from "@/components/cartao-kpi";
 import { criarLancamento, registrarBaixa, cancelarLancamento, editarLancamento, apagarLancamentos } from "./lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
 import { SelecionarTodos } from "@/components/selecionar-todos";
+import { SelectAutoSubmit } from "@/components/select-auto-submit";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
 
-const STATUS_LABEL: Record<string, string> = {
-  pendente: "Pendente",
-  pago_parcial: "Pago parcial",
+type EstadoExibicao = "vencido" | "pago" | "cancelado" | "recorrente" | "pago_parcial" | "pendente";
+
+const ESTADO_ROTULO: Record<EstadoExibicao, string> = {
+  vencido: "Vencido",
   pago: "Pago",
   cancelado: "Cancelado",
+  recorrente: "Recorrente",
+  pago_parcial: "Pago parcial",
+  pendente: "Pendente",
 };
-const STATUS_COR: Record<string, string> = {
-  pendente: "bg-amber-50 text-amber-700 border-amber-100",
-  pago_parcial: "bg-blue-50 text-blue-700 border-blue-100",
-  pago: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  cancelado: "bg-stone-100 text-stone-500 border-stone-200",
+const ESTADO_COR: Record<EstadoExibicao, string> = {
+  vencido: "bg-rose-500",
+  pago: "bg-emerald-500",
+  cancelado: "bg-stone-400",
+  recorrente: "bg-blue-500",
+  pago_parcial: "bg-indigo-500",
+  pendente: "bg-amber-500",
 };
+const ESTADO_TEXTO: Record<EstadoExibicao, string> = {
+  vencido: "text-rose-700",
+  pago: "text-emerald-700",
+  cancelado: "text-stone-500",
+  recorrente: "text-blue-700",
+  pago_parcial: "text-indigo-700",
+  pendente: "text-amber-700",
+};
+
+type LancamentoLinha = {
+  id: string;
+  descricao: string;
+  valor: number;
+  vencimento: string;
+  competencia: string | null;
+  status: string;
+  recorrencia_id: string | null;
+  pessoa_id: string | null;
+  categoria_id: string | null;
+  centro_custo_id: string | null;
+  unidade_id: string | null;
+  conta_bancaria_id: string | null;
+  forma_pagamento: string | null;
+  numero_documento: string | null;
+  observacoes: string | null;
+  financeiro_pessoas: { nome: string } | null;
+  financeiro_categorias: { nome: string } | null;
+  financeiro_unidades: { nome: string } | null;
+  financeiro_contas_bancarias: { nome: string } | null;
+};
+
+function estadoExibicao(l: LancamentoLinha, hoje: string): EstadoExibicao {
+  if (l.status === "cancelado") return "cancelado";
+  if (l.status === "pago") return "pago";
+  const aberto = l.status === "pendente" || l.status === "pago_parcial";
+  if (aberto && l.vencimento < hoje) return "vencido";
+  if (aberto && l.recorrencia_id) return "recorrente";
+  if (l.status === "pago_parcial") return "pago_parcial";
+  return "pendente";
+}
 
 function brl(v: number): string {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -29,13 +92,62 @@ function dataBR(iso: string): string {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR");
 }
 
-type Filtros = { status?: string; categoria?: string; pessoa?: string; q?: string };
+type Filtros = {
+  q?: string;
+  status?: string;
+  categoria?: string;
+  pessoa?: string;
+  conta_bancaria?: string;
+  unidade?: string;
+  competencia?: string;
+  ordenar?: string;
+  direcao?: string;
+  pagina?: string;
+  por_pagina?: string;
+};
+
+type CampoOrdenacao = "descricao" | "pessoa" | "categoria" | "vencimento" | "valor" | "status";
+
+function construirUrl(base: string, params: Filtros): string {
+  const sp = new URLSearchParams();
+  (Object.keys(params) as (keyof Filtros)[]).forEach((k) => {
+    const v = params[k];
+    if (v) sp.set(k, v);
+  });
+  const qs = sp.toString();
+  return qs ? `${base}?${qs}#lista` : `${base}#lista`;
+}
+
+function linhaComparativo(percentual: number | null, aumentoBom: boolean) {
+  if (percentual === null) return null;
+  const subiu = percentual >= 0;
+  const bom = subiu === aumentoBom;
+  const Icone = subiu ? ArrowUp : ArrowDown;
+  const cor = bom ? "text-emerald-600" : "text-rose-600";
+  return (
+    <p className={`mt-2 flex items-center gap-1 text-xs font-medium ${cor}`}>
+      <Icone size={12} strokeWidth={2.5} />
+      {Math.abs(percentual).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% em relação ao mês anterior
+    </p>
+  );
+}
+
+function variacao(atual: number, anterior: number): number | null {
+  if (anterior <= 0) return null;
+  return ((atual - anterior) / anterior) * 100;
+}
 
 export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita" | "despesa"; searchParams?: Filtros }) {
   const supabase = await createClient();
   const hoje = hojeISO();
+  const ano = Number(hoje.slice(0, 4));
+  const mes = Number(hoje.slice(5, 7));
   const inicioMes = `${hoje.slice(0, 7)}-01`;
-  const fim = new Date(Number(hoje.slice(0, 4)), Number(hoje.slice(5, 7)), 0).toISOString().slice(0, 10);
+  const fim = new Date(ano, mes, 0).toISOString().slice(0, 10);
+  const anoAnterior = mes === 1 ? ano - 1 : ano;
+  const mesAnterior = mes === 1 ? 12 : mes - 1;
+  const inicioMesAnterior = `${anoAnterior}-${String(mesAnterior).padStart(2, "0")}-01`;
+  const fimMesAnterior = new Date(anoAnterior, mesAnterior, 0).toISOString().slice(0, 10);
 
   const [{ data: pessoas }, { data: categorias }, { data: centros }, { data: unidades }, { data: contas }] =
     await Promise.all([
@@ -49,7 +161,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const { data: lancamentosTodos } = await supabase
     .from("financeiro_lancamentos")
     .select(
-      "id, descricao, valor, vencimento, competencia, status, recorrencia_id, pessoa_id, categoria_id, centro_custo_id, unidade_id, conta_bancaria_id, forma_pagamento, numero_documento, observacoes, financeiro_pessoas ( nome ), financeiro_categorias ( nome ), financeiro_unidades ( nome )"
+      "id, descricao, valor, vencimento, competencia, status, recorrencia_id, pessoa_id, categoria_id, centro_custo_id, unidade_id, conta_bancaria_id, forma_pagamento, numero_documento, observacoes, financeiro_pessoas ( nome ), financeiro_categorias ( nome ), financeiro_unidades ( nome ), financeiro_contas_bancarias ( nome )"
     )
     .eq("tipo", tipo)
     .order("vencimento");
@@ -62,7 +174,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     baixadoPorLancamento.set(b.lancamento_id, (baixadoPorLancamento.get(b.lancamento_id) ?? 0) + Number(b.valor));
   });
 
-  const todos = lancamentosTodos ?? [];
+  const todos = (lancamentosTodos ?? []) as unknown as LancamentoLinha[];
 
   // KPIs do mês corrente, calculados sobre a lista completa (não filtrada).
   const noMes = todos.filter((l) => l.vencimento >= inicioMes && l.vencimento <= fim);
@@ -76,52 +188,360 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     .filter((b) => todos.some((l) => l.id === b.lancamento_id))
     .reduce((s, b) => s + Number(b.valor), 0);
 
+  // Comparativos com o mês anterior (dados reais, não estimados).
+  const comprometidoMes = todos
+    .filter((l) => l.status !== "cancelado" && l.vencimento >= inicioMes && l.vencimento <= fim)
+    .reduce((s, l) => s + Number(l.valor), 0);
+  const comprometidoMesAnterior = todos
+    .filter((l) => l.status !== "cancelado" && l.vencimento >= inicioMesAnterior && l.vencimento <= fimMesAnterior)
+    .reduce((s, l) => s + Number(l.valor), 0);
+  const vencidosMesAnterior = todos
+    .filter((l) => (l.status === "pendente" || l.status === "pago_parcial") && l.vencimento < inicioMes)
+    .reduce((s, l) => s + Number(l.valor), 0);
+  const baixasMesAnterior = (baixasRaw ?? [])
+    .filter((b) => b.data >= inicioMesAnterior && b.data <= fimMesAnterior && todos.some((l) => l.id === b.lancamento_id))
+    .reduce((s, b) => s + Number(b.valor), 0);
+  const percentualRecorrentes = todos.length > 0 ? (recorrentes.length / todos.length) * 100 : 0;
+
   // Filtros (via querystring, navegação simples sem JS).
   const f = searchParams ?? {};
-  const lancamentos = todos.filter((l) => {
-    if (f.status && l.status !== f.status) return false;
+  let lancamentos = todos.filter((l) => {
+    if (f.status && estadoExibicao(l, hoje) !== f.status) return false;
     if (f.categoria && l.categoria_id !== f.categoria) return false;
     if (f.pessoa && l.pessoa_id !== f.pessoa) return false;
-    if (f.q && !l.descricao.toLowerCase().includes(f.q.toLowerCase())) return false;
+    if (f.conta_bancaria && l.conta_bancaria_id !== f.conta_bancaria) return false;
+    if (f.unidade && l.unidade_id !== f.unidade) return false;
+    if (f.competencia && (l.competencia ?? l.vencimento).slice(0, 7) !== f.competencia) return false;
+    if (f.q) {
+      const termo = f.q.toLowerCase();
+      const combinado = `${l.descricao} ${l.financeiro_pessoas?.nome ?? ""} ${l.financeiro_categorias?.nome ?? ""}`.toLowerCase();
+      if (!combinado.includes(termo)) return false;
+    }
     return true;
   });
+
+  // Ordenação.
+  const ordenar = ((["descricao", "pessoa", "categoria", "vencimento", "valor", "status"] as string[]).includes(
+    f.ordenar ?? ""
+  )
+    ? f.ordenar
+    : "vencimento") as CampoOrdenacao;
+  const direcao = f.direcao === "desc" ? "desc" : "asc";
+  const sinal = direcao === "asc" ? 1 : -1;
+  lancamentos = [...lancamentos].sort((a, b) => {
+    let va: string | number;
+    let vb: string | number;
+    switch (ordenar) {
+      case "descricao":
+        va = a.descricao.toLowerCase();
+        vb = b.descricao.toLowerCase();
+        break;
+      case "pessoa":
+        va = (a.financeiro_pessoas?.nome ?? "").toLowerCase();
+        vb = (b.financeiro_pessoas?.nome ?? "").toLowerCase();
+        break;
+      case "categoria":
+        va = (a.financeiro_categorias?.nome ?? "").toLowerCase();
+        vb = (b.financeiro_categorias?.nome ?? "").toLowerCase();
+        break;
+      case "valor":
+        va = Number(a.valor);
+        vb = Number(b.valor);
+        break;
+      case "status":
+        va = estadoExibicao(a, hoje);
+        vb = estadoExibicao(b, hoje);
+        break;
+      default:
+        va = a.vencimento;
+        vb = b.vencimento;
+    }
+    if (va < vb) return -1 * sinal;
+    if (va > vb) return 1 * sinal;
+    return 0;
+  });
+
+  // Paginação.
+  const porPagina = Math.max(1, Number(f.por_pagina) || 10);
+  const totalItens = lancamentos.length;
+  const totalPaginas = Math.max(1, Math.ceil(totalItens / porPagina));
+  const paginaAtual = Math.min(Math.max(1, Number(f.pagina) || 1), totalPaginas);
+  const inicioPagina = (paginaAtual - 1) * porPagina;
+  const lancamentosPagina = lancamentos.slice(inicioPagina, inicioPagina + porPagina);
 
   const titulo = tipo === "receita" ? "Contas a Receber" : "Contas a Pagar";
   const rotuloPessoa = tipo === "receita" ? "Cliente" : "Fornecedor";
   const rota = tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
-  const temFiltro = !!(f.status || f.categoria || f.pessoa || f.q);
+  const temFiltro = !!(f.status || f.categoria || f.pessoa || f.conta_bancaria || f.unidade || f.competencia || f.q);
+
+  function linkOrdenar(campo: CampoOrdenacao): string {
+    const novaDirecao = ordenar === campo && direcao === "asc" ? "desc" : "asc";
+    return construirUrl(rota, { ...f, ordenar: campo, direcao: novaDirecao, pagina: undefined });
+  }
+  function iconeOrdenacao(campo: CampoOrdenacao) {
+    if (campo !== ordenar) return <ChevronsUpDown size={12} className="text-ink-muted/50" />;
+    return direcao === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />;
+  }
+
+  const camposOcultos: [keyof Filtros, string | undefined][] = [
+    ["q", f.q],
+    ["status", f.status],
+    ["categoria", f.categoria],
+    ["pessoa", f.pessoa],
+    ["conta_bancaria", f.conta_bancaria],
+    ["unidade", f.unidade],
+    ["competencia", f.competencia],
+    ["ordenar", f.ordenar],
+    ["direcao", f.direcao],
+    ["por_pagina", f.por_pagina],
+  ];
+  function CamposOcultos({ omitir = [] }: { omitir?: (keyof Filtros)[] }) {
+    return (
+      <>
+        {camposOcultos
+          .filter(([campo]) => !omitir.includes(campo))
+          .map(([campo, valor]) => (valor ? <input key={campo} type="hidden" name={campo} value={valor} /> : null))}
+      </>
+    );
+  }
 
   return (
-    <div className="max-w-5xl space-y-6">
+    <div className="max-w-6xl space-y-6">
       <div>
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">{titulo}</h1>
         <p className="mt-1 text-sm text-ink-muted">
-          Lançamentos manuais e recorrentes — marque como recorrente pra gerar as próximas ocorrências
-          automaticamente, sem precisar cadastrar uma por uma.
+          Lançamentos manuais e recorrentes para gerenciar os seus{" "}
+          {tipo === "receita" ? "recebimentos" : "compromissos financeiros"}, com controle de vencimentos e{" "}
+          {tipo === "receita" ? "recebimentos" : "pagamentos"}.
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <CartaoIndicador
+        <CartaoKpi
           icon={Wallet}
-          valor={brl(totalNoMes)}
+          tom="marca"
           label={`${tipo === "receita" ? "A receber" : "A pagar"} no mês`}
+          valor={brl(totalNoMes)}
+          href={`${rota}?status=pendente#lista`}
+          rodape={linhaComparativo(variacao(comprometidoMes, comprometidoMesAnterior), false)}
         />
-        <CartaoIndicador icon={AlertTriangle} valor={brl(totalVencidos)} label={`Vencidos (${vencidos.length})`} tom={vencidos.length > 0 ? "perigo" : "neutro"} />
-        <CartaoIndicador icon={RefreshCcw} valor={recorrentes.length} label="Recorrentes em aberto" />
-        <CartaoIndicador icon={CheckCircle2} valor={brl(totalBaixadoNoMes)} label={`${tipo === "receita" ? "Recebidos" : "Pagos"} no mês`} tom="sucesso" />
+        <CartaoKpi
+          icon={AlertTriangle}
+          tom="perigo"
+          label={`Vencidos (${vencidos.length})`}
+          valor={brl(totalVencidos)}
+          href={`${rota}?status=vencido#lista`}
+          rodape={linhaComparativo(variacao(totalVencidos, vencidosMesAnterior), false)}
+        />
+        <CartaoKpi
+          icon={RefreshCcw}
+          tom="info"
+          label="Recorrentes em aberto"
+          valor={recorrentes.length}
+          href={`${rota}?status=recorrente#lista`}
+          rodape={
+            <p className="mt-2 text-xs text-ink-muted">
+              {percentualRecorrentes.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}% do total de lançamentos
+            </p>
+          }
+        />
+        <CartaoKpi
+          icon={CheckCircle2}
+          tom="sucesso"
+          label={`${tipo === "receita" ? "Recebidos" : "Pagos"} no mês`}
+          valor={brl(totalBaixadoNoMes)}
+          href={`${rota}?status=pago#lista`}
+          rodape={linhaComparativo(variacao(totalBaixadoNoMes, baixasMesAnterior), true)}
+        />
       </div>
 
-      <form method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
-        <div className="min-w-[180px] flex-1">
-          <label className="mb-1 block text-xs font-medium text-ink-muted">Buscar por descrição</label>
-          <input name="q" defaultValue={f.q ?? ""} placeholder="Descrição..." className={campoClasse} />
-        </div>
+      <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm sm:flex-row sm:items-center">
+        <form method="get" action={`${rota}#lista`} className="relative flex-1">
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
+          <input
+            name="q"
+            defaultValue={f.q ?? ""}
+            placeholder={`Buscar por descrição, ${rotuloPessoa.toLowerCase()}, categoria...`}
+            className={`${campoClasse} pl-9`}
+          />
+          <button type="submit" className="sr-only">
+            Buscar
+          </button>
+          <CamposOcultos omitir={["q"]} />
+        </form>
+        <details className="shrink-0">
+          <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+            + Novo lançamento
+          </summary>
+          <form action={criarLancamento} className="mt-3 space-y-5 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+            <input type="hidden" name="tipo" value={tipo} />
+
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">1. Dados principais</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <input name="descricao" required placeholder="Descrição" className={campoClasse} />
+                <input name="valor" type="number" step="0.01" required placeholder="Valor (R$)" className={campoClasse} />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select name="pessoa_id" defaultValue="" className={campoClasse}>
+                  <option value="">{rotuloPessoa} (opcional)</option>
+                  {(pessoas ?? []).map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.nome}
+                    </option>
+                  ))}
+                </select>
+                <select name="categoria_id" defaultValue="" className={campoClasse}>
+                  <option value="">Categoria (opcional)</option>
+                  {(categorias ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-3">
+                <select name="centro_custo_id" defaultValue="" className={campoClasse}>
+                  <option value="">Centro de resultado (opcional)</option>
+                  {(centros ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+                <select name="unidade_id" defaultValue="" className={campoClasse}>
+                  <option value="">Unidade (opcional)</option>
+                  {(unidades ?? []).map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.nome}
+                    </option>
+                  ))}
+                </select>
+                <select name="conta_bancaria_id" defaultValue="" className={campoClasse}>
+                  <option value="">Conta bancária prevista (opcional)</option>
+                  {(contas ?? []).map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">2. Datas e pagamento</p>
+              <label className="flex items-center gap-2 text-sm font-medium text-ink">
+                <input type="checkbox" name="recorrente" className="accent-brand" />
+                <Repeat size={14} strokeWidth={2} />
+                Isso é uma conta recorrente
+              </label>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ink-muted">
+                    Vencimento (só pra lançamento avulso)
+                  </label>
+                  <input name="vencimento" type="date" className={campoClasse} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ink-muted">Competência (opcional)</label>
+                  <input name="competencia" type="date" className={campoClasse} />
+                </div>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <input name="forma_pagamento" placeholder="Forma de pagamento (opcional)" className={campoClasse} />
+                <input name="numero_documento" placeholder="Número do documento (opcional)" className={campoClasse} />
+              </div>
+            </div>
+
+            <div className="space-y-3 rounded-lg bg-background p-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                3. Recorrência (se marcou o campo acima)
+              </p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <select name="frequencia" defaultValue="mensal" className={campoClasse}>
+                  <option value="semanal">Semanal</option>
+                  <option value="mensal">Mensal</option>
+                  <option value="trimestral">Trimestral</option>
+                  <option value="semestral">Semestral</option>
+                  <option value="anual">Anual</option>
+                </select>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ink-muted">Data da 1ª ocorrência</label>
+                  <input name="data_inicio" type="date" className={campoClasse} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ink-muted">
+                    Repetir até (data final)
+                  </label>
+                  <input name="data_fim" type="date" className={campoClasse} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ink-muted">
+                    ...ou por quantas vezes
+                  </label>
+                  <input name="numero_ocorrencias" type="number" min={1} placeholder="Ex: 12" className={campoClasse} />
+                </div>
+              </div>
+              <p className="text-[11px] text-ink-muted">
+                Preencha &quot;repetir até&quot; OU &quot;quantas vezes&quot; — só precisa de um dos dois. As
+                ocorrências já são criadas todas de uma vez (limite de 60 lançamentos por recorrência).
+              </p>
+
+              <div className="space-y-2 border-t border-border pt-3">
+                <p className="text-xs font-medium text-ink">Vencimento de cada ocorrência</p>
+                <div className="flex flex-wrap gap-4">
+                  <label className="flex items-center gap-1.5 text-xs text-ink">
+                    <input type="radio" name="tipo_vencimento" value="fixo" defaultChecked className="accent-brand" />
+                    Sempre no mesmo dia (usa a data da 1ª ocorrência)
+                  </label>
+                  <label className="flex items-center gap-1.5 text-xs text-ink">
+                    <input type="radio" name="tipo_vencimento" value="dia_util" className="accent-brand" />
+                    Num dia útil do mês
+                  </label>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    name="dia_util"
+                    type="number"
+                    min={1}
+                    max={23}
+                    placeholder="Ex: 5"
+                    className={`${campoClasse} max-w-[100px]`}
+                  />
+                  <span className="text-xs text-ink-muted">
+                    º dia útil do mês (só vale se marcar a opção acima — a data da 1ª ocorrência
+                    serve só pra indicar o mês/ano de início). Vale para mensal, trimestral, semestral
+                    e anual; não se aplica à semanal.
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">4. Observações</p>
+              <textarea name="observacoes" rows={2} placeholder="Observações (opcional)" className={campoClasse} />
+            </div>
+
+            <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+              Criar lançamento
+            </button>
+          </form>
+        </details>
+      </div>
+
+      <form
+        method="get"
+        action={`${rota}#lista`}
+        className="flex flex-wrap items-end gap-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm"
+      >
+        <input type="hidden" name="q" value={f.q ?? ""} />
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">Status</label>
           <select name="status" defaultValue={f.status ?? ""} className={campoClasse}>
             <option value="">Todos</option>
             <option value="pendente">Pendente</option>
+            <option value="vencido">Vencido</option>
+            <option value="recorrente">Recorrente</option>
             <option value="pago_parcial">Pago parcial</option>
             <option value="pago">Pago</option>
             <option value="cancelado">Cancelado</option>
@@ -149,174 +569,44 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
             ))}
           </select>
         </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-muted">Conta bancária</label>
+          <select name="conta_bancaria" defaultValue={f.conta_bancaria ?? ""} className={campoClasse}>
+            <option value="">Todas</option>
+            {(contas ?? []).map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-muted">Competência</label>
+          <input name="competencia" type="month" defaultValue={f.competencia ?? ""} className={campoClasse} />
+        </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-muted">Unidade</label>
+          <select name="unidade" defaultValue={f.unidade ?? ""} className={campoClasse}>
+            <option value="">Todas</option>
+            {(unidades ?? []).map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+        <input type="hidden" name="ordenar" value={f.ordenar ?? ""} />
+        <input type="hidden" name="direcao" value={f.direcao ?? ""} />
+        <input type="hidden" name="por_pagina" value={f.por_pagina ?? ""} />
         <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
           Filtrar
         </button>
         {temFiltro && (
-          <a href={rota} className="text-xs text-ink-muted hover:text-brand hover:underline">
+          <a href={`${rota}#lista`} className="text-xs text-ink-muted hover:text-brand hover:underline">
             Limpar filtros
           </a>
         )}
       </form>
-
-      <details className="rounded-xl border border-border/60 bg-surface shadow-sm">
-        <summary className="cursor-pointer list-none p-5 text-sm font-semibold text-ink">
-          + Novo lançamento
-        </summary>
-        <form action={criarLancamento} className="space-y-5 border-t border-border p-5">
-          <input type="hidden" name="tipo" value={tipo} />
-
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">1. Dados principais</p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <input name="descricao" required placeholder="Descrição" className={campoClasse} />
-              <input name="valor" type="number" step="0.01" required placeholder="Valor (R$)" className={campoClasse} />
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <select name="pessoa_id" defaultValue="" className={campoClasse}>
-                <option value="">{rotuloPessoa} (opcional)</option>
-                {(pessoas ?? []).map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nome}
-                  </option>
-                ))}
-              </select>
-              <select name="categoria_id" defaultValue="" className={campoClasse}>
-                <option value="">Categoria (opcional)</option>
-                {(categorias ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <select name="centro_custo_id" defaultValue="" className={campoClasse}>
-                <option value="">Centro de resultado (opcional)</option>
-                {(centros ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-              <select name="unidade_id" defaultValue="" className={campoClasse}>
-                <option value="">Unidade (opcional)</option>
-                {(unidades ?? []).map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.nome}
-                  </option>
-                ))}
-              </select>
-              <select name="conta_bancaria_id" defaultValue="" className={campoClasse}>
-                <option value="">Conta bancária prevista (opcional)</option>
-                {(contas ?? []).map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.nome}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">2. Datas e pagamento</p>
-            <label className="flex items-center gap-2 text-sm font-medium text-ink">
-              <input type="checkbox" name="recorrente" className="accent-brand" />
-              <Repeat size={14} strokeWidth={2} />
-              Isso é uma conta recorrente
-            </label>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">
-                  Vencimento (só pra lançamento avulso)
-                </label>
-                <input name="vencimento" type="date" className={campoClasse} />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Competência (opcional)</label>
-                <input name="competencia" type="date" className={campoClasse} />
-              </div>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <input name="forma_pagamento" placeholder="Forma de pagamento (opcional)" className={campoClasse} />
-              <input name="numero_documento" placeholder="Número do documento (opcional)" className={campoClasse} />
-            </div>
-          </div>
-
-          <div className="space-y-3 rounded-lg bg-background p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
-              3. Recorrência (se marcou o campo acima)
-            </p>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <select name="frequencia" defaultValue="mensal" className={campoClasse}>
-                <option value="semanal">Semanal</option>
-                <option value="mensal">Mensal</option>
-                <option value="trimestral">Trimestral</option>
-                <option value="semestral">Semestral</option>
-                <option value="anual">Anual</option>
-              </select>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Data da 1ª ocorrência</label>
-                <input name="data_inicio" type="date" className={campoClasse} />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">
-                  Repetir até (data final)
-                </label>
-                <input name="data_fim" type="date" className={campoClasse} />
-              </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">
-                  ...ou por quantas vezes
-                </label>
-                <input name="numero_ocorrencias" type="number" min={1} placeholder="Ex: 12" className={campoClasse} />
-              </div>
-            </div>
-            <p className="text-[11px] text-ink-muted">
-              Preencha &quot;repetir até&quot; OU &quot;quantas vezes&quot; — só precisa de um dos dois. As
-              ocorrências já são criadas todas de uma vez (limite de 60 lançamentos por recorrência).
-            </p>
-
-            <div className="space-y-2 border-t border-border pt-3">
-              <p className="text-xs font-medium text-ink">Vencimento de cada ocorrência</p>
-              <div className="flex flex-wrap gap-4">
-                <label className="flex items-center gap-1.5 text-xs text-ink">
-                  <input type="radio" name="tipo_vencimento" value="fixo" defaultChecked className="accent-brand" />
-                  Sempre no mesmo dia (usa a data da 1ª ocorrência)
-                </label>
-                <label className="flex items-center gap-1.5 text-xs text-ink">
-                  <input type="radio" name="tipo_vencimento" value="dia_util" className="accent-brand" />
-                  Num dia útil do mês
-                </label>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  name="dia_util"
-                  type="number"
-                  min={1}
-                  max={23}
-                  placeholder="Ex: 5"
-                  className={`${campoClasse} max-w-[100px]`}
-                />
-                <span className="text-xs text-ink-muted">
-                  º dia útil do mês (só vale se marcar a opção acima — a data da 1ª ocorrência
-                  serve só pra indicar o mês/ano de início). Vale para mensal, trimestral, semestral
-                  e anual; não se aplica à semanal.
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">4. Observações</p>
-            <textarea name="observacoes" rows={2} placeholder="Observações (opcional)" className={campoClasse} />
-          </div>
-
-          <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
-            Criar lançamento
-          </button>
-        </form>
-      </details>
 
       {lancamentos.length > 0 && (
         <form
@@ -334,212 +624,324 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         </form>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-border/60 bg-surface shadow-sm">
+      <div id="lista" className="scroll-mt-4 overflow-x-auto rounded-xl border border-border/60 bg-surface shadow-sm">
         {lancamentos.length === 0 ? (
           <p className="p-8 text-center text-sm text-ink-muted">
             {temFiltro ? "Nenhum lançamento encontrado com esses filtros." : "Nenhum lançamento ainda."}
           </p>
         ) : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
-                <th className="w-8 px-4 py-2.5">
-                  <SelecionarTodos formId="form-apagar-lote" className="accent-brand" />
-                </th>
-                <th className="px-4 py-2.5 font-medium">Descrição</th>
-                <th className="px-4 py-2.5 font-medium">{rotuloPessoa}</th>
-                <th className="px-4 py-2.5 font-medium">Categoria</th>
-                <th className="px-4 py-2.5 font-medium">Vencimento</th>
-                <th className="px-4 py-2.5 font-medium">Valor</th>
-                <th className="px-4 py-2.5 font-medium">Status</th>
-                <th className="px-4 py-2.5 font-medium"></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {lancamentos.map((l) => {
-                const pessoa = (l as unknown as { financeiro_pessoas: { nome: string } | null }).financeiro_pessoas;
-                const categoria = (l as unknown as { financeiro_categorias: { nome: string } | null })
-                  .financeiro_categorias;
-                const restante = Number(l.valor) - (baixadoPorLancamento.get(l.id) ?? 0);
-                const editavel = l.status === "pendente" || l.status === "pago_parcial";
-                return (
-                  <tr key={l.id}>
-                    <td className="px-4 py-2.5">
-                      {l.status === "pendente" && (
-                        <input type="checkbox" name="ids" value={l.id} form="form-apagar-lote" className="accent-brand" />
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 text-ink">
-                      {l.descricao}
-                      {l.recorrencia_id && (
-                        <Repeat size={11} strokeWidth={2} className="ml-1.5 inline text-ink-muted" />
-                      )}
-                    </td>
-                    <td className="px-4 py-2.5 text-ink-muted">{pessoa?.nome ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-ink-muted">{categoria?.nome ?? "—"}</td>
-                    <td className="px-4 py-2.5 text-ink-muted">{dataBR(l.vencimento)}</td>
-                    <td className="num px-4 py-2.5 text-ink">{brl(l.valor)}</td>
-                    <td className="px-4 py-2.5">
-                      <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${STATUS_COR[l.status]}`}>
-                        {STATUS_LABEL[l.status]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-2.5 text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {editavel && (
-                          <details className="relative">
-                            <summary className="cursor-pointer list-none text-xs font-medium text-ink-muted hover:text-brand hover:underline">
-                              editar
-                            </summary>
-                            <form
-                              action={editarLancamento}
-                              className="absolute right-0 z-20 mt-1 w-72 space-y-2 rounded-md border border-border bg-surface p-3 shadow-md"
-                            >
-                              <input type="hidden" name="id" value={l.id} />
-                              <input
-                                name="descricao"
-                                defaultValue={l.descricao}
-                                required
-                                placeholder="Descrição"
-                                className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                              />
-                              <input
-                                name="valor"
-                                type="number"
-                                step="0.01"
-                                defaultValue={l.valor}
-                                required
-                                placeholder="Valor"
-                                className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                              />
-                              <input
-                                name="vencimento"
-                                type="date"
-                                defaultValue={l.vencimento}
-                                required
-                                className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                              />
-                              <input
-                                name="competencia"
-                                type="date"
-                                defaultValue={l.competencia ?? l.vencimento}
-                                className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                              />
-                              <select
-                                name="pessoa_id"
-                                defaultValue={l.pessoa_id ?? ""}
-                                className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                              >
-                                <option value="">{rotuloPessoa} (opcional)</option>
-                                {(pessoas ?? []).map((p) => (
-                                  <option key={p.id} value={p.id}>
-                                    {p.nome}
-                                  </option>
-                                ))}
-                              </select>
-                              <select
-                                name="categoria_id"
-                                defaultValue={l.categoria_id ?? ""}
-                                className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                              >
-                                <option value="">Categoria (opcional)</option>
-                                {(categorias ?? []).map((c) => (
-                                  <option key={c.id} value={c.id}>
-                                    {c.nome}
-                                  </option>
-                                ))}
-                              </select>
-                              {l.recorrencia_id && (
-                                <div className="space-y-1 rounded-md bg-background p-2">
-                                  <p className="text-[10px] font-medium text-ink-muted">
-                                    Faz parte de uma recorrência. Aplicar a:
-                                  </p>
-                                  <label className="flex items-center gap-1.5 text-[11px] text-ink">
-                                    <input type="radio" name="escopo" value="um" defaultChecked className="accent-brand" />
-                                    Somente este lançamento
-                                  </label>
-                                  <label className="flex items-center gap-1.5 text-[11px] text-ink">
-                                    <input type="radio" name="escopo" value="todos_futuros" className="accent-brand" />
-                                    Este e todos os futuros da recorrência
-                                  </label>
-                                  <p className="text-[10px] text-ink-muted">
-                                    Nesse caso o vencimento de cada ocorrência é mantido — só descrição, valor,
-                                    categoria e demais dados cadastrais são replicados.
-                                  </p>
-                                </div>
-                              )}
-                              <button
-                                type="submit"
-                                className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                              >
-                                Salvar alterações
-                              </button>
-                            </form>
-                          </details>
+          <>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
+                  <th className="w-8 px-4 py-2.5">
+                    <SelecionarTodos formId="form-apagar-lote" className="accent-brand" />
+                  </th>
+                  <th className="px-4 py-2.5 font-medium">
+                    <Link href={linkOrdenar("descricao")} className="inline-flex items-center gap-1 hover:text-ink">
+                      Descrição {iconeOrdenacao("descricao")}
+                    </Link>
+                  </th>
+                  <th className="px-4 py-2.5 font-medium">
+                    <Link href={linkOrdenar("pessoa")} className="inline-flex items-center gap-1 hover:text-ink">
+                      {rotuloPessoa} {iconeOrdenacao("pessoa")}
+                    </Link>
+                  </th>
+                  <th className="px-4 py-2.5 font-medium">
+                    <Link href={linkOrdenar("categoria")} className="inline-flex items-center gap-1 hover:text-ink">
+                      Categoria {iconeOrdenacao("categoria")}
+                    </Link>
+                  </th>
+                  <th className="px-4 py-2.5 font-medium">
+                    <Link href={linkOrdenar("vencimento")} className="inline-flex items-center gap-1 hover:text-ink">
+                      Vencimento {iconeOrdenacao("vencimento")}
+                    </Link>
+                  </th>
+                  <th className="px-4 py-2.5 font-medium">
+                    <Link href={linkOrdenar("valor")} className="inline-flex items-center gap-1 hover:text-ink">
+                      Valor {iconeOrdenacao("valor")}
+                    </Link>
+                  </th>
+                  <th className="px-4 py-2.5 font-medium">
+                    <Link href={linkOrdenar("status")} className="inline-flex items-center gap-1 hover:text-ink">
+                      Status {iconeOrdenacao("status")}
+                    </Link>
+                  </th>
+                  <th className="px-4 py-2.5 font-medium">Conta</th>
+                  <th className="px-4 py-2.5 font-medium text-right">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {lancamentosPagina.map((l) => {
+                  const pessoa = l.financeiro_pessoas;
+                  const categoria = l.financeiro_categorias;
+                  const conta = l.financeiro_contas_bancarias;
+                  const restante = Number(l.valor) - (baixadoPorLancamento.get(l.id) ?? 0);
+                  const editavel = l.status === "pendente" || l.status === "pago_parcial";
+                  const estado = estadoExibicao(l, hoje);
+                  return (
+                    <tr key={l.id}>
+                      <td className="px-4 py-2.5">
+                        {l.status === "pendente" && (
+                          <input type="checkbox" name="ids" value={l.id} form="form-apagar-lote" className="accent-brand" />
                         )}
-                        {l.status !== "pago" && l.status !== "cancelado" && (
-                          <>
+                      </td>
+                      <td className="px-4 py-2.5 text-ink">
+                        {l.descricao}
+                        {l.recorrencia_id && (
+                          <Repeat size={11} strokeWidth={2} className="ml-1.5 inline text-ink-muted" />
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 text-ink-muted">{pessoa?.nome ?? "—"}</td>
+                      <td className="px-4 py-2.5 text-ink-muted">{categoria?.nome ?? "—"}</td>
+                      <td className="px-4 py-2.5 text-ink-muted">{dataBR(l.vencimento)}</td>
+                      <td className="num px-4 py-2.5 text-ink">{brl(l.valor)}</td>
+                      <td className="px-4 py-2.5">
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${ESTADO_TEXTO[estado]}`}>
+                          <span className={`h-1.5 w-1.5 rounded-full ${ESTADO_COR[estado]}`} />
+                          {ESTADO_ROTULO[estado]}
+                        </span>
+                      </td>
+                      <td className="px-4 py-2.5 text-ink-muted">{conta?.nome ?? "—"}</td>
+                      <td className="px-4 py-2.5">
+                        <div className="flex items-center justify-end gap-1">
+                          {editavel && (
                             <details className="relative">
-                              <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
-                                {tipo === "receita" ? "receber" : "pagar"}
+                              <summary
+                                className="cursor-pointer list-none rounded-md p-1.5 text-ink-muted hover:bg-background hover:text-brand"
+                                aria-label="Editar"
+                                title="Editar"
+                              >
+                                <Pencil size={15} strokeWidth={2} />
                               </summary>
                               <form
-                                action={registrarBaixa}
-                                className="absolute right-0 z-10 mt-1 w-64 space-y-2 rounded-md border border-border bg-surface p-3 shadow-md"
+                                action={editarLancamento}
+                                className="absolute right-0 z-20 mt-1 w-72 space-y-2 rounded-md border border-border bg-surface p-3 shadow-md"
                               >
-                                <input type="hidden" name="lancamento_id" value={l.id} />
-                                <p className="text-xs text-ink-muted">Restante: {brl(restante)}</p>
+                                <input type="hidden" name="id" value={l.id} />
+                                <input
+                                  name="descricao"
+                                  defaultValue={l.descricao}
+                                  required
+                                  placeholder="Descrição"
+                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                                />
                                 <input
                                   name="valor"
                                   type="number"
                                   step="0.01"
+                                  defaultValue={l.valor}
                                   required
-                                  defaultValue={restante}
                                   placeholder="Valor"
                                   className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                                 />
                                 <input
-                                  name="data"
+                                  name="vencimento"
                                   type="date"
+                                  defaultValue={l.vencimento}
                                   required
-                                  defaultValue={new Date().toISOString().slice(0, 10)}
+                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                                />
+                                <input
+                                  name="competencia"
+                                  type="date"
+                                  defaultValue={l.competencia ?? l.vencimento}
                                   className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                                 />
                                 <select
-                                  name="conta_bancaria_id"
-                                  defaultValue=""
+                                  name="pessoa_id"
+                                  defaultValue={l.pessoa_id ?? ""}
                                   className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                                 >
-                                  <option value="">Conta bancária</option>
-                                  {(contas ?? []).map((c) => (
+                                  <option value="">{rotuloPessoa} (opcional)</option>
+                                  {(pessoas ?? []).map((p) => (
+                                    <option key={p.id} value={p.id}>
+                                      {p.nome}
+                                    </option>
+                                  ))}
+                                </select>
+                                <select
+                                  name="categoria_id"
+                                  defaultValue={l.categoria_id ?? ""}
+                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                                >
+                                  <option value="">Categoria (opcional)</option>
+                                  {(categorias ?? []).map((c) => (
                                     <option key={c.id} value={c.id}>
                                       {c.nome}
                                     </option>
                                   ))}
                                 </select>
+                                {l.recorrencia_id && (
+                                  <div className="space-y-1 rounded-md bg-background p-2">
+                                    <p className="text-[10px] font-medium text-ink-muted">
+                                      Faz parte de uma recorrência. Aplicar a:
+                                    </p>
+                                    <label className="flex items-center gap-1.5 text-[11px] text-ink">
+                                      <input type="radio" name="escopo" value="um" defaultChecked className="accent-brand" />
+                                      Somente este lançamento
+                                    </label>
+                                    <label className="flex items-center gap-1.5 text-[11px] text-ink">
+                                      <input type="radio" name="escopo" value="todos_futuros" className="accent-brand" />
+                                      Este e todos os futuros da recorrência
+                                    </label>
+                                    <p className="text-[10px] text-ink-muted">
+                                      Nesse caso o vencimento de cada ocorrência é mantido — só descrição, valor,
+                                      categoria e demais dados cadastrais são replicados.
+                                    </p>
+                                  </div>
+                                )}
                                 <button
                                   type="submit"
                                   className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                                 >
-                                  Confirmar
+                                  Salvar alterações
                                 </button>
                               </form>
                             </details>
-                            <form action={cancelarLancamento}>
-                              <input type="hidden" name="id" value={l.id} />
-                              <button type="submit" className="text-xs text-ink-muted hover:text-rose-600">
-                                cancelar
-                              </button>
-                            </form>
-                          </>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                          )}
+                          {l.status !== "pago" && l.status !== "cancelado" && (
+                            <>
+                              <details className="relative">
+                                <summary
+                                  className="cursor-pointer list-none rounded-md p-1.5 text-brand hover:bg-background"
+                                  aria-label={tipo === "receita" ? "Receber" : "Pagar"}
+                                  title={tipo === "receita" ? "Receber" : "Pagar"}
+                                >
+                                  <CheckCircle2 size={15} strokeWidth={2} />
+                                </summary>
+                                <form
+                                  action={registrarBaixa}
+                                  className="absolute right-0 z-10 mt-1 w-64 space-y-2 rounded-md border border-border bg-surface p-3 shadow-md"
+                                >
+                                  <input type="hidden" name="lancamento_id" value={l.id} />
+                                  <p className="text-xs text-ink-muted">Restante: {brl(restante)}</p>
+                                  <input
+                                    name="valor"
+                                    type="number"
+                                    step="0.01"
+                                    required
+                                    defaultValue={restante}
+                                    placeholder="Valor"
+                                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                                  />
+                                  <input
+                                    name="data"
+                                    type="date"
+                                    required
+                                    defaultValue={new Date().toISOString().slice(0, 10)}
+                                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                                  />
+                                  <select
+                                    name="conta_bancaria_id"
+                                    defaultValue=""
+                                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                                  >
+                                    <option value="">Conta bancária</option>
+                                    {(contas ?? []).map((c) => (
+                                      <option key={c.id} value={c.id}>
+                                        {c.nome}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    type="submit"
+                                    className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                                  >
+                                    Confirmar
+                                  </button>
+                                </form>
+                              </details>
+                              <form action={cancelarLancamento}>
+                                <input type="hidden" name="id" value={l.id} />
+                                <button
+                                  type="submit"
+                                  className="rounded-md p-1.5 text-ink-muted hover:bg-background hover:text-rose-600"
+                                  aria-label="Cancelar"
+                                  title="Cancelar"
+                                >
+                                  <Ban size={15} strokeWidth={2} />
+                                </button>
+                              </form>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-xs text-ink-muted">
+              <span>
+                Mostrando {totalItens === 0 ? 0 : inicioPagina + 1} a {Math.min(inicioPagina + porPagina, totalItens)} de{" "}
+                {totalItens} lançamentos
+              </span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <Link
+                    href={construirUrl(rota, { ...f, pagina: String(Math.max(1, paginaAtual - 1)) })}
+                    aria-disabled={paginaAtual === 1}
+                    className={`rounded-md border border-border p-1.5 ${
+                      paginaAtual === 1 ? "pointer-events-none opacity-40" : "hover:bg-background"
+                    }`}
+                  >
+                    <ChevronLeft size={14} />
+                  </Link>
+                  {Array.from({ length: totalPaginas })
+                    .map((_, i) => i + 1)
+                    .filter((n) => n === 1 || n === totalPaginas || Math.abs(n - paginaAtual) <= 1)
+                    .reduce<number[]>((acc, n) => {
+                      if (acc.length > 0 && n - acc[acc.length - 1] > 1) acc.push(-1);
+                      acc.push(n);
+                      return acc;
+                    }, [])
+                    .map((n, i) =>
+                      n === -1 ? (
+                        <span key={`gap-${i}`} className="px-1">
+                          …
+                        </span>
+                      ) : (
+                        <Link
+                          key={n}
+                          href={construirUrl(rota, { ...f, pagina: String(n) })}
+                          className={`rounded-md border px-2.5 py-1 ${
+                            n === paginaAtual
+                              ? "border-brand bg-brand text-white"
+                              : "border-border text-ink-muted hover:bg-background"
+                          }`}
+                        >
+                          {n}
+                        </Link>
+                      )
+                    )}
+                  <Link
+                    href={construirUrl(rota, { ...f, pagina: String(Math.min(totalPaginas, paginaAtual + 1)) })}
+                    aria-disabled={paginaAtual === totalPaginas}
+                    className={`rounded-md border border-border p-1.5 ${
+                      paginaAtual === totalPaginas ? "pointer-events-none opacity-40" : "hover:bg-background"
+                    }`}
+                  >
+                    <ChevronRight size={14} />
+                  </Link>
+                </div>
+                <form method="get" action={`${rota}#lista`} className="flex items-center gap-1.5">
+                  <CamposOcultos omitir={["por_pagina"]} />
+                  <SelectAutoSubmit
+                    name="por_pagina"
+                    defaultValue={String(porPagina)}
+                    options={[
+                      { value: "10", label: "10 por página" },
+                      { value: "25", label: "25 por página" },
+                      { value: "50", label: "50 por página" },
+                    ]}
+                    className="rounded-md border border-border bg-background px-2 py-1.5 text-xs outline-none focus:border-brand"
+                  />
+                </form>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>
