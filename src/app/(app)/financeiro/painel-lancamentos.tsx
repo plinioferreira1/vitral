@@ -19,6 +19,7 @@ import {
   Tag,
   MoreHorizontal,
   SlidersHorizontal,
+  Plus,
 } from "lucide-react";
 import { CartaoKpi } from "@/components/cartao-kpi";
 import {
@@ -32,6 +33,7 @@ import {
 import { hojeISO } from "@/lib/data-br";
 import { SelecionarTodos } from "@/components/selecionar-todos";
 import { SelectAutoSubmit } from "@/components/select-auto-submit";
+import { PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
