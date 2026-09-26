@@ -6,7 +6,12 @@ import { criarContaBancaria, arquivarContaBancaria } from "./actions";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
-const TIPO_LABEL: Record<string, string> = { corrente: "Conta corrente", poupanca: "Conta poupança" };
+const TIPO_LABEL: Record<string, string> = {
+  corrente: "Conta corrente",
+  poupanca: "Conta poupança",
+  investimento: "Investimento",
+  cartao_credito: "Cartão de crédito",
+};
 
 function brl(v: number): string {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -82,11 +87,13 @@ export default async function ContasBancariasPage({
           <select name="tipo" defaultValue="corrente" className={campoClasse}>
             <option value="corrente">Conta corrente</option>
             <option value="poupanca">Poupança</option>
+            <option value="investimento">Investimento</option>
+            <option value="cartao_credito">Cartão de crédito</option>
           </select>
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <input name="titular" placeholder="Titular" className={campoClasse} />
-          <input name="saldo_inicial" type="number" step="0.01" placeholder="Saldo inicial (R$)" className={campoClasse} />
+          <input name="saldo_inicial" type="number" step="0.01" placeholder="Saldo inicial (R$) — cartão: negativo" className={campoClasse} />
           <input name="data_abertura" type="date" className={campoClasse} />
         </div>
         <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
