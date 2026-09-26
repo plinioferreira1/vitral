@@ -331,6 +331,30 @@ export async function editarLancamento(formData: FormData) {
   revalidatePath("/financeiro/agenda");
 }
 
+/** Define (ou troca) só a categoria/centro de resultado de um lançamento já
+ * lançado — usado na revisão rápida de "sem categoria", sem abrir o formulário
+ * de edição completo. */
+export async function categorizarLancamento(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const categoriaId = String(formData.get("categoria_id") ?? "").trim();
+  if (!id || !categoriaId) return;
+
+  const supabase = await createClient();
+  const centroCustoId = String(formData.get("centro_custo_id") ?? "").trim() || null;
+
+  const { data: atual } = await supabase.from("financeiro_lancamentos").select("tipo").eq("id", id).single();
+  if (!atual) return;
+
+  await supabase
+    .from("financeiro_lancamentos")
+    .update({ categoria_id: categoriaId, centro_custo_id: centroCustoId })
+    .eq("id", id);
+
+  const caminho = atual.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
+  revalidatePath(caminho);
+  revalidatePath("/financeiro");
+}
+
 export async function cancelarLancamento(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;

@@ -16,9 +16,17 @@ import {
   Search,
   Pencil,
   Ban,
+  Tag,
 } from "lucide-react";
 import { CartaoKpi } from "@/components/cartao-kpi";
-import { criarLancamento, registrarBaixa, cancelarLancamento, editarLancamento, apagarLancamentos } from "./lancamentos-actions";
+import {
+  criarLancamento,
+  registrarBaixa,
+  cancelarLancamento,
+  editarLancamento,
+  apagarLancamentos,
+  categorizarLancamento,
+} from "./lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
 import { SelecionarTodos } from "@/components/selecionar-todos";
 import { SelectAutoSubmit } from "@/components/select-auto-submit";
@@ -206,7 +214,11 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   // Filtros (via querystring, navegação simples sem JS).
   const f = searchParams ?? {};
   let lancamentos = todos.filter((l) => {
-    if (f.status && estadoExibicao(l, hoje) !== f.status) return false;
+    if (f.status === "sem_categoria") {
+      if (l.categoria_id !== null || (l.status !== "pago" && l.status !== "pago_parcial")) return false;
+    } else if (f.status && estadoExibicao(l, hoje) !== f.status) {
+      return false;
+    }
     if (f.categoria && l.categoria_id !== f.categoria) return false;
     if (f.pessoa && l.pessoa_id !== f.pessoa) return false;
     if (f.conta_bancaria && l.conta_bancaria_id !== f.conta_bancaria) return false;
@@ -315,6 +327,35 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           {tipo === "receita" ? "recebimentos" : "pagamentos"}.
         </p>
       </div>
+
+      {tipo === "receita" && (
+        <div className="flex flex-wrap gap-2 border-b border-border">
+          {(
+            [
+              ["", "Todos", todos.length],
+              ["pendente", "Pendentes", todos.filter((l) => l.status === "pendente" || l.status === "pago_parcial").length],
+              ["pago", "Recebidos", todos.filter((l) => l.status === "pago").length],
+              [
+                "sem_categoria",
+                "Sem categoria",
+                todos.filter((l) => l.categoria_id === null && (l.status === "pago" || l.status === "pago_parcial")).length,
+              ],
+            ] as [string, string, number][]
+          ).map(([valor, label, contagem]) => (
+            <Link
+              key={valor || "todos"}
+              href={valor ? `${rota}?status=${valor}` : rota}
+              className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
+                (f.status ?? "") === valor
+                  ? "border-brand text-brand"
+                  : "border-transparent text-ink-muted hover:text-ink"
+              }`}
+            >
+              {label} {contagem > 0 && <span className="text-xs">({contagem})</span>}
+            </Link>
+          ))}
+        </div>
+      )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <CartaoKpi
@@ -545,6 +586,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
             <option value="pago_parcial">Pago parcial</option>
             <option value="pago">Pago</option>
             <option value="cancelado">Cancelado</option>
+            {tipo === "receita" && <option value="sem_categoria">Sem categoria</option>}
           </select>
         </div>
         <div>
@@ -705,6 +747,57 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                       <td className="px-4 py-2.5 text-ink-muted">{conta?.nome ?? "—"}</td>
                       <td className="px-4 py-2.5">
                         <div className="flex items-center justify-end gap-1">
+                          {tipo === "receita" && !l.categoria_id && (l.status === "pago" || l.status === "pago_parcial") && (
+                            <details className="relative">
+                              <summary
+                                className="cursor-pointer list-none rounded-md p-1.5 text-amber-600 hover:bg-background"
+                                aria-label="Categorizar agora"
+                                title="Categorizar agora"
+                              >
+                                <Tag size={15} strokeWidth={2} />
+                              </summary>
+                              <form
+                                action={categorizarLancamento}
+                                className="absolute right-0 z-20 mt-1 w-64 space-y-2 rounded-md border border-border bg-surface p-3 shadow-md"
+                              >
+                                <input type="hidden" name="id" value={l.id} />
+                                <p className="text-xs font-medium text-ink">Categorizar agora</p>
+                                <select
+                                  name="categoria_id"
+                                  required
+                                  defaultValue=""
+                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                                >
+                                  <option value="" disabled>
+                                    Selecione a categoria...
+                                  </option>
+                                  {(categorias ?? []).map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                      {c.nome}
+                                    </option>
+                                  ))}
+                                </select>
+                                <select
+                                  name="centro_custo_id"
+                                  defaultValue=""
+                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                                >
+                                  <option value="">Centro de resultado (opcional)</option>
+                                  {(centros ?? []).map((c) => (
+                                    <option key={c.id} value={c.id}>
+                                      {c.nome}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  type="submit"
+                                  className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                                >
+                                  Salvar categoria
+                                </button>
+                              </form>
+                            </details>
+                          )}
                           {editavel && (
                             <details className="relative">
                               <summary
