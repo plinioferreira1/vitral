@@ -140,6 +140,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   { href: "/financeiro/pessoas", label: "Clientes e Fornecedores" },
                   { href: "/financeiro/categorias", label: "Categorias e Centros de Resultado" },
                   { href: "/financeiro/relatorios", label: "Relatórios Financeiros" },
+                  { href: "/financeiro/cartao-corporativo", label: "Cartão Corporativo" },
                   { href: "/financeiro/configuracoes-email", label: "Configurações de E-mail" },
                 ],
               },
