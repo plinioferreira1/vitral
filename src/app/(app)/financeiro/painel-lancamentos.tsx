@@ -396,9 +396,23 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                                 ))}
                               </select>
                               {l.recorrencia_id && (
-                                <p className="text-[10px] text-ink-muted">
-                                  Faz parte de uma recorrência — a edição vale só para este lançamento.
-                                </p>
+                                <div className="space-y-1 rounded-md bg-background p-2">
+                                  <p className="text-[10px] font-medium text-ink-muted">
+                                    Faz parte de uma recorrência. Aplicar a:
+                                  </p>
+                                  <label className="flex items-center gap-1.5 text-[11px] text-ink">
+                                    <input type="radio" name="escopo" value="um" defaultChecked className="accent-brand" />
+                                    Somente este lançamento
+                                  </label>
+                                  <label className="flex items-center gap-1.5 text-[11px] text-ink">
+                                    <input type="radio" name="escopo" value="todos_futuros" className="accent-brand" />
+                                    Este e todos os futuros da recorrência
+                                  </label>
+                                  <p className="text-[10px] text-ink-muted">
+                                    Nesse caso o vencimento de cada ocorrência é mantido — só descrição, valor,
+                                    categoria e demais dados cadastrais são replicados.
+                                  </p>
+                                </div>
                               )}
                               <button
                                 type="submit"

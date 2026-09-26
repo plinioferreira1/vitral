@@ -20,7 +20,7 @@ export default async function AgendaFinanceiraPage() {
     supabase
       .from("financeiro_lancamentos")
       .select(
-        "id, tipo, descricao, valor, vencimento, competencia, status, pessoa_id, categoria_id, financeiro_pessoas ( nome )"
+        "id, tipo, descricao, valor, vencimento, competencia, status, pessoa_id, categoria_id, recorrencia_id, financeiro_pessoas ( nome )"
       )
       .in("status", ["pendente", "pago_parcial"])
       .lte("vencimento", em60dias.toISOString().slice(0, 10))
@@ -119,6 +119,21 @@ export default async function AgendaFinanceiraPage() {
                                 required
                                 className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                               />
+                              {l.recorrencia_id && (
+                                <div className="space-y-1 rounded-md bg-background p-2">
+                                  <p className="text-[10px] font-medium text-ink-muted">
+                                    Faz parte de uma recorrência. Aplicar a:
+                                  </p>
+                                  <label className="flex items-center gap-1.5 text-[11px] text-ink">
+                                    <input type="radio" name="escopo" value="um" defaultChecked className="accent-brand" />
+                                    Somente este lançamento
+                                  </label>
+                                  <label className="flex items-center gap-1.5 text-[11px] text-ink">
+                                    <input type="radio" name="escopo" value="todos_futuros" className="accent-brand" />
+                                    Este e todos os futuros
+                                  </label>
+                                </div>
+                              )}
                               <button
                                 type="submit"
                                 className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"

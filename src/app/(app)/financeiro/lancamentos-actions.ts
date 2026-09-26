@@ -186,8 +186,15 @@ export async function registrarBaixa(formData: FormData) {
  * valor, categoria etc). Bloqueado para lançamentos já pagos ou
  * cancelados — aí a correção deve ser feita por estorno, não por
  * edição direta, pra preservar o histórico financeiro.
- * Se o lançamento faz parte de uma recorrência, a edição vale só
- * para essa ocorrência; as demais não são alteradas.
+ *
+ * Se o lançamento faz parte de uma recorrência, o campo "escopo"
+ * decide o alcance da edição:
+ * - "um" (padrão): só esse lançamento.
+ * - "todos_futuros": esse lançamento e todas as ocorrências futuras
+ *   ainda em aberto (pendente/pago_parcial) da mesma recorrência, além
+ *   da recorrência-base (pra manter as próximas gerações consistentes).
+ *   Nesse modo o vencimento de cada ocorrência não é alterado — só os
+ *   dados cadastrais (descrição, valor, categoria etc).
  */
 export async function editarLancamento(formData: FormData) {
   const supabase = await createClient();
@@ -199,7 +206,7 @@ export async function editarLancamento(formData: FormData) {
 
   const { data: atual } = await supabase
     .from("financeiro_lancamentos")
-    .select("status, tipo")
+    .select("status, tipo, vencimento, recorrencia_id")
     .eq("id", id)
     .single();
   if (!atual || atual.status === "pago" || atual.status === "cancelado") return;
@@ -210,24 +217,51 @@ export async function editarLancamento(formData: FormData) {
   if (!descricao || !valor || !vencimento) return;
 
   const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
+  const escopo = String(formData.get("escopo") ?? "um");
 
-  await supabase
-    .from("financeiro_lancamentos")
-    .update({
-      descricao,
-      valor,
-      vencimento,
-      competencia: campo("competencia") ?? vencimento,
-      pessoa_id: campo("pessoa_id"),
-      categoria_id: campo("categoria_id"),
-      centro_custo_id: campo("centro_custo_id"),
-      unidade_id: campo("unidade_id"),
-      conta_bancaria_id: campo("conta_bancaria_id"),
-      forma_pagamento: campo("forma_pagamento"),
-      numero_documento: campo("numero_documento"),
-      observacoes: campo("observacoes"),
-    })
-    .eq("id", id);
+  const dadosCadastrais = {
+    descricao,
+    valor,
+    pessoa_id: campo("pessoa_id"),
+    categoria_id: campo("categoria_id"),
+    centro_custo_id: campo("centro_custo_id"),
+    unidade_id: campo("unidade_id"),
+    conta_bancaria_id: campo("conta_bancaria_id"),
+    forma_pagamento: campo("forma_pagamento"),
+    numero_documento: campo("numero_documento"),
+    observacoes: campo("observacoes"),
+  };
+
+  if (escopo === "todos_futuros" && atual.recorrencia_id) {
+    await supabase
+      .from("financeiro_lancamentos")
+      .update(dadosCadastrais)
+      .eq("recorrencia_id", atual.recorrencia_id)
+      .in("status", ["pendente", "pago_parcial"])
+      .gte("vencimento", atual.vencimento);
+
+    await supabase
+      .from("financeiro_recorrencias")
+      .update({
+        descricao: dadosCadastrais.descricao,
+        valor: dadosCadastrais.valor,
+        pessoa_id: dadosCadastrais.pessoa_id,
+        categoria_id: dadosCadastrais.categoria_id,
+        centro_custo_id: dadosCadastrais.centro_custo_id,
+        unidade_id: dadosCadastrais.unidade_id,
+        conta_bancaria_id: dadosCadastrais.conta_bancaria_id,
+      })
+      .eq("id", atual.recorrencia_id);
+  } else {
+    await supabase
+      .from("financeiro_lancamentos")
+      .update({
+        ...dadosCadastrais,
+        vencimento,
+        competencia: campo("competencia") ?? vencimento,
+      })
+      .eq("id", id);
+  }
 
   const caminho = atual.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath(caminho);
