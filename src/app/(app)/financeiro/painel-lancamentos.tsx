@@ -2,8 +2,9 @@ import { createClient } from "@/lib/supabase/server";
 import { Repeat } from "lucide-react";
 import { CartaoIndicador } from "@/components/cartao-indicador";
 import { Wallet, AlertTriangle, RefreshCcw, CheckCircle2 } from "lucide-react";
-import { criarLancamento, registrarBaixa, cancelarLancamento, editarLancamento } from "./lancamentos-actions";
+import { criarLancamento, registrarBaixa, cancelarLancamento, editarLancamento, apagarLancamentos } from "./lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
+import { SelecionarTodos } from "@/components/selecionar-todos";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -288,6 +289,22 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         </form>
       </details>
 
+      {lancamentos.length > 0 && (
+        <form
+          id="form-apagar-lote"
+          action={apagarLancamentos}
+          className="flex items-center justify-between rounded-xl border border-border/60 bg-surface px-4 py-2.5 text-xs text-ink-muted shadow-sm"
+        >
+          <span>Marque um ou mais lançamentos pendentes na tabela abaixo pra apagar de uma vez.</span>
+          <button
+            type="submit"
+            className="rounded-md border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50"
+          >
+            Apagar selecionados
+          </button>
+        </form>
+      )}
+
       <div className="overflow-x-auto rounded-xl border border-border/60 bg-surface shadow-sm">
         {lancamentos.length === 0 ? (
           <p className="p-8 text-center text-sm text-ink-muted">
@@ -297,6 +314,9 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
+                <th className="w-8 px-4 py-2.5">
+                  <SelecionarTodos formId="form-apagar-lote" className="accent-brand" />
+                </th>
                 <th className="px-4 py-2.5 font-medium">Descrição</th>
                 <th className="px-4 py-2.5 font-medium">{rotuloPessoa}</th>
                 <th className="px-4 py-2.5 font-medium">Categoria</th>
@@ -315,6 +335,11 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                 const editavel = l.status === "pendente" || l.status === "pago_parcial";
                 return (
                   <tr key={l.id}>
+                    <td className="px-4 py-2.5">
+                      {l.status === "pendente" && (
+                        <input type="checkbox" name="ids" value={l.id} form="form-apagar-lote" className="accent-brand" />
+                      )}
+                    </td>
                     <td className="px-4 py-2.5 text-ink">
                       {l.descricao}
                       {l.recorrencia_id && (

@@ -278,3 +278,23 @@ export async function cancelarLancamento(formData: FormData) {
   revalidatePath("/financeiro/contas-a-receber");
   revalidatePath("/financeiro");
 }
+
+/**
+ * Apaga em lote lançamentos selecionados por checkbox. Só apaga de
+ * fato quem está "pendente" (nada foi pago ainda) — quem já tem
+ * pagamento/recebimento registrado (pago ou pago_parcial) não é
+ * excluído por aqui, pra não perder histórico financeiro real; use
+ * "cancelar" nesses casos.
+ */
+export async function apagarLancamentos(formData: FormData) {
+  const ids = formData.getAll("ids").map(String).filter(Boolean);
+  if (ids.length === 0) return;
+
+  const supabase = await createClient();
+  await supabase.from("financeiro_lancamentos").delete().in("id", ids).eq("status", "pendente");
+
+  revalidatePath("/financeiro/contas-a-pagar");
+  revalidatePath("/financeiro/contas-a-receber");
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/agenda");
+}
