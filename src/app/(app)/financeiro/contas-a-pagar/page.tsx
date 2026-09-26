@@ -1,5 +1,10 @@
 import { PainelLancamentos } from "../painel-lancamentos";
 
-export default function ContasAPagarPage() {
-  return <PainelLancamentos tipo="despesa" />;
+export default async function ContasAPagarPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string; categoria?: string; pessoa?: string; q?: string }>;
+}) {
+  const params = await searchParams;
+  return <PainelLancamentos tipo="despesa" searchParams={params} />;
 }

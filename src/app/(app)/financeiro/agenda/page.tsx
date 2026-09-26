@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { AlertTriangle } from "lucide-react";
-import { registrarBaixa, cancelarLancamento } from "../lancamentos-actions";
+import { registrarBaixa, cancelarLancamento, editarLancamento } from "../lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
 
 function brl(v: number): string {
@@ -20,7 +20,7 @@ export default async function AgendaFinanceiraPage() {
     supabase
       .from("financeiro_lancamentos")
       .select(
-        "id, tipo, descricao, valor, vencimento, status, financeiro_pessoas ( nome )"
+        "id, tipo, descricao, valor, vencimento, competencia, status, pessoa_id, categoria_id, financeiro_pessoas ( nome )"
       )
       .in("status", ["pendente", "pago_parcial"])
       .lte("vencimento", em60dias.toISOString().slice(0, 10))
@@ -88,6 +88,45 @@ export default async function AgendaFinanceiraPage() {
                         </div>
                         <div className="flex shrink-0 items-center gap-2">
                           <span className="num text-sm font-medium text-ink">{brl(l.valor)}</span>
+                          <details className="relative">
+                            <summary className="cursor-pointer list-none text-xs font-medium text-ink-muted hover:text-brand hover:underline">
+                              editar
+                            </summary>
+                            <form
+                              action={editarLancamento}
+                              className="absolute right-0 z-20 mt-1 w-64 space-y-2 rounded-md border border-border bg-surface p-3 shadow-md"
+                            >
+                              <input type="hidden" name="id" value={l.id} />
+                              <input
+                                name="descricao"
+                                defaultValue={l.descricao}
+                                required
+                                placeholder="Descrição"
+                                className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                              />
+                              <input
+                                name="valor"
+                                type="number"
+                                step="0.01"
+                                defaultValue={l.valor}
+                                required
+                                className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                              />
+                              <input
+                                name="vencimento"
+                                type="date"
+                                defaultValue={l.vencimento}
+                                required
+                                className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
+                              />
+                              <button
+                                type="submit"
+                                className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                              >
+                                Salvar alterações
+                              </button>
+                            </form>
+                          </details>
                           <details className="relative">
                             <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
                               liquidar

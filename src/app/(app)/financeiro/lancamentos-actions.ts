@@ -181,6 +181,60 @@ export async function registrarBaixa(formData: FormData) {
   revalidatePath("/financeiro");
 }
 
+/**
+ * Edita os dados cadastrais de um lançamento (descrição, vencimento,
+ * valor, categoria etc). Bloqueado para lançamentos já pagos ou
+ * cancelados — aí a correção deve ser feita por estorno, não por
+ * edição direta, pra preservar o histórico financeiro.
+ * Se o lançamento faz parte de uma recorrência, a edição vale só
+ * para essa ocorrência; as demais não são alteradas.
+ */
+export async function editarLancamento(formData: FormData) {
+  const supabase = await createClient();
+  const { tenantId } = await contexto(supabase);
+  if (!tenantId) return;
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  const { data: atual } = await supabase
+    .from("financeiro_lancamentos")
+    .select("status, tipo")
+    .eq("id", id)
+    .single();
+  if (!atual || atual.status === "pago" || atual.status === "cancelado") return;
+
+  const descricao = String(formData.get("descricao") ?? "").trim();
+  const valor = Number(formData.get("valor") ?? 0);
+  const vencimento = String(formData.get("vencimento") ?? "").trim();
+  if (!descricao || !valor || !vencimento) return;
+
+  const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
+
+  await supabase
+    .from("financeiro_lancamentos")
+    .update({
+      descricao,
+      valor,
+      vencimento,
+      competencia: campo("competencia") ?? vencimento,
+      pessoa_id: campo("pessoa_id"),
+      categoria_id: campo("categoria_id"),
+      centro_custo_id: campo("centro_custo_id"),
+      unidade_id: campo("unidade_id"),
+      conta_bancaria_id: campo("conta_bancaria_id"),
+      forma_pagamento: campo("forma_pagamento"),
+      numero_documento: campo("numero_documento"),
+      observacoes: campo("observacoes"),
+    })
+    .eq("id", id);
+
+  const caminho = atual.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
+  revalidatePath(caminho);
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/agenda");
+}
+
 export async function cancelarLancamento(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
