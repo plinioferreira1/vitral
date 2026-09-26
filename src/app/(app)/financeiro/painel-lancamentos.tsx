@@ -410,11 +410,15 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           </button>
           <CamposOcultos omitir={["q"]} />
         </form>
-        <details className="shrink-0">
-          <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
-            + Novo lançamento
+        <details className="relative shrink-0">
+          <summary className={`${PRIMARY_BUTTON_CLASS} cursor-pointer list-none`}>
+            <Plus size={16} strokeWidth={2.2} />
+            Novo lançamento
           </summary>
-          <form action={criarLancamento} className="mt-3 space-y-5 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+          <form
+            action={criarLancamento}
+            className="absolute right-0 z-30 mt-2 max-h-[78vh] w-[min(calc(100vw-2rem),760px)] space-y-5 overflow-y-auto rounded-2xl border border-border/70 bg-surface p-5 shadow-xl"
+          >
             <input type="hidden" name="tipo" value={tipo} />
 
             <div className="space-y-3">
@@ -563,9 +567,11 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
               <textarea name="observacoes" rows={2} placeholder="Observações (opcional)" className={campoClasse} />
             </div>
 
-            <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
-              Criar lançamento
-            </button>
+            <div className="flex justify-end border-t border-border/70 pt-4">
+              <button type="submit" className={PRIMARY_BUTTON_CLASS}>
+                Criar lançamento
+              </button>
+            </div>
           </form>
         </details>
       </div>
