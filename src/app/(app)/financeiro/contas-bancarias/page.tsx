@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { Landmark } from "lucide-react";
+import { identidadeBanco } from "@/lib/bancos";
 import { criarContaBancaria, arquivarContaBancaria } from "./actions";
 
 const campoClasse =
@@ -34,12 +35,20 @@ export default async function ContasBancariasPage() {
   });
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Contas Bancárias</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Saldo calculado a partir do saldo inicial + pagamentos e recebimentos registrados.
-        </p>
+    <div className="max-w-4xl space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Contas Bancárias</h1>
+          <p className="mt-1 text-sm text-ink-muted">
+            Saldo calculado a partir do saldo inicial + pagamentos e recebimentos registrados.
+          </p>
+        </div>
+        <span
+          title="Importação de extratos OFX ainda não foi implementada"
+          className="cursor-not-allowed rounded-md border border-border/60 px-3 py-2 text-sm text-ink-muted opacity-60"
+        >
+          Importar OFX (em breve)
+        </span>
       </div>
 
       <form
@@ -77,6 +86,7 @@ export default async function ContasBancariasPage() {
         ) : (
           (contas ?? []).map((c) => {
             const saldoAtual = Number(c.saldo_inicial) + (movimentoPorConta.get(c.id) ?? 0);
+            const id = identidadeBanco(c.banco);
             return (
               <div
                 key={c.id}
@@ -84,13 +94,21 @@ export default async function ContasBancariasPage() {
                   c.ativa ? "" : "opacity-50"
                 }`}
               >
-                <div>
-                  <p className="text-sm font-medium text-ink">
-                    {c.nome} {!c.ativa && <span className="text-xs text-ink-muted">(arquivada)</span>}
-                  </p>
-                  <p className="text-xs text-ink-muted">
-                    {[c.banco, c.agencia && `Ag. ${c.agencia}`, c.numero_conta].filter(Boolean).join(" · ") || "—"}
-                  </p>
+                <div className="flex items-center gap-3">
+                  <div
+                    className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md text-[10px] font-bold"
+                    style={{ backgroundColor: id.bg, color: id.fg }}
+                  >
+                    {id.sigla.length <= 3 ? id.sigla.toUpperCase() : id.sigla.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-ink">
+                      {c.nome} {!c.ativa && <span className="text-xs text-ink-muted">(arquivada)</span>}
+                    </p>
+                    <p className="text-xs text-ink-muted">
+                      {[c.banco, c.agencia && `Ag. ${c.agencia}`, c.numero_conta].filter(Boolean).join(" · ") || "—"}
+                    </p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-4">
                   <p className={`num text-lg font-semibold ${saldoAtual < 0 ? "text-rose-600" : "text-ink"}`}>
