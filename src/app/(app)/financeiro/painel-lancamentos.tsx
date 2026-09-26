@@ -17,6 +17,7 @@ import {
   Pencil,
   Ban,
   Tag,
+  MoreHorizontal,
 } from "lucide-react";
 import { CartaoKpi } from "@/components/cartao-kpi";
 import {
@@ -708,16 +709,6 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                     </Link>
                   </th>
                   <th className="px-4 py-2.5 font-medium">
-                    <Link href={linkOrdenar("pessoa")} className="inline-flex items-center gap-1 hover:text-ink">
-                      {rotuloPessoa} {iconeOrdenacao("pessoa")}
-                    </Link>
-                  </th>
-                  <th className="px-4 py-2.5 font-medium">
-                    <Link href={linkOrdenar("categoria")} className="inline-flex items-center gap-1 hover:text-ink">
-                      Categoria {iconeOrdenacao("categoria")}
-                    </Link>
-                  </th>
-                  <th className="px-4 py-2.5 font-medium">
                     <Link href={linkOrdenar("vencimento")} className="inline-flex items-center gap-1 hover:text-ink">
                       Vencimento {iconeOrdenacao("vencimento")}
                     </Link>
@@ -732,7 +723,6 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                       Status {iconeOrdenacao("status")}
                     </Link>
                   </th>
-                  <th className="px-4 py-2.5 font-medium">Conta</th>
                   <th className="px-4 py-2.5 font-medium text-right">Ações</th>
                 </tr>
               </thead>
@@ -751,14 +741,13 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                           <input type="checkbox" name="ids" value={l.id} form="form-apagar-lote" className="accent-brand" />
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-ink">
-                        {l.descricao}
-                        {l.recorrencia_id && (
-                          <Repeat size={11} strokeWidth={2} className="ml-1.5 inline text-ink-muted" />
-                        )}
+
+                      <td className="px-4 py-3 text-ink">
+                        <div className="font-medium">{l.descricao} {l.recorrencia_id && <Repeat size={12} className="inline text-ink-muted" />}</div>
+                        <div className="mt-1 text-xs text-ink-muted">
+                          {[pessoa?.nome, categoria?.nome ?? "Sem categoria", conta?.nome].filter(Boolean).join(" · ")}
+                        </div>
                       </td>
-                      <td className="px-4 py-2.5 text-ink-muted">{pessoa?.nome ?? "—"}</td>
-                      <td className="px-4 py-2.5 text-ink-muted">{categoria?.nome ?? "—"}</td>
                       <td className="px-4 py-2.5 text-ink-muted">{dataBR(l.vencimento)}</td>
                       <td className="num px-4 py-2.5 text-ink">{brl(l.valor)}</td>
                       <td className="px-4 py-2.5">
@@ -767,21 +756,24 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                           {ESTADO_ROTULO[estado]}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 text-ink-muted">{conta?.nome ?? "—"}</td>
                       <td className="px-4 py-2.5">
-                        <div className="flex items-center justify-end gap-1">
+                        <details className="relative">
+                          <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink hover:bg-background" aria-label={`Ações para ${l.descricao}`}>
+                            <MoreHorizontal size={16} /> Ações
+                          </summary>
+                          <div className="absolute right-0 z-30 mt-1 w-72 max-w-[calc(100vw-2rem)] space-y-2 rounded-xl border border-border bg-surface p-3 shadow-lg">
                           {tipo === "receita" && !l.categoria_id && (l.status === "pago" || l.status === "pago_parcial") && (
                             <details className="relative">
                               <summary
-                                className="cursor-pointer list-none rounded-md p-1.5 text-amber-600 hover:bg-background"
+                                className="flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1.5 text-xs text-amber-600 hover:bg-background"
                                 aria-label="Categorizar agora"
                                 title="Categorizar agora"
                               >
-                                <Tag size={15} strokeWidth={2} />
+                                <Tag size={15} strokeWidth={2} /> Categorizar
                               </summary>
                               <form
                                 action={categorizarLancamento}
-                                className="absolute right-0 z-20 mt-1 w-64 space-y-2 rounded-md border border-border bg-surface p-3 shadow-md"
+                                className="mt-2 w-full space-y-2 rounded-md border border-border bg-background p-3"
                               >
                                 <input type="hidden" name="id" value={l.id} />
                                 <p className="text-xs font-medium text-ink">Categorizar agora</p>
@@ -824,15 +816,15 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                           {editavel && (
                             <details className="relative">
                               <summary
-                                className="cursor-pointer list-none rounded-md p-1.5 text-ink-muted hover:bg-background hover:text-brand"
+                                className="flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1.5 text-xs text-ink-muted hover:bg-background hover:text-brand"
                                 aria-label="Editar"
                                 title="Editar"
                               >
-                                <Pencil size={15} strokeWidth={2} />
+                                <Pencil size={15} strokeWidth={2} /> Editar
                               </summary>
                               <form
                                 action={editarLancamento}
-                                className="absolute right-0 z-20 mt-1 w-72 space-y-2 rounded-md border border-border bg-surface p-3 shadow-md"
+                                className="mt-2 w-full space-y-2 rounded-md border border-border bg-background p-3"
                               >
                                 <input type="hidden" name="id" value={l.id} />
                                 <input
@@ -920,15 +912,15 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                             <>
                               <details className="relative">
                                 <summary
-                                  className="cursor-pointer list-none rounded-md p-1.5 text-brand hover:bg-background"
+                                  className="flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1.5 text-xs text-brand hover:bg-background"
                                   aria-label={tipo === "receita" ? "Receber" : "Pagar"}
                                   title={tipo === "receita" ? "Receber" : "Pagar"}
                                 >
-                                  <CheckCircle2 size={15} strokeWidth={2} />
+                                  <CheckCircle2 size={15} strokeWidth={2} /> {tipo === "receita" ? "Receber" : "Pagar"}
                                 </summary>
                                 <form
                                   action={registrarBaixa}
-                                  className="absolute right-0 z-10 mt-1 w-64 space-y-2 rounded-md border border-border bg-surface p-3 shadow-md"
+                                  className="mt-2 w-full space-y-2 rounded-md border border-border bg-background p-3"
                                 >
                                   <input type="hidden" name="lancamento_id" value={l.id} />
                                   <p className="text-xs text-ink-muted">Restante: {brl(restante)}</p>
@@ -972,16 +964,17 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                                 <input type="hidden" name="id" value={l.id} />
                                 <button
                                   type="submit"
-                                  className="rounded-md p-1.5 text-ink-muted hover:bg-background hover:text-rose-600"
+                                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-ink-muted hover:bg-background hover:text-rose-600"
                                   aria-label="Cancelar"
                                   title="Cancelar"
                                 >
-                                  <Ban size={15} strokeWidth={2} />
+                                  <Ban size={15} strokeWidth={2} /> Cancelar
                                 </button>
                               </form>
                             </>
                           )}
-                        </div>
+                          </div>
+                        </details>
                       </td>
                     </tr>
                   );
