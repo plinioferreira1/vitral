@@ -11,6 +11,7 @@ type LogoBancoProps = {
 export function LogoBanco({ banco, size = "md", mostrarNome = false }: LogoBancoProps) {
   const id = identidadeBanco(banco);
   const compacto = size === "sm";
+  const logoPadding = id.logoPadding ?? (compacto ? 5 : 6);
 
   return (
     <div className="flex shrink-0 items-center gap-2" title={id.nome}>
@@ -19,13 +20,23 @@ export function LogoBanco({ banco, size = "md", mostrarNome = false }: LogoBanco
           compacto ? "h-9 w-12 rounded-md text-[10px]" : "h-11 w-16 rounded-lg text-[11px]"
         }`}
         style={{
-          background: `linear-gradient(135deg, ${id.bg}, ${id.accent})`,
-          borderColor: id.border ?? "transparent",
+          background: id.logo ? "#ffffff" : `linear-gradient(135deg, ${id.bg}, ${id.accent})`,
+          borderColor: id.border ?? (id.logo ? "#E7E2DC" : "transparent"),
           color: id.fg,
         }}
       >
         {id.logo ? (
-          <Image src={id.logo} alt={id.nome} width={compacto ? 72 : 96} height={compacto ? 44 : 60} className="h-full w-full object-contain bg-white p-1" />
+          <>
+            <Image
+              src={id.logo}
+              alt={id.nome}
+              width={compacto ? 72 : 96}
+              height={compacto ? 44 : 60}
+              className="relative z-10 h-full w-full object-contain"
+              style={{ padding: logoPadding }}
+            />
+            <span className="absolute inset-x-0 bottom-0 h-0.5" style={{ backgroundColor: id.accent }} />
+          </>
         ) : (
           <>
             <span className="absolute -right-3 -top-4 h-9 w-9 rounded-full bg-white/20" />
