@@ -183,9 +183,15 @@ export default async function FinanceiroDashboardPage({
             titulo="Vencidos"
             descricao="Ainda não liquidados, com vencimento no passado."
             acao={
-              <Link href="/financeiro/agenda" className="text-xs font-medium text-brand hover:underline">
-                Ver todos ({vencidos.length})
-              </Link>
+              <div className="flex gap-2 text-xs font-medium">
+                <Link href="/financeiro/contas-a-pagar?status=vencido#lista" className="text-brand hover:underline">
+                  A pagar
+                </Link>
+                <span className="text-ink-muted">·</span>
+                <Link href="/financeiro/contas-a-receber?status=vencido#lista" className="text-brand hover:underline">
+                  A receber
+                </Link>
+              </div>
             }
           />
           {vencidos.length === 0 ? (
@@ -200,7 +206,13 @@ export default async function FinanceiroDashboardPage({
                       <p className="truncate font-semibold text-ink">{l.descricao}</p>
                       <p className="text-xs text-ink-muted">{pessoa?.nome ?? "Sem pessoa vinculada"} · {dataBR(l.vencimento)}</p>
                     </div>
-                    <div className="flex items-center gap-3"><span className="rounded-full bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700">{l.tipo === "despesa" ? "A pagar" : "A receber"}</span><p className="num font-semibold text-rose-700">{brl(l.valor)}</p></div>
+                    <div className="flex items-center gap-3">
+                      <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${l.tipo === "despesa" ? "text-rose-700" : "text-emerald-700"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${l.tipo === "despesa" ? "bg-rose-600" : "bg-emerald-600"}`} />
+                        {l.tipo === "despesa" ? "A pagar" : "A receber"}
+                      </span>
+                      <p className="num font-semibold text-rose-700">{brl(l.valor)}</p>
+                    </div>
                   </li>
                 );
               })}
@@ -214,9 +226,15 @@ export default async function FinanceiroDashboardPage({
             titulo="Próximos vencimentos"
             descricao="Nos próximos 7 dias."
             acao={
-              <Link href="/financeiro/agenda" className="text-xs font-medium text-brand hover:underline">
-                Ver todos ({proximosVencimentos.length})
-              </Link>
+              <div className="flex gap-2 text-xs font-medium">
+                <Link href="/financeiro/contas-a-pagar?status=em_aberto#lista" className="text-brand hover:underline">
+                  A pagar
+                </Link>
+                <span className="text-ink-muted">·</span>
+                <Link href="/financeiro/contas-a-receber?status=em_aberto#lista" className="text-brand hover:underline">
+                  A receber
+                </Link>
+              </div>
             }
           />
           {proximosVencimentos.length === 0 ? (
@@ -231,7 +249,13 @@ export default async function FinanceiroDashboardPage({
                       <p className="truncate font-semibold text-ink">{l.descricao}</p>
                       <p className="text-xs text-ink-muted">{pessoa?.nome ?? "Sem pessoa vinculada"} · {dataBR(l.vencimento)}</p>
                     </div>
-                    <div className="flex items-center gap-3"><span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">{l.tipo === "despesa" ? "A pagar" : "A receber"}</span><p className="num font-semibold text-ink">{brl(l.valor)}</p></div>
+                    <div className="flex items-center gap-3">
+                      <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${l.tipo === "despesa" ? "text-rose-700" : "text-emerald-700"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${l.tipo === "despesa" ? "bg-rose-600" : "bg-emerald-600"}`} />
+                        {l.tipo === "despesa" ? "A pagar" : "A receber"}
+                      </span>
+                      <p className="num font-semibold text-ink">{brl(l.valor)}</p>
+                    </div>
                   </li>
                 );
               })}

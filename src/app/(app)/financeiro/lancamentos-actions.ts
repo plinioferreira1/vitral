@@ -201,7 +201,6 @@ export async function criarLancamento(formData: FormData) {
   const caminho = tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath(caminho);
   revalidatePath("/financeiro");
-  revalidatePath("/financeiro/agenda");
   redirect(retornoSeguro(formData, caminho));
 }
 
@@ -250,7 +249,6 @@ export async function registrarBaixa(formData: FormData) {
   revalidatePath("/financeiro/contas-a-pagar");
   revalidatePath("/financeiro/contas-a-receber");
   revalidatePath("/financeiro");
-  revalidatePath("/financeiro/agenda");
   redirect(retornoSeguro(formData, caminho));
 }
 
@@ -339,7 +337,6 @@ export async function editarLancamento(formData: FormData) {
   const caminho = atual.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath(caminho);
   revalidatePath("/financeiro");
-  revalidatePath("/financeiro/agenda");
   redirect(retornoSeguro(formData, caminho));
 }
 
@@ -399,7 +396,6 @@ export async function reativarLancamento(formData: FormData) {
   const caminho = lancamento.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath(caminho);
   revalidatePath("/financeiro");
-  revalidatePath("/financeiro/agenda");
 }
 
 /**
@@ -419,5 +415,4 @@ export async function apagarLancamentos(formData: FormData) {
   revalidatePath("/financeiro/contas-a-pagar");
   revalidatePath("/financeiro/contas-a-receber");
   revalidatePath("/financeiro");
-  revalidatePath("/financeiro/agenda");
 }

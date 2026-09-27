@@ -73,7 +73,7 @@ export default async function BaixarLancamentoFinanceiroPage({
           </Link>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">{titulo}</h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Baixe total ou parcialmente o lancamento e mantenha o saldo atualizado.
+            Baixe total ou parcialmente o lançamento e mantenha o saldo atualizado.
           </p>
         </div>
         <button type="submit" className="rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90">
@@ -84,11 +84,11 @@ export default async function BaixarLancamentoFinanceiroPage({
       <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <FileText size={18} className="text-brand" />
-          <h2 className="text-base font-bold text-ink">Resumo do lancamento</h2>
+          <h2 className="text-base font-bold text-ink">Resumo do lançamento</h2>
         </div>
         <div className="grid gap-4 lg:grid-cols-[1fr_160px_160px_160px] lg:items-end">
           <div>
-            <p className="text-xs font-medium text-ink-muted">Descricao</p>
+            <p className="text-xs font-medium text-ink-muted">Descrição</p>
             <p className="mt-1 text-base font-bold text-ink">{lancamento.descricao}</p>
             <p className="mt-1 text-sm text-ink-muted">
               {lancamento.financeiro_categorias?.nome ?? "Sem categoria"} · {lancamento.financeiro_pessoas?.nome ?? "Sem pessoa vinculada"}
@@ -112,10 +112,10 @@ export default async function BaixarLancamentoFinanceiroPage({
       <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <Wallet size={18} className="text-brand" />
-          <h2 className="text-base font-bold text-ink">Condicao do {acao}</h2>
+          <h2 className="text-base font-bold text-ink">Condição do {acao}</h2>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[170px_1.2fr_1.2fr_auto_auto] lg:items-end">
+        <div className="grid gap-4 lg:grid-cols-[170px_1.2fr_1.2fr] lg:items-end">
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Data *</label>
             <input name="data" type="date" defaultValue={hoje} required className={campoClasse} />
@@ -135,34 +135,14 @@ export default async function BaixarLancamentoFinanceiroPage({
               ))}
             </select>
           </div>
-          <label className="flex items-center gap-2 pb-2 text-sm text-ink">
-            <input type="checkbox" defaultChecked className="accent-brand" readOnly />
-            Baixado
-          </label>
-          <label className="flex items-center gap-2 pb-2 text-sm text-ink">
-            <input type="checkbox" className="accent-brand" disabled />
-            Agendado
-          </label>
         </div>
 
         <div className="mt-5 rounded-xl border border-brand/15 bg-brand-soft/60 p-4">
-          <p className="text-sm font-bold text-ink">Previsao do {acao}</p>
-          <div className="mt-3 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <p className="text-sm font-bold text-ink">Valor do {acao}</p>
+          <div className="mt-3 max-w-[240px]">
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-muted">Valor a baixar *</label>
               <input name="valor" type="number" step="0.01" required defaultValue={saldoAberto} className={campoClasse} />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">Juros</label>
-              <input type="number" step="0.01" defaultValue="0.00" className={campoClasse} disabled />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">Multa</label>
-              <input type="number" step="0.01" defaultValue="0.00" className={campoClasse} disabled />
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">Desconto</label>
-              <input type="number" step="0.01" defaultValue="0.00" className={campoClasse} disabled />
             </div>
           </div>
         </div>
@@ -171,23 +151,17 @@ export default async function BaixarLancamentoFinanceiroPage({
       <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <CheckCircle2 size={18} className="text-brand" />
-          <h2 className="text-base font-bold text-ink">Observacoes e anexo</h2>
+          <h2 className="text-base font-bold text-ink">Observações</h2>
         </div>
-        <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Observacoes</label>
-            <textarea
-              name="observacoes"
-              rows={4}
-              defaultValue={lancamento.observacoes ?? ""}
-              placeholder={`Observacoes sobre este ${acao}...`}
-              className={campoClasse}
-            />
-          </div>
-          <div className="rounded-lg border border-dashed border-border bg-background p-4 text-sm text-ink-muted">
-            <p className="font-semibold text-ink">Anexo</p>
-            <p className="mt-1">Espaco reservado para comprovante de pagamento/recebimento.</p>
-          </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-muted">Observações</label>
+          <textarea
+            name="observacoes"
+            rows={4}
+            defaultValue={lancamento.observacoes ?? ""}
+            placeholder={`Observações sobre este ${acao}...`}
+            className={campoClasse}
+          />
         </div>
       </section>
 

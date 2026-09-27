@@ -18,14 +18,12 @@ export default async function NovoLancamentoFinanceiroPage({
   const supabase = await createClient();
   const hoje = hojeISO();
 
-  const [{ data: pessoas }, { data: categorias }, { data: centros }, { data: unidades }, { data: contas }] =
-    await Promise.all([
-      supabase.from("financeiro_pessoas").select("id, nome").order("nome"),
-      supabase.from("financeiro_categorias").select("id, nome").eq("tipo", tipo).order("nome"),
-      supabase.from("financeiro_centros_custo").select("id, nome").order("nome"),
-      supabase.from("financeiro_unidades").select("id, nome").order("nome"),
-      supabase.from("financeiro_contas_bancarias").select("id, nome").eq("ativa", true).order("nome"),
-    ]);
+  const [{ data: pessoas }, { data: categorias }, { data: centros }, { data: contas }] = await Promise.all([
+    supabase.from("financeiro_pessoas").select("id, nome").order("nome"),
+    supabase.from("financeiro_categorias").select("id, nome").eq("tipo", tipo).order("nome"),
+    supabase.from("financeiro_centros_custo").select("id, nome").order("nome"),
+    supabase.from("financeiro_contas_bancarias").select("id, nome").eq("ativa", true).order("nome"),
+  ]);
 
   const titulo = tipo === "receita" ? "Nova conta a receber" : "Nova despesa";
   const rotuloPessoa = tipo === "receita" ? "Cliente" : "Fornecedor";
@@ -44,29 +42,29 @@ export default async function NovoLancamentoFinanceiroPage({
           </Link>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">{titulo}</h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Lance uma movimentacao no modelo operacional do financeiro, com dados principais, condicao de pagamento e recorrencia.
+            Lance uma movimentação no modelo operacional do financeiro, com dados principais, condição de pagamento e recorrência.
           </p>
         </div>
         <button type="submit" className="rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90">
-          Salvar lancamento
+          Salvar lançamento
         </button>
       </div>
 
       <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <FileText size={18} className="text-brand" />
-          <h2 className="text-base font-bold text-ink">Informacoes do lancamento</h2>
+          <h2 className="text-base font-bold text-ink">Informações do lançamento</h2>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[1.2fr_170px_1.8fr_170px]">
           <BuscaOpcaoFinanceira name="pessoa_id" label={rotuloPessoa} options={pessoas ?? []} />
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Data de competencia</label>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Data de competência</label>
             <input name="competencia" type="date" defaultValue={hoje} className={campoClasse} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Descricao *</label>
-            <input name="descricao" required placeholder="Ex: aluguel, comissao, taxa, reembolso..." className={campoClasse} />
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Descrição *</label>
+            <input name="descricao" required placeholder="Ex: aluguel, comissão, taxa, reembolso..." className={campoClasse} />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Valor *</label>
@@ -74,14 +72,7 @@ export default async function NovoLancamentoFinanceiroPage({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[180px_1.4fr_1.4fr_1fr]">
-          <div>
-            <p className="mb-1 text-xs font-medium text-ink-muted">Habilitar rateio</p>
-            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-2 py-1 text-xs text-ink-muted">
-              <span className="h-6 w-6 rounded-full bg-surface shadow-sm" />
-              Nao
-            </div>
-          </div>
+        <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1.4fr_1fr]">
           <BuscaOpcaoFinanceira name="categoria_id" label="Categoria" options={categorias ?? []} />
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Centro de resultado</label>
@@ -95,7 +86,7 @@ export default async function NovoLancamentoFinanceiroPage({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Codigo de referencia</label>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Código de referência</label>
             <input name="numero_documento" placeholder="Opcional" className={campoClasse} />
           </div>
         </div>
@@ -104,14 +95,14 @@ export default async function NovoLancamentoFinanceiroPage({
       <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <Wallet size={18} className="text-brand" />
-          <h2 className="text-base font-bold text-ink">Condicao de pagamento</h2>
+          <h2 className="text-base font-bold text-ink">Condição de pagamento</h2>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[150px_170px_1.2fr_1.2fr_auto_auto] lg:items-end">
+        <div className="grid gap-4 lg:grid-cols-[150px_170px_1.2fr_1.2fr] lg:items-end">
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Parcelamento</label>
             <select className={campoClasse} defaultValue="avista">
-              <option value="avista">A vista</option>
+              <option value="avista">À vista</option>
               <option value="parcelado">Parcelado</option>
             </select>
           </div>
@@ -121,7 +112,7 @@ export default async function NovoLancamentoFinanceiroPage({
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>
-            <input name="forma_pagamento" placeholder="Pix, boleto, transferencia..." className={campoClasse} />
+            <input name="forma_pagamento" placeholder="Pix, boleto, transferência..." className={campoClasse} />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Conta prevista</label>
@@ -134,22 +125,14 @@ export default async function NovoLancamentoFinanceiroPage({
               ))}
             </select>
           </div>
-          <label className="flex items-center gap-2 pb-2 text-sm text-ink">
-            <input type="checkbox" className="accent-brand" disabled />
-            Pago
-          </label>
-          <label className="flex items-center gap-2 pb-2 text-sm text-ink">
-            <input type="checkbox" className="accent-brand" disabled />
-            Agendado
-          </label>
         </div>
 
         <div className="mt-5 rounded-xl border border-brand/15 bg-brand-soft/60 p-4">
           <p className="text-sm font-bold text-ink">Rotina da Sacra</p>
           <div className="mt-2 grid gap-2 text-sm text-ink-muted md:grid-cols-3">
-            <span className="text-brand">✓ <span className="text-ink-muted">Vencimento entra na agenda financeira</span></span>
+            <span className="text-brand">✓ <span className="text-ink-muted">Vencimento entra em A Pagar ou A Receber</span></span>
             <span className="text-brand">✓ <span className="text-ink-muted">Baixa pode ser total ou parcial</span></span>
-            <span className="text-brand">✓ <span className="text-ink-muted">Categoria ajuda nos relatorios</span></span>
+            <span className="text-brand">✓ <span className="text-ink-muted">Categoria ajuda nos relatórios</span></span>
           </div>
         </div>
       </section>
@@ -157,16 +140,16 @@ export default async function NovoLancamentoFinanceiroPage({
       <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <Repeat size={18} className="text-brand" />
-          <h2 className="text-base font-bold text-ink">Recorrencia</h2>
+          <h2 className="text-base font-bold text-ink">Recorrência</h2>
         </div>
         <label className="mb-4 flex items-center gap-2 text-sm font-medium text-ink">
           <input type="checkbox" name="recorrente" className="accent-brand" />
-          Repetir lancamento
+          Repetir lançamento
         </label>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Frequencia</label>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Frequência</label>
             <select name="frequencia" defaultValue="mensal" className={campoClasse}>
               <option value="semanal">Semanal</option>
               <option value="mensal">Mensal</option>
@@ -176,11 +159,11 @@ export default async function NovoLancamentoFinanceiroPage({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Data da 1a ocorrencia</label>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Data da 1ª ocorrência</label>
             <input name="data_inicio" type="date" className={campoClasse} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Repetir ate</label>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Repetir até</label>
             <input name="data_fim" type="date" className={campoClasse} />
           </div>
           <div>
@@ -190,15 +173,15 @@ export default async function NovoLancamentoFinanceiroPage({
         </div>
 
         <div className="mt-4 space-y-2 rounded-lg bg-background p-3">
-          <p className="text-xs font-semibold text-ink">Vencimento de cada ocorrencia</p>
+          <p className="text-xs font-semibold text-ink">Vencimento de cada ocorrência</p>
           <div className="flex flex-wrap gap-4">
             <label className="flex items-center gap-2 text-xs text-ink">
               <input type="radio" name="tipo_vencimento" value="fixo" defaultChecked className="accent-brand" />
-              Mesmo dia da primeira ocorrencia
+              Mesmo dia da primeira ocorrência
             </label>
             <label className="flex items-center gap-2 text-xs text-ink">
               <input type="radio" name="tipo_vencimento" value="dia_util" className="accent-brand" />
-              Dia util do mes
+              Dia útil do mês
             </label>
           </div>
           <input name="dia_util" type="number" min={1} max={23} placeholder="Ex: 5" className={`${campoClasse} max-w-[120px]`} />
@@ -208,17 +191,11 @@ export default async function NovoLancamentoFinanceiroPage({
       <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <CalendarDays size={18} className="text-brand" />
-          <h2 className="text-base font-bold text-ink">Observacoes e anexos</h2>
+          <h2 className="text-base font-bold text-ink">Observações</h2>
         </div>
-        <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Observacoes</label>
-            <textarea name="observacoes" rows={4} placeholder="Detalhes relevantes sobre este lancamento..." className={campoClasse} />
-          </div>
-          <div className="rounded-lg border border-dashed border-border bg-background p-4 text-sm text-ink-muted">
-            <p className="font-semibold text-ink">Anexo</p>
-            <p className="mt-1">Espaco reservado para nota fiscal, boleto, comprovante ou contrato em uma proxima etapa.</p>
-          </div>
+        <div>
+          <label className="mb-1 block text-xs font-medium text-ink-muted">Observações</label>
+          <textarea name="observacoes" rows={4} placeholder="Detalhes relevantes sobre este lançamento..." className={campoClasse} />
         </div>
       </section>
 

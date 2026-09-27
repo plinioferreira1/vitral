@@ -62,14 +62,6 @@ const ESTADO_TEXTO: Record<EstadoExibicao, string> = {
   pago_parcial: "text-indigo-700",
   pendente: "text-amber-700",
 };
-const ESTADO_FUNDO: Record<EstadoExibicao, string> = {
-  vencido: "bg-rose-50",
-  pago: "bg-emerald-50",
-  cancelado: "bg-stone-100",
-  recorrente: "bg-blue-50",
-  pago_parcial: "bg-indigo-50",
-  pendente: "bg-amber-50",
-};
 
 type LancamentoLinha = {
   id: string;
@@ -614,12 +606,12 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                       </td>
                       <td className="hidden truncate px-4 py-2.5 text-ink-muted lg:table-cell">{pessoa?.nome ?? "—"}</td>
                       <td className="hidden truncate px-4 py-2.5 text-ink-muted lg:table-cell">
-                        {categoria?.nome ?? <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700">Sem categoria</span>}
+                        {categoria?.nome ?? <span className="font-medium text-amber-700">Sem categoria</span>}
                       </td>
                       <td className="hidden px-4 py-2.5 text-ink-muted md:table-cell">{dataBR(l.vencimento)}</td>
                       <td className="num w-28 px-2 py-2.5 text-right text-xs font-medium text-ink sm:text-sm">{brl(l.valor)}</td>
                       <td className="hidden px-4 py-2.5 md:table-cell">
-                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${ESTADO_TEXTO[estado]} ${ESTADO_FUNDO[estado]}`}>
+                        <span className={`inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium ${ESTADO_TEXTO[estado]}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${ESTADO_COR[estado]}`} />
                           {ESTADO_ROTULO[estado]}
                         </span>
