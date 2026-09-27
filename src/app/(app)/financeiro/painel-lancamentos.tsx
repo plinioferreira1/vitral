@@ -648,7 +648,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                             <>
                               <Link
                                 href={`/financeiro/lancamentos/${l.id}/baixar`}
-                                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-brand hover:bg-background"
+                                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-emerald-700 hover:bg-emerald-50"
                               >
                                 <CheckCircle2 size={15} strokeWidth={2} /> {tipo === "receita" ? "Receber" : "Pagar"}
                               </Link>

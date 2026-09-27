@@ -61,6 +61,7 @@ export default async function BaixarLancamentoFinanceiroPage({
   const retorno = lancamento.tipo === "receita" ? "/financeiro/contas-a-receber#lista" : "/financeiro/contas-a-pagar#lista";
   const acao = lancamento.tipo === "receita" ? "recebimento" : "pagamento";
   const titulo = lancamento.tipo === "receita" ? "Registrar recebimento" : "Registrar pagamento";
+  const botaoConfirmarClasse = "rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700";
 
   return (
     <form action={registrarBaixa} className="financeiro-ui mx-auto max-w-[1180px] space-y-5 pb-24">
@@ -78,7 +79,7 @@ export default async function BaixarLancamentoFinanceiroPage({
             Baixe total ou parcialmente o lançamento e mantenha o saldo atualizado.
           </p>
         </div>
-        <button type="submit" className="rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90">
+        <button type="submit" className={botaoConfirmarClasse}>
           Confirmar {acao}
         </button>
       </div>
@@ -213,7 +214,7 @@ export default async function BaixarLancamentoFinanceiroPage({
           <Link href={retorno} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-ink-muted hover:bg-background">
             Voltar
           </Link>
-          <button type="submit" className="rounded-lg bg-brand px-5 py-2 text-sm font-bold text-white shadow-sm hover:opacity-90">
+          <button type="submit" className={botaoConfirmarClasse}>
             Confirmar
           </button>
         </div>
