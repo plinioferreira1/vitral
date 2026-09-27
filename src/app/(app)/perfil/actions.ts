@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
@@ -9,10 +11,9 @@ import type { TablesUpdate } from "@/lib/database.types";
 
 export async function atualizarPerfil(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
   const nome = String(formData.get("nome") ?? "").trim();
   const cargo = String(formData.get("cargo") ?? "").trim();

@@ -1,6 +1,7 @@
 "use server";
 
 import { checar } from "@/lib/aviso";
+import { getUsuarioAtual, GESTORES } from "@/lib/usuario-atual";
 
 import { valorDaLista } from "@/lib/validacao";
 
@@ -9,7 +10,16 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { obterSiteUrl } from "@/lib/site-url";
-import type { CategoriaProcesso, NivelAcesso } from "@/lib/types";
+import type { CategoriaProcesso } from "@/lib/types";
+
+/** Só diretor/gerente mexe em membros; senão volta para a tela com o erro. */
+async function exigirGestor() {
+  const { user, usuario: eu } = await getUsuarioAtual();
+  if (!user || !eu?.tenant_id || !GESTORES.includes(eu.nivel_acesso)) {
+    redirect(`/membros?erro=${encodeURIComponent("Só diretor ou gerente pode fazer isso.")}`);
+  }
+  return { user, eu, tenantId: eu.tenant_id };
+}
 
 /**
  * Confere que quem está chamando é diretor/gerente, e que o membro
@@ -18,20 +28,8 @@ import type { CategoriaProcesso, NivelAcesso } from "@/lib/types";
  * manual aqui).
  */
 async function exigirPermissaoSobreMembro(usuarioAlvoId: string) {
+  const { user, eu } = await exigirGestor();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const { data: eu } = await supabase
-    .from("usuarios")
-    .select("nivel_acesso, tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
-
-  if (!eu || !["diretor", "gerente"].includes(eu.nivel_acesso)) {
-    redirect(`/membros?erro=${encodeURIComponent("Só diretor ou gerente pode fazer isso.")}`);
-  }
 
   const { data: alvo } = await supabase
     .from("usuarios")
@@ -43,10 +41,11 @@ async function exigirPermissaoSobreMembro(usuarioAlvoId: string) {
     redirect(`/membros?erro=${encodeURIComponent("Membro não encontrado.")}`);
   }
 
-  return { supabase, meuId: user!.id };
+  return { supabase, meuId: user.id };
 }
 
 export async function adicionarMembro(formData: FormData) {
+  await exigirGestor();
   const supabase = await createClient();
   const email = String(formData.get("email") ?? "").trim();
   const perfil = valorDaLista("perfil_usuario", formData.get("perfil"), "corretor");
@@ -68,6 +67,7 @@ export async function adicionarMembro(formData: FormData) {
 }
 
 export async function atualizarCategoriasMembro(formData: FormData) {
+  await exigirGestor();
   const supabase = await createClient();
   const usuarioId = String(formData.get("usuario_id") ?? "");
   const categorias = formData.getAll("categorias") as CategoriaProcesso[];
@@ -195,17 +195,8 @@ export async function excluirMembro(formData: FormData) {
 }
 
 export async function criarConvite(formData: FormData) {
+  const { user, tenantId } = await exigirGestor();
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: eu } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
-
-  if (!eu?.tenant_id) return;
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const perfil = valorDaLista("perfil_usuario", formData.get("perfil"), "corretor");
@@ -215,12 +206,12 @@ export async function criarConvite(formData: FormData) {
   if (!email) return;
 
   const { error } = await supabase.from("convites").insert({
-    tenant_id: eu.tenant_id,
+    tenant_id: tenantId,
     email,
     perfil,
     nivel_acesso: nivelAcesso,
     categorias,
-    criado_por: user?.id ?? null,
+    criado_por: user.id,
   });
 
   if (error) {
@@ -234,6 +225,7 @@ export async function cancelarConvite(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
+  await exigirGestor();
   const supabase = await createClient();
   await checar(supabase.from("convites").delete().eq("id", id), "excluir");
 
@@ -241,6 +233,9 @@ export async function cancelarConvite(formData: FormData) {
 }
 
 export async function reenviarRedefinicaoParaTodos() {
+  // Antes não havia checagem: qualquer pessoa logada podia disparar
+  // e-mails de troca de senha para toda a equipe.
+  await exigirGestor();
   const supabase = await createClient();
   const siteUrl = await obterSiteUrl();
 

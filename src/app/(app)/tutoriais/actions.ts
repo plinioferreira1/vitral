@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
@@ -7,14 +9,9 @@ import { revalidatePath } from "next/cache";
 
 export async function adicionarTutorial(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return;
+  const usuario = sessao.usuario;
   if (!usuario?.tenant_id) return;
 
   const categoria = String(formData.get("categoria") ?? "").trim();
@@ -43,6 +40,7 @@ export async function adicionarTutorial(formData: FormData) {
 }
 
 export async function editarTutorial(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -65,6 +63,7 @@ export async function editarTutorial(formData: FormData) {
 }
 
 export async function removerTutorial(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   if (!id) return;

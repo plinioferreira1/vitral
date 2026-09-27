@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { after } from "next/server";
@@ -49,10 +51,9 @@ async function resolverOuCriar(
 export async function criarProcesso(formData: FormData) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
   const modeloProcessoId = String(formData.get("modelo_processo_id") ?? "");
   const categoria = valorDaLista("categoria_processo", formData.get("categoria"), "venda");
@@ -72,11 +73,7 @@ export async function criarProcesso(formData: FormData) {
     redirect(`/processos/novo?erro=${encodeURIComponent("Modelo e data base são obrigatórios.")}`);
   }
 
-  const { data: usuarioRow } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user.id)
-    .single();
+  const usuarioRow = sessao.usuario;
 
   const tenantId = usuarioRow?.tenant_id;
   if (!tenantId) redirect("/onboarding");

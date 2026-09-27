@@ -1,26 +1,21 @@
 "use server";
 
+import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { parseCsvFatura } from "@/lib/fatura-csv";
 
-async function contexto(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
-  return usuario?.tenant_id ?? null;
+/** Empresa de quem está logado — só diretor/gerente (senão, avisa e devolve null). */
+async function contexto() {
+  return (await exigirUsuario(GESTORES))?.tenantId ?? null;
 }
 
 export async function criarCartao(formData: FormData) {
   const supabase = await createClient();
-  const tenantId = await contexto(supabase);
+  const tenantId = await contexto();
   if (!tenantId) return;
 
   const nome = String(formData.get("nome") ?? "").trim();
@@ -38,7 +33,7 @@ export async function criarCartao(formData: FormData) {
 
 export async function importarFatura(formData: FormData) {
   const supabase = await createClient();
-  const tenantId = await contexto(supabase);
+  const tenantId = await contexto();
   if (!tenantId) return;
 
   const cartaoId = String(formData.get("cartao_id") ?? "");
@@ -76,6 +71,7 @@ export async function importarFatura(formData: FormData) {
 }
 
 export async function categorizarItemFatura(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const id = String(formData.get("id") ?? "");
   const categoriaId = String(formData.get("categoria_id") ?? "").trim();
   if (!id || !categoriaId) return;
@@ -94,6 +90,7 @@ export async function categorizarItemFatura(formData: FormData) {
  * (de qualquer fatura) que já foram categorizados com o mesmo estabelecimento
  * — sugestão real, aprendida do próprio histórico, não inventada. */
 export async function aplicarSugestaoCategoria(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const faturaId = String(formData.get("fatura_id") ?? "");
   if (!faturaId) return;
 
@@ -132,6 +129,7 @@ export async function aplicarSugestaoCategoria(formData: FormData) {
 }
 
 export async function limparCategorizacoes(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const faturaId = String(formData.get("fatura_id") ?? "");
   if (!faturaId) return;
   const supabase = await createClient();
@@ -143,6 +141,7 @@ export async function limparCategorizacoes(formData: FormData) {
 }
 
 export async function apagarFatura(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();

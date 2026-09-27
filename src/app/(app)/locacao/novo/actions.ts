@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
@@ -38,16 +40,11 @@ async function resolverOuCriar(
 
 export async function criarContratoLocacao(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user.id)
-    .single();
+  const usuario = sessao.usuario;
   if (!usuario?.tenant_id) redirect("/onboarding");
 
   const imovelNome = String(formData.get("imovel") ?? "");

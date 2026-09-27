@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
@@ -40,14 +42,10 @@ async function resolverOuCriar(
 
 export async function criarTermoVisita(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
+  const usuario = sessao.usuario;
 
   if (!usuario?.tenant_id) return;
   const tenantId = usuario.tenant_id;
@@ -103,6 +101,7 @@ export async function criarTermoVisita(formData: FormData) {
 }
 
 export async function atualizarFeedbackVisita(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   const nota = formData.get("nota");
@@ -122,6 +121,7 @@ export async function atualizarFeedbackVisita(formData: FormData) {
 }
 
 export async function cancelarTermoVisita(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
 

@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { datasDaRecorrencia, mesesPorFrequencia } from "@/lib/recorrencia";
@@ -7,17 +9,6 @@ import { avisar, checar } from "@/lib/aviso";
 import { valorDaLista } from "@/lib/validacao";
 import type { TablesInsert } from "@/lib/database.types";
 
-async function contexto(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
-  return { userId: user?.id ?? null, tenantId: usuario?.tenant_id ?? null };
-}
 
 
 /**
@@ -27,7 +18,9 @@ async function contexto(supabase: Awaited<ReturnType<typeof createClient>>) {
  */
 export async function criarLancamento(formData: FormData) {
   const supabase = await createClient();
-  const { userId, tenantId } = await contexto(supabase);
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return;
+  const { userId, tenantId } = sessao;
   if (!tenantId) return;
 
   const tipo = valorDaLista("financeiro_tipo_categoria", formData.get("tipo"), "despesa");
@@ -135,7 +128,9 @@ export async function criarLancamento(formData: FormData) {
  */
 export async function registrarBaixa(formData: FormData) {
   const supabase = await createClient();
-  const { userId, tenantId } = await contexto(supabase);
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return;
+  const { userId, tenantId } = sessao;
   if (!tenantId) return;
 
   const lancamentoId = String(formData.get("lancamento_id") ?? "");
@@ -192,7 +187,9 @@ export async function registrarBaixa(formData: FormData) {
  */
 export async function editarLancamento(formData: FormData) {
   const supabase = await createClient();
-  const { tenantId } = await contexto(supabase);
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return;
+  const { tenantId } = sessao;
   if (!tenantId) return;
 
   const id = String(formData.get("id") ?? "");
@@ -267,6 +264,7 @@ export async function editarLancamento(formData: FormData) {
  * lançado — usado na revisão rápida de "sem categoria", sem abrir o formulário
  * de edição completo. */
 export async function categorizarLancamento(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const id = String(formData.get("id") ?? "");
   const categoriaId = String(formData.get("categoria_id") ?? "").trim();
   if (!id || !categoriaId) return;
@@ -288,6 +286,7 @@ export async function categorizarLancamento(formData: FormData) {
 }
 
 export async function cancelarLancamento(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();
@@ -305,6 +304,7 @@ export async function cancelarLancamento(formData: FormData) {
  * "cancelar" nesses casos.
  */
 export async function apagarLancamentos(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const ids = formData.getAll("ids").map(String).filter(Boolean);
   if (ids.length === 0) return;
 

@@ -2942,6 +2942,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      usuario_eh_gestor: { Args: never; Returns: boolean }
       usuario_pode_criar_documento_cliente: { Args: never; Returns: boolean }
       usuario_pode_editar: { Args: never; Returns: boolean }
       usuario_pode_ver_documento_cliente:

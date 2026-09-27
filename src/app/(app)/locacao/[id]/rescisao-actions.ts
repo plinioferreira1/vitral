@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
@@ -85,6 +87,7 @@ const TEMPLATE_RESCISAO: { nome: string; checklist: string[] }[] = [
 ];
 
 export async function iniciarRescisao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const contratoId = String(formData.get("contrato_id") ?? "");
   const dataAviso = String(formData.get("data_aviso") ?? "").trim();
@@ -139,6 +142,7 @@ export async function iniciarRescisao(formData: FormData) {
 }
 
 export async function alternarChecklistItemRescisao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const itemId = String(formData.get("item_id") ?? "");
   const contratoId = String(formData.get("contrato_id") ?? "");
@@ -153,6 +157,7 @@ export async function alternarChecklistItemRescisao(formData: FormData) {
 }
 
 export async function concluirEtapaRescisao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const etapaId = String(formData.get("etapa_id") ?? "");
   const rescisaoId = String(formData.get("rescisao_id") ?? "");
@@ -188,6 +193,7 @@ export async function concluirEtapaRescisao(formData: FormData) {
 }
 
 export async function reabrirEtapaRescisao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const etapaId = String(formData.get("etapa_id") ?? "");
   const rescisaoId = String(formData.get("rescisao_id") ?? "");

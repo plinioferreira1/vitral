@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
@@ -14,14 +16,9 @@ function categoriaFornecedorOuNull(formData: FormData, papel: string): string | 
 
 export async function criarPessoaFinanceiro(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return;
+  const usuario = sessao.usuario;
   if (!usuario?.tenant_id) return;
 
   const nome = String(formData.get("nome") ?? "").trim();
@@ -43,6 +40,7 @@ export async function criarPessoaFinanceiro(formData: FormData) {
 }
 
 export async function editarPessoaFinanceiro(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -68,6 +66,7 @@ export async function editarPessoaFinanceiro(formData: FormData) {
 }
 
 export async function apagarPessoaFinanceiro(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 

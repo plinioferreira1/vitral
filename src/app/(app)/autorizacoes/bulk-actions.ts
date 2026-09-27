@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
@@ -7,6 +9,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function apagarAutorizacoesSelecionadas(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const ids = formData.getAll("ids") as string[];
   if (ids.length === 0) return;
 
@@ -17,6 +20,7 @@ export async function apagarAutorizacoesSelecionadas(formData: FormData) {
 }
 
 export async function apagarAutorizacao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 

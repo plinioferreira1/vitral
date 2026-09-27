@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { after } from "next/server";
@@ -21,10 +23,9 @@ import { reconciliarAgendaProcesso, removerEventosDeEtapas, reconciliarAlertaCon
  */
 export async function moverProcessoParaEtapa(processoId: string, etapaNomeAlvo: string | null) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
   const [{ data: processo }, { data: todasEtapas }] = await Promise.all([
     supabase.from("processos").select("status").eq("id", processoId).single(),
@@ -84,6 +85,7 @@ export async function moverProcessoParaEtapa(processoId: string, etapaNomeAlvo: 
 }
 
 export async function apagarProcessosSelecionados(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const ids = formData.getAll("ids") as string[];
   if (ids.length === 0) return;
 
@@ -102,6 +104,7 @@ export async function apagarProcessosSelecionados(formData: FormData) {
 }
 
 export async function apagarProcesso(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 

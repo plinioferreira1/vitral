@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
@@ -28,14 +30,9 @@ function periodicidadeDe(tipoRegra: TipoRegra): "mensal" | "semanal" {
 
 export async function adicionarTarefaRecorrente(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return;
+  const usuario = sessao.usuario;
 
   if (!usuario?.tenant_id) return;
 
@@ -69,6 +66,7 @@ export async function adicionarTarefaRecorrente(formData: FormData) {
 }
 
 export async function editarTarefaRecorrente(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   const nome = String(formData.get("nome") ?? "").trim();
@@ -94,6 +92,7 @@ export async function editarTarefaRecorrente(formData: FormData) {
 }
 
 export async function removerTarefaRecorrente(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   if (!id) return;

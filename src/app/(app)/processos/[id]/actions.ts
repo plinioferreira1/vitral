@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { after } from "next/server";
@@ -43,6 +45,7 @@ async function resolverOuCriar(
 }
 
 export async function salvarOrdemEtapas(processoId: string, etapaIdsEmOrdem: string[]) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   if (!processoId || etapaIdsEmOrdem.length === 0) return;
 
@@ -61,10 +64,9 @@ export async function salvarOrdemEtapas(processoId: string, etapaIdsEmOrdem: str
 
 export async function concluirEtapa(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
   const etapaId = String(formData.get("etapa_id") ?? "");
   const processoId = String(formData.get("processo_id") ?? "");
@@ -157,6 +159,7 @@ export async function concluirEtapa(formData: FormData) {
 }
 
 export async function reabrirEtapa(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const etapaId = String(formData.get("etapa_id") ?? "");
   const processoId = String(formData.get("processo_id") ?? "");
@@ -189,6 +192,7 @@ export async function reabrirEtapa(formData: FormData) {
 }
 
 export async function salvarDatasContrato(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const processoId = String(formData.get("processo_id") ?? "");
   const dataAssinatura = String(formData.get("data_assinatura") ?? "");
@@ -210,6 +214,7 @@ export async function salvarDatasContrato(formData: FormData) {
 }
 
 export async function alterarDataPrevista(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const etapaId = String(formData.get("etapa_id") ?? "");
   const processoId = String(formData.get("processo_id") ?? "");
@@ -225,6 +230,7 @@ export async function alterarDataPrevista(formData: FormData) {
 }
 
 export async function salvarNumeroRegistro(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const etapaId = String(formData.get("etapa_id") ?? "");
   const processoId = String(formData.get("processo_id") ?? "");
@@ -236,6 +242,7 @@ export async function salvarNumeroRegistro(formData: FormData) {
 }
 
 export async function salvarEnderecoImovel(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const imovelId = String(formData.get("imovel_id") ?? "");
   const processoId = String(formData.get("processo_id") ?? "");
@@ -252,6 +259,7 @@ export async function salvarEnderecoImovel(formData: FormData) {
 }
 
 export async function salvarCodigoSanProcesso(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const processoId = String(formData.get("processo_id") ?? "");
   const codigoSan = String(formData.get("codigo_san") ?? "").trim() || null;
@@ -266,6 +274,7 @@ export async function salvarCodigoSanProcesso(formData: FormData) {
 }
 
 export async function salvarDadosProcesso(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const processoId = String(formData.get("processo_id") ?? "");
   if (!processoId) return;
@@ -357,9 +366,9 @@ export async function salvarDadosProcesso(formData: FormData) {
 
 export async function alternarChecklistItem(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
   const itemId = String(formData.get("item_id") ?? "");
   const processoId = String(formData.get("processo_id") ?? "");
@@ -379,9 +388,9 @@ export async function alternarChecklistItem(formData: FormData) {
 
 export async function alternarEtapaPadrao(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
   const processoId = String(formData.get("processo_id") ?? "");
   const nome = String(formData.get("nome") ?? "");
@@ -412,6 +421,7 @@ export async function alternarEtapaPadrao(formData: FormData) {
 }
 
 export async function salvarComissao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const processoId = String(formData.get("processo_id") ?? "");
   const comissaoId = String(formData.get("comissao_id") ?? "") || null;
@@ -445,10 +455,9 @@ export async function salvarComissao(formData: FormData) {
 
 export async function adicionarComentario(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
   const processoId = String(formData.get("processo_id") ?? "");
   const etapaId = String(formData.get("etapa_id") ?? "") || null;

@@ -1,26 +1,21 @@
 "use server";
 
+import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { valorDaLista } from "@/lib/validacao";
 
-async function tenantAtual(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
-  return usuario?.tenant_id ?? null;
+/** Empresa de quem está logado — só diretor/gerente (senão, avisa e devolve null). */
+async function tenantAtual() {
+  return (await exigirUsuario(GESTORES))?.tenantId ?? null;
 }
 
 export async function criarCategoria(formData: FormData) {
   const supabase = await createClient();
-  const tenantId = await tenantAtual(supabase);
+  const tenantId = await tenantAtual();
   if (!tenantId) return;
 
   const nome = String(formData.get("nome") ?? "").trim();
@@ -36,6 +31,7 @@ export async function criarCategoria(formData: FormData) {
 }
 
 export async function editarCategoria(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const nome = String(formData.get("nome") ?? "").trim();
@@ -52,6 +48,7 @@ export async function editarCategoria(formData: FormData) {
 }
 
 export async function apagarCategoria(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();
@@ -61,7 +58,7 @@ export async function apagarCategoria(formData: FormData) {
 
 export async function criarCentroCusto(formData: FormData) {
   const supabase = await createClient();
-  const tenantId = await tenantAtual(supabase);
+  const tenantId = await tenantAtual();
   if (!tenantId) return;
 
   const nome = String(formData.get("nome") ?? "").trim();
@@ -72,6 +69,7 @@ export async function criarCentroCusto(formData: FormData) {
 }
 
 export async function apagarCentroCusto(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();

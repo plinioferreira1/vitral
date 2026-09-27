@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
@@ -54,14 +56,10 @@ function condicoesDoFormulario(formData: FormData): { descricao: string; valor: 
 
 export async function criarCartaProposta(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
+  const usuario = sessao.usuario;
 
   if (!usuario?.tenant_id) return;
   const tenantId = usuario.tenant_id;
@@ -139,6 +137,7 @@ export async function criarCartaProposta(formData: FormData) {
 }
 
 export async function atualizarCartaProposta(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -236,6 +235,7 @@ export async function atualizarCartaProposta(formData: FormData) {
 }
 
 export async function cancelarCartaProposta(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -247,6 +247,7 @@ export async function cancelarCartaProposta(formData: FormData) {
 }
 
 export async function salvarResponsavelCartaProposta(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   const responsavelId = String(formData.get("responsavel_id") ?? "").trim() || null;

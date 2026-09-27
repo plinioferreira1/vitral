@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
@@ -7,14 +9,9 @@ import { revalidatePath } from "next/cache";
 
 export async function criarContaBancaria(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return;
+  const usuario = sessao.usuario;
   if (!usuario?.tenant_id) return;
 
   const nome = String(formData.get("nome") ?? "").trim();
@@ -37,6 +34,7 @@ export async function criarContaBancaria(formData: FormData) {
 }
 
 export async function arquivarContaBancaria(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();

@@ -1,28 +1,25 @@
 "use server";
 
+import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
+import { valorDaLista } from "@/lib/validacao";
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import type { CategoriaProcesso, TipoEtapaPadrao } from "@/lib/types";
 
 export async function adicionarEtapaPadrao(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return;
+  const { user } = sessao;
 
   const nome = String(formData.get("nome") ?? "").trim();
-  const categoria = (String(formData.get("categoria") ?? "venda")) as CategoriaProcesso;
-  const tipo = (String(formData.get("tipo") ?? "sequencial")) as TipoEtapaPadrao;
+  const categoria = valorDaLista("categoria_processo", formData.get("categoria"), "venda");
+  const tipo = valorDaLista("tipo_etapa_padrao", formData.get("tipo"), "sequencial");
   if (!nome) return;
 
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user.id)
-    .single();
+  const usuario = sessao.usuario;
   if (!usuario?.tenant_id) return;
 
   const { data: existentes } = await supabase
@@ -43,6 +40,7 @@ export async function adicionarEtapaPadrao(formData: FormData) {
 }
 
 export async function removerEtapaPadrao(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   await checar(supabase.from("etapas_padrao").delete().eq("id", id), "excluir");
@@ -50,21 +48,24 @@ export async function removerEtapaPadrao(formData: FormData) {
 }
 
 export async function editarEtapaPadrao(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   const nome = String(formData.get("nome") ?? "").trim();
-  const tipo = String(formData.get("tipo") ?? "") as TipoEtapaPadrao;
-  if (!nome) return;
+  const tipo = valorDaLista("tipo_etapa_padrao", formData.get("tipo"));
+  if (!nome || !tipo) return;
   await checar(supabase.from("etapas_padrao").update({ nome, tipo }).eq("id", id), "atualizar");
   revalidatePath("/etapas-padrao");
 }
 
 export async function moverEtapaPadrao(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   const direcao = String(formData.get("direcao") ?? "");
-  const categoria = String(formData.get("categoria") ?? "") as CategoriaProcesso;
-  const tipo = String(formData.get("tipo") ?? "") as TipoEtapaPadrao;
+  const categoria = valorDaLista("categoria_processo", formData.get("categoria"));
+  const tipo = valorDaLista("tipo_etapa_padrao", formData.get("tipo"));
+  if (!categoria || !tipo) return;
 
   const { data: etapas } = await supabase
     .from("etapas_padrao")

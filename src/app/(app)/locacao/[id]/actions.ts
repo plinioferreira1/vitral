@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
@@ -17,6 +19,7 @@ const PROXIMO_STATUS: Record<StatusContaLocacao, StatusContaLocacao> = {
 };
 
 export async function alternarStatusConta(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
 
   const contratoId = String(formData.get("contrato_id") ?? "");
@@ -50,6 +53,7 @@ export async function alternarStatusConta(formData: FormData) {
 }
 
 export async function atualizarDetalhesConta(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const contaId = String(formData.get("conta_id") ?? "");
   const contratoId = String(formData.get("contrato_id") ?? "");
@@ -100,6 +104,7 @@ async function resolverOuCriarCliente(
 }
 
 export async function atualizarContrato(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
 
@@ -145,6 +150,7 @@ export async function atualizarContrato(formData: FormData) {
 }
 
 export async function encerrarContrato(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
 
@@ -159,6 +165,7 @@ export async function encerrarContrato(formData: FormData) {
 }
 
 export async function reativarContrato(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
 

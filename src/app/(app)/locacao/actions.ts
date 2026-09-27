@@ -1,5 +1,7 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
@@ -7,9 +9,9 @@ import { revalidatePath } from "next/cache";
 
 export async function alternarTarefaMensal(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
   const tarefaId = String(formData.get("tarefa_id") ?? "");
   const competencia = String(formData.get("competencia") ?? "");
