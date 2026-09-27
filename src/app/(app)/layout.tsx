@@ -139,6 +139,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                     children: [
                       { href: "/financeiro/contas-a-pagar", label: "A Pagar" },
                       { href: "/financeiro/contas-a-receber", label: "A Receber" },
+                      { href: "/financeiro/cartao-corporativo", label: "Cartões" },
                     ],
                   },
                   {
@@ -147,7 +148,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                       { href: "/financeiro/contas-bancarias", label: "Bancos" },
                       { href: "/financeiro/pessoas", label: "Contatos" },
                       { href: "/financeiro/categorias", label: "Categorias" },
-                      { href: "/financeiro/cartao-corporativo", label: "Cartões" },
                       { href: "/financeiro/configuracoes-email", label: "E-mails" },
                     ],
                   },

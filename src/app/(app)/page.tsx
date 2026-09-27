@@ -11,7 +11,6 @@ import { hojeISO } from "@/lib/data-br";
 import { ocorrenciasDaTarefa, type RegraTarefa } from "@/lib/tarefas-recorrentes";
 import { alternarTarefaMensal } from "@/app/(app)/locacao/actions";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import type { CategoriaProcesso } from "@/lib/types";
 import { calcularUrgencia } from "@/lib/alertas";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
@@ -79,16 +78,16 @@ export default async function DashboardPage({
   const mesAnterior = format(addMonths(referencia, -1), "yyyy-MM");
   const proximoMes = format(addMonths(referencia, 1), "yyyy-MM");
 
-  let tarefasHoje: {
+  type TarefaHoje = {
     tarefaId: string;
     nome: string;
     competencia: string;
     statusId: string | null;
     concluida: boolean;
-  }[] = [];
+  };
 
-  const tarefasPromise = (async () => {
-    if (!temLocacao) return;
+  const tarefasPromise = (async (): Promise<TarefaHoje[]> => {
+    if (!temLocacao) return [];
     const { data: tarefasRaw } = await supabase
       .from("tarefas_mensais")
       .select("id, nome, tipo_regra, dia_fixo, periodicidade");
@@ -99,41 +98,41 @@ export default async function DashboardPage({
         .map((oc) => ({ tarefa: t, ocorrencia: oc }))
     );
 
-    if (ocorrenciasHoje.length > 0) {
-      const { data: statusRaw } = await supabase
-        .from("tarefas_mensais_status")
-        .select("id, tarefa_id, competencia, concluida")
-        .in(
-          "tarefa_id",
-          ocorrenciasHoje.map((o) => o.tarefa.id)
-        );
+    if (ocorrenciasHoje.length === 0) return [];
 
-      tarefasHoje = ocorrenciasHoje.map(({ tarefa, ocorrencia }) => {
-        const status = (statusRaw ?? []).find(
-          (s) => s.tarefa_id === tarefa.id && s.competencia === ocorrencia.competencia
-        );
-        return {
-          tarefaId: tarefa.id,
-          nome: tarefa.nome,
-          competencia: ocorrencia.competencia,
-          statusId: status?.id ?? null,
-          concluida: status?.concluida ?? false,
-        };
-      });
-    }
+    const { data: statusRaw } = await supabase
+      .from("tarefas_mensais_status")
+      .select("id, tarefa_id, competencia, concluida")
+      .in(
+        "tarefa_id",
+        ocorrenciasHoje.map((o) => o.tarefa.id)
+      );
+
+    return ocorrenciasHoje.map(({ tarefa, ocorrencia }) => {
+      const status = (statusRaw ?? []).find(
+        (s) => s.tarefa_id === tarefa.id && s.competencia === ocorrencia.competencia
+      );
+      return {
+        tarefaId: tarefa.id,
+        nome: tarefa.nome,
+        competencia: ocorrencia.competencia,
+        statusId: status?.id ?? null,
+        concluida: status?.concluida ?? false,
+      };
+    });
   })();
 
-  let quadrosKanban: {
+  type QuadroKanbanHome = {
     categoria: CategoriaProcesso;
     titulo: string;
     colunas: string[];
     cards: CardKanban[];
     colunaPrazos?: { titulo: string; cards: CardPrazo[] };
     stats: { total: number; atrasados: number; venceHoje: number; venceEmBreve: number };
-  }[] = [];
+  };
 
-  const quadrosPromise = (async () => {
-    if (!ehAdmin || !usuario.tenant_id) return;
+  const quadrosPromise = (async (): Promise<QuadroKanbanHome[]> => {
+    if (!ehAdmin || !usuario.tenant_id) return [];
     const tenantId = usuario.tenant_id;
     async function montarQuadro(categoria: "venda" | "financiamento", titulo: string) {
       const { data: processosRaw } = await supabase
@@ -246,13 +245,13 @@ export default async function DashboardPage({
       };
     }
 
-    quadrosKanban = await Promise.all([
+    return Promise.all([
       ...(temVenda ? [montarQuadro("venda", "Vendas")] : []),
       ...(temFinanciamento ? [montarQuadro("financiamento", "Financiamento")] : []),
     ]);
   })();
 
-  const [eventos] = await Promise.all([eventosPromise, tarefasPromise, quadrosPromise]);
+  const [eventos, tarefasHoje, quadrosKanban] = await Promise.all([eventosPromise, tarefasPromise, quadrosPromise]);
 
   const quadroPrazos = quadrosKanban.find((q) => q.colunaPrazos)?.colunaPrazos ?? null;
 

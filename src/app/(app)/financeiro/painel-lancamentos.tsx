@@ -125,6 +125,7 @@ type Filtros = {
 };
 
 type CampoOrdenacao = "descricao" | "pessoa" | "categoria" | "vencimento" | "valor" | "status";
+type CampoOculto = [keyof Filtros, string | undefined];
 
 function construirUrl(base: string, params: Filtros): string {
   const sp = new URLSearchParams();
@@ -153,6 +154,12 @@ function linhaComparativo(percentual: number | null, aumentoBom: boolean) {
 function variacao(atual: number, anterior: number): number | null {
   if (anterior <= 0) return null;
   return ((atual - anterior) / anterior) * 100;
+}
+
+function renderCamposOcultos(campos: CampoOculto[], omitir: (keyof Filtros)[] = []) {
+  return campos
+    .filter(([campo]) => !omitir.includes(campo))
+    .map(([campo, valor]) => (valor ? <input key={campo} type="hidden" name={campo} value={valor} /> : null));
 }
 
 export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita" | "despesa"; searchParams?: Filtros }) {
@@ -324,7 +331,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     return direcao === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />;
   }
 
-  const camposOcultos: [keyof Filtros, string | undefined][] = [
+  const camposOcultos: CampoOculto[] = [
     ["q", f.q],
     ["status", f.status],
     ["categoria", f.categoria],
@@ -336,16 +343,6 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     ["direcao", f.direcao],
     ["por_pagina", f.por_pagina],
   ];
-  function CamposOcultos({ omitir = [] }: { omitir?: (keyof Filtros)[] }) {
-    return (
-      <>
-        {camposOcultos
-          .filter(([campo]) => !omitir.includes(campo))
-          .map(([campo, valor]) => (valor ? <input key={campo} type="hidden" name={campo} value={valor} /> : null))}
-      </>
-    );
-  }
-
   return (
     <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
       <div>
@@ -424,7 +421,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           <button type="submit" className="sr-only">
             Buscar
           </button>
-          <CamposOcultos omitir={["q"]} />
+          {renderCamposOcultos(camposOcultos, ["q"])}
         </form>
         <Link href={`/financeiro/lancamentos/novo?tipo=${tipo}`} className={`${PRIMARY_BUTTON_CLASS} shrink-0`}>
             <Plus size={16} strokeWidth={2.2} />
@@ -790,7 +787,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                   </Link>
                 </div>
                 <form method="get" action={`${rota}#lista`} className="flex items-center gap-1.5">
-                  <CamposOcultos omitir={["por_pagina"]} />
+                  {renderCamposOcultos(camposOcultos, ["por_pagina"])}
                   <SelectAutoSubmit
                     name="por_pagina"
                     defaultValue={String(porPagina)}

@@ -64,6 +64,7 @@ export default async function MembrosPage({
     .order("criado_em", { ascending: false });
 
   const siteUrl = await obterSiteUrl();
+  const agora = new Date();
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -169,7 +170,7 @@ export default async function MembrosPage({
             Convites pendentes
           </p>
           {(convites ?? []).map((c) => {
-            const expirado = new Date(c.expira_em).getTime() < Date.now();
+            const expirado = new Date(c.expira_em) < agora;
             return (
               <div
                 key={c.id}
