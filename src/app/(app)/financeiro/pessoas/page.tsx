@@ -72,7 +72,7 @@ export default async function FinanceiroPessoasPage({
     { chave: "fornecedor", label: "Fornecedores", icon: Landmark, lista: fornecedores },
     { chave: "funcionario", label: "Funcionários", icon: UserCog, lista: funcionarios },
     { chave: "corretor", label: "Corretores", icon: Briefcase, lista: corretores },
-    { chave: "prestador_servico", label: "Prestadores de Serviço", icon: Wrench, lista: prestadores },
+    { chave: "prestador_servico", label: "Prestadores de serviço", icon: Wrench, lista: prestadores },
   ] as const;
 
   const abaAtiva = tipo ?? "";
@@ -85,11 +85,11 @@ export default async function FinanceiroPessoasPage({
   }
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-            Clientes e Fornecedores
+            Clientes e fornecedores
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
             Cadastro central de pessoas e empresas usado em contas a pagar e a receber.

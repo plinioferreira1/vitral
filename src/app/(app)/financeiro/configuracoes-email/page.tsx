@@ -29,10 +29,10 @@ export default async function ConfiguracoesEmailPage() {
     .limit(5);
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="financeiro-ui mx-auto max-w-[1100px] space-y-5">
       <div>
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-          Configurações de E-mail
+          Resumo financeiro por e-mail
         </h1>
         <p className="mt-1 text-sm text-ink-muted">
           O relatório financeiro diário é enviado automaticamente todo dia às 9h (horário de

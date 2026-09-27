@@ -36,10 +36,10 @@ export default async function AgendaFinanceiraPage() {
   const datasOrdenadas = Array.from(porData.keys()).sort();
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="financeiro-ui mx-auto max-w-[1100px] space-y-5">
       <div>
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-          Agenda Financeira
+          Vencimentos
         </h1>
         <p className="mt-1 text-sm text-ink-muted">
           Vencimentos futuros e vencidos, pendentes de liquidação — dos próximos 60 dias.

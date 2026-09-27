@@ -6,6 +6,7 @@ import { KanbanComAbas } from "@/components/kanban-com-abas";
 import type { CardKanban, CardPrazo } from "@/components/kanban-processos";
 import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
 import { getPermissoesUsuario } from "@/lib/permissoes";
+import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { hojeISO } from "@/lib/data-br";
 import { ocorrenciasDaTarefa, type RegraTarefa } from "@/lib/tarefas-recorrentes";
 import { alternarTarefaMensal } from "@/app/(app)/locacao/actions";
@@ -58,16 +59,10 @@ export default async function DashboardPage({
 }) {
   const { mes } = await searchParams;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("nome, nivel_acesso, perfil, tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
+  // Mesma busca já feita pelo layout nesta renderização — reaproveitada.
+  const { user, usuario } = await getUsuarioAtual();
 
-  if (!usuario) return null;
+  if (!user || !usuario) return null;
 
   const ehAdmin = usuario.perfil === "admin";
 
@@ -77,7 +72,9 @@ export default async function DashboardPage({
     usuario.nivel_acesso
   );
 
-  const eventos = await getEventosCalendario();
+  // Calendário, tarefas do dia e quadros do kanban não dependem um do
+  // outro — carregam em paralelo em vez de um após o outro.
+  const eventosPromise = getEventosCalendario();
   const referencia = mes ? new Date(`${mes}-01T00:00:00`) : new Date(`${hojeISO()}T00:00:00`);
   const mesAnterior = format(addMonths(referencia, -1), "yyyy-MM");
   const proximoMes = format(addMonths(referencia, 1), "yyyy-MM");
@@ -90,7 +87,8 @@ export default async function DashboardPage({
     concluida: boolean;
   }[] = [];
 
-  if (temLocacao) {
+  const tarefasPromise = (async () => {
+    if (!temLocacao) return;
     const { data: tarefasRaw } = await supabase
       .from("tarefas_mensais")
       .select("id, nome, tipo_regra, dia_fixo, periodicidade");
@@ -123,7 +121,7 @@ export default async function DashboardPage({
         };
       });
     }
-  }
+  })();
 
   let quadrosKanban: {
     categoria: CategoriaProcesso;
@@ -134,7 +132,8 @@ export default async function DashboardPage({
     stats: { total: number; atrasados: number; venceHoje: number; venceEmBreve: number };
   }[] = [];
 
-  if (ehAdmin && usuario.tenant_id) {
+  const quadrosPromise = (async () => {
+    if (!ehAdmin || !usuario.tenant_id) return;
     const tenantId = usuario.tenant_id;
     async function montarQuadro(categoria: "venda" | "financiamento", titulo: string) {
       const { data: processosRaw } = await supabase
@@ -251,7 +250,9 @@ export default async function DashboardPage({
       ...(temVenda ? [montarQuadro("venda", "Vendas")] : []),
       ...(temFinanciamento ? [montarQuadro("financiamento", "Financiamento")] : []),
     ]);
-  }
+  })();
+
+  const [eventos] = await Promise.all([eventosPromise, tarefasPromise, quadrosPromise]);
 
   const quadroPrazos = quadrosKanban.find((q) => q.colunaPrazos)?.colunaPrazos ?? null;
 

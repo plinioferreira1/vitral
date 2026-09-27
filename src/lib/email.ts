@@ -32,6 +32,11 @@ export async function enviarEmail({
     port: 465,
     secure: true,
     auth: { user: usuario, pass: senha },
+    // Sem esses limites o padrão do nodemailer espera minutos por um
+    // servidor SMTP lento, travando a ação/cron que envia o e-mail.
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
   });
 
   await transportador.sendMail({

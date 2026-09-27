@@ -34,6 +34,7 @@ import { hojeISO } from "@/lib/data-br";
 import { SelecionarTodos } from "@/components/selecionar-todos";
 import { SelectAutoSubmit } from "@/components/select-auto-submit";
 import { PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
+import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -63,6 +64,14 @@ const ESTADO_TEXTO: Record<EstadoExibicao, string> = {
   recorrente: "text-blue-700",
   pago_parcial: "text-indigo-700",
   pendente: "text-amber-700",
+};
+const ESTADO_FUNDO: Record<EstadoExibicao, string> = {
+  vencido: "bg-rose-50",
+  pago: "bg-emerald-50",
+  cancelado: "bg-stone-100",
+  recorrente: "bg-blue-50",
+  pago_parcial: "bg-indigo-50",
+  pendente: "bg-amber-50",
 };
 
 type LancamentoLinha = {
@@ -161,26 +170,30 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const inicioMesAnterior = `${anoAnterior}-${String(mesAnterior).padStart(2, "0")}-01`;
   const fimMesAnterior = new Date(anoAnterior, mesAnterior, 0).toISOString().slice(0, 10);
 
-  const [{ data: pessoas }, { data: categorias }, { data: centros }, { data: unidades }, { data: contas }] =
-    await Promise.all([
-      supabase.from("financeiro_pessoas").select("id, nome").order("nome"),
-      supabase.from("financeiro_categorias").select("id, nome").eq("tipo", tipo).order("nome"),
-      supabase.from("financeiro_centros_custo").select("id, nome").order("nome"),
-      supabase.from("financeiro_unidades").select("id, nome").order("nome"),
-      supabase.from("financeiro_contas_bancarias").select("id, nome").eq("ativa", true).order("nome"),
-    ]);
-
-  const { data: lancamentosTodos } = await supabase
-    .from("financeiro_lancamentos")
-    .select(
-      "id, descricao, valor, vencimento, competencia, status, recorrencia_id, pessoa_id, categoria_id, centro_custo_id, unidade_id, conta_bancaria_id, forma_pagamento, numero_documento, observacoes, financeiro_pessoas ( nome ), financeiro_categorias ( nome ), financeiro_unidades ( nome ), financeiro_contas_bancarias ( nome )"
-    )
-    .eq("tipo", tipo)
-    .order("vencimento");
-
-  const { data: baixasRaw } = await supabase
-    .from("financeiro_baixas")
-    .select("lancamento_id, valor, data");
+  // Consultas independentes em uma rodada, preservando a otimização da branch principal.
+  const [
+    { data: pessoas },
+    { data: categorias },
+    { data: centros },
+    { data: unidades },
+    { data: contas },
+    { data: lancamentosTodos },
+    { data: baixasRaw },
+  ] = await Promise.all([
+    supabase.from("financeiro_pessoas").select("id, nome").order("nome"),
+    supabase.from("financeiro_categorias").select("id, nome").eq("tipo", tipo).order("nome"),
+    supabase.from("financeiro_centros_custo").select("id, nome").order("nome"),
+    supabase.from("financeiro_unidades").select("id, nome").order("nome"),
+    supabase.from("financeiro_contas_bancarias").select("id, nome").eq("ativa", true).order("nome"),
+    supabase
+      .from("financeiro_lancamentos")
+      .select(
+        "id, descricao, valor, vencimento, competencia, status, recorrencia_id, pessoa_id, categoria_id, centro_custo_id, unidade_id, conta_bancaria_id, forma_pagamento, numero_documento, observacoes, financeiro_pessoas ( nome ), financeiro_categorias ( nome ), financeiro_unidades ( nome ), financeiro_contas_bancarias ( nome )"
+      )
+      .eq("tipo", tipo)
+      .order("vencimento"),
+    supabase.from("financeiro_baixas").select("lancamento_id, valor, data"),
+  ]);
   const baixadoPorLancamento = new Map<string, number>();
   (baixasRaw ?? []).forEach((b) => {
     baixadoPorLancamento.set(b.lancamento_id, (baixadoPorLancamento.get(b.lancamento_id) ?? 0) + Number(b.valor));
@@ -322,7 +335,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   }
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
       <div>
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">{titulo}</h1>
         <p className="mt-1 text-sm text-ink-muted">
@@ -421,9 +434,14 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           </summary>
           <form
             action={criarLancamento}
-            className="absolute right-0 z-30 mt-2 max-h-[78vh] w-[min(calc(100vw-2rem),760px)] space-y-5 overflow-y-auto rounded-2xl border border-border/70 bg-surface p-5 shadow-xl"
+            className="absolute right-0 z-30 mt-2 max-h-[80vh] w-[min(calc(100vw-2rem),960px)] space-y-5 overflow-y-auto rounded-2xl border border-border/70 bg-surface p-5 shadow-xl sm:p-7"
           >
             <input type="hidden" name="tipo" value={tipo} />
+
+            <div className="border-b border-border pb-4">
+              <p className="text-lg font-bold tracking-tight text-ink">Novo lançamento</p>
+              <p className="mt-1 text-sm text-ink-muted">Cadastre {tipo === "receita" ? "uma conta a receber" : "uma conta a pagar"} e acompanhe vencimentos e baixas.</p>
+            </div>
 
             <div className="space-y-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">1. Dados principais</p>
@@ -432,22 +450,8 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                 <input name="valor" type="number" step="0.01" required placeholder="Valor (R$)" className={campoClasse} />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <select name="pessoa_id" defaultValue="" className={campoClasse}>
-                  <option value="">{rotuloPessoa} (opcional)</option>
-                  {(pessoas ?? []).map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nome}
-                    </option>
-                  ))}
-                </select>
-                <select name="categoria_id" defaultValue="" className={campoClasse}>
-                  <option value="">Categoria (opcional)</option>
-                  {(categorias ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
+                <BuscaOpcaoFinanceira name="pessoa_id" label={rotuloPessoa} options={pessoas ?? []} />
+                <BuscaOpcaoFinanceira name="categoria_id" label="Categoria" options={categorias ?? []} />
               </div>
               <div className="grid gap-3 sm:grid-cols-3">
                 <select name="centro_custo_id" defaultValue="" className={campoClasse}>
@@ -580,7 +584,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         </details>
       </div>
 
-      <details className="group rounded-2xl border border-border/70 bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
+      <details open className="group rounded-2xl border border-border/70 bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-ink-muted">
@@ -599,7 +603,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         <form
           method="get"
           action={`${rota}#lista`}
-          className="flex flex-wrap items-end gap-3 border-t border-border/70 px-4 py-4"
+          className="grid grid-cols-2 gap-3 border-t border-border/70 px-4 py-4 md:grid-cols-3 xl:grid-cols-6"
         >
         <input type="hidden" name="q" value={f.q ?? ""} />
         <div>
@@ -693,7 +697,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         </form>
       )}
 
-      <div id="lista" className="scroll-mt-4 rounded-xl border border-border/60 bg-surface shadow-sm">
+      <div id="lista" className="financeiro-lista scroll-mt-4 rounded-xl border border-border/60 bg-surface shadow-sm">
         {lancamentos.length === 0 ? (
           <p className="p-8 text-center text-sm text-ink-muted">
             {temFiltro ? "Nenhum lançamento encontrado com esses filtros." : "Nenhum lançamento ainda."}
@@ -706,9 +710,19 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                   <th className="w-10 px-2 py-2.5">
                     <SelecionarTodos formId="form-apagar-lote" className="accent-brand" />
                   </th>
-                  <th className="px-4 py-2.5 font-medium">
+                  <th className="w-[28%] px-4 py-2.5 font-medium">
                     <Link href={linkOrdenar("descricao")} className="inline-flex items-center gap-1 hover:text-ink">
                       Descrição {iconeOrdenacao("descricao")}
+                    </Link>
+                  </th>
+                  <th className="hidden px-4 py-2.5 font-medium lg:table-cell">
+                    <Link href={linkOrdenar("pessoa")} className="inline-flex items-center gap-1 hover:text-ink">
+                      {rotuloPessoa} {iconeOrdenacao("pessoa")}
+                    </Link>
+                  </th>
+                  <th className="hidden px-4 py-2.5 font-medium lg:table-cell">
+                    <Link href={linkOrdenar("categoria")} className="inline-flex items-center gap-1 hover:text-ink">
+                      Categoria {iconeOrdenacao("categoria")}
                     </Link>
                   </th>
                   <th className="hidden px-4 py-2.5 font-medium md:table-cell">
@@ -726,6 +740,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                       Status {iconeOrdenacao("status")}
                     </Link>
                   </th>
+                  <th className="hidden px-4 py-2.5 font-medium xl:table-cell">Conta</th>
                   <th className="w-24 px-2 py-2.5 font-medium text-right">Ações</th>
                 </tr>
               </thead>
@@ -739,7 +754,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                   const estado = estadoExibicao(l, hoje);
                   return (
                     <tr key={l.id}>
-                      <td className="px-4 py-2.5">
+                      <td className="px-2 py-2.5">
                         {l.status === "pendente" && (
                           <input type="checkbox" name="ids" value={l.id} form="form-apagar-lote" className="accent-brand" />
                         )}
@@ -747,19 +762,24 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
 
                       <td className="px-4 py-3 text-ink">
                         <div className="font-medium">{l.descricao} {l.recorrencia_id && <Repeat size={12} className="inline text-ink-muted" />}</div>
-                        <div className="mt-1 text-xs text-ink-muted">
+                        <div className="mt-1 text-xs text-ink-muted lg:hidden">
                           {[pessoa?.nome, categoria?.nome ?? "Sem categoria", conta?.nome].filter(Boolean).join(" · ")}
                         </div>
                         <div className="mt-1 text-xs text-ink-muted md:hidden">{dataBR(l.vencimento)} · {ESTADO_ROTULO[estado]}</div>
                       </td>
+                      <td className="hidden truncate px-4 py-2.5 text-ink-muted lg:table-cell">{pessoa?.nome ?? "—"}</td>
+                      <td className="hidden truncate px-4 py-2.5 text-ink-muted lg:table-cell">
+                        {categoria?.nome ?? <span className="rounded-full bg-amber-50 px-2 py-1 text-amber-700">Sem categoria</span>}
+                      </td>
                       <td className="hidden px-4 py-2.5 text-ink-muted md:table-cell">{dataBR(l.vencimento)}</td>
                       <td className="num w-28 px-2 py-2.5 text-right text-xs font-medium text-ink sm:text-sm">{brl(l.valor)}</td>
                       <td className="hidden px-4 py-2.5 md:table-cell">
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${ESTADO_TEXTO[estado]}`}>
+                        <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${ESTADO_TEXTO[estado]} ${ESTADO_FUNDO[estado]}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${ESTADO_COR[estado]}`} />
                           {ESTADO_ROTULO[estado]}
                         </span>
                       </td>
+                      <td className="hidden truncate px-4 py-2.5 text-ink-muted xl:table-cell">{conta?.nome ?? "—"}</td>
                       <td className="px-4 py-2.5">
                         <details className="relative">
                           <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink hover:bg-background" aria-label={`Ações para ${l.descricao}`}>

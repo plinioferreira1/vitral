@@ -203,14 +203,18 @@ export async function aplicarSugestaoCategoria(formData: FormData) {
     }
   });
 
-  for (const item of pendentes) {
-    const sugestao = sugestaoPorEstabelecimento.get(item.estabelecimento.trim().toLowerCase());
-    if (!sugestao) continue;
-    await supabase
-      .from("financeiro_fatura_itens")
-      .update({ categoria_id: sugestao.categoria_id, centro_custo_id: sugestao.centro_custo_id })
-      .eq("id", item.id);
-  }
+  await Promise.all(
+    pendentes.flatMap((item) => {
+      const sugestao = sugestaoPorEstabelecimento.get(item.estabelecimento.trim().toLowerCase());
+      if (!sugestao) return [];
+      return [
+        supabase
+          .from("financeiro_fatura_itens")
+          .update({ categoria_id: sugestao.categoria_id, centro_custo_id: sugestao.centro_custo_id })
+          .eq("id", item.id),
+      ];
+    })
+  );
 
   revalidatePath("/financeiro/cartao-corporativo");
 }

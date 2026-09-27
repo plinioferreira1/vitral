@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { sair } from "@/app/login/actions";
 import { AppShell } from "./app-shell";
 import { getPermissoesUsuario } from "@/lib/permissoes";
+import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { TopBar } from "@/components/topbar";
 import { hojeISO } from "@/lib/data-br";
 import { format } from "date-fns";
@@ -10,28 +11,26 @@ import { ptBR } from "date-fns/locale";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user, usuario } = await getUsuarioAtual();
 
   if (!user) redirect("/login");
-
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("nome, perfil, tenant_id, cargo, foto_url, nivel_acesso")
-    .eq("id", user.id)
-    .single();
-
   if (!usuario?.tenant_id) redirect("/onboarding");
 
-  const { data: tenant } = await supabase
-    .from("tenants")
-    .select("nome")
-    .eq("id", usuario.tenant_id)
-    .single();
+  const hoje = hojeISO();
 
-  const { ehCorretor, ehSocialMedia, podeConfigurar, temVenda, temFinanciamento, temLocacao } =
-    await getPermissoesUsuario(supabase, user.id, usuario.nivel_acesso);
+  // Empresa, permissões e contador de atrasados não dependem um do outro.
+  const [{ data: tenant }, permissoes, { count: contagemAtrasados }] = await Promise.all([
+    supabase.from("tenants").select("nome").eq("id", usuario.tenant_id).single(),
+    getPermissoesUsuario(supabase, user.id, usuario.nivel_acesso),
+    supabase
+      .from("etapas")
+      .select("id, processos!inner(status)", { count: "exact", head: true })
+      .in("status", ["pendente", "em_andamento"])
+      .lt("data_prevista", hoje)
+      .not("processos.status", "in", "(concluido,cancelado)"),
+  ]);
+
+  const { ehCorretor, ehSocialMedia, podeConfigurar, temVenda, temFinanciamento, temLocacao } = permissoes;
 
   type SubItemMenu = { href: string; label: string } | { label: string; children: { href: string; label: string }[] };
   type ItemMenu = { href: string; label: string } | { label: string; children: SubItemMenu[] };
@@ -133,26 +132,16 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {
                 label: "Financeiro",
                 children: [
-                  { href: "/financeiro", label: "Resumo" },
-                  {
-                    label: "Movimentações",
-                    children: [
-                      { href: "/financeiro/contas-a-pagar", label: "Pagar" },
-                      { href: "/financeiro/contas-a-receber", label: "Receber" },
-                      { href: "/financeiro/agenda", label: "Agenda" },
-                    ],
-                  },
-                  {
-                    label: "Cadastros",
-                    children: [
-                      { href: "/financeiro/contas-bancarias", label: "Bancos" },
-                      { href: "/financeiro/pessoas", label: "Contatos" },
-                      { href: "/financeiro/categorias", label: "Categorias" },
-                    ],
-                  },
-                  { href: "/financeiro/relatorios", label: "Relatórios" },
-                  { href: "/financeiro/cartao-corporativo", label: "Cartões" },
-                  { href: "/financeiro/configuracoes-email", label: "E-mails" },
+                  { href: "/financeiro", label: "Visão geral" },
+                  { href: "/financeiro/contas-a-pagar", label: "Contas a pagar" },
+                  { href: "/financeiro/contas-a-receber", label: "Contas a receber" },
+                  { href: "/financeiro/contas-bancarias", label: "Contas bancárias" },
+                  { href: "/financeiro/pessoas", label: "Clientes e fornecedores" },
+                  { href: "/financeiro/categorias", label: "Categorias e centros" },
+                  { href: "/financeiro/relatorios", label: "Relatórios financeiros" },
+                  { href: "/financeiro/cartao-corporativo", label: "Cartão corporativo" },
+                  { href: "/financeiro/agenda", label: "Vencimentos" },
+                  { href: "/financeiro/configuracoes-email", label: "Resumo por e-mail" },
                 ],
               },
             ]
@@ -175,14 +164,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             ]
           : []),
       ];
-
-  const hoje = hojeISO();
-  const { count: contagemAtrasados } = await supabase
-    .from("etapas")
-    .select("id, processos!inner(status)", { count: "exact", head: true })
-    .in("status", ["pendente", "em_andamento"])
-    .lt("data_prevista", hoje)
-    .not("processos.status", "in", "(concluido,cancelado)");
 
   const dataHojeBruta = format(new Date(`${hoje}T00:00:00`), "EEEE, d 'de' MMMM 'de' yyyy", {
     locale: ptBR,

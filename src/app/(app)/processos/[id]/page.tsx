@@ -33,71 +33,73 @@ export default async function ProcessoDetalhePage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const { data: processo } = await supabase
-    .from("processos")
-    .select(
-      `id, numero_processo, codigo_san, status, valor_total, valor_financiado, origem, categoria, data_criacao,
-       data_assinatura, data_final_contrato, imovel_id,
-       comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
-       vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
-       imoveis ( endereco ), bancos ( nome ),
-       corretores!processos_corretor_id_fkey ( nome ), usuarios ( nome ), modelos_processo ( nome ),
-       indicacao:corretores!processos_indicacao_id_fkey ( nome )`
-    )
-    .eq("id", id)
-    .single();
+  // 1ª rodada: tudo que só depende do id do processo, em paralelo
+  // (antes eram 10 consultas em fila).
+  const [
+    { data: processo },
+    { data: comissoes },
+    { data: corretoresLista },
+    { data: bancosLista },
+    { data: usuariosLista },
+    { data: etapasRaw },
+    { data: comentarios },
+    { data: historico },
+  ] = await Promise.all([
+    supabase
+      .from("processos")
+      .select(
+        `id, numero_processo, codigo_san, status, valor_total, valor_financiado, origem, categoria, data_criacao,
+         data_assinatura, data_final_contrato, imovel_id,
+         comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
+         vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
+         imoveis ( endereco ), bancos ( nome ),
+         corretores!processos_corretor_id_fkey ( nome ), usuarios ( nome ), modelos_processo ( nome ),
+         indicacao:corretores!processos_indicacao_id_fkey ( nome )`
+      )
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("comissoes")
+      .select("*, corretores!comissoes_beneficiario_id_fkey ( nome )")
+      .eq("processo_id", id)
+      .order("criado_em", { ascending: true }),
+    supabase.from("corretores").select("id, nome").order("nome"),
+    supabase.from("bancos").select("id, nome").order("nome"),
+    supabase.from("usuarios").select("id, nome").eq("ativo", true).order("nome"),
+    supabase
+      .from("etapas")
+      .select("*, usuarios ( nome )")
+      .eq("processo_id", id)
+      .order("ordem", { ascending: true }),
+    supabase
+      .from("comentarios")
+      .select("*, usuarios ( nome )")
+      .eq("processo_id", id)
+      .order("criado_em", { ascending: false }),
+    supabase
+      .from("historico")
+      .select("*, usuarios ( nome )")
+      .eq("processo_id", id)
+      .order("criado_em", { ascending: false })
+      .limit(20),
+  ]);
 
   if (!processo) notFound();
 
-  const { data: comissoes } = await supabase
-    .from("comissoes")
-    .select("*, corretores!comissoes_beneficiario_id_fkey ( nome )")
-    .eq("processo_id", id)
-    .order("criado_em", { ascending: true });
-
-  const { data: etapasPadrao } = await supabase
-    .from("etapas_padrao")
-    .select("id, nome, ordem, categoria, tipo")
-    .eq("categoria", (processo as unknown as { categoria: string }).categoria)
-    .order("ordem", { ascending: true });
-
-  const { data: corretoresLista } = await supabase
-    .from("corretores")
-    .select("id, nome")
-    .order("nome");
-
-  const { data: bancosLista } = await supabase.from("bancos").select("id, nome").order("nome");
-  const { data: usuariosLista } = await supabase
-    .from("usuarios")
-    .select("id, nome")
-    .eq("ativo", true)
-    .order("nome");
-
-  const { data: etapasRaw } = await supabase
-    .from("etapas")
-    .select("*, usuarios ( nome )")
-    .eq("processo_id", id)
-    .order("ordem", { ascending: true });
-
   const etapas = anexarUrgencia(etapasRaw ?? []);
-
   const etapaIds = (etapasRaw ?? []).map((e) => e.id);
-  const { data: checklistItens } = etapaIds.length
-    ? await supabase.from("checklist_itens").select("*").in("etapa_id", etapaIds).order("ordem")
-    : { data: [] };
 
-  const { data: comentarios } = await supabase
-    .from("comentarios")
-    .select("*, usuarios ( nome )")
-    .eq("processo_id", id)
-    .order("criado_em", { ascending: false });
-
-  const { data: historico } = await supabase
-    .from("historico")
-    .select("*, usuarios ( nome )")
-    .eq("processo_id", id)
-    .order("criado_em", { ascending: false })
-    .limit(20);
+  // 2ª rodada: o que depende da categoria do processo e dos ids das etapas.
+  const [{ data: etapasPadrao }, { data: checklistItens }] = await Promise.all([
+    supabase
+      .from("etapas_padrao")
+      .select("id, nome, ordem, categoria, tipo")
+      .eq("categoria", (processo as unknown as { categoria: string }).categoria)
+      .order("ordem", { ascending: true }),
+    etapaIds.length
+      ? supabase.from("checklist_itens").select("*").in("etapa_id", etapaIds).order("ordem")
+      : Promise.resolve({ data: [] }),
+  ]);
 
   type P = typeof processo & {
     comprador: { nome: string; telefone: string | null } | null;

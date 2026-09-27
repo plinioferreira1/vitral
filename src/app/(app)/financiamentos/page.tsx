@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getEventosCalendario } from "@/lib/queries";
+import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { ResumoPrazos } from "@/components/resumo-prazos";
 import { CalendarioGrid } from "@/components/calendario-grid";
 import { TabelaProcessos, type ProcessoRow } from "@/components/tabela-processos";
@@ -35,19 +36,25 @@ export default async function FinanciamentosPage({
 
   const supabase = await createClient();
 
-  const { data: processos, error } = await supabase
-    .from("processos")
-    .select(
-      `id, numero_processo, codigo_san, tipo, status, data_criacao, data_assinatura, data_final_contrato, valor_total, valor_financiado, origem,
-       imoveis ( endereco ),
-       comprador:clientes!processos_comprador_id_fkey ( nome ),
-       vendedor:clientes!processos_vendedor_id_fkey ( nome ),
-       corretores!processos_corretor_id_fkey ( nome ), bancos ( nome ),
-       indicacao:corretores!processos_indicacao_id_fkey ( nome ),
-       modelos_processo ( nome )`
-    )
-    .eq("categoria", "financiamento")
-    .order("criado_em", { ascending: false });
+  // Processos, eventos do calendário e usuário (já buscado pelo layout)
+  // carregam em paralelo. Os eventos só são usados na aba Resumo.
+  const [{ data: processos, error }, todosEventos, { usuario }] = await Promise.all([
+    supabase
+      .from("processos")
+      .select(
+        `id, numero_processo, codigo_san, tipo, status, data_criacao, data_assinatura, data_final_contrato, valor_total, valor_financiado, origem,
+         imoveis ( endereco ),
+         comprador:clientes!processos_comprador_id_fkey ( nome ),
+         vendedor:clientes!processos_vendedor_id_fkey ( nome ),
+         corretores!processos_corretor_id_fkey ( nome ), bancos ( nome ),
+         indicacao:corretores!processos_indicacao_id_fkey ( nome ),
+         modelos_processo ( nome )`
+      )
+      .eq("categoria", "financiamento")
+      .order("criado_em", { ascending: false }),
+    aba === "resumo" ? getEventosCalendario() : Promise.resolve([]),
+    getUsuarioAtual(),
+  ]);
 
   if (error) {
     return <p className="text-sm text-rose-700">Erro ao carregar processos: {error.message}</p>;
@@ -77,21 +84,12 @@ export default async function FinanciamentosPage({
     }
   });
 
-  const eventos = (await getEventosCalendario()).filter((e) => e.categoria === "financiamento");
+  const eventos = todosEventos.filter((e) => e.categoria === "financiamento");
   const referencia = new Date(`${hojeISO()}T00:00:00`);
 
   let cardsKanban: CardKanban[] = [];
   let colunas: string[] = [];
   if (aba === "resumo" && vista === "kanban") {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    const { data: usuario } = await supabase
-      .from("usuarios")
-      .select("tenant_id")
-      .eq("id", user?.id ?? "")
-      .single();
-
     if (usuario?.tenant_id) {
       const [colunasResult, etapaAtualMap] = await Promise.all([
         colunasKanban(supabase, usuario.tenant_id, "financiamento"),

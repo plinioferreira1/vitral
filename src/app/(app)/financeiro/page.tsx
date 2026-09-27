@@ -126,11 +126,11 @@ export default async function FinanceiroDashboardPage({
   const saldoPrevisto = saldoConsolidado + totalEntradas30 - totalSaidas30;
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Financeiro</h1>
-          <p className="mt-1 text-sm text-ink-muted">Visão geral — Sacra Netimóveis e Sacra Cred.</p>
+          <p className="mt-1 text-sm text-ink-muted">Acompanhe saldos, recebimentos e compromissos em um só lugar.</p>
         </div>
         <div className="flex gap-1 rounded-lg border border-border/60 bg-surface p-1 text-sm">
           {Object.entries(PERIODOS).map(([valor, label]) => (
@@ -147,7 +147,7 @@ export default async function FinanceiroDashboardPage({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 financeiro-indicadores">
         <CartaoIndicador
           icon={Wallet}
           valor={brl(saldoConsolidado)}
@@ -189,22 +189,18 @@ export default async function FinanceiroDashboardPage({
             }
           />
           {vencidos.length === 0 ? (
-            <p className="text-sm text-ink-muted">Nenhum lançamento vencido. ✅</p>
+            <p className="rounded-lg bg-background px-4 py-6 text-center text-sm text-ink-muted">Nenhum lançamento vencido.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="divide-y divide-border">
               {vencidos.slice(0, 6).map((l) => {
                 const pessoa = (l as unknown as { financeiro_pessoas: { nome: string } | null }).financeiro_pessoas;
                 return (
-                  <li key={l.id} className="rounded-lg border border-rose-100 bg-rose-50 p-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-ink">
-                        {l.tipo === "despesa" ? "Pagar" : "Receber"}: {l.descricao}
-                      </p>
-                      <p className="num font-semibold text-rose-700">{brl(l.valor)}</p>
+                  <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-ink">{l.descricao}</p>
+                      <p className="text-xs text-ink-muted">{pessoa?.nome ?? "Sem pessoa vinculada"} · {dataBR(l.vencimento)}</p>
                     </div>
-                    <p className="text-xs text-rose-700">
-                      {pessoa?.nome ?? "—"} · venceu em {dataBR(l.vencimento)}
-                    </p>
+                    <div className="flex items-center gap-3"><span className="rounded-full bg-rose-50 px-2 py-1 text-[11px] font-semibold text-rose-700">{l.tipo === "despesa" ? "A pagar" : "A receber"}</span><p className="num font-semibold text-rose-700">{brl(l.valor)}</p></div>
                   </li>
                 );
               })}
@@ -224,22 +220,18 @@ export default async function FinanceiroDashboardPage({
             }
           />
           {proximosVencimentos.length === 0 ? (
-            <p className="text-sm text-ink-muted">Nada vencendo nos próximos 7 dias.</p>
+            <p className="rounded-lg bg-background px-4 py-6 text-center text-sm text-ink-muted">Nada vencendo nos próximos 7 dias.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="divide-y divide-border">
               {proximosVencimentos.slice(0, 6).map((l) => {
                 const pessoa = (l as unknown as { financeiro_pessoas: { nome: string } | null }).financeiro_pessoas;
                 return (
-                  <li key={l.id} className="rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-ink">
-                        {l.tipo === "despesa" ? "Pagar" : "Receber"}: {l.descricao}
-                      </p>
-                      <p className="num font-semibold text-amber-700">{brl(l.valor)}</p>
+                  <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-ink">{l.descricao}</p>
+                      <p className="text-xs text-ink-muted">{pessoa?.nome ?? "Sem pessoa vinculada"} · {dataBR(l.vencimento)}</p>
                     </div>
-                    <p className="text-xs text-amber-700">
-                      {pessoa?.nome ?? "—"} · vence em {dataBR(l.vencimento)}
-                    </p>
+                    <div className="flex items-center gap-3"><span className="rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-700">{l.tipo === "despesa" ? "A pagar" : "A receber"}</span><p className="num font-semibold text-ink">{brl(l.valor)}</p></div>
                   </li>
                 );
               })}
@@ -253,7 +245,7 @@ export default async function FinanceiroDashboardPage({
           <CabecalhoSecao icon={LineChart} titulo="Fluxo de caixa (próximos 30 dias)" descricao="Com base nos lançamentos pendentes." />
           <GraficoFluxoCaixa dias={diasChart} />
         </div>
-        <div className="grid grid-rows-3 gap-3">
+        <div className="grid grid-rows-3 gap-3 financeiro-projecao">
           <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
             <p className="text-xs text-ink-muted">Saldo previsto (30 dias)</p>
             <p className={`num text-xl font-bold ${saldoPrevisto < 0 ? "text-rose-600" : "text-ink"}`}>{brl(saldoPrevisto)}</p>
@@ -305,15 +297,15 @@ export default async function FinanceiroDashboardPage({
         )}
       </div>
 
-      <div>
+      <div className="financeiro-atalhos">
         <p className="mb-2 text-sm font-semibold text-ink">Acessos rápidos</p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <Link href="/financeiro/contas-a-pagar" className="rounded-xl border border-rose-100 bg-rose-50 p-4 text-sm hover:opacity-90">
+          <Link href="/financeiro/contas-a-pagar" className="rounded-xl border border-border bg-surface p-4 text-sm hover:opacity-90">
             <FileText size={18} className="mb-2 text-rose-700" />
             <p className="font-medium text-ink">Contas a Pagar</p>
             <p className="text-xs text-ink-muted">Cadastrar e gerenciar títulos</p>
           </Link>
-          <Link href="/financeiro/contas-a-receber" className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm hover:opacity-90">
+          <Link href="/financeiro/contas-a-receber" className="rounded-xl border border-border bg-surface p-4 text-sm hover:opacity-90">
             <TrendingUp size={18} className="mb-2 text-emerald-700" />
             <p className="font-medium text-ink">Contas a Receber</p>
             <p className="text-xs text-ink-muted">Acompanhar recebimentos</p>
