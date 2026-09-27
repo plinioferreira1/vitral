@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { addWeeks, addMonths } from "date-fns";
 
 async function contexto(supabase: Awaited<ReturnType<typeof createClient>>) {
@@ -68,6 +69,11 @@ function nEsimoDiaUtil(ano: number, mesIndex0: number, n: number): Date {
 }
 
 const MAX_OCORRENCIAS = 60;
+
+function retornoSeguro(formData: FormData, fallback: string): string {
+  const retorno = String(formData.get("return_to") ?? "").trim();
+  return retorno.startsWith("/financeiro") ? retorno : fallback;
+}
 
 /**
  * Cria um lançamento avulso, ou — se "recorrente" vier marcado —
@@ -195,6 +201,8 @@ export async function criarLancamento(formData: FormData) {
   const caminho = tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath(caminho);
   revalidatePath("/financeiro");
+  revalidatePath("/financeiro/agenda");
+  redirect(retornoSeguro(formData, caminho));
 }
 
 /**
@@ -224,7 +232,7 @@ export async function registrarBaixa(formData: FormData) {
 
   const { data: lancamento } = await supabase
     .from("financeiro_lancamentos")
-    .select("valor")
+    .select("valor, tipo")
     .eq("id", lancamentoId)
     .single();
   const { data: baixas } = await supabase
@@ -238,9 +246,12 @@ export async function registrarBaixa(formData: FormData) {
 
   await supabase.from("financeiro_lancamentos").update({ status: novoStatus }).eq("id", lancamentoId);
 
+  const caminho = lancamento?.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath("/financeiro/contas-a-pagar");
   revalidatePath("/financeiro/contas-a-receber");
   revalidatePath("/financeiro");
+  revalidatePath("/financeiro/agenda");
+  redirect(retornoSeguro(formData, caminho));
 }
 
 /**
@@ -329,6 +340,7 @@ export async function editarLancamento(formData: FormData) {
   revalidatePath(caminho);
   revalidatePath("/financeiro");
   revalidatePath("/financeiro/agenda");
+  redirect(retornoSeguro(formData, caminho));
 }
 
 /** Define (ou troca) só a categoria/centro de resultado de um lançamento já
