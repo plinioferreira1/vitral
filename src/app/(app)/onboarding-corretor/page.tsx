@@ -4,6 +4,7 @@ import {
   editarEtapaOnboarding,
   removerEtapaOnboarding,
 } from "./actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 interface EtapaRow {
   id: string;
@@ -54,12 +55,11 @@ export default async function OnboardingCorretorPage() {
           placeholder="Link (opcional, ex: /termos-visita)"
           className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
         />
-        <button
-          type="submit"
+        <BotaoEnviar
           className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
           Adicionar
-        </button>
+        </BotaoEnviar>
       </form>
 
       <div className="rounded-xl border border-border/60 bg-surface shadow-sm">
@@ -101,23 +101,21 @@ export default async function OnboardingCorretorPage() {
                           defaultValue={e.link ?? ""}
                           className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                         />
-                        <button
-                          type="submit"
+                        <BotaoEnviar
                           className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                         >
                           Salvar
-                        </button>
+                        </BotaoEnviar>
                       </form>
                     </details>
                     <form action={removerEtapaOnboarding}>
                       <input type="hidden" name="id" value={e.id} />
-                      <button
-                        type="submit"
+                      <BotaoEnviar
                         aria-label={`Remover ${e.nome}`}
                         className="rounded-md p-1.5 text-ink-muted hover:bg-background hover:text-rose-600"
                       >
                         🗑
-                      </button>
+                      </BotaoEnviar>
                     </form>
                   </div>
                 </div>

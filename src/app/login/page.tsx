@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { entrar, cadastrar, esqueciSenha } from "./actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 export default async function LoginPage({
   searchParams,
@@ -74,12 +75,11 @@ export default async function LoginPage({
                     placeholder="voce@empresa.com"
                   />
                 </div>
-                <button
-                  type="submit"
+                <BotaoEnviar
                   className="w-full rounded-md bg-brand py-2 text-sm font-medium text-white transition hover:opacity-90"
                 >
                   Enviar link de redefinição
-                </button>
+                </BotaoEnviar>
               </form>
 
               <a href="/login" className="mt-4 block text-center text-xs text-ink-muted hover:underline">
@@ -164,12 +164,11 @@ export default async function LoginPage({
                       placeholder="••••••••"
                     />
                   </div>
-                  <button
-                    type="submit"
+                  <BotaoEnviar
                     className="w-full rounded-md bg-brand py-2 text-sm font-medium text-white transition hover:opacity-90"
                   >
                     {modoCadastro ? "Criar conta" : "Entrar"}
-                  </button>
+                  </BotaoEnviar>
                 </form>
               )}
             </>

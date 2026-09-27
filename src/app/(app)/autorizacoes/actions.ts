@@ -1,5 +1,9 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -38,14 +42,10 @@ async function resolverOuCriar(
 
 export async function criarAutorizacao(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
+  const usuario = sessao.usuario;
 
   if (!usuario?.tenant_id) return;
   const tenantId = usuario.tenant_id;
@@ -74,7 +74,7 @@ export async function criarAutorizacao(formData: FormData) {
     endereco: campo("vendedor_endereco"),
   });
   if (!objetoVazio(dadosVendedor)) {
-    await supabase.from("clientes").update(dadosVendedor).eq("id", vendedorId);
+    await checar(supabase.from("clientes").update(dadosVendedor).eq("id", vendedorId), "atualizar");
   }
 
   const regiaoAdministrativa = campo("regiao_administrativa");
@@ -89,7 +89,7 @@ export async function criarAutorizacao(formData: FormData) {
     regiao_administrativa: regiaoAdministrativa,
   });
   if (!objetoVazio(dadosImovel)) {
-    await supabase.from("imoveis").update(dadosImovel).eq("id", imovelId);
+    await checar(supabase.from("imoveis").update(dadosImovel).eq("id", imovelId), "atualizar");
   }
 
   let conjugeId: string | null = null;
@@ -104,7 +104,7 @@ export async function criarAutorizacao(formData: FormData) {
         endereco: campo("conjuge_endereco"),
       });
       if (!objetoVazio(dadosConjuge)) {
-        await supabase.from("clientes").update(dadosConjuge).eq("id", conjugeId);
+        await checar(supabase.from("clientes").update(dadosConjuge).eq("id", conjugeId), "atualizar");
       }
     }
   }
@@ -143,14 +143,15 @@ export async function criarAutorizacao(formData: FormData) {
   if (formData.get("segundo_proprietario") === "on") {
     signatarios.push({ nome_esperado: "Proprietário 2", ordem: 2 });
   }
-  await supabase.from("autorizacao_signatarios").insert(
+  await checar(supabase.from("autorizacao_signatarios").insert(
     signatarios.map((s) => ({ ...s, autorizacao_id: autorizacao.id }))
-  );
+  ), "salvar");
 
   redirect(`/autorizacoes/${autorizacao.id}`);
 }
 
 export async function atualizarAutorizacao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -174,7 +175,7 @@ export async function atualizarAutorizacao(formData: FormData) {
     endereco: campo("vendedor_endereco"),
   });
   if (!objetoVazio(dadosVendedor)) {
-    await supabase.from("clientes").update(dadosVendedor).eq("id", existente.vendedor_id);
+    await checar(supabase.from("clientes").update(dadosVendedor).eq("id", existente.vendedor_id), "atualizar");
   }
 
   const regiaoAdministrativa = campo("regiao_administrativa");
@@ -190,7 +191,7 @@ export async function atualizarAutorizacao(formData: FormData) {
     regiao_administrativa: regiaoAdministrativa,
   });
   if (!objetoVazio(dadosImovel)) {
-    await supabase.from("imoveis").update(dadosImovel).eq("id", existente.imovel_id);
+    await checar(supabase.from("imoveis").update(dadosImovel).eq("id", existente.imovel_id), "atualizar");
   }
 
   // Cônjuge / segundo proprietário.
@@ -216,7 +217,7 @@ export async function atualizarAutorizacao(formData: FormData) {
         endereco: campo("conjuge_endereco"),
       });
       if (!objetoVazio(dadosConjuge)) {
-        await supabase.from("clientes").update(dadosConjuge).eq("id", conjugeId);
+        await checar(supabase.from("clientes").update(dadosConjuge).eq("id", conjugeId), "atualizar");
       }
     }
   } else if (!conjugeNome) {
@@ -230,7 +231,7 @@ export async function atualizarAutorizacao(formData: FormData) {
   const observacoes = campo("observacoes");
   const foro = foroPorRegiaoAdministrativa(regiaoAdministrativa ?? "");
 
-  await supabase
+  await checar(supabase
     .from("autorizacoes_venda")
     .update({
       conjuge_id: conjugeId,
@@ -241,7 +242,7 @@ export async function atualizarAutorizacao(formData: FormData) {
       observacoes,
       foro,
     })
-    .eq("id", id);
+    .eq("id", id), "atualizar");
 
   // Ajusta os signatários: garante que exista (ou não) o segundo
   // proprietário, sem mexer no signatário 1.
@@ -254,11 +255,11 @@ export async function atualizarAutorizacao(formData: FormData) {
   const signatario2 = (signatarios ?? []).find((s) => s.ordem === 2);
 
   if (querSegundoProprietario && !signatario2) {
-    await supabase
+    await checar(supabase
       .from("autorizacao_signatarios")
-      .insert({ autorizacao_id: id, nome_esperado: "Proprietário 2", ordem: 2 });
+      .insert({ autorizacao_id: id, nome_esperado: "Proprietário 2", ordem: 2 }), "salvar");
   } else if (!querSegundoProprietario && signatario2 && !signatario2.assinado_em) {
-    await supabase.from("autorizacao_signatarios").delete().eq("id", signatario2.id);
+    await checar(supabase.from("autorizacao_signatarios").delete().eq("id", signatario2.id), "excluir");
   }
 
   revalidatePath(`/autorizacoes/${id}`);
@@ -267,22 +268,24 @@ export async function atualizarAutorizacao(formData: FormData) {
 }
 
 export async function cancelarAutorizacao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
 
-  await supabase.from("autorizacoes_venda").update({ status: "cancelado" }).eq("id", id);
+  await checar(supabase.from("autorizacoes_venda").update({ status: "cancelado" }).eq("id", id), "atualizar");
 
   revalidatePath(`/autorizacoes/${id}`);
   revalidatePath("/autorizacoes");
 }
 
 export async function salvarResponsavelAutorizacao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   const responsavelId = String(formData.get("responsavel_id") ?? "").trim() || null;
   if (!id) return;
 
-  await supabase.from("autorizacoes_venda").update({ responsavel_id: responsavelId }).eq("id", id);
+  await checar(supabase.from("autorizacoes_venda").update({ responsavel_id: responsavelId }).eq("id", id), "atualizar");
 
   revalidatePath(`/autorizacoes/${id}`);
   revalidatePath("/autorizacoes");

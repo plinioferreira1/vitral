@@ -7,6 +7,7 @@ import { GraficoFluxoCaixa } from "@/components/grafico-fluxo-caixa";
 import { GraficoDonut } from "@/components/grafico-donut";
 import { GraficoLinha } from "@/components/grafico-linha";
 import { hojeISO } from "@/lib/data-br";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -243,9 +244,9 @@ export default async function RelatoriosFinanceirosPage({
             ))}
           </select>
         </div>
-        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+        <BotaoEnviar className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
           Aplicar
-        </button>
+        </BotaoEnviar>
         <a
           href={urlCsv}
           className="ml-auto flex items-center gap-1.5 rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-background"

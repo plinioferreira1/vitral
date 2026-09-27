@@ -26,6 +26,7 @@ import {
   Clock,
   Calendar,
 } from "lucide-react";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const COR_PRAZO_FUNDO: Record<CardPrazo["cor"], string> = {
   vermelho: "border-rose-200 bg-rose-50",
@@ -98,31 +99,32 @@ export default async function DashboardPage({
         .map((oc) => ({ tarefa: t, ocorrencia: oc }))
     );
 
-    if (ocorrenciasHoje.length === 0) return [];
+    if (ocorrenciasHoje.length > 0) {
+      const { data: statusRaw } = await supabase
+        .from("tarefas_mensais_status")
+        .select("id, tarefa_id, competencia, concluida")
+        .in(
+          "tarefa_id",
+          ocorrenciasHoje.map((o) => o.tarefa.id)
+        );
 
-    const { data: statusRaw } = await supabase
-      .from("tarefas_mensais_status")
-      .select("id, tarefa_id, competencia, concluida")
-      .in(
-        "tarefa_id",
-        ocorrenciasHoje.map((o) => o.tarefa.id)
-      );
-
-    return ocorrenciasHoje.map(({ tarefa, ocorrencia }) => {
-      const status = (statusRaw ?? []).find(
-        (s) => s.tarefa_id === tarefa.id && s.competencia === ocorrencia.competencia
-      );
-      return {
-        tarefaId: tarefa.id,
-        nome: tarefa.nome,
-        competencia: ocorrencia.competencia,
-        statusId: status?.id ?? null,
-        concluida: status?.concluida ?? false,
-      };
-    });
+      return ocorrenciasHoje.map(({ tarefa, ocorrencia }) => {
+        const status = (statusRaw ?? []).find(
+          (s) => s.tarefa_id === tarefa.id && s.competencia === ocorrencia.competencia
+        );
+        return {
+          tarefaId: tarefa.id,
+          nome: tarefa.nome,
+          competencia: ocorrencia.competencia,
+          statusId: status?.id ?? null,
+          concluida: status?.concluida ?? false,
+        };
+      });
+    }
+    return [];
   })();
 
-  type QuadroKanbanHome = {
+  type QuadroKanban = {
     categoria: CategoriaProcesso;
     titulo: string;
     colunas: string[];
@@ -131,7 +133,7 @@ export default async function DashboardPage({
     stats: { total: number; atrasados: number; venceHoje: number; venceEmBreve: number };
   };
 
-  const quadrosPromise = (async (): Promise<QuadroKanbanHome[]> => {
+  const quadrosPromise = (async (): Promise<QuadroKanban[]> => {
     if (!ehAdmin || !usuario.tenant_id) return [];
     const tenantId = usuario.tenant_id;
     async function montarQuadro(categoria: "venda" | "financiamento", titulo: string) {
@@ -251,7 +253,11 @@ export default async function DashboardPage({
     ]);
   })();
 
-  const [eventos, tarefasHoje, quadrosKanban] = await Promise.all([eventosPromise, tarefasPromise, quadrosPromise]);
+  const [eventos, tarefasHoje, quadrosKanban] = await Promise.all([
+    eventosPromise,
+    tarefasPromise,
+    quadrosPromise,
+  ]);
 
   const quadroPrazos = quadrosKanban.find((q) => q.colunaPrazos)?.colunaPrazos ?? null;
 
@@ -316,7 +322,7 @@ export default async function DashboardPage({
                 <input type="hidden" name="competencia" value={t.competencia} />
                 <input type="hidden" name="concluida_atual" value={String(t.concluida)} />
                 {t.statusId && <input type="hidden" name="status_id" value={t.statusId} />}
-                <button type="submit" className="flex w-full items-center gap-2.5 text-left text-sm">
+                <BotaoEnviar className="flex w-full items-center gap-2.5 text-left text-sm">
                   <span
                     className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
                       t.concluida ? "border-brand bg-brand text-white" : "border-border-strong bg-surface"
@@ -325,7 +331,7 @@ export default async function DashboardPage({
                     {t.concluida && <Check size={12} strokeWidth={3} />}
                   </span>
                   <span className={t.concluida ? "text-ink-muted line-through" : "text-ink"}>{t.nome}</span>
-                </button>
+                </BotaoEnviar>
               </form>
             ))}
           </div>

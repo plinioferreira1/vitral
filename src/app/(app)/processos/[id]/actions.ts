@@ -1,5 +1,9 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
+import { checar } from "@/lib/aviso";
+
 import { after } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
@@ -9,6 +13,7 @@ import { parseISO } from "date-fns";
 import { hojeISO } from "@/lib/data-br";
 import { reconciliarAgendaProcesso, removerEventosDeEtapas, reconciliarAlertaContratoFinal } from "@/lib/google-agenda";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { TablesUpdate } from "@/lib/database.types";
 
 async function resolverOuCriar(
   supabase: SupabaseClient,
@@ -40,6 +45,7 @@ async function resolverOuCriar(
 }
 
 export async function salvarOrdemEtapas(processoId: string, etapaIdsEmOrdem: string[]) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   if (!processoId || etapaIdsEmOrdem.length === 0) return;
 
@@ -58,10 +64,9 @@ export async function salvarOrdemEtapas(processoId: string, etapaIdsEmOrdem: str
 
 export async function concluirEtapa(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
   const etapaId = String(formData.get("etapa_id") ?? "");
   const processoId = String(formData.get("processo_id") ?? "");
@@ -72,10 +77,13 @@ export async function concluirEtapa(formData: FormData) {
   // dependem desta e status atual do processo.
   const [{ data: etapa }, , { data: dependentes }, { data: processoAtual }] = await Promise.all([
     supabase.from("etapas").select("id, nome").eq("id", etapaId).single(),
-    supabase
-      .from("etapas")
-      .update({ status: "concluida", data_realizada: dataRealizada })
-      .eq("id", etapaId),
+    checar(
+      supabase
+        .from("etapas")
+        .update({ status: "concluida", data_realizada: dataRealizada })
+        .eq("id", etapaId),
+      "concluir a etapa"
+    ),
     supabase
       .from("etapas")
       .select("id, modelo_etapa_id")
@@ -94,13 +102,16 @@ export async function concluirEtapa(formData: FormData) {
   // 2ª rodada (em paralelo): histórico, regras dos modelos (numa única
   // consulta, não uma por etapa) e o status de todas as etapas.
   const [, { data: modelos }, { data: todasEtapas }] = await Promise.all([
-    supabase.from("historico").insert({
-      processo_id: processoId,
-      etapa_id: etapaId,
-      usuario_id: user.id,
-      acao: "concluiu a etapa",
-      detalhe: { etapa: etapa?.nome, data_realizada: dataRealizada },
-    }),
+    checar(
+      supabase.from("historico").insert({
+        processo_id: processoId,
+        etapa_id: etapaId,
+        usuario_id: user.id,
+        acao: "concluiu a etapa",
+        detalhe: { etapa: etapa?.nome, data_realizada: dataRealizada },
+      }),
+      "registrar o histórico"
+    ),
     modeloIds.length > 0
       ? supabase.from("modelos_etapa").select("id, dias_offset, tipo_regra_data").in("id", modeloIds)
       : Promise.resolve({ data: [] as { id: string; dias_offset: number; tipo_regra_data: string }[] }),
@@ -115,7 +126,10 @@ export async function concluirEtapa(formData: FormData) {
       const modeloEtapa = modeloPorId.get(dep.modelo_etapa_id as string);
       if (modeloEtapa?.tipo_regra_data !== "relativa_etapa_anterior") return null;
       const novaData = recalcularDataDependente(parseISO(dataRealizada), modeloEtapa.dias_offset);
-      return supabase.from("etapas").update({ data_prevista: novaData }).eq("id", dep.id);
+      return checar(
+        supabase.from("etapas").update({ data_prevista: novaData }).eq("id", dep.id),
+        "recalcular as etapas seguintes"
+      );
     })
   );
 
@@ -135,7 +149,7 @@ export async function concluirEtapa(formData: FormData) {
       (todasEtapas?.length ?? 0) > 0 && todasEtapas!.every((e) => e.status === "concluida");
 
     if (todasConcluidas) {
-      await supabase.from("processos").update({ status: "concluido" }).eq("id", processoId);
+      await checar(supabase.from("processos").update({ status: "concluido" }).eq("id", processoId), "atualizar");
       after(() => reconciliarAlertaContratoFinal(supabase, processoId));
       revalidatePath(`/processos/${processoId}`);
       revalidatePath("/vendas");
@@ -145,14 +159,15 @@ export async function concluirEtapa(formData: FormData) {
 }
 
 export async function reabrirEtapa(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const etapaId = String(formData.get("etapa_id") ?? "");
   const processoId = String(formData.get("processo_id") ?? "");
 
-  await supabase
+  await checar(supabase
     .from("etapas")
     .update({ status: "pendente", data_realizada: null })
-    .eq("id", etapaId);
+    .eq("id", etapaId), "atualizar");
 
   // Se o processo já tinha sido dado como concluído, reabrir uma
   // etapa desfaz isso — volta a aparecer na lista principal.
@@ -163,7 +178,7 @@ export async function reabrirEtapa(formData: FormData) {
     .single();
 
   if (processoAtual?.status === "concluido") {
-    await supabase.from("processos").update({ status: "ativo" }).eq("id", processoId);
+    await checar(supabase.from("processos").update({ status: "ativo" }).eq("id", processoId), "atualizar");
     after(() => reconciliarAlertaContratoFinal(supabase, processoId));
     revalidatePath("/vendas");
       revalidatePath("/financiamentos");
@@ -177,18 +192,19 @@ export async function reabrirEtapa(formData: FormData) {
 }
 
 export async function salvarDatasContrato(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const processoId = String(formData.get("processo_id") ?? "");
   const dataAssinatura = String(formData.get("data_assinatura") ?? "");
   const dataFinalContrato = String(formData.get("data_final_contrato") ?? "");
 
-  await supabase
+  await checar(supabase
     .from("processos")
     .update({
       data_assinatura: dataAssinatura || null,
       data_final_contrato: dataFinalContrato || null,
     })
-    .eq("id", processoId);
+    .eq("id", processoId), "atualizar");
 
   after(() => reconciliarAlertaContratoFinal(supabase, processoId));
 
@@ -198,12 +214,13 @@ export async function salvarDatasContrato(formData: FormData) {
 }
 
 export async function alterarDataPrevista(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const etapaId = String(formData.get("etapa_id") ?? "");
   const processoId = String(formData.get("processo_id") ?? "");
   const novaData = String(formData.get("data_prevista") ?? "");
 
-  await supabase.from("etapas").update({ data_prevista: novaData || null }).eq("id", etapaId);
+  await checar(supabase.from("etapas").update({ data_prevista: novaData || null }).eq("id", etapaId), "atualizar");
 
   after(() => reconciliarAgendaProcesso(supabase, processoId));
 
@@ -213,17 +230,19 @@ export async function alterarDataPrevista(formData: FormData) {
 }
 
 export async function salvarNumeroRegistro(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const etapaId = String(formData.get("etapa_id") ?? "");
   const processoId = String(formData.get("processo_id") ?? "");
   const numeroRegistro = String(formData.get("numero_registro") ?? "").trim() || null;
 
-  await supabase.from("etapas").update({ numero_registro: numeroRegistro }).eq("id", etapaId);
+  await checar(supabase.from("etapas").update({ numero_registro: numeroRegistro }).eq("id", etapaId), "atualizar");
 
   revalidatePath(`/processos/${processoId}`);
 }
 
 export async function salvarEnderecoImovel(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const imovelId = String(formData.get("imovel_id") ?? "");
   const processoId = String(formData.get("processo_id") ?? "");
@@ -231,7 +250,7 @@ export async function salvarEnderecoImovel(formData: FormData) {
 
   if (!imovelId || !endereco) return;
 
-  await supabase.from("imoveis").update({ endereco }).eq("id", imovelId);
+  await checar(supabase.from("imoveis").update({ endereco }).eq("id", imovelId), "atualizar");
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/vendas");
@@ -240,13 +259,14 @@ export async function salvarEnderecoImovel(formData: FormData) {
 }
 
 export async function salvarCodigoSanProcesso(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const processoId = String(formData.get("processo_id") ?? "");
   const codigoSan = String(formData.get("codigo_san") ?? "").trim() || null;
 
   if (!processoId) return;
 
-  await supabase.from("processos").update({ codigo_san: codigoSan }).eq("id", processoId);
+  await checar(supabase.from("processos").update({ codigo_san: codigoSan }).eq("id", processoId), "atualizar");
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/vendas");
@@ -254,6 +274,7 @@ export async function salvarCodigoSanProcesso(formData: FormData) {
 }
 
 export async function salvarDadosProcesso(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const processoId = String(formData.get("processo_id") ?? "");
   if (!processoId) return;
@@ -273,25 +294,25 @@ export async function salvarDadosProcesso(formData: FormData) {
   // Comprador
   const compradorNome = campo("comprador_nome");
   if (compradorNome && existente.comprador_id) {
-    await supabase
+    await checar(supabase
       .from("clientes")
       .update({ nome: compradorNome, telefone: campo("comprador_telefone") })
-      .eq("id", existente.comprador_id);
+      .eq("id", existente.comprador_id), "atualizar");
   }
 
   // Vendedor (só faz sentido em venda)
   const vendedorNome = campo("vendedor_nome");
   if (!ehFinanciamento && vendedorNome && existente.vendedor_id) {
-    await supabase
+    await checar(supabase
       .from("clientes")
       .update({ nome: vendedorNome, telefone: campo("vendedor_telefone") })
-      .eq("id", existente.vendedor_id);
+      .eq("id", existente.vendedor_id), "atualizar");
   }
 
   // Imóvel
   const enderecoImovel = campo("imovel_endereco");
   if (enderecoImovel && existente.imovel_id) {
-    await supabase.from("imoveis").update({ endereco: enderecoImovel }).eq("id", existente.imovel_id);
+    await checar(supabase.from("imoveis").update({ endereco: enderecoImovel }).eq("id", existente.imovel_id), "atualizar");
   }
 
   // Banco / Corretor / Indicação — resolve por nome (cria se não existir)
@@ -315,7 +336,7 @@ export async function salvarDadosProcesso(formData: FormData) {
     responsavelId = usuarioEncontrado?.id ?? null;
   }
 
-  const dadosProcesso: Record<string, unknown> = {
+  const dadosProcesso: TablesUpdate<"processos"> = {
     codigo_san: campo("codigo_san"),
     valor_total: formData.get("valor_total") ? Number(formData.get("valor_total")) : null,
     data_assinatura: campo("data_assinatura"),
@@ -332,7 +353,7 @@ export async function salvarDadosProcesso(formData: FormData) {
     dadosProcesso.origem = campo("origem");
   }
 
-  await supabase.from("processos").update(dadosProcesso).eq("id", processoId);
+  await checar(supabase.from("processos").update(dadosProcesso).eq("id", processoId), "atualizar");
 
   after(() => reconciliarAgendaProcesso(supabase, processoId));
   after(() => reconciliarAlertaContratoFinal(supabase, processoId));
@@ -345,31 +366,31 @@ export async function salvarDadosProcesso(formData: FormData) {
 
 export async function alternarChecklistItem(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
   const itemId = String(formData.get("item_id") ?? "");
   const processoId = String(formData.get("processo_id") ?? "");
   const concluidoAtual = formData.get("concluido_atual") === "true";
 
-  await supabase
+  await checar(supabase
     .from("checklist_itens")
     .update({
       concluido: !concluidoAtual,
       concluido_por: !concluidoAtual ? (user?.id ?? null) : null,
       concluido_em: !concluidoAtual ? new Date().toISOString() : null,
     })
-    .eq("id", itemId);
+    .eq("id", itemId), "atualizar");
 
   revalidatePath(`/processos/${processoId}`);
 }
 
 export async function alternarEtapaPadrao(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
   const processoId = String(formData.get("processo_id") ?? "");
   const nome = String(formData.get("nome") ?? "");
@@ -380,16 +401,16 @@ export async function alternarEtapaPadrao(formData: FormData) {
   if (aplicada && etapaId) {
     // já existe -> remove (destrava a etapa desse processo)
     await removerEventosDeEtapas(supabase, [etapaId]);
-    await supabase.from("etapas").delete().eq("id", etapaId);
+    await checar(supabase.from("etapas").delete().eq("id", etapaId), "excluir");
   } else if (!aplicada) {
-    await supabase.from("etapas").insert({
+    await checar(supabase.from("etapas").insert({
       processo_id: processoId,
       nome,
       responsavel_id: user?.id ?? null,
       status: "pendente",
       ordem: ordemCatalogo,
       especial: true,
-    });
+    }), "salvar");
   }
 
   after(() => reconciliarAgendaProcesso(supabase, processoId));
@@ -400,6 +421,7 @@ export async function alternarEtapaPadrao(formData: FormData) {
 }
 
 export async function salvarComissao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const processoId = String(formData.get("processo_id") ?? "");
   const comissaoId = String(formData.get("comissao_id") ?? "") || null;
@@ -423,9 +445,9 @@ export async function salvarComissao(formData: FormData) {
   };
 
   if (comissaoId) {
-    await supabase.from("comissoes").update(campos).eq("id", comissaoId);
+    await checar(supabase.from("comissoes").update(campos).eq("id", comissaoId), "atualizar");
   } else {
-    await supabase.from("comissoes").insert({ processo_id: processoId, ...campos });
+    await checar(supabase.from("comissoes").insert({ processo_id: processoId, ...campos }), "salvar");
   }
 
   revalidatePath(`/processos/${processoId}`);
@@ -433,10 +455,9 @@ export async function salvarComissao(formData: FormData) {
 
 export async function adicionarComentario(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return;
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
   const processoId = String(formData.get("processo_id") ?? "");
   const etapaId = String(formData.get("etapa_id") ?? "") || null;
@@ -444,12 +465,12 @@ export async function adicionarComentario(formData: FormData) {
 
   if (!texto) return;
 
-  await supabase.from("comentarios").insert({
+  await checar(supabase.from("comentarios").insert({
     processo_id: processoId,
     etapa_id: etapaId,
     usuario_id: user.id,
     texto,
-  });
+  }), "salvar");
 
   revalidatePath(`/processos/${processoId}`);
 }

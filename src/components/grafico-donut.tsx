@@ -41,18 +41,16 @@ export function GraficoDonut({
   const espessura = 22;
   const circunferencia = 2 * Math.PI * raio;
 
-  const { segmentos } = dados.reduce(
-    (acc, f, i) => {
-      const fracao = total > 0 ? f.valor / total : 0;
-      const dash = fracao * circunferencia;
-      const offset = -acc.acumulado * circunferencia;
-      return {
-        acumulado: acc.acumulado + fracao,
-        segmentos: [...acc.segmentos, { ...f, dash, offset, indice: i }],
-      };
-    },
-    { acumulado: 0, segmentos: [] as (Fatia & { cor: string; dash: number; offset: number; indice: number })[] }
-  );
+  const fracoes = dados.map((f) => (total > 0 ? f.valor / total : 0));
+  const segmentos = dados.map((f, i) => {
+    const acumuladoAntes = fracoes.slice(0, i).reduce((s, x) => s + x, 0);
+    return {
+      ...f,
+      dash: fracoes[i] * circunferencia,
+      offset: -acumuladoAntes * circunferencia,
+      indice: i,
+    };
+  });
 
   return (
     <div>

@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { adicionarTutorial, editarTutorial, removerTutorial } from "./actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 interface TutorialRow {
   id: string;
@@ -86,12 +87,11 @@ export default async function TutoriaisPage() {
           placeholder="Ordem"
           className={`${campoClasse} max-w-[120px]`}
         />
-        <button
-          type="submit"
+        <BotaoEnviar
           className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
           Adicionar
-        </button>
+        </BotaoEnviar>
       </form>
 
       {categorias.length === 0 ? (
@@ -178,23 +178,21 @@ export default async function TutoriaisPage() {
                               defaultValue={t.ordem}
                               className="w-20 rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                             />
-                            <button
-                              type="submit"
+                            <BotaoEnviar
                               className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                             >
                               Salvar
-                            </button>
+                            </BotaoEnviar>
                           </form>
                         </details>
                         <form action={removerTutorial}>
                           <input type="hidden" name="id" value={t.id} />
-                          <button
-                            type="submit"
+                          <BotaoEnviar
                             aria-label={`Remover ${t.titulo}`}
                             className="rounded-md p-1.5 text-ink-muted hover:bg-background hover:text-rose-600"
                           >
                             🗑
-                          </button>
+                          </BotaoEnviar>
                         </form>
                       </div>
                     </div>

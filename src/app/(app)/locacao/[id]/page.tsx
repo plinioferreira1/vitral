@@ -30,6 +30,7 @@ import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { apagarContrato } from "../bulk-actions";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { FileWarning, FileText, Calendar } from "lucide-react";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const MESES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez",
@@ -133,7 +134,7 @@ export default async function ContratoLocacaoPage({
       .select("*")
       .eq("rescisao_id", rescisaoAtiva.id)
       .order("ordem", { ascending: true });
-    rescisaoEtapas = etapasData ?? [];
+    rescisaoEtapas = (etapasData ?? []) as RescisaoEtapa[]; // status é texto livre no banco
 
     const etapaIdsRescisao = rescisaoEtapas.map((e) => e.id);
     if (etapaIdsRescisao.length > 0) {
@@ -283,7 +284,7 @@ export default async function ContratoLocacaoPage({
                                 name="concluido_atual"
                                 value={String(item.concluido)}
                               />
-                              <button type="submit" className="flex items-center gap-2 text-left">
+                              <BotaoEnviar className="flex items-center gap-2 text-left">
                                 <span
                                   className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
                                     item.concluido
@@ -310,7 +311,7 @@ export default async function ContratoLocacaoPage({
                                 >
                                   {item.descricao}
                                 </span>
-                              </button>
+                              </BotaoEnviar>
                             </form>
                           </li>
                         ))}
@@ -323,24 +324,22 @@ export default async function ContratoLocacaoPage({
                           <input type="hidden" name="etapa_id" value={etapa.id} />
                           <input type="hidden" name="rescisao_id" value={rescisaoAtiva.id} />
                           <input type="hidden" name="contrato_id" value={id} />
-                          <button
-                            type="submit"
+                          <BotaoEnviar
                             className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
                           >
                             Concluir etapa
-                          </button>
+                          </BotaoEnviar>
                         </form>
                       ) : (
                         <form action={reabrirEtapaRescisao}>
                           <input type="hidden" name="etapa_id" value={etapa.id} />
                           <input type="hidden" name="rescisao_id" value={rescisaoAtiva.id} />
                           <input type="hidden" name="contrato_id" value={id} />
-                          <button
-                            type="submit"
+                          <BotaoEnviar
                             className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background"
                           >
                             Reabrir
-                          </button>
+                          </BotaoEnviar>
                         </form>
                       )}
                     </div>
@@ -369,12 +368,11 @@ export default async function ContratoLocacaoPage({
                   className="rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                 />
               </div>
-              <button
-                type="submit"
+              <BotaoEnviar
                 className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
               >
                 Iniciar rescisão
-              </button>
+              </BotaoEnviar>
             </form>
           </div>
         )}
@@ -445,8 +443,7 @@ export default async function ContratoLocacaoPage({
                             <input type="hidden" name="competencia" value={competencia} />
                             <input type="hidden" name="status_atual" value={status} />
                             {conta && <input type="hidden" name="conta_id" value={conta.id} />}
-                            <button
-                              type="submit"
+                            <BotaoEnviar
                               title={`${TIPO_CONTA_LABEL[tipo]} — ${MESES[mesIdx]}/${ano}${
                                 estado === "em_dia" ? " (em dia)" : estado === "vencido" ? " (vencido)" : ""
                               }`}
@@ -457,7 +454,7 @@ export default async function ContratoLocacaoPage({
                               >
                                 {estado === "pago" && <IconeContaCheck />}
                               </span>
-                            </button>
+                            </BotaoEnviar>
                           </form>
                         </td>
                       );
@@ -538,12 +535,11 @@ export default async function ContratoLocacaoPage({
                             defaultValue={cc.vencimento ?? ""}
                             className="rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
                           />
-                          <button
-                            type="submit"
+                          <BotaoEnviar
                             className="rounded-md border border-border px-2 py-1 text-xs text-ink-muted hover:bg-background"
                           >
                             Salvar
-                          </button>
+                          </BotaoEnviar>
                         </form>
                       </td>
                     </tr>
@@ -716,12 +712,11 @@ export default async function ContratoLocacaoPage({
             />
           </div>
 
-          <button
-            type="submit"
+          <BotaoEnviar
             className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             Salvar contrato
-          </button>
+          </BotaoEnviar>
         </form>
 
         <datalist id="lista-clientes-locacao">
@@ -739,23 +734,21 @@ export default async function ContratoLocacaoPage({
               </p>
               <form action={encerrarContrato}>
                 <input type="hidden" name="id" value={id} />
-                <button
-                  type="submit"
+                <BotaoEnviar
                   className="rounded-md border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-100"
                 >
                   Encerrar contrato
-                </button>
+                </BotaoEnviar>
               </form>
             </>
           ) : (
             <form action={reativarContrato}>
               <input type="hidden" name="id" value={id} />
-              <button
-                type="submit"
+              <BotaoEnviar
                 className="rounded-md border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 hover:bg-emerald-100"
               >
                 Reativar contrato
-              </button>
+              </BotaoEnviar>
             </form>
           )}
         </div>

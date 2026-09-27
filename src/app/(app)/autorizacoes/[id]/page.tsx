@@ -8,6 +8,7 @@ import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { obterSiteUrl } from "@/lib/site-url";
 import { cancelarAutorizacao, salvarResponsavelAutorizacao } from "../actions";
 import { apagarAutorizacao } from "../bulk-actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const STATUS_COR: Record<string, string> = {
   pendente: "bg-amber-50 text-amber-700 border-amber-100",
@@ -112,12 +113,11 @@ export default async function AutorizacaoDetalhePage({
               </option>
             ))}
           </select>
-          <button
-            type="submit"
+          <BotaoEnviar
             className="rounded-md border border-border px-2 py-1 text-xs font-medium text-ink hover:opacity-80"
           >
             Salvar
-          </button>
+          </BotaoEnviar>
         </form>
         <p className="mt-0.5 text-[11px] text-ink-muted">
           Só quem criou ou o responsável enxerga o formulário completo desta autorização.
@@ -138,7 +138,7 @@ export default async function AutorizacaoDetalhePage({
                   titulo: s.nome_esperado,
                   nome: s.nome_digitado ?? "",
                   assinaturaImagem: s.assinatura_imagem ?? "",
-                  assinadoEm: s.assinado_em,
+                  assinadoEm: s.assinado_em ?? "",
                   ip: s.ip_assinatura,
                 }))}
             />
@@ -223,12 +223,11 @@ export default async function AutorizacaoDetalhePage({
       {a.status === "pendente" && (
         <form action={cancelarAutorizacao}>
           <input type="hidden" name="id" value={a.id} />
-          <button
-            type="submit"
+          <BotaoEnviar
             className="text-xs font-medium text-ink-muted hover:text-rose-600"
           >
             Cancelar esta autorização
-          </button>
+          </BotaoEnviar>
         </form>
       )}
 

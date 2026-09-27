@@ -4,6 +4,7 @@ import { atualizarPerfil } from "./actions";
 import { SeletorFoto } from "./photo-picker";
 import { SucessoBanner } from "@/components/banners";
 import { VoltarLink } from "@/components/voltar-link";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const PERFIL_LABEL: Record<string, string> = {
   admin: "Administrador",
@@ -121,12 +122,11 @@ export default async function PerfilPage({
           />
         </div>
 
-        <button
-          type="submit"
+        <BotaoEnviar
           className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white hover:opacity-90"
         >
           Salvar
-        </button>
+        </BotaoEnviar>
       </form>
     </div>
   );

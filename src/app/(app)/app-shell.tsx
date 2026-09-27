@@ -32,6 +32,7 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 interface SubNavItem {
   href?: string;
@@ -359,13 +360,12 @@ export function AppShell({
         </span>
       </Link>
       <form action={sairAction}>
-        <button
-          type="submit"
+        <BotaoEnviar
           className="mt-1 flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs text-ink-muted transition hover:bg-background hover:text-ink"
         >
           <LogOut size={14} strokeWidth={2} />
           Sair
-        </button>
+        </BotaoEnviar>
       </form>
     </div>
   );

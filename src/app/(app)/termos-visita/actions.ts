@@ -1,5 +1,9 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -38,14 +42,10 @@ async function resolverOuCriar(
 
 export async function criarTermoVisita(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
+  const usuario = sessao.usuario;
 
   if (!usuario?.tenant_id) return;
   const tenantId = usuario.tenant_id;
@@ -65,7 +65,7 @@ export async function criarTermoVisita(formData: FormData) {
 
   const dadosCliente = objetoParcial({ telefone: campo("cliente_telefone"), email: campo("cliente_email") });
   if (!objetoVazio(dadosCliente)) {
-    await supabase.from("clientes").update(dadosCliente).eq("id", clienteId);
+    await checar(supabase.from("clientes").update(dadosCliente).eq("id", clienteId), "atualizar");
   }
 
   let corretorId: string | null = null;
@@ -101,29 +101,31 @@ export async function criarTermoVisita(formData: FormData) {
 }
 
 export async function atualizarFeedbackVisita(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
   const nota = formData.get("nota");
   const feedback = String(formData.get("feedback") ?? "").trim() || null;
   const observacoes = String(formData.get("observacoes") ?? "").trim() || null;
 
-  await supabase
+  await checar(supabase
     .from("termos_visita")
     .update({
       nota: nota ? Number(nota) : null,
       feedback,
       observacoes,
     })
-    .eq("id", id);
+    .eq("id", id), "atualizar");
 
   revalidatePath(`/termos-visita/${id}`);
 }
 
 export async function cancelarTermoVisita(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
 
-  await supabase.from("termos_visita").update({ status: "cancelado" }).eq("id", id);
+  await checar(supabase.from("termos_visita").update({ status: "cancelado" }).eq("id", id), "atualizar");
 
   revalidatePath(`/termos-visita/${id}`);
   revalidatePath("/termos-visita");

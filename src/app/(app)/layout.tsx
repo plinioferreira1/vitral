@@ -4,6 +4,9 @@ import { sair } from "@/app/login/actions";
 import { AppShell } from "./app-shell";
 import { getPermissoesUsuario } from "@/lib/permissoes";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
+import { cookies } from "next/headers";
+import { COOKIE_AVISO, lerAviso } from "@/lib/aviso";
+import { AvisoTela } from "@/components/aviso-tela";
 import { TopBar } from "@/components/topbar";
 import { hojeISO } from "@/lib/data-br";
 import { format } from "date-fns";
@@ -174,6 +177,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           : []),
       ];
 
+  // Aviso deixado pela última ação (sucesso/erro), se houver.
+  const aviso = lerAviso((await cookies()).get(COOKIE_AVISO)?.value);
+
   const dataHojeBruta = format(new Date(`${hoje}T00:00:00`), "EEEE, d 'de' MMMM 'de' yyyy", {
     locale: ptBR,
   });
@@ -190,6 +196,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         userFoto={usuario.foto_url}
         sairAction={sair}
       />
+
+      <AvisoTela aviso={aviso} />
 
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-8 sm:py-8">

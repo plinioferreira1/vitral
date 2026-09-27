@@ -1,75 +1,14 @@
 "use server";
 
+import { avisar, checar } from "@/lib/aviso";
+import type { TablesInsert } from "@/lib/database.types";
+import { moedaParaNumero } from "@/lib/moeda";
+import { datasDaRecorrencia, mesesPorFrequencia } from "@/lib/recorrencia";
 import { createClient } from "@/lib/supabase/server";
+import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
+import { valorDaLista } from "@/lib/validacao";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { addWeeks, addMonths } from "date-fns";
-import { moedaParaNumero } from "@/lib/moeda";
-
-async function contexto(supabase: Awaited<ReturnType<typeof createClient>>) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
-  return { userId: user?.id ?? null, tenantId: usuario?.tenant_id ?? null };
-}
-
-function proximaData(data: Date, frequencia: string): Date {
-  switch (frequencia) {
-    case "semanal":
-      return addWeeks(data, 1);
-    case "trimestral":
-      return addMonths(data, 3);
-    case "semestral":
-      return addMonths(data, 6);
-    case "anual":
-      return addMonths(data, 12);
-    default:
-      return addMonths(data, 1);
-  }
-}
-
-/** Quantos meses uma frequência avança — null quando não é "por mês" (ex: semanal). */
-function mesesPorFrequencia(frequencia: string): number | null {
-  switch (frequencia) {
-    case "mensal":
-      return 1;
-    case "trimestral":
-      return 3;
-    case "semestral":
-      return 6;
-    case "anual":
-      return 12;
-    default:
-      return null;
-  }
-}
-
-/**
- * N-ésimo dia útil (seg a sex, sem considerar feriados) de um mês.
- * Se o mês não tiver dias úteis suficientes, cai no último dia útil dele.
- */
-function nEsimoDiaUtil(ano: number, mesIndex0: number, n: number): Date {
-  let contador = 0;
-  let ultimoUtil = new Date(ano, mesIndex0, 1);
-  const dia = new Date(ano, mesIndex0, 1);
-  while (dia.getMonth() === mesIndex0) {
-    const semana = dia.getDay();
-    if (semana !== 0 && semana !== 6) {
-      contador++;
-      ultimoUtil = new Date(dia);
-      if (contador === n) return new Date(dia);
-    }
-    dia.setDate(dia.getDate() + 1);
-  }
-  return ultimoUtil;
-}
-
-const MAX_OCORRENCIAS = 60;
 
 function retornoSeguro(formData: FormData, fallback: string): string {
   const retorno = String(formData.get("return_to") ?? "").trim();
@@ -83,10 +22,11 @@ function retornoSeguro(formData: FormData, fallback: string): string {
  */
 export async function criarLancamento(formData: FormData) {
   const supabase = await createClient();
-  const { userId, tenantId } = await contexto(supabase);
-  if (!tenantId) return;
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return;
+  const { userId, tenantId } = sessao;
 
-  const tipo = String(formData.get("tipo") ?? "despesa");
+  const tipo = valorDaLista("financeiro_tipo_categoria", formData.get("tipo"), "despesa");
   const descricao = String(formData.get("descricao") ?? "").trim();
   const valor = moedaParaNumero(formData.get("valor"));
   if (!descricao || !valor) return;
@@ -112,14 +52,18 @@ export async function criarLancamento(formData: FormData) {
   if (!recorrente) {
     const vencimento = campo("vencimento");
     if (!vencimento) return;
-    await supabase.from("financeiro_lancamentos").insert({
-      ...dadosComuns,
-      valor,
-      vencimento,
-      competencia: campo("competencia") ?? vencimento,
-    });
+    const salvou = await checar(
+      supabase.from("financeiro_lancamentos").insert({
+        ...dadosComuns,
+        valor,
+        vencimento,
+        competencia: campo("competencia") ?? vencimento,
+      }),
+      "salvar"
+    );
+    if (!salvou) return;
   } else {
-    const frequencia = String(formData.get("frequencia") ?? "mensal");
+    const frequencia = valorDaLista("financeiro_frequencia", formData.get("frequencia"), "mensal");
     const dataInicio = campo("data_inicio") ?? campo("vencimento");
     const dataFim = campo("data_fim");
     const numeroOcorrenciasRaw = campo("numero_ocorrencias");
@@ -130,7 +74,7 @@ export async function criarLancamento(formData: FormData) {
     const diaUtilRaw = campo("dia_util");
     const diaUtil = diaUtilRaw ? Number(diaUtilRaw) : null;
     const mesesStep = mesesPorFrequencia(frequencia);
-    const usaDiaUtil = tipoVencimento === "dia_util" && diaUtil && mesesStep !== null;
+    const usaDiaUtil = tipoVencimento === "dia_util" && Boolean(diaUtil) && mesesStep !== null;
 
     const { data: recorrencia, error } = await supabase
       .from("financeiro_recorrencias")
@@ -155,47 +99,32 @@ export async function criarLancamento(formData: FormData) {
       .select("id")
       .single();
 
-    if (error || !recorrencia) return;
-
-    const limiteData = dataFim ? new Date(`${dataFim}T00:00:00`) : null;
-    const ocorrencias: Record<string, unknown>[] = [];
-
-    if (usaDiaUtil && diaUtil && mesesStep) {
-      const base = new Date(`${dataInicio}T00:00:00`);
-      for (let i = 0; i < MAX_OCORRENCIAS; i++) {
-        if (numeroOcorrencias && i >= numeroOcorrencias) break;
-        const alvo = addMonths(base, i * mesesStep);
-        const vencimento = nEsimoDiaUtil(alvo.getFullYear(), alvo.getMonth(), diaUtil);
-        if (limiteData && vencimento > limiteData) break;
-
-        ocorrencias.push({
-          ...dadosComuns,
-          valor,
-          vencimento: vencimento.toISOString().slice(0, 10),
-          competencia: new Date(alvo.getFullYear(), alvo.getMonth(), 1).toISOString().slice(0, 10),
-          recorrencia_id: recorrencia.id,
-        });
-      }
-    } else {
-      let dataAtual = new Date(`${dataInicio}T00:00:00`);
-      for (let i = 0; i < MAX_OCORRENCIAS; i++) {
-        if (limiteData && dataAtual > limiteData) break;
-        if (numeroOcorrencias && i >= numeroOcorrencias) break;
-
-        ocorrencias.push({
-          ...dadosComuns,
-          valor,
-          vencimento: dataAtual.toISOString().slice(0, 10),
-          competencia: dataAtual.toISOString().slice(0, 10),
-          recorrencia_id: recorrencia.id,
-        });
-
-        dataAtual = proximaData(dataAtual, frequencia);
-      }
+    if (error || !recorrencia) {
+      console.error("Falha ao salvar recorrência:", error);
+      await avisar("erro", "Não foi possível salvar a recorrência. Confira os dados e tente de novo.");
+      return;
     }
 
+    const ocorrencias: TablesInsert<"financeiro_lancamentos">[] = datasDaRecorrencia({
+      dataInicio,
+      frequencia,
+      dataFim,
+      numeroOcorrencias,
+      diaUtil: usaDiaUtil ? diaUtil : null,
+    }).map(({ vencimento, competencia }) => ({
+      ...dadosComuns,
+      valor,
+      vencimento,
+      competencia,
+      recorrencia_id: recorrencia.id,
+    }));
+
     if (ocorrencias.length > 0) {
-      await supabase.from("financeiro_lancamentos").insert(ocorrencias);
+      const salvouOcorrencias = await checar(
+        supabase.from("financeiro_lancamentos").insert(ocorrencias),
+        "salvar"
+      );
+      if (!salvouOcorrencias) return;
     }
   }
 
@@ -211,8 +140,9 @@ export async function criarLancamento(formData: FormData) {
  */
 export async function registrarBaixa(formData: FormData) {
   const supabase = await createClient();
-  const { userId, tenantId } = await contexto(supabase);
-  if (!tenantId) return;
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return;
+  const { userId, tenantId } = sessao;
 
   const lancamentoId = String(formData.get("lancamento_id") ?? "");
   const valor = moedaParaNumero(formData.get("valor"));
@@ -220,7 +150,7 @@ export async function registrarBaixa(formData: FormData) {
   if (!lancamentoId || !valor || !data) return;
   const gerarRecibo = formData.get("gerar_recibo") === "on";
 
-  const dadosBaixa: Record<string, unknown> = {
+  const dadosBaixa: TablesInsert<"financeiro_baixas"> = {
     tenant_id: tenantId,
     lancamento_id: lancamentoId,
     valor,
@@ -237,11 +167,17 @@ export async function registrarBaixa(formData: FormData) {
     dadosBaixa.recibo_documento = String(formData.get("recibo_documento") ?? "").trim() || null;
   }
 
-  const { data: baixa } = await supabase
+  const { data: baixa, error: erroBaixa } = await supabase
     .from("financeiro_baixas")
     .insert(dadosBaixa)
     .select("id")
     .single();
+
+  if (erroBaixa) {
+    console.error("Falha ao salvar baixa:", erroBaixa);
+    await avisar("erro", "Não foi possível salvar a baixa. Confira os dados e tente de novo.");
+    return;
+  }
 
   const { data: lancamento } = await supabase
     .from("financeiro_lancamentos")
@@ -257,7 +193,11 @@ export async function registrarBaixa(formData: FormData) {
   const novoStatus =
     totalBaixado >= Number(lancamento?.valor ?? 0) ? "pago" : totalBaixado > 0 ? "pago_parcial" : "pendente";
 
-  await supabase.from("financeiro_lancamentos").update({ status: novoStatus }).eq("id", lancamentoId);
+  const atualizou = await checar(
+    supabase.from("financeiro_lancamentos").update({ status: novoStatus }).eq("id", lancamentoId),
+    "atualizar"
+  );
+  if (!atualizou) return;
 
   const caminho = lancamento?.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath("/financeiro/contas-a-pagar");
@@ -286,8 +226,8 @@ export async function registrarBaixa(formData: FormData) {
  */
 export async function editarLancamento(formData: FormData) {
   const supabase = await createClient();
-  const { tenantId } = await contexto(supabase);
-  if (!tenantId) return;
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return;
 
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -321,39 +261,52 @@ export async function editarLancamento(formData: FormData) {
   };
 
   if (escopo === "todos_futuros" && atual.recorrencia_id) {
-    await supabase
-      .from("financeiro_lancamentos")
-      .update(dadosCadastrais)
-      .eq("recorrencia_id", atual.recorrencia_id)
-      .in("status", ["pendente", "pago_parcial"])
-      .gte("vencimento", atual.vencimento);
+    const atualizouLancamentos = await checar(
+      supabase
+        .from("financeiro_lancamentos")
+        .update(dadosCadastrais)
+        .eq("recorrencia_id", atual.recorrencia_id)
+        .in("status", ["pendente", "pago_parcial"])
+        .gte("vencimento", atual.vencimento),
+      "atualizar"
+    );
 
-    await supabase
-      .from("financeiro_recorrencias")
-      .update({
-        descricao: dadosCadastrais.descricao,
-        valor: dadosCadastrais.valor,
-        pessoa_id: dadosCadastrais.pessoa_id,
-        categoria_id: dadosCadastrais.categoria_id,
-        centro_custo_id: dadosCadastrais.centro_custo_id,
-        unidade_id: dadosCadastrais.unidade_id,
-        conta_bancaria_id: dadosCadastrais.conta_bancaria_id,
-      })
-      .eq("id", atual.recorrencia_id);
+    const atualizouRecorrencia = await checar(
+      supabase
+        .from("financeiro_recorrencias")
+        .update({
+          descricao: dadosCadastrais.descricao,
+          valor: dadosCadastrais.valor,
+          pessoa_id: dadosCadastrais.pessoa_id,
+          categoria_id: dadosCadastrais.categoria_id,
+          centro_custo_id: dadosCadastrais.centro_custo_id,
+          unidade_id: dadosCadastrais.unidade_id,
+          conta_bancaria_id: dadosCadastrais.conta_bancaria_id,
+        })
+        .eq("id", atual.recorrencia_id),
+      "atualizar"
+    );
+
+    if (!atualizouLancamentos || !atualizouRecorrencia) return;
   } else {
-    await supabase
-      .from("financeiro_lancamentos")
-      .update({
-        ...dadosCadastrais,
-        vencimento,
-        competencia: campo("competencia") ?? vencimento,
-      })
-      .eq("id", id);
+    const atualizou = await checar(
+      supabase
+        .from("financeiro_lancamentos")
+        .update({
+          ...dadosCadastrais,
+          vencimento,
+          competencia: campo("competencia") ?? vencimento,
+        })
+        .eq("id", id),
+      "atualizar"
+    );
+    if (!atualizou) return;
   }
 
   const caminho = atual.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath(caminho);
   revalidatePath("/financeiro");
+  revalidatePath("/financeiro/agenda");
   redirect(retornoSeguro(formData, caminho));
 }
 
@@ -361,6 +314,7 @@ export async function editarLancamento(formData: FormData) {
  * lançado — usado na revisão rápida de "sem categoria", sem abrir o formulário
  * de edição completo. */
 export async function categorizarLancamento(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const id = String(formData.get("id") ?? "");
   const categoriaId = String(formData.get("categoria_id") ?? "").trim();
   if (!id || !categoriaId) return;
@@ -371,10 +325,13 @@ export async function categorizarLancamento(formData: FormData) {
   const { data: atual } = await supabase.from("financeiro_lancamentos").select("tipo").eq("id", id).single();
   if (!atual) return;
 
-  await supabase
-    .from("financeiro_lancamentos")
-    .update({ categoria_id: categoriaId, centro_custo_id: centroCustoId })
-    .eq("id", id);
+  await checar(
+    supabase
+      .from("financeiro_lancamentos")
+      .update({ categoria_id: categoriaId, centro_custo_id: centroCustoId })
+      .eq("id", id),
+    "atualizar"
+  );
 
   const caminho = atual.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath(caminho);
@@ -382,16 +339,19 @@ export async function categorizarLancamento(formData: FormData) {
 }
 
 export async function cancelarLancamento(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();
-  await supabase.from("financeiro_lancamentos").update({ status: "cancelado" }).eq("id", id);
+  await checar(supabase.from("financeiro_lancamentos").update({ status: "cancelado" }).eq("id", id), "atualizar");
   revalidatePath("/financeiro/contas-a-pagar");
   revalidatePath("/financeiro/contas-a-receber");
   revalidatePath("/financeiro");
+  revalidatePath("/financeiro/agenda");
 }
 
 export async function reativarLancamento(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
@@ -408,11 +368,12 @@ export async function reativarLancamento(formData: FormData) {
   const novoStatus =
     totalBaixado >= Number(lancamento.valor) ? "pago" : totalBaixado > 0 ? "pago_parcial" : "pendente";
 
-  await supabase.from("financeiro_lancamentos").update({ status: novoStatus }).eq("id", id);
+  await checar(supabase.from("financeiro_lancamentos").update({ status: novoStatus }).eq("id", id), "atualizar");
 
   const caminho = lancamento.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath(caminho);
   revalidatePath("/financeiro");
+  revalidatePath("/financeiro/agenda");
 }
 
 /**
@@ -423,13 +384,15 @@ export async function reativarLancamento(formData: FormData) {
  * "cancelar" nesses casos.
  */
 export async function apagarLancamentos(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
   const ids = formData.getAll("ids").map(String).filter(Boolean);
   if (ids.length === 0) return;
 
   const supabase = await createClient();
-  await supabase.from("financeiro_lancamentos").delete().in("id", ids).eq("status", "pendente");
+  await checar(supabase.from("financeiro_lancamentos").delete().in("id", ids).eq("status", "pendente"), "excluir");
 
   revalidatePath("/financeiro/contas-a-pagar");
   revalidatePath("/financeiro/contas-a-receber");
   revalidatePath("/financeiro");
+  revalidatePath("/financeiro/agenda");
 }

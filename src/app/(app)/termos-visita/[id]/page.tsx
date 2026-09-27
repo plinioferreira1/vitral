@@ -7,6 +7,7 @@ import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { obterSiteUrl } from "@/lib/site-url";
 import { cancelarTermoVisita, atualizarFeedbackVisita } from "../actions";
 import { apagarTermoVisita } from "../bulk-actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const STATUS_COR: Record<string, string> = {
   pendente: "bg-amber-50 text-amber-700 border-amber-100",
@@ -199,21 +200,20 @@ export default async function TermoVisitaDetalhePage({
               className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
           </div>
-          <button
-            type="submit"
+          <BotaoEnviar
             className="rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-background"
           >
             Salvar feedback
-          </button>
+          </BotaoEnviar>
         </form>
       </div>
 
       {t.status === "pendente" && (
         <form action={cancelarTermoVisita}>
           <input type="hidden" name="id" value={t.id} />
-          <button type="submit" className="text-xs font-medium text-ink-muted hover:text-rose-600">
+          <BotaoEnviar className="text-xs font-medium text-ink-muted hover:text-rose-600">
             Cancelar este termo
-          </button>
+          </BotaoEnviar>
         </form>
       )}
 

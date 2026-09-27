@@ -11,6 +11,7 @@ import {
   removerItem,
 } from "./actions";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 interface Item {
   id: string;
@@ -84,12 +85,11 @@ export default async function ChecklistsFinanciamentoPage() {
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
           />
         </div>
-        <button
-          type="submit"
+        <BotaoEnviar
           className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
           + Novo checklist
-        </button>
+        </BotaoEnviar>
       </form>
 
       <div className="space-y-4">
@@ -126,12 +126,11 @@ export default async function ChecklistsFinanciamentoPage() {
                         placeholder="Descrição"
                         className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                       />
-                      <button
-                        type="submit"
+                      <BotaoEnviar
                         className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                       >
                         Salvar
-                      </button>
+                      </BotaoEnviar>
                     </form>
                   </details>
                   <form action={removerChecklist}>
@@ -178,12 +177,11 @@ export default async function ChecklistsFinanciamentoPage() {
                               placeholder="Observação (opcional)"
                               className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                             />
-                            <button
-                              type="submit"
+                            <BotaoEnviar
                               className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                             >
                               Salvar
-                            </button>
+                            </BotaoEnviar>
                           </form>
                         </details>
                         <form action={removerGrupo}>
@@ -217,23 +215,21 @@ export default async function ChecklistsFinanciamentoPage() {
                                   defaultValue={item.texto}
                                   className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                                 />
-                                <button
-                                  type="submit"
+                                <BotaoEnviar
                                   className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                                 >
                                   Salvar
-                                </button>
+                                </BotaoEnviar>
                               </form>
                             </details>
                             <form action={removerItem}>
                               <input type="hidden" name="id" value={item.id} />
-                              <button
-                                type="submit"
+                              <BotaoEnviar
                                 aria-label={`Remover ${item.texto}`}
                                 className="rounded-md p-1 text-xs text-ink-muted hover:bg-surface hover:text-rose-600"
                               >
                                 🗑
-                              </button>
+                              </BotaoEnviar>
                             </form>
                           </div>
                         </li>
@@ -247,12 +243,11 @@ export default async function ChecklistsFinanciamentoPage() {
                         placeholder="+ Novo item"
                         className="w-full rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
                       />
-                      <button
-                        type="submit"
+                      <BotaoEnviar
                         className="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-ink-muted hover:bg-surface"
                       >
                         Adicionar
-                      </button>
+                      </BotaoEnviar>
                     </form>
                   </div>
                 ))}
@@ -267,12 +262,11 @@ export default async function ChecklistsFinanciamentoPage() {
                     placeholder="+ Nova seção (ex: Compradores)"
                     className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                   />
-                  <button
-                    type="submit"
+                  <BotaoEnviar
                     className="shrink-0 rounded-md border border-border px-3 py-1.5 text-xs text-ink-muted hover:bg-background"
                   >
                     Adicionar seção
-                  </button>
+                  </BotaoEnviar>
                 </form>
               </div>
             </div>

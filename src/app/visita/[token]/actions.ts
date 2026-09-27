@@ -28,8 +28,9 @@ export async function registrarAssinaturaVisita(
   const { data, error } = await supabase.rpc("termo_visita_registrar", {
     p_token: token,
     p_nome_digitado: nomeDigitado.trim(),
-    p_cpf: cpf.trim() || null,
-    p_rg: rg.trim() || null,
+    // A função SQL aceita nulo nesses dois; o tipo gerado não sabe disso.
+    p_cpf: (cpf.trim() || null) as string,
+    p_rg: (rg.trim() || null) as string,
     p_assinatura_imagem: assinaturaImagem,
     p_ip: ip,
   });

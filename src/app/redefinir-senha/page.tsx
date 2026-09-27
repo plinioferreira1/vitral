@@ -1,4 +1,5 @@
 import { redefinirSenha } from "@/app/login/actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 export default async function RedefinirSenhaPage({
   searchParams,
@@ -38,12 +39,11 @@ export default async function RedefinirSenhaPage({
                 placeholder="••••••••"
               />
             </div>
-            <button
-              type="submit"
+            <BotaoEnviar
               className="w-full rounded-md bg-brand py-2 text-sm font-medium text-white transition hover:opacity-90"
             >
               Salvar nova senha
-            </button>
+            </BotaoEnviar>
           </form>
         </div>
       </div>

@@ -1,5 +1,9 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { hojeISO } from "@/lib/data-br";
@@ -83,6 +87,7 @@ const TEMPLATE_RESCISAO: { nome: string; checklist: string[] }[] = [
 ];
 
 export async function iniciarRescisao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const contratoId = String(formData.get("contrato_id") ?? "");
   const dataAviso = String(formData.get("data_aviso") ?? "").trim();
@@ -123,13 +128,13 @@ export async function iniciarRescisao(formData: FormData) {
       .single();
 
     if (etapa && etapaTemplate.checklist.length > 0) {
-      await supabase.from("rescisao_checklist_itens").insert(
+      await checar(supabase.from("rescisao_checklist_itens").insert(
         etapaTemplate.checklist.map((descricao, j) => ({
           etapa_id: etapa.id,
           descricao,
           ordem: j + 1,
         }))
-      );
+      ), "salvar");
     }
   }
 
@@ -137,29 +142,31 @@ export async function iniciarRescisao(formData: FormData) {
 }
 
 export async function alternarChecklistItemRescisao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const itemId = String(formData.get("item_id") ?? "");
   const contratoId = String(formData.get("contrato_id") ?? "");
   const concluidoAtual = formData.get("concluido_atual") === "true";
 
-  await supabase
+  await checar(supabase
     .from("rescisao_checklist_itens")
     .update({ concluido: !concluidoAtual })
-    .eq("id", itemId);
+    .eq("id", itemId), "atualizar");
 
   revalidatePath(`/locacao/${contratoId}`);
 }
 
 export async function concluirEtapaRescisao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const etapaId = String(formData.get("etapa_id") ?? "");
   const rescisaoId = String(formData.get("rescisao_id") ?? "");
   const contratoId = String(formData.get("contrato_id") ?? "");
 
-  await supabase
+  await checar(supabase
     .from("rescisao_etapas")
     .update({ status: "concluida", data_realizada: hojeISO() })
-    .eq("id", etapaId);
+    .eq("id", etapaId), "atualizar");
 
   // Se essa era a última etapa pendente, fecha a rescisão inteira e
   // já encerra o contrato — igual ao que "encerrarContrato" faz.
@@ -170,15 +177,15 @@ export async function concluirEtapaRescisao(formData: FormData) {
     .eq("status", "pendente");
 
   if (!pendentes || pendentes.length === 0) {
-    await supabase
+    await checar(supabase
       .from("rescisoes_locacao")
       .update({ status: "concluida", concluida_em: new Date().toISOString() })
-      .eq("id", rescisaoId);
+      .eq("id", rescisaoId), "atualizar");
 
-    await supabase
+    await checar(supabase
       .from("contratos_locacao")
       .update({ ativo: false, data_encerramento: hojeISO() })
-      .eq("id", contratoId);
+      .eq("id", contratoId), "atualizar");
   }
 
   revalidatePath(`/locacao/${contratoId}`);
@@ -186,15 +193,16 @@ export async function concluirEtapaRescisao(formData: FormData) {
 }
 
 export async function reabrirEtapaRescisao(formData: FormData) {
+  if (!(await exigirUsuario())) return;
   const supabase = await createClient();
   const etapaId = String(formData.get("etapa_id") ?? "");
   const rescisaoId = String(formData.get("rescisao_id") ?? "");
   const contratoId = String(formData.get("contrato_id") ?? "");
 
-  await supabase
+  await checar(supabase
     .from("rescisao_etapas")
     .update({ status: "pendente", data_realizada: null })
-    .eq("id", etapaId);
+    .eq("id", etapaId), "atualizar");
 
   // Se a rescisão (e o encerramento do contrato) já tinham sido dados
   // como concluídos, reabrir uma etapa desfaz os dois — o processo
@@ -206,15 +214,15 @@ export async function reabrirEtapaRescisao(formData: FormData) {
     .single();
 
   if (rescisao?.status === "concluida") {
-    await supabase
+    await checar(supabase
       .from("rescisoes_locacao")
       .update({ status: "em_andamento", concluida_em: null })
-      .eq("id", rescisaoId);
+      .eq("id", rescisaoId), "atualizar");
 
-    await supabase
+    await checar(supabase
       .from("contratos_locacao")
       .update({ ativo: true, data_encerramento: null })
-      .eq("id", contratoId);
+      .eq("id", contratoId), "atualizar");
   }
 
   revalidatePath(`/locacao/${contratoId}`);

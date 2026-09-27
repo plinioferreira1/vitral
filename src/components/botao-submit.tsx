@@ -1,7 +1,8 @@
 "use client";
 
-import { useFormStatus } from "react-dom";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
+// Mantido por compatibilidade — hoje é só um atalho para <BotaoEnviar />.
 export function BotaoSubmit({
   children,
   className,
@@ -11,11 +12,9 @@ export function BotaoSubmit({
   className?: string;
   textoEnviando?: string;
 }) {
-  const { pending } = useFormStatus();
-
   return (
-    <button type="submit" disabled={pending} className={`${className} disabled:opacity-60`}>
-      {pending ? (textoEnviando ?? "Enviando...") : children}
-    </button>
+    <BotaoEnviar className={className} textoEnviando={textoEnviando ?? "Enviando..."}>
+      {children}
+    </BotaoEnviar>
   );
 }

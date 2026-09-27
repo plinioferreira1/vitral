@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { salvarCodigoSanProcesso } from "@/app/(app)/processos/[id]/actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 export const STATUS_LABEL: Record<string, string> = {
   ativo: "Ativo",
@@ -113,12 +114,11 @@ export function TabelaProcessos({
                       placeholder="Código SAN"
                       className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                     />
-                    <button
-                      type="submit"
+                    <BotaoEnviar
                       className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                     >
                       Salvar
-                    </button>
+                    </BotaoEnviar>
                   </form>
                 </details>
               </td>

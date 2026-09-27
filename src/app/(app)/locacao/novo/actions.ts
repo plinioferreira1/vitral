@@ -1,5 +1,9 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -36,16 +40,11 @@ async function resolverOuCriar(
 
 export async function criarContratoLocacao(formData: FormData) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user.id)
-    .single();
+  const usuario = sessao.usuario;
   if (!usuario?.tenant_id) redirect("/onboarding");
 
   const imovelNome = String(formData.get("imovel") ?? "");
@@ -62,13 +61,13 @@ export async function criarContratoLocacao(formData: FormData) {
   if (locadorId) {
     const dadosLocador = objetoParcial({ telefone: campo("locador_telefone"), email: campo("locador_email") });
     if (!objetoVazio(dadosLocador)) {
-      await supabase.from("clientes").update(dadosLocador).eq("id", locadorId);
+      await checar(supabase.from("clientes").update(dadosLocador).eq("id", locadorId), "atualizar");
     }
   }
   if (locatarioId) {
     const dadosLocatario = objetoParcial({ telefone: campo("locatario_telefone"), email: campo("locatario_email") });
     if (!objetoVazio(dadosLocatario)) {
-      await supabase.from("clientes").update(dadosLocatario).eq("id", locatarioId);
+      await checar(supabase.from("clientes").update(dadosLocatario).eq("id", locatarioId), "atualizar");
     }
   }
 

@@ -1,58 +1,31 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+import { moedaParaNumero } from "@/lib/moeda";
 import { createClient } from "@/lib/supabase/server";
+import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { moedaParaNumero } from "@/lib/moeda";
 
 async function contexto() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
-  return { supabase, tenantId: usuario?.tenant_id ?? null };
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return null;
+  return { supabase, tenantId: sessao.tenantId };
 }
 
 const campo = (formData: FormData, nome: string) => String(formData.get(nome) ?? "").trim() || null;
 
 export async function criarContaBancaria(formData: FormData) {
-  const { supabase, tenantId } = await contexto();
-  if (!tenantId) return;
+  const ctx = await contexto();
+  if (!ctx) return;
+  const { supabase, tenantId } = ctx;
   const nome = String(formData.get("nome") ?? "").trim();
   if (!nome) return;
 
-  await supabase.from("financeiro_contas_bancarias").insert({
-    tenant_id: tenantId,
-    nome,
-    banco: campo(formData, "banco"),
-    agencia: campo(formData, "agencia"),
-    numero_conta: campo(formData, "numero_conta"),
-    titular: campo(formData, "titular"),
-    tipo: String(formData.get("tipo") ?? "corrente"),
-    saldo_inicial: moedaParaNumero(formData.get("saldo_inicial")),
-    data_abertura: campo(formData, "data_abertura"),
-  });
-
-  revalidatePath("/financeiro/contas-bancarias");
-  revalidatePath("/financeiro");
-}
-
-export async function editarContaBancaria(formData: FormData) {
-  const { supabase, tenantId } = await contexto();
-  if (!tenantId) return;
-
-  const id = String(formData.get("id") ?? "");
-  const nome = String(formData.get("nome") ?? "").trim();
-  if (!id || !nome) return;
-
-  await supabase
-    .from("financeiro_contas_bancarias")
-    .update({
+  const salvou = await checar(
+    supabase.from("financeiro_contas_bancarias").insert({
+      tenant_id: tenantId,
       nome,
       banco: campo(formData, "banco"),
       agencia: campo(formData, "agencia"),
@@ -61,10 +34,43 @@ export async function editarContaBancaria(formData: FormData) {
       tipo: String(formData.get("tipo") ?? "corrente"),
       saldo_inicial: moedaParaNumero(formData.get("saldo_inicial")),
       data_abertura: campo(formData, "data_abertura"),
-      ativa: formData.get("ativa") === "on",
-    })
-    .eq("id", id)
-    .eq("tenant_id", tenantId);
+    }),
+    "salvar"
+  );
+  if (!salvou) return;
+
+  revalidatePath("/financeiro/contas-bancarias");
+  revalidatePath("/financeiro");
+}
+
+export async function editarContaBancaria(formData: FormData) {
+  const ctx = await contexto();
+  if (!ctx) return;
+  const { supabase, tenantId } = ctx;
+
+  const id = String(formData.get("id") ?? "");
+  const nome = String(formData.get("nome") ?? "").trim();
+  if (!id || !nome) return;
+
+  const atualizou = await checar(
+    supabase
+      .from("financeiro_contas_bancarias")
+      .update({
+        nome,
+        banco: campo(formData, "banco"),
+        agencia: campo(formData, "agencia"),
+        numero_conta: campo(formData, "numero_conta"),
+        titular: campo(formData, "titular"),
+        tipo: String(formData.get("tipo") ?? "corrente"),
+        saldo_inicial: moedaParaNumero(formData.get("saldo_inicial")),
+        data_abertura: campo(formData, "data_abertura"),
+        ativa: formData.get("ativa") === "on",
+      })
+      .eq("id", id)
+      .eq("tenant_id", tenantId),
+    "atualizar"
+  );
+  if (!atualizou) return;
 
   revalidatePath("/financeiro/contas-bancarias");
   revalidatePath("/financeiro");
@@ -72,8 +78,9 @@ export async function editarContaBancaria(formData: FormData) {
 }
 
 export async function criarContasPadrao() {
-  const { supabase, tenantId } = await contexto();
-  if (!tenantId) return;
+  const ctx = await contexto();
+  if (!ctx) return;
+  const { supabase, tenantId } = ctx;
 
   const { data: existentes } = await supabase
     .from("financeiro_contas_bancarias")
@@ -106,7 +113,8 @@ export async function criarContasPadrao() {
   }
 
   if (novas.length > 0) {
-    await supabase.from("financeiro_contas_bancarias").insert(novas);
+    const salvou = await checar(supabase.from("financeiro_contas_bancarias").insert(novas), "salvar");
+    if (!salvou) return;
   }
 
   revalidatePath("/financeiro/contas-bancarias");
@@ -114,10 +122,14 @@ export async function criarContasPadrao() {
 }
 
 export async function arquivarContaBancaria(formData: FormData) {
+  const ctx = await contexto();
+  if (!ctx) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-  const supabase = await createClient();
-  await supabase.from("financeiro_contas_bancarias").update({ ativa: false }).eq("id", id);
+  await checar(
+    ctx.supabase.from("financeiro_contas_bancarias").update({ ativa: false }).eq("id", id),
+    "atualizar"
+  );
   revalidatePath("/financeiro/contas-bancarias");
   revalidatePath("/financeiro");
 }

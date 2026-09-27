@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { criarOrganizacao } from "./actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 export default async function OnboardingPage({
   searchParams,
@@ -54,12 +55,11 @@ export default async function OnboardingPage({
                 placeholder="Ex: Imobiliária Silva & Associados"
               />
             </div>
-            <button
-              type="submit"
+            <BotaoEnviar
               className="w-full rounded-md bg-brand py-2 text-sm font-medium text-white transition hover:opacity-90"
             >
               Criar organização
-            </button>
+            </BotaoEnviar>
           </form>
           <p className="mt-3 text-xs text-ink-muted">
             Isso já cria os modelos de processo padrão: Venda Financiada, Locação,

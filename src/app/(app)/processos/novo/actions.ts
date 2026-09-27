@@ -1,5 +1,9 @@
 "use server";
 
+import { exigirUsuario } from "@/lib/usuario-atual";
+
+import { checar } from "@/lib/aviso";
+
 import { after } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
@@ -7,6 +11,7 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hojeISO } from "@/lib/data-br";
 import { reconciliarAgendaProcesso } from "@/lib/google-agenda";
+import { valorDaLista } from "@/lib/validacao";
 
 /**
  * Acha um registro pelo nome (exato, sem diferenciar maiúsculas)
@@ -46,13 +51,12 @@ async function resolverOuCriar(
 export async function criarProcesso(formData: FormData) {
   const supabase = await createClient();
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const { user } = sessao;
 
   const modeloProcessoId = String(formData.get("modelo_processo_id") ?? "");
-  const categoria = String(formData.get("categoria") ?? "venda");
+  const categoria = valorDaLista("categoria_processo", formData.get("categoria"), "venda");
   const compradorNome = String(formData.get("comprador_nome") ?? "");
   const vendedorNome = String(formData.get("vendedor_nome") ?? "");
   const imovelEndereco = String(formData.get("imovel_endereco") ?? "");
@@ -69,11 +73,7 @@ export async function criarProcesso(formData: FormData) {
     redirect(`/processos/novo?erro=${encodeURIComponent("Modelo e data base são obrigatórios.")}`);
   }
 
-  const { data: usuarioRow } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user.id)
-    .single();
+  const usuarioRow = sessao.usuario;
 
   const tenantId = usuarioRow?.tenant_id;
   if (!tenantId) redirect("/onboarding");
@@ -153,7 +153,7 @@ export async function criarProcesso(formData: FormData) {
       .order("ordem", { ascending: true });
 
     if (todasEtapas && todasEtapas.length > 0) {
-      await supabase.from("etapas").insert(
+      await checar(supabase.from("etapas").insert(
         todasEtapas.map((ep) => ({
           processo_id: processo.id,
           nome: ep.nome,
@@ -162,7 +162,7 @@ export async function criarProcesso(formData: FormData) {
           ordem: ep.ordem,
           especial: false,
         }))
-      );
+      ), "salvar");
     }
   } else if (etapasSelecionadas.length > 0) {
     const { data: etapasPadrao } = await supabase
@@ -171,7 +171,7 @@ export async function criarProcesso(formData: FormData) {
       .in("id", etapasSelecionadas);
 
     if (etapasPadrao && etapasPadrao.length > 0) {
-      await supabase.from("etapas").insert(
+      await checar(supabase.from("etapas").insert(
         etapasPadrao.map((ep) => ({
           processo_id: processo.id,
           nome: ep.nome,
@@ -180,16 +180,16 @@ export async function criarProcesso(formData: FormData) {
           ordem: ep.ordem,
           especial: ep.tipo === "especial",
         }))
-      );
+      ), "salvar");
     }
   }
 
-  await supabase.from("historico").insert({
+  await checar(supabase.from("historico").insert({
     processo_id: processo.id,
     usuario_id: user.id,
     acao: "criou o processo",
     detalhe: { modelo: modeloProcesso?.nome },
-  });
+  }), "salvar");
 
   after(() => reconciliarAgendaProcesso(supabase, processo.id));
 

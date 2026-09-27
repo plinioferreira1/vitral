@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { Mail, Send } from "lucide-react";
 import { adicionarDestinatario, alternarDestinatario, apagarDestinatario, testarEnvioAgora } from "./actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -45,12 +46,11 @@ export default async function ConfiguracoesEmailPage() {
         <form action={adicionarDestinatario} className="mb-4 flex flex-wrap gap-2">
           <input name="email" type="email" required placeholder="E-mail" className={`${campoClasse} flex-1`} />
           <input name="nome" placeholder="Nome (opcional)" className={`${campoClasse} w-48`} />
-          <button
-            type="submit"
+          <BotaoEnviar
             className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             Adicionar
-          </button>
+          </BotaoEnviar>
         </form>
 
         <ul className="space-y-1.5">
@@ -72,8 +72,7 @@ export default async function ConfiguracoesEmailPage() {
                   <form action={alternarDestinatario}>
                     <input type="hidden" name="id" value={d.id} />
                     <input type="hidden" name="ativo_atual" value={String(d.ativo)} />
-                    <button
-                      type="submit"
+                    <BotaoEnviar
                       className={`rounded-full border px-2 py-0.5 text-xs font-medium ${
                         d.ativo
                           ? "border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -81,13 +80,13 @@ export default async function ConfiguracoesEmailPage() {
                       }`}
                     >
                       {d.ativo ? "Ativo" : "Inativo"}
-                    </button>
+                    </BotaoEnviar>
                   </form>
                   <form action={apagarDestinatario}>
                     <input type="hidden" name="id" value={d.id} />
-                    <button type="submit" className="text-xs text-ink-muted hover:text-rose-600">
+                    <BotaoEnviar className="text-xs text-ink-muted hover:text-rose-600">
                       apagar
-                    </button>
+                    </BotaoEnviar>
                   </form>
                 </div>
               </li>
@@ -104,12 +103,11 @@ export default async function ConfiguracoesEmailPage() {
             titulo="Testar agora"
             descricao="Envia o relatório imediatamente pros destinatários ativos, sem esperar as 9h."
           />
-          <button
-            type="submit"
+          <BotaoEnviar
             className="rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-background"
           >
             Enviar teste agora
-          </button>
+          </BotaoEnviar>
         </form>
       )}
 

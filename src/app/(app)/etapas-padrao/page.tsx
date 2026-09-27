@@ -8,6 +8,7 @@ import {
 } from "./actions";
 import type { CategoriaProcesso, TipoEtapaPadrao } from "@/lib/types";
 import { CATEGORIA_LABEL } from "@/lib/types";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 interface EtapaRow {
   id: string;
@@ -82,12 +83,11 @@ export default async function EtapasPadraoPage({
           <option value="sequencial">Sequência normal</option>
           <option value="especial">Situação especial</option>
         </select>
-        <button
-          type="submit"
+        <BotaoEnviar
           className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
           Adicionar
-        </button>
+        </BotaoEnviar>
       </form>
 
       <div>
@@ -132,8 +132,7 @@ function ListaEtapas({
                       <input type="hidden" name="categoria" value={categoria} />
                       <input type="hidden" name="tipo" value={tipo} />
                       <input type="hidden" name="direcao" value="cima" />
-                      <button
-                        type="submit"
+                      <BotaoEnviar
                         disabled={i === 0}
                         aria-label="Mover pra cima"
                         className="flex h-4 w-4 items-center justify-center text-ink-muted hover:text-ink disabled:opacity-20"
@@ -141,15 +140,14 @@ function ListaEtapas({
                         <svg width="10" height="10" viewBox="0 0 12 12">
                           <path d="M2 8l4-4 4 4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                      </button>
+                      </BotaoEnviar>
                     </form>
                     <form action={moverEtapaPadrao}>
                       <input type="hidden" name="id" value={e.id} />
                       <input type="hidden" name="categoria" value={categoria} />
                       <input type="hidden" name="tipo" value={tipo} />
                       <input type="hidden" name="direcao" value="baixo" />
-                      <button
-                        type="submit"
+                      <BotaoEnviar
                         disabled={i === etapas.length - 1}
                         aria-label="Mover pra baixo"
                         className="flex h-4 w-4 items-center justify-center text-ink-muted hover:text-ink disabled:opacity-20"
@@ -157,7 +155,7 @@ function ListaEtapas({
                         <svg width="10" height="10" viewBox="0 0 12 12">
                           <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                      </button>
+                      </BotaoEnviar>
                     </form>
                   </div>
                   <span className="text-sm text-ink">{e.nome}</span>
@@ -186,23 +184,21 @@ function ListaEtapas({
                         <option value="sequencial">Sequência</option>
                         <option value="especial">Especial</option>
                       </select>
-                      <button
-                        type="submit"
+                      <BotaoEnviar
                         className="rounded-md bg-brand px-2 py-1 text-xs font-medium text-white hover:opacity-90"
                       >
                         Salvar
-                      </button>
+                      </BotaoEnviar>
                     </form>
                   </details>
                   <form action={removerEtapaPadrao}>
                     <input type="hidden" name="id" value={e.id} />
-                    <button
-                      type="submit"
+                    <BotaoEnviar
                       aria-label={`Remover ${e.nome}`}
                       className="rounded-md p-1.5 text-ink-muted hover:bg-background hover:text-rose-600"
                     >
                       🗑
-                    </button>
+                    </BotaoEnviar>
                   </form>
                 </div>
               </div>
