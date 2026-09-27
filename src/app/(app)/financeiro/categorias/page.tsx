@@ -50,6 +50,9 @@ export default async function FinanceiroCategoriasPage({
   const gruposAtivos = aba === "centros" ? [] : agruparPorGrupo(
     busca ? categoriasAtivas.filter((c) => `${c.nome} ${c.grupo ?? ""}`.toLocaleLowerCase("pt-BR").includes(busca.toLocaleLowerCase("pt-BR"))) : categoriasAtivas,
   );
+  const centrosVisiveis = busca
+    ? (centros ?? []).filter((c) => c.nome.toLocaleLowerCase("pt-BR").includes(busca.toLocaleLowerCase("pt-BR")))
+    : (centros ?? []);
 
   return (
     <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
@@ -93,7 +96,7 @@ export default async function FinanceiroCategoriasPage({
         </Link>
         <form method="get" className="flex min-w-[220px] flex-1 gap-2 lg:ml-auto lg:max-w-sm">
           <input type="hidden" name="aba" value={aba} />
-          <input name="q" defaultValue={busca ?? ""} placeholder="Buscar categoria ou grupo..." className={campoClasse} />
+          <input name="q" defaultValue={busca ?? ""} placeholder={aba === "centros" ? "Buscar centro..." : "Buscar categoria ou grupo..."} className={campoClasse} />
           <button type="submit" className="rounded-lg border border-border px-3 text-sm font-medium text-ink hover:bg-background">Buscar</button>
         </form>
       </div>
@@ -102,11 +105,11 @@ export default async function FinanceiroCategoriasPage({
         <div className="space-y-3">
           {aba === "centros" ? (
             <div className="rounded-xl border border-border/60 bg-surface shadow-sm">
-              {(centros ?? []).length === 0 ? (
-                <p className="p-8 text-center text-sm text-ink-muted">Nenhum centro de resultado ainda.</p>
+              {centrosVisiveis.length === 0 ? (
+                <p className="p-8 text-center text-sm text-ink-muted">{busca ? "Nenhum centro encontrado." : "Nenhum centro de resultado ainda."}</p>
               ) : (
                 <ul className="divide-y divide-border">
-                  {(centros ?? []).map((c) => (
+                  {centrosVisiveis.map((c) => (
                     <li key={c.id} className="flex items-center justify-between px-4 py-2.5 text-sm">
                       <span className="text-ink">{c.nome}</span>
                       <form action={apagarCentroCusto}>
@@ -122,7 +125,7 @@ export default async function FinanceiroCategoriasPage({
             </div>
           ) : gruposAtivos.length === 0 ? (
             <p className="rounded-xl border border-border/60 bg-surface p-8 text-center text-sm text-ink-muted shadow-sm">
-              Nenhuma categoria de {aba === "receitas" ? "receita" : "despesa"} ainda.
+              {busca ? "Nenhuma categoria encontrada." : `Nenhuma categoria de ${aba === "receitas" ? "receita" : "despesa"} ainda.`}
             </p>
           ) : (
             gruposAtivos.map(([grupo, itens], index) => (
