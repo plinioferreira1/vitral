@@ -235,6 +235,8 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
       if (l.categoria_id !== null || (l.status !== "pago" && l.status !== "pago_parcial")) return false;
     } else if (f.status && estadoExibicao(l, hoje) !== f.status) {
       return false;
+    } else if (!f.status && l.status === "cancelado") {
+      return false;
     }
     if (f.categoria && l.categoria_id !== f.categoria) return false;
     if (f.pessoa && l.pessoa_id !== f.pessoa) return false;
