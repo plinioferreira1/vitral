@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Users, User, Landmark, Briefcase, UserCog, Wrench } from "lucide-react";
+import { CampoMascarado } from "@/components/financeiro/campo-mascarado";
+import { formatarCpfCnpj, formatarTelefone } from "@/lib/mascaras";
 import { criarPessoaFinanceiro, apagarPessoaFinanceiro } from "./actions";
 
 const PAPEL_LABEL: Record<string, string> = {
@@ -105,7 +107,7 @@ export default async function FinanceiroPessoasPage({
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <input name="nome" required placeholder="Nome" className={campoClasse} />
-              <input name="cpf_cnpj" placeholder="CPF/CNPJ" className={campoClasse} />
+              <CampoMascarado name="cpf_cnpj" mask="cpf_cnpj" placeholder="CPF/CNPJ" className={campoClasse} />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <select name="papel" defaultValue="fornecedor" className={campoClasse}>
@@ -121,7 +123,7 @@ export default async function FinanceiroPessoasPage({
               </select>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <input name="telefone" placeholder="Telefone (opcional)" className={campoClasse} />
+              <CampoMascarado name="telefone" mask="telefone" placeholder="Telefone (opcional)" className={campoClasse} />
               <input name="email" placeholder="E-mail (opcional)" className={campoClasse} />
             </div>
             <input name="observacoes" placeholder="Observações (opcional)" className={campoClasse} />
@@ -201,9 +203,9 @@ export default async function FinanceiroPessoasPage({
                     <td className="px-4 py-2.5 text-ink-muted">
                       {p.categoria_fornecedor ? CATEGORIA_FORNECEDOR_LABEL[p.categoria_fornecedor] : "—"}
                     </td>
-                    <td className="px-4 py-2.5 text-ink-muted">{p.cpf_cnpj || "—"}</td>
+                    <td className="px-4 py-2.5 text-ink-muted">{p.cpf_cnpj ? formatarCpfCnpj(p.cpf_cnpj) : "—"}</td>
                     <td className="px-4 py-2.5 text-ink-muted">
-                      {[p.telefone, p.email].filter(Boolean).join(" · ") || "—"}
+                      {[p.telefone ? formatarTelefone(p.telefone) : null, p.email].filter(Boolean).join(" · ") || "—"}
                     </td>
                     <td className="px-4 py-2.5">
                       {ultimo ? (

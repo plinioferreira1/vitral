@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, FileText, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { CampoMascarado } from "@/components/financeiro/campo-mascarado";
+import { CampoMoeda } from "@/components/financeiro/campo-moeda";
 import { registrarBaixa } from "../../../lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
 
@@ -27,7 +29,7 @@ type Lancamento = {
   forma_pagamento: string | null;
   conta_bancaria_id: string | null;
   observacoes: string | null;
-  financeiro_pessoas: { nome: string } | null;
+  financeiro_pessoas: { nome: string; cpf_cnpj?: string | null } | null;
   financeiro_categorias: { nome: string } | null;
 };
 
@@ -44,7 +46,7 @@ export default async function BaixarLancamentoFinanceiroPage({
     supabase
       .from("financeiro_lancamentos")
       .select(
-        "id, tipo, descricao, valor, vencimento, competencia, status, forma_pagamento, conta_bancaria_id, observacoes, financeiro_pessoas ( nome ), financeiro_categorias ( nome )"
+        "id, tipo, descricao, valor, vencimento, competencia, status, forma_pagamento, conta_bancaria_id, observacoes, financeiro_pessoas ( nome, cpf_cnpj ), financeiro_categorias ( nome )"
       )
       .eq("id", id)
       .single(),
@@ -142,10 +144,45 @@ export default async function BaixarLancamentoFinanceiroPage({
           <div className="mt-3 max-w-[240px]">
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-muted">Valor a baixar *</label>
-              <input name="valor" type="number" step="0.01" required defaultValue={saldoAberto} className={campoClasse} />
+                <CampoMoeda name="valor" required defaultValue={saldoAberto} className={campoClasse} />
             </div>
           </div>
         </div>
+
+        {lancamento.tipo === "despesa" && (
+          <div className="mt-5 rounded-xl border border-border bg-background p-4">
+            <label className="flex items-start gap-3 text-sm text-ink">
+              <input type="checkbox" name="gerar_recibo" className="mt-1 accent-brand" />
+              <span>
+                <span className="block font-semibold">Gerar recibo deste pagamento</span>
+                <span className="mt-0.5 block text-xs leading-5 text-ink-muted">
+                  Use quando precisar emitir um recibo no padrão Sacra para o favorecido assinar.
+                </span>
+              </span>
+            </label>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">Emitido para</label>
+                <input
+                  name="recibo_emitido_para"
+                  defaultValue={lancamento.financeiro_pessoas?.nome ?? ""}
+                  placeholder="Nome do favorecido"
+                  className={campoClasse}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">CPF/CNPJ do favorecido</label>
+                <CampoMascarado
+                  name="recibo_documento"
+                  mask="cpf_cnpj"
+                  defaultValue={lancamento.financeiro_pessoas?.cpf_cnpj ?? ""}
+                  placeholder="Opcional"
+                  className={campoClasse}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">

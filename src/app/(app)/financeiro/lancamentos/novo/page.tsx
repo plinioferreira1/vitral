@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, CalendarDays, FileText, Repeat, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
+import { CampoMoeda } from "@/components/financeiro/campo-moeda";
 import { criarLancamento } from "../../lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
 
@@ -68,7 +69,7 @@ export default async function NovoLancamentoFinanceiroPage({
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Valor *</label>
-            <input name="valor" type="number" step="0.01" required placeholder="0,00" className={campoClasse} />
+            <CampoMoeda name="valor" required className={campoClasse} />
           </div>
         </div>
 

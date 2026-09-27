@@ -3,6 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { formatarCpfCnpj, formatarTelefone } from "@/lib/mascaras";
 
 function categoriaFornecedorOuNull(formData: FormData, papel: string): string | null {
   if (papel === "cliente") return null;
@@ -29,10 +30,10 @@ export async function criarPessoaFinanceiro(formData: FormData) {
   await supabase.from("financeiro_pessoas").insert({
     tenant_id: usuario.tenant_id,
     nome,
-    cpf_cnpj: String(formData.get("cpf_cnpj") ?? "").trim() || null,
+    cpf_cnpj: formatarCpfCnpj(formData.get("cpf_cnpj")) || null,
     papel,
     categoria_fornecedor: categoriaFornecedorOuNull(formData, papel),
-    telefone: String(formData.get("telefone") ?? "").trim() || null,
+    telefone: formatarTelefone(formData.get("telefone")) || null,
     email: String(formData.get("email") ?? "").trim() || null,
     observacoes: String(formData.get("observacoes") ?? "").trim() || null,
   });
@@ -53,10 +54,10 @@ export async function editarPessoaFinanceiro(formData: FormData) {
     .from("financeiro_pessoas")
     .update({
       nome,
-      cpf_cnpj: String(formData.get("cpf_cnpj") ?? "").trim() || null,
+      cpf_cnpj: formatarCpfCnpj(formData.get("cpf_cnpj")) || null,
       papel,
       categoria_fornecedor: categoriaFornecedorOuNull(formData, papel),
-      telefone: String(formData.get("telefone") ?? "").trim() || null,
+      telefone: formatarTelefone(formData.get("telefone")) || null,
       email: String(formData.get("email") ?? "").trim() || null,
       observacoes: String(formData.get("observacoes") ?? "").trim() || null,
     })

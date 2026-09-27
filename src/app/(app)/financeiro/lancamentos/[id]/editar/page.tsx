@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AlertCircle, ArrowLeft, CalendarDays, FileText, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
+import { CampoMoeda } from "@/components/financeiro/campo-moeda";
 import { editarLancamento } from "../../../lancamentos-actions";
 
 const campoClasse =
@@ -117,7 +118,7 @@ export default async function EditarLancamentoFinanceiroPage({
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Valor *</label>
-            <input name="valor" type="number" step="0.01" required defaultValue={lancamento.valor} className={campoClasse} />
+            <CampoMoeda name="valor" required defaultValue={lancamento.valor} className={campoClasse} />
           </div>
         </div>
 

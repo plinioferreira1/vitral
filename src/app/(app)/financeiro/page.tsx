@@ -12,6 +12,7 @@ import {
   CalendarClock,
   Clock,
   Landmark,
+  Layers,
   LineChart,
   FileText,
   Users,
@@ -54,7 +55,7 @@ export default async function FinanceiroDashboardPage({
   const [{ data: contas }, { data: baixasPeriodo }, { data: pendentes }, { data: todasBaixas }] = await Promise.all([
     supabase
       .from("financeiro_contas_bancarias")
-      .select("id, nome, banco, saldo_inicial, ativa")
+      .select("id, nome, banco, tipo, saldo_inicial, ativa")
       .eq("ativa", true),
     supabase
       .from("financeiro_baixas")
@@ -68,6 +69,7 @@ export default async function FinanceiroDashboardPage({
     supabase.from("financeiro_baixas").select("conta_bancaria_id, valor, financeiro_lancamentos ( tipo )"),
   ]);
 
+  type ContaResumo = { id: string; nome: string; banco: string | null; tipo: string | null; saldo_inicial: number };
   type BaixaComTipo = { valor: number; financeiro_lancamentos: { tipo: string } | null };
 
   const saldoInicialTotal = (contas ?? []).reduce((soma, c) => soma + Number(c.saldo_inicial), 0);
@@ -84,6 +86,37 @@ export default async function FinanceiroDashboardPage({
     const delta = tipo === "receita" ? Number(b.valor) : -Number(b.valor);
     movimentoPorConta.set(b.conta_bancaria_id, (movimentoPorConta.get(b.conta_bancaria_id) ?? 0) + delta);
   });
+
+  const contasAtivas = (contas ?? []) as unknown as ContaResumo[];
+  const contasInvestimento = contasAtivas.filter((c) => c.tipo === "investimento");
+  const contasOperacionais = contasAtivas.filter((c) => c.tipo !== "investimento");
+  const saldoInvestimentos = contasInvestimento.reduce(
+    (soma, c) => soma + Number(c.saldo_inicial) + (movimentoPorConta.get(c.id) ?? 0),
+    0
+  );
+  const investimentoSemSaldo = contasInvestimento.every((c) => Number(c.saldo_inicial) === 0 && !movimentoPorConta.has(c.id));
+  const saldosContas = [
+    ...(contasInvestimento.length > 0
+      ? [
+          {
+            id: "investimentos",
+            nome: "Investimentos",
+            banco: null,
+            saldo: saldoInvestimentos,
+            saldoNaoInformado: investimentoSemSaldo,
+            investimentos: true,
+          },
+        ]
+      : []),
+    ...contasOperacionais.map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      banco: c.banco,
+      saldo: Number(c.saldo_inicial) + (movimentoPorConta.get(c.id) ?? 0),
+      saldoNaoInformado: Number(c.saldo_inicial) === 0 && !movimentoPorConta.has(c.id),
+      investimentos: false,
+    })),
+  ];
 
   const recebidoNoPeriodo = ((baixasPeriodo ?? []) as unknown as BaixaComTipo[])
     .filter((b) => b.financeiro_lancamentos?.tipo === "receita")
@@ -295,22 +328,26 @@ export default async function FinanceiroDashboardPage({
             </Link>
           }
         />
-        {(contas ?? []).length === 0 ? (
+        {contasAtivas.length === 0 ? (
           <p className="text-sm text-ink-muted">Nenhuma conta bancária cadastrada ainda.</p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {(contas ?? []).map((c) => {
-              const saldo = Number(c.saldo_inicial) + (movimentoPorConta.get(c.id) ?? 0);
-              const saldoNaoInformado = Number(c.saldo_inicial) === 0 && !movimentoPorConta.has(c.id);
+            {saldosContas.map((c) => {
               return (
                 <div key={c.id} className="flex items-center gap-3 rounded-lg border border-border/60 p-3">
-                  <LogoBanco banco={c.banco} size="sm" />
+                  {c.investimentos ? (
+                    <div className="flex h-9 w-12 shrink-0 items-center justify-center rounded-md border border-border bg-background text-brand">
+                      <Layers size={16} strokeWidth={2.2} />
+                    </div>
+                  ) : (
+                    <LogoBanco banco={c.banco} size="sm" />
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs text-ink-muted">{c.nome}</p>
-                    {saldoNaoInformado ? (
+                    {c.saldoNaoInformado ? (
                       <p className="text-sm font-semibold text-ink-muted">A confirmar</p>
                     ) : (
-                      <p className={`num text-sm font-semibold ${saldo < 0 ? "text-rose-600" : "text-ink"}`}>{brl(saldo)}</p>
+                      <p className={`num text-sm font-semibold ${c.saldo < 0 ? "text-rose-600" : "text-ink"}`}>{brl(c.saldo)}</p>
                     )}
                   </div>
                 </div>

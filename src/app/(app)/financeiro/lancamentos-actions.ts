@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { addWeeks, addMonths } from "date-fns";
+import { moedaParaNumero } from "@/lib/moeda";
 
 async function contexto(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
@@ -87,7 +88,7 @@ export async function criarLancamento(formData: FormData) {
 
   const tipo = String(formData.get("tipo") ?? "despesa");
   const descricao = String(formData.get("descricao") ?? "").trim();
-  const valor = Number(formData.get("valor") ?? 0);
+  const valor = moedaParaNumero(formData.get("valor"));
   if (!descricao || !valor) return;
 
   const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
@@ -214,11 +215,12 @@ export async function registrarBaixa(formData: FormData) {
   if (!tenantId) return;
 
   const lancamentoId = String(formData.get("lancamento_id") ?? "");
-  const valor = Number(formData.get("valor") ?? 0);
+  const valor = moedaParaNumero(formData.get("valor"));
   const data = String(formData.get("data") ?? "").trim();
   if (!lancamentoId || !valor || !data) return;
+  const gerarRecibo = formData.get("gerar_recibo") === "on";
 
-  await supabase.from("financeiro_baixas").insert({
+  const dadosBaixa: Record<string, unknown> = {
     tenant_id: tenantId,
     lancamento_id: lancamentoId,
     valor,
@@ -227,7 +229,19 @@ export async function registrarBaixa(formData: FormData) {
     forma_pagamento: String(formData.get("forma_pagamento") ?? "").trim() || null,
     observacoes: String(formData.get("observacoes") ?? "").trim() || null,
     criado_por: userId,
-  });
+  };
+
+  if (gerarRecibo) {
+    dadosBaixa.gerar_recibo = true;
+    dadosBaixa.recibo_emitido_para = String(formData.get("recibo_emitido_para") ?? "").trim() || null;
+    dadosBaixa.recibo_documento = String(formData.get("recibo_documento") ?? "").trim() || null;
+  }
+
+  const { data: baixa } = await supabase
+    .from("financeiro_baixas")
+    .insert(dadosBaixa)
+    .select("id")
+    .single();
 
   const { data: lancamento } = await supabase
     .from("financeiro_lancamentos")
@@ -249,6 +263,9 @@ export async function registrarBaixa(formData: FormData) {
   revalidatePath("/financeiro/contas-a-pagar");
   revalidatePath("/financeiro/contas-a-receber");
   revalidatePath("/financeiro");
+  if (gerarRecibo && baixa?.id) {
+    redirect(`/financeiro/baixas/${baixa.id}/recibo`);
+  }
   redirect(retornoSeguro(formData, caminho));
 }
 
@@ -283,7 +300,7 @@ export async function editarLancamento(formData: FormData) {
   if (!atual || atual.status === "pago" || atual.status === "cancelado") return;
 
   const descricao = String(formData.get("descricao") ?? "").trim();
-  const valor = Number(formData.get("valor") ?? 0);
+  const valor = moedaParaNumero(formData.get("valor"));
   const vencimento = String(formData.get("vencimento") ?? "").trim();
   if (!descricao || !valor || !vencimento) return;
 

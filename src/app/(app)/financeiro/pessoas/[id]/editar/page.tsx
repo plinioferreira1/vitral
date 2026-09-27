@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Save, UserRound, FileText } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
+import { CampoMascarado } from "@/components/financeiro/campo-mascarado";
 import { editarPessoaFinanceiro } from "../../actions";
 
 const campoClasse =
@@ -92,7 +93,7 @@ export default async function EditarPessoaFinanceiroPage({
             </label>
             <label className="space-y-1.5 text-sm font-medium text-ink">
               CPF/CNPJ
-              <input name="cpf_cnpj" defaultValue={pessoa.cpf_cnpj ?? ""} className={campoClasse} />
+              <CampoMascarado name="cpf_cnpj" mask="cpf_cnpj" defaultValue={pessoa.cpf_cnpj ?? ""} className={campoClasse} />
             </label>
           </div>
 
@@ -119,7 +120,7 @@ export default async function EditarPessoaFinanceiroPage({
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="space-y-1.5 text-sm font-medium text-ink">
               Telefone
-              <input name="telefone" defaultValue={pessoa.telefone ?? ""} className={campoClasse} />
+              <CampoMascarado name="telefone" mask="telefone" defaultValue={pessoa.telefone ?? ""} className={campoClasse} />
             </label>
             <label className="space-y-1.5 text-sm font-medium text-ink">
               E-mail
