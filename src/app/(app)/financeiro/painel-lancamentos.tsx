@@ -17,7 +17,6 @@ import {
   Pencil,
   Ban,
   Tag,
-  MoreHorizontal,
   SlidersHorizontal,
   Plus,
   Copy,
@@ -535,7 +534,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                     </Link>
                   </th>
                   <th className="hidden min-w-[170px] px-4 py-2.5 font-medium xl:table-cell">Conta</th>
-                  <th className="w-24 px-2 py-2.5 font-medium text-right">Ações</th>
+                  <th className="min-w-[260px] px-4 py-2.5 font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -574,15 +573,11 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                       </td>
                       <td className="hidden max-w-[220px] break-words px-4 py-2.5 text-ink-muted xl:table-cell" title={conta?.nome ?? ""}>{conta?.nome ?? "—"}</td>
                       <td className="px-4 py-2.5">
-                        <details className="relative">
-                          <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink hover:bg-background" aria-label={`Ações para ${l.descricao}`}>
-                            <MoreHorizontal size={16} /> Ações
-                          </summary>
-                          <div className="absolute right-0 z-30 mt-1 w-72 max-w-[calc(100vw-2rem)] space-y-2 rounded-xl border border-border bg-surface p-3 shadow-lg">
+                        <div className="flex flex-wrap justify-end gap-2">
                           {tipo === "receita" && !l.categoria_id && (l.status === "pago" || l.status === "pago_parcial") && (
-                            <details className="relative">
+                            <details className="w-full">
                               <summary
-                                className="flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1.5 text-xs text-amber-600 hover:bg-background"
+                                className="ml-auto flex w-fit cursor-pointer list-none items-center gap-2 rounded-md border border-amber-200 px-2 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50"
                                 aria-label="Categorizar agora"
                                 title="Categorizar agora"
                               >
@@ -590,7 +585,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                               </summary>
                               <form
                                 action={categorizarLancamento}
-                                className="mt-2 w-full space-y-2 rounded-md border border-border bg-background p-3"
+                                className="mt-2 w-full space-y-2 rounded-md border border-border bg-background p-3 text-left"
                               >
                                 <input type="hidden" name="id" value={l.id} />
                                 <p className="text-xs font-medium text-ink">Categorizar agora</p>
@@ -633,14 +628,14 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                           {editavel && (
                             <Link
                               href={`/financeiro/lancamentos/${l.id}/editar`}
-                              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-ink-muted hover:bg-background hover:text-brand"
+                              className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink-muted hover:bg-background hover:text-brand"
                             >
                               <Pencil size={15} strokeWidth={2} /> Editar
                             </Link>
                           )}
                           <Link
                             href={`/financeiro/lancamentos/novo?tipo=${tipo}&clonar=${l.id}`}
-                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-ink-muted hover:bg-background hover:text-brand"
+                            className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink-muted hover:bg-background hover:text-brand"
                           >
                             <Copy size={15} strokeWidth={2} /> Clonar {tipo === "receita" ? "receita" : "despesa"}
                           </Link>
@@ -648,7 +643,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                             <>
                               <Link
                                 href={`/financeiro/lancamentos/${l.id}/baixar`}
-                                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-emerald-700 hover:bg-emerald-50"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 px-2 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50"
                               >
                                 <CheckCircle2 size={15} strokeWidth={2} /> {tipo === "receita" ? "Receber" : "Pagar"}
                               </Link>
@@ -656,7 +651,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                                 <input type="hidden" name="id" value={l.id} />
                                 <button
                                   type="submit"
-                                  className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-ink-muted hover:bg-background hover:text-rose-600"
+                                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink-muted hover:bg-background hover:text-rose-600"
                                   aria-label="Cancelar"
                                   title="Cancelar"
                                 >
@@ -670,7 +665,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                               <input type="hidden" name="id" value={l.id} />
                               <button
                                 type="submit"
-                                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-brand hover:bg-background"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-brand hover:bg-background"
                                 aria-label="Reativar"
                                 title="Reativar"
                               >
@@ -678,8 +673,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                               </button>
                             </form>
                           )}
-                          </div>
-                        </details>
+                        </div>
                       </td>
                     </tr>
                   );
