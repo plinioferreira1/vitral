@@ -54,21 +54,44 @@ export default async function LocacaoPage({
   const proximoMes = format(addMonths(mesReferencia, 1), "yyyy-MM");
   const mesLabel = format(mesReferencia, "MMMM yyyy", { locale: ptBR });
 
-  const { data: contratos } = await supabase
-    .from("contratos_locacao")
-    .select(
-      `id, numero, ativo, criado_em,
-       imoveis ( endereco ),
-       locador:clientes!contratos_locacao_locador_id_fkey ( nome ),
-       locatario:clientes!contratos_locacao_locatario_id_fkey ( nome )`
-    )
-    .order("criado_em", { ascending: false });
-
-  const { data: contasPendentesRaw } = await supabase
-    .from("contas_locacao")
-    .select("id, tipo, status, competencia, contrato_id, vencimento")
-    .eq("status", "pendente")
-    .order("vencimento", { ascending: true, nullsFirst: true });
+  // As 5 consultas da tela são independentes — carregam em paralelo.
+  const [
+    { data: contratos },
+    { data: contasPendentesRaw },
+    { data: contasPagasNoMesRaw },
+    { data: tarefas },
+    { data: tarefasStatus },
+  ] = await Promise.all([
+    supabase
+      .from("contratos_locacao")
+      .select(
+        `id, numero, ativo, criado_em,
+         imoveis ( endereco ),
+         locador:clientes!contratos_locacao_locador_id_fkey ( nome ),
+         locatario:clientes!contratos_locacao_locatario_id_fkey ( nome )`
+      )
+      .order("criado_em", { ascending: false }),
+    supabase
+      .from("contas_locacao")
+      .select("id, tipo, status, competencia, contrato_id, vencimento")
+      .eq("status", "pendente")
+      .order("vencimento", { ascending: true, nullsFirst: true }),
+    supabase
+      .from("contas_locacao")
+      .select("id, tipo, status, competencia, contrato_id, vencimento")
+      .eq("status", "pago")
+      .gte("competencia", inicioMes)
+      .lt("competencia", fimMes)
+      .order("competencia", { ascending: false }),
+    supabase
+      .from("tarefas_mensais")
+      .select("id, nome, regra, ordem, periodicidade")
+      .order("ordem", { ascending: true }),
+    supabase
+      .from("tarefas_mensais_status")
+      .select("id, tarefa_id, competencia, concluida")
+      .in("competencia", [competenciaAtual, competenciaSemanaAtual]),
+  ]);
 
   type ContaLinha = {
     id: string;
@@ -79,14 +102,6 @@ export default async function LocacaoPage({
     vencimento: string | null;
   };
   const contasPendentes = (contasPendentesRaw ?? []) as ContaLinha[];
-
-  const { data: contasPagasNoMesRaw } = await supabase
-    .from("contas_locacao")
-    .select("id, tipo, status, competencia, contrato_id, vencimento")
-    .eq("status", "pago")
-    .gte("competencia", inicioMes)
-    .lt("competencia", fimMes)
-    .order("competencia", { ascending: false });
   const contasPagasNoMes = (contasPagasNoMesRaw ?? []) as ContaLinha[];
 
   const pendentesNoMes = contasPendentes.filter(
@@ -97,16 +112,6 @@ export default async function LocacaoPage({
       calcularUrgencia({ status: "pendente", data_prevista: c.vencimento ?? c.competencia }).urgencia ===
       "atrasada"
   );
-
-  const { data: tarefas } = await supabase
-    .from("tarefas_mensais")
-    .select("id, nome, regra, ordem, periodicidade")
-    .order("ordem", { ascending: true });
-
-  const { data: tarefasStatus } = await supabase
-    .from("tarefas_mensais_status")
-    .select("id, tarefa_id, competencia, concluida")
-    .in("competencia", [competenciaAtual, competenciaSemanaAtual]);
 
   type ContratoRow = {
     id: string;

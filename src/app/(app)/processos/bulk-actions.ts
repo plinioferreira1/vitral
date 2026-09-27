@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -22,45 +24,44 @@ export async function moverProcessoParaEtapa(processoId: string, etapaNomeAlvo: 
   } = await supabase.auth.getUser();
   if (!user) return;
 
-  const { data: processo } = await supabase
-    .from("processos")
-    .select("status")
-    .eq("id", processoId)
-    .single();
-  if (!processo) return;
-
-  const { data: todasEtapas } = await supabase
-    .from("etapas")
-    .select("id, nome, status, ordem, data_realizada, especial")
-    .eq("processo_id", processoId)
-    .order("ordem", { ascending: true });
-  if (!todasEtapas) return;
+  const [{ data: processo }, { data: todasEtapas }] = await Promise.all([
+    supabase.from("processos").select("status").eq("id", processoId).single(),
+    supabase
+      .from("etapas")
+      .select("id, nome, status, ordem, data_realizada, especial")
+      .eq("processo_id", processoId)
+      .order("ordem", { ascending: true }),
+  ]);
+  if (!processo || !todasEtapas) return;
 
   const sequenciais = todasEtapas.filter((e) => !e.especial);
   const ordemAlvo = etapaNomeAlvo
     ? (sequenciais.find((e) => e.nome === etapaNomeAlvo)?.ordem ?? null)
     : null;
 
-  for (const etapa of sequenciais) {
+  // Calcula o novo status de cada etapa e grava todas as mudanças em
+  // paralelo (antes era uma gravação de cada vez, arrastando o kanban).
+  const novoStatusPorId = new Map<string, string>();
+  const atualizacoes = sequenciais.flatMap((etapa) => {
     const deveConcluir = ordemAlvo === null || etapa.ordem < ordemAlvo;
     const novoStatus = deveConcluir ? "concluida" : "pendente";
-    if (etapa.status === novoStatus) continue;
+    novoStatusPorId.set(etapa.id, novoStatus);
+    if (etapa.status === novoStatus) return [];
+    return [
+      supabase
+        .from("etapas")
+        .update({
+          status: novoStatus,
+          data_realizada: novoStatus === "concluida" ? (etapa.data_realizada ?? hojeISO()) : null,
+        })
+        .eq("id", etapa.id),
+    ];
+  });
+  await Promise.all(atualizacoes);
 
-    await supabase
-      .from("etapas")
-      .update({
-        status: novoStatus,
-        data_realizada: novoStatus === "concluida" ? (etapa.data_realizada ?? hojeISO()) : null,
-      })
-      .eq("id", etapa.id);
-  }
-
-  const { data: etapasAtualizadas } = await supabase
-    .from("etapas")
-    .select("status")
-    .eq("processo_id", processoId);
-  const todasConcluidas =
-    (etapasAtualizadas?.length ?? 0) > 0 && etapasAtualizadas!.every((e) => e.status === "concluida");
+  // Status final já é conhecido aqui — não precisa reler do banco.
+  const statusFinais = todasEtapas.map((e) => novoStatusPorId.get(e.id) ?? e.status);
+  const todasConcluidas = statusFinais.length > 0 && statusFinais.every((st) => st === "concluida");
 
   if (todasConcluidas && processo.status !== "concluido") {
     await supabase.from("processos").update({ status: "concluido" }).eq("id", processoId);
@@ -68,8 +69,8 @@ export async function moverProcessoParaEtapa(processoId: string, etapaNomeAlvo: 
     await supabase.from("processos").update({ status: "ativo" }).eq("id", processoId);
   }
 
-  await reconciliarAgendaProcesso(supabase, processoId);
-  await reconciliarAlertaContratoFinal(supabase, processoId);
+  after(() => reconciliarAgendaProcesso(supabase, processoId));
+  after(() => reconciliarAlertaContratoFinal(supabase, processoId));
 
   revalidatePath("/vendas");
   revalidatePath("/financiamentos");

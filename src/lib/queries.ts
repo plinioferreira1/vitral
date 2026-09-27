@@ -71,16 +71,41 @@ export interface EventoCalendario {
 export async function getEventosCalendario(): Promise<EventoCalendario[]> {
   const supabase = await createClient();
 
-  const { data: etapasRaw } = await supabase
-    .from("etapas")
-    .select(
-      `id, nome, data_prevista, status, responsavel_id,
-       usuarios ( nome ),
-       processos!inner ( id, categoria, status, imoveis ( endereco ) )`
-    )
-    .neq("processos.status", "cancelado")
-    .neq("processos.status", "arquivado")
-    .not("data_prevista", "is", null);
+  // As 5 consultas são independentes — rodam em paralelo (antes eram 5
+  // idas e voltas ao banco em fila).
+  const [
+    { data: etapasRaw },
+    { data: contasRaw },
+    { data: tarefasRaw },
+    { data: statusRaw },
+    { data: prazosRaw },
+  ] = await Promise.all([
+    supabase
+      .from("etapas")
+      .select(
+        `id, nome, data_prevista, status, responsavel_id,
+         usuarios ( nome ),
+         processos!inner ( id, categoria, status, imoveis ( endereco ) )`
+      )
+      .neq("processos.status", "cancelado")
+      .neq("processos.status", "arquivado")
+      .not("data_prevista", "is", null),
+    supabase
+      .from("contas_locacao")
+      .select(
+        `id, tipo, status, competencia, vencimento, contrato_id,
+         contratos_locacao ( id, imoveis ( endereco ) )`
+      )
+      .neq("status", "nao_aplicavel"),
+    supabase.from("tarefas_mensais").select("id, nome, periodicidade, tipo_regra, dia_fixo"),
+    supabase.from("tarefas_mensais_status").select("tarefa_id, competencia, concluida"),
+    supabase
+      .from("processos")
+      .select("id, categoria, data_final_contrato, imoveis ( endereco )")
+      .in("categoria", ["venda", "financiamento"])
+      .not("status", "in", "(concluido,cancelado)")
+      .not("data_final_contrato", "is", null),
+  ]);
 
   type EtapaRow = {
     id: string;
@@ -116,14 +141,6 @@ export async function getEventosCalendario(): Promise<EventoCalendario[]> {
     };
   });
 
-  const { data: contasRaw } = await supabase
-    .from("contas_locacao")
-    .select(
-      `id, tipo, status, competencia, vencimento, contrato_id,
-       contratos_locacao ( id, imoveis ( endereco ) )`
-    )
-    .neq("status", "nao_aplicavel");
-
   type ContaRow = {
     id: string;
     tipo: TipoContaLocacao;
@@ -153,14 +170,6 @@ export async function getEventosCalendario(): Promise<EventoCalendario[]> {
       concluida: c.status === "pago",
     };
   });
-
-  const { data: tarefasRaw } = await supabase
-    .from("tarefas_mensais")
-    .select("id, nome, periodicidade, tipo_regra, dia_fixo");
-
-  const { data: statusRaw } = await supabase
-    .from("tarefas_mensais_status")
-    .select("tarefa_id, competencia, concluida");
 
   const statusPorChave = new Map(
     (statusRaw ?? []).map((s) => [`${s.tarefa_id}-${s.competencia}`, s.concluida])
@@ -197,13 +206,6 @@ export async function getEventosCalendario(): Promise<EventoCalendario[]> {
   // (Vendas/Financiamentos) — um evento por dia, começando 20 dias
   // antes do vencimento, pra aparecer no calendário como um aviso
   // que vai ficando mais urgente a cada dia que passa.
-  const { data: prazosRaw } = await supabase
-    .from("processos")
-    .select("id, categoria, data_final_contrato, imoveis ( endereco )")
-    .in("categoria", ["venda", "financiamento"])
-    .not("status", "in", "(concluido,cancelado)")
-    .not("data_final_contrato", "is", null);
-
   type PrazoRow = {
     id: string;
     categoria: CategoriaProcesso;

@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -189,7 +191,7 @@ export async function criarProcesso(formData: FormData) {
     detalhe: { modelo: modeloProcesso?.nome },
   });
 
-  await reconciliarAgendaProcesso(supabase, processo.id);
+  after(() => reconciliarAgendaProcesso(supabase, processo.id));
 
   redirect(`/processos/${processo.id}`);
 }

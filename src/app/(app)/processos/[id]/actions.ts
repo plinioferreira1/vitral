@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+
 import { createClient } from "@/lib/supabase/server";
 import { recalcularDataDependente } from "@/lib/motor-processos";
 import { revalidatePath } from "next/cache";
@@ -66,54 +68,59 @@ export async function concluirEtapa(formData: FormData) {
   const dataRealizada =
     String(formData.get("data_realizada") ?? "") || hojeISO();
 
-  const { data: etapa } = await supabase
-    .from("etapas")
-    .select("id, nome")
-    .eq("id", etapaId)
-    .single();
-
-  await supabase
-    .from("etapas")
-    .update({ status: "concluida", data_realizada: dataRealizada })
-    .eq("id", etapaId);
-
-  await supabase.from("historico").insert({
-    processo_id: processoId,
-    etapa_id: etapaId,
-    usuario_id: user.id,
-    acao: "concluiu a etapa",
-    detalhe: { etapa: etapa?.nome, data_realizada: dataRealizada },
-  });
+  // 1ª rodada (em paralelo): nome da etapa, conclusão dela, etapas que
+  // dependem desta e status atual do processo.
+  const [{ data: etapa }, , { data: dependentes }, { data: processoAtual }] = await Promise.all([
+    supabase.from("etapas").select("id, nome").eq("id", etapaId).single(),
+    supabase
+      .from("etapas")
+      .update({ status: "concluida", data_realizada: dataRealizada })
+      .eq("id", etapaId),
+    supabase
+      .from("etapas")
+      .select("id, modelo_etapa_id")
+      .eq("etapa_dependencia_id", etapaId)
+      .eq("status", "pendente"),
+    supabase.from("processos").select("status").eq("id", processoId).single(),
+  ]);
 
   // Recalcula em cascata as etapas que dependem desta, usando a regra
   // do modelo de origem (dias_offset a partir da data_realizada real,
   // não da prevista) — é o que evita "esconder" atraso propagado.
-  const { data: dependentes } = await supabase
-    .from("etapas")
-    .select("id, modelo_etapa_id")
-    .eq("etapa_dependencia_id", etapaId)
-    .eq("status", "pendente");
+  const deps = (dependentes ?? []).filter((d) => d.modelo_etapa_id);
+  const modeloIds = [...new Set(deps.map((d) => d.modelo_etapa_id as string))];
+  const verificarConclusao = !!processoAtual && processoAtual.status !== "concluido";
 
-  if (dependentes && dependentes.length > 0) {
-    for (const dep of dependentes) {
-      if (!dep.modelo_etapa_id) continue;
-      const { data: modeloEtapa } = await supabase
-        .from("modelos_etapa")
-        .select("dias_offset, tipo_regra_data")
-        .eq("id", dep.modelo_etapa_id)
-        .single();
+  // 2ª rodada (em paralelo): histórico, regras dos modelos (numa única
+  // consulta, não uma por etapa) e o status de todas as etapas.
+  const [, { data: modelos }, { data: todasEtapas }] = await Promise.all([
+    supabase.from("historico").insert({
+      processo_id: processoId,
+      etapa_id: etapaId,
+      usuario_id: user.id,
+      acao: "concluiu a etapa",
+      detalhe: { etapa: etapa?.nome, data_realizada: dataRealizada },
+    }),
+    modeloIds.length > 0
+      ? supabase.from("modelos_etapa").select("id, dias_offset, tipo_regra_data").in("id", modeloIds)
+      : Promise.resolve({ data: [] as { id: string; dias_offset: number; tipo_regra_data: string }[] }),
+    verificarConclusao
+      ? supabase.from("etapas").select("status").eq("processo_id", processoId)
+      : Promise.resolve({ data: null as { status: string }[] | null }),
+  ]);
 
-      if (modeloEtapa?.tipo_regra_data === "relativa_etapa_anterior") {
-        const novaData = recalcularDataDependente(
-          parseISO(dataRealizada),
-          modeloEtapa.dias_offset
-        );
-        await supabase.from("etapas").update({ data_prevista: novaData }).eq("id", dep.id);
-      }
-    }
-  }
+  const modeloPorId = new Map((modelos ?? []).map((m) => [m.id, m]));
+  await Promise.all(
+    deps.map((dep) => {
+      const modeloEtapa = modeloPorId.get(dep.modelo_etapa_id as string);
+      if (modeloEtapa?.tipo_regra_data !== "relativa_etapa_anterior") return null;
+      const novaData = recalcularDataDependente(parseISO(dataRealizada), modeloEtapa.dias_offset);
+      return supabase.from("etapas").update({ data_prevista: novaData }).eq("id", dep.id);
+    })
+  );
 
-  await reconciliarAgendaProcesso(supabase, processoId);
+  // Sincroniza o Google Agenda depois de responder — a tela não espera.
+  after(() => reconciliarAgendaProcesso(supabase, processoId));
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/");
@@ -123,24 +130,13 @@ export async function concluirEtapa(formData: FormData) {
   // sequenciais e especiais — uma especial ativa e pendente, tipo
   // "Em Processo Judicial", bloqueia a conclusão), o processo passa
   // pra "concluído" sozinho.
-  const { data: processoAtual } = await supabase
-    .from("processos")
-    .select("status")
-    .eq("id", processoId)
-    .single();
-
-  if (processoAtual && processoAtual.status !== "concluido") {
-    const { data: todasEtapas } = await supabase
-      .from("etapas")
-      .select("status")
-      .eq("processo_id", processoId);
-
+  if (verificarConclusao) {
     const todasConcluidas =
       (todasEtapas?.length ?? 0) > 0 && todasEtapas!.every((e) => e.status === "concluida");
 
     if (todasConcluidas) {
       await supabase.from("processos").update({ status: "concluido" }).eq("id", processoId);
-      await reconciliarAlertaContratoFinal(supabase, processoId);
+      after(() => reconciliarAlertaContratoFinal(supabase, processoId));
       revalidatePath(`/processos/${processoId}`);
       revalidatePath("/vendas");
       revalidatePath("/financiamentos");
@@ -168,12 +164,12 @@ export async function reabrirEtapa(formData: FormData) {
 
   if (processoAtual?.status === "concluido") {
     await supabase.from("processos").update({ status: "ativo" }).eq("id", processoId);
-    await reconciliarAlertaContratoFinal(supabase, processoId);
+    after(() => reconciliarAlertaContratoFinal(supabase, processoId));
     revalidatePath("/vendas");
       revalidatePath("/financiamentos");
   }
 
-  await reconciliarAgendaProcesso(supabase, processoId);
+  after(() => reconciliarAgendaProcesso(supabase, processoId));
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/");
@@ -194,7 +190,7 @@ export async function salvarDatasContrato(formData: FormData) {
     })
     .eq("id", processoId);
 
-  await reconciliarAlertaContratoFinal(supabase, processoId);
+  after(() => reconciliarAlertaContratoFinal(supabase, processoId));
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/vendas");
@@ -209,7 +205,7 @@ export async function alterarDataPrevista(formData: FormData) {
 
   await supabase.from("etapas").update({ data_prevista: novaData || null }).eq("id", etapaId);
 
-  await reconciliarAgendaProcesso(supabase, processoId);
+  after(() => reconciliarAgendaProcesso(supabase, processoId));
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/");
@@ -338,8 +334,8 @@ export async function salvarDadosProcesso(formData: FormData) {
 
   await supabase.from("processos").update(dadosProcesso).eq("id", processoId);
 
-  await reconciliarAgendaProcesso(supabase, processoId);
-  await reconciliarAlertaContratoFinal(supabase, processoId);
+  after(() => reconciliarAgendaProcesso(supabase, processoId));
+  after(() => reconciliarAlertaContratoFinal(supabase, processoId));
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/vendas");
@@ -396,7 +392,7 @@ export async function alternarEtapaPadrao(formData: FormData) {
     });
   }
 
-  await reconciliarAgendaProcesso(supabase, processoId);
+  after(() => reconciliarAgendaProcesso(supabase, processoId));
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/");

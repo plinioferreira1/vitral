@@ -157,26 +157,30 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const inicioMesAnterior = `${anoAnterior}-${String(mesAnterior).padStart(2, "0")}-01`;
   const fimMesAnterior = new Date(anoAnterior, mesAnterior, 0).toISOString().slice(0, 10);
 
-  const [{ data: pessoas }, { data: categorias }, { data: centros }, { data: unidades }, { data: contas }] =
-    await Promise.all([
-      supabase.from("financeiro_pessoas").select("id, nome").order("nome"),
-      supabase.from("financeiro_categorias").select("id, nome").eq("tipo", tipo).order("nome"),
-      supabase.from("financeiro_centros_custo").select("id, nome").order("nome"),
-      supabase.from("financeiro_unidades").select("id, nome").order("nome"),
-      supabase.from("financeiro_contas_bancarias").select("id, nome").eq("ativa", true).order("nome"),
-    ]);
-
-  const { data: lancamentosTodos } = await supabase
-    .from("financeiro_lancamentos")
-    .select(
-      "id, descricao, valor, vencimento, competencia, status, recorrencia_id, pessoa_id, categoria_id, centro_custo_id, unidade_id, conta_bancaria_id, forma_pagamento, numero_documento, observacoes, financeiro_pessoas ( nome ), financeiro_categorias ( nome ), financeiro_unidades ( nome ), financeiro_contas_bancarias ( nome )"
-    )
-    .eq("tipo", tipo)
-    .order("vencimento");
-
-  const { data: baixasRaw } = await supabase
-    .from("financeiro_baixas")
-    .select("lancamento_id, valor, data");
+  // Todas as consultas desta tela são independentes — uma única rodada.
+  const [
+    { data: pessoas },
+    { data: categorias },
+    { data: centros },
+    { data: unidades },
+    { data: contas },
+    { data: lancamentosTodos },
+    { data: baixasRaw },
+  ] = await Promise.all([
+    supabase.from("financeiro_pessoas").select("id, nome").order("nome"),
+    supabase.from("financeiro_categorias").select("id, nome").eq("tipo", tipo).order("nome"),
+    supabase.from("financeiro_centros_custo").select("id, nome").order("nome"),
+    supabase.from("financeiro_unidades").select("id, nome").order("nome"),
+    supabase.from("financeiro_contas_bancarias").select("id, nome").eq("ativa", true).order("nome"),
+    supabase
+      .from("financeiro_lancamentos")
+      .select(
+        "id, descricao, valor, vencimento, competencia, status, recorrencia_id, pessoa_id, categoria_id, centro_custo_id, unidade_id, conta_bancaria_id, forma_pagamento, numero_documento, observacoes, financeiro_pessoas ( nome ), financeiro_categorias ( nome ), financeiro_unidades ( nome ), financeiro_contas_bancarias ( nome )"
+      )
+      .eq("tipo", tipo)
+      .order("vencimento"),
+    supabase.from("financeiro_baixas").select("lancamento_id, valor, data"),
+  ]);
   const baixadoPorLancamento = new Map<string, number>();
   (baixasRaw ?? []).forEach((b) => {
     baixadoPorLancamento.set(b.lancamento_id, (baixadoPorLancamento.get(b.lancamento_id) ?? 0) + Number(b.valor));

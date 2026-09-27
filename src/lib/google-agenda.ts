@@ -84,6 +84,7 @@ export async function diagnosticarCredenciaisGoogle(): Promise<{
         grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
         assertion: jwt,
       }),
+      signal: AbortSignal.timeout(TIMEOUT_GOOGLE_MS),
     });
 
     if (!resposta.ok) {
@@ -110,8 +111,38 @@ export async function diagnosticarCredenciaisGoogle(): Promise<{
 }
 
 let tokenCache: { token: string; expiraEm: number } | null = null;
+let tokenEmAndamento: Promise<string | null> | null = null;
 
-async function obterAccessToken(): Promise<string | null> {
+// Tempo máximo de espera por qualquer chamada ao Google — sem isso, uma
+// resposta lenta do Google deixava a ação (e a tela) travada.
+const TIMEOUT_GOOGLE_MS = 10_000;
+// Quantas chamadas ao Google Agenda disparar ao mesmo tempo.
+const LOTE_GOOGLE = 5;
+
+/** Executa `fn` para cada item, com no máximo `tamanho` em paralelo. */
+async function emLotes<T>(itens: T[], tamanho: number, fn: (item: T) => Promise<void>): Promise<void> {
+  for (let i = 0; i < itens.length; i += tamanho) {
+    await Promise.all(itens.slice(i, i + tamanho).map(fn));
+  }
+}
+
+// Chamadas paralelas compartilham a mesma busca de token em andamento.
+function obterAccessToken(): Promise<string | null> {
+  if (tokenCache && tokenCache.expiraEm > Date.now() + 30_000) return Promise.resolve(tokenCache.token);
+  if (!tokenEmAndamento) {
+    tokenEmAndamento = buscarAccessToken()
+      .catch((erro) => {
+        console.error("google-agenda: falha ao obter access token", erro);
+        return null;
+      })
+      .finally(() => {
+        tokenEmAndamento = null;
+      });
+  }
+  return tokenEmAndamento;
+}
+
+async function buscarAccessToken(): Promise<string | null> {
   const email = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL?.trim();
   const chavePrivada = process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY?.replace(/\\n/g, "\n").trim();
   if (!email || !chavePrivada) return null;
@@ -143,6 +174,7 @@ async function obterAccessToken(): Promise<string | null> {
       grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
       assertion: jwt,
     }),
+    signal: AbortSignal.timeout(TIMEOUT_GOOGLE_MS),
   });
 
   if (!resposta.ok) {
@@ -165,14 +197,21 @@ async function chamarGoogleCalendar(
   if (!token) return { ok: false };
 
   const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(agendaId)}/events${caminho}`;
-  const resposta = await fetch(url, {
-    method: metodo,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: corpo ? JSON.stringify(corpo) : undefined,
-  });
+  let resposta: Response;
+  try {
+    resposta = await fetch(url, {
+      method: metodo,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: corpo ? JSON.stringify(corpo) : undefined,
+      signal: AbortSignal.timeout(TIMEOUT_GOOGLE_MS),
+    });
+  } catch (erro) {
+    console.error(`google-agenda: sem resposta em ${metodo} ${caminho}`, erro);
+    return { ok: false };
+  }
 
   // 410 (Gone) e 404 na exclusão significam que o evento já não
   // existe no Google — trata como sucesso (é o estado que queremos).
@@ -239,7 +278,7 @@ export async function reconciliarAgendaProcesso(
     const processoAtivo = processo.status !== "cancelado" && processo.status !== "arquivado";
     const identificador = processo.imoveis?.endereco ?? processo.numero_processo;
 
-    for (const etapa of etapas) {
+    await emLotes(etapas, LOTE_GOOGLE, async (etapa) => {
       const devesTerEvento =
         processoAtivo &&
         !!etapa.data_prevista &&
@@ -251,7 +290,7 @@ export async function reconciliarAgendaProcesso(
           await chamarGoogleCalendar("DELETE", agendaId, `/${etapa.google_event_id}`);
           await supabase.from("etapas").update({ google_event_id: null }).eq("id", etapa.id);
         }
-        continue;
+        return;
       }
 
       const corpoEvento = {
@@ -282,7 +321,7 @@ export async function reconciliarAgendaProcesso(
           await supabase.from("etapas").update({ google_event_id: criado.id }).eq("id", etapa.id);
         }
       }
-    }
+    });
   } catch (erro) {
     console.error("google-agenda: falha ao reconciliar processo", processoId, erro);
   }
@@ -310,11 +349,11 @@ export async function removerEventosDeEtapas(
       processos: { categoria: CategoriaProcesso } | null;
     }[];
 
-    for (const etapa of etapas) {
+    await emLotes(etapas, LOTE_GOOGLE, async (etapa) => {
       const agendaId = etapa.processos ? CALENDAR_IDS[etapa.processos.categoria] : undefined;
-      if (!agendaId) continue;
+      if (!agendaId) return;
       await chamarGoogleCalendar("DELETE", agendaId, `/${etapa.google_event_id}`);
-    }
+    });
   } catch (erro) {
     console.error("google-agenda: falha ao remover eventos de etapas apagadas", erro);
   }
@@ -401,20 +440,19 @@ export async function reconciliarAlertaContratoFinal(
 
     // Apaga do Google os dias que não fazem mais parte da janela
     // (prazo mudou, processo foi concluído/cancelado, etc.).
-    const restantes: AlertaContratoEvento[] = [];
-    for (const existente of existentes) {
-      if (!alvoSet.has(existente.data)) {
+    const restantes: AlertaContratoEvento[] = existentes.filter((e) => alvoSet.has(e.data));
+    await emLotes(
+      existentes.filter((e) => !alvoSet.has(e.data)),
+      LOTE_GOOGLE,
+      async (existente) => {
         await chamarGoogleCalendar("DELETE", agendaId, `/${existente.event_id}`);
-      } else {
-        restantes.push(existente);
       }
-    }
+    );
 
     // Cria os dias que estão faltando.
     const identificador = processo.imoveis?.endereco ?? processo.numero_processo;
     const jaTem = new Set(restantes.map((e) => e.data));
-    for (const data of datasAlvo) {
-      if (jaTem.has(data)) continue;
+    await emLotes(datasAlvo.filter((d) => !jaTem.has(d)), LOTE_GOOGLE, async (data) => {
 
       const dias = diferencaEmDias(processo.data_final_contrato!, data);
       const titulo =
@@ -430,7 +468,8 @@ export async function reconciliarAlertaContratoFinal(
         colorId: "11", // vermelho (Tomato)
       });
       if (criado.ok && criado.id) restantes.push({ data, event_id: criado.id });
-    }
+    });
+    restantes.sort((a, b) => a.data.localeCompare(b.data));
 
     await supabase.from("processos").update({ google_alerta_contrato: restantes }).eq("id", processoId);
   } catch (erro) {
@@ -459,13 +498,14 @@ export async function removerAlertasContratoDeProcessos(
       google_alerta_contrato: AlertaContratoEvento[] | null;
     }[];
 
-    for (const processo of processos) {
+    const exclusoes = processos.flatMap((processo) => {
       const agendaId = CALENDAR_IDS[processo.categoria];
-      if (!agendaId) continue;
-      for (const evento of processo.google_alerta_contrato ?? []) {
-        await chamarGoogleCalendar("DELETE", agendaId, `/${evento.event_id}`);
-      }
-    }
+      if (!agendaId) return [];
+      return (processo.google_alerta_contrato ?? []).map((evento) => ({ agendaId, eventId: evento.event_id }));
+    });
+    await emLotes(exclusoes, LOTE_GOOGLE, async ({ agendaId, eventId }) => {
+      await chamarGoogleCalendar("DELETE", agendaId, `/${eventId}`);
+    });
   } catch (erro) {
     console.error("google-agenda: falha ao remover alertas de contrato de processos apagados", erro);
   }
