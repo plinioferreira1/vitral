@@ -1,10 +1,9 @@
 "use server";
 
-import { checar } from "@/lib/aviso";
-
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
-import { addWeeks, addMonths } from "date-fns";
+import { datasDaRecorrencia, mesesPorFrequencia } from "@/lib/recorrencia";
+import { avisar, checar } from "@/lib/aviso";
 import { valorDaLista } from "@/lib/validacao";
 import type { TablesInsert } from "@/lib/database.types";
 
@@ -20,58 +19,6 @@ async function contexto(supabase: Awaited<ReturnType<typeof createClient>>) {
   return { userId: user?.id ?? null, tenantId: usuario?.tenant_id ?? null };
 }
 
-function proximaData(data: Date, frequencia: string): Date {
-  switch (frequencia) {
-    case "semanal":
-      return addWeeks(data, 1);
-    case "trimestral":
-      return addMonths(data, 3);
-    case "semestral":
-      return addMonths(data, 6);
-    case "anual":
-      return addMonths(data, 12);
-    default:
-      return addMonths(data, 1);
-  }
-}
-
-/** Quantos meses uma frequência avança — null quando não é "por mês" (ex: semanal). */
-function mesesPorFrequencia(frequencia: string): number | null {
-  switch (frequencia) {
-    case "mensal":
-      return 1;
-    case "trimestral":
-      return 3;
-    case "semestral":
-      return 6;
-    case "anual":
-      return 12;
-    default:
-      return null;
-  }
-}
-
-/**
- * N-ésimo dia útil (seg a sex, sem considerar feriados) de um mês.
- * Se o mês não tiver dias úteis suficientes, cai no último dia útil dele.
- */
-function nEsimoDiaUtil(ano: number, mesIndex0: number, n: number): Date {
-  let contador = 0;
-  let ultimoUtil = new Date(ano, mesIndex0, 1);
-  const dia = new Date(ano, mesIndex0, 1);
-  while (dia.getMonth() === mesIndex0) {
-    const semana = dia.getDay();
-    if (semana !== 0 && semana !== 6) {
-      contador++;
-      ultimoUtil = new Date(dia);
-      if (contador === n) return new Date(dia);
-    }
-    dia.setDate(dia.getDate() + 1);
-  }
-  return ultimoUtil;
-}
-
-const MAX_OCORRENCIAS = 60;
 
 /**
  * Cria um lançamento avulso, ou — se "recorrente" vier marcado —
@@ -152,44 +99,25 @@ export async function criarLancamento(formData: FormData) {
       .select("id")
       .single();
 
-    if (error || !recorrencia) return;
-
-    const limiteData = dataFim ? new Date(`${dataFim}T00:00:00`) : null;
-    const ocorrencias: TablesInsert<"financeiro_lancamentos">[] = [];
-
-    if (usaDiaUtil && diaUtil && mesesStep) {
-      const base = new Date(`${dataInicio}T00:00:00`);
-      for (let i = 0; i < MAX_OCORRENCIAS; i++) {
-        if (numeroOcorrencias && i >= numeroOcorrencias) break;
-        const alvo = addMonths(base, i * mesesStep);
-        const vencimento = nEsimoDiaUtil(alvo.getFullYear(), alvo.getMonth(), diaUtil);
-        if (limiteData && vencimento > limiteData) break;
-
-        ocorrencias.push({
-          ...dadosComuns,
-          valor,
-          vencimento: vencimento.toISOString().slice(0, 10),
-          competencia: new Date(alvo.getFullYear(), alvo.getMonth(), 1).toISOString().slice(0, 10),
-          recorrencia_id: recorrencia.id,
-        });
-      }
-    } else {
-      let dataAtual = new Date(`${dataInicio}T00:00:00`);
-      for (let i = 0; i < MAX_OCORRENCIAS; i++) {
-        if (limiteData && dataAtual > limiteData) break;
-        if (numeroOcorrencias && i >= numeroOcorrencias) break;
-
-        ocorrencias.push({
-          ...dadosComuns,
-          valor,
-          vencimento: dataAtual.toISOString().slice(0, 10),
-          competencia: dataAtual.toISOString().slice(0, 10),
-          recorrencia_id: recorrencia.id,
-        });
-
-        dataAtual = proximaData(dataAtual, frequencia);
-      }
+    if (error || !recorrencia) {
+      await avisar("erro", "Não foi possível salvar a recorrência. Confira os dados e tente de novo.");
+      return;
     }
+
+    // Datas calculadas em src/lib/recorrencia.ts (testado automaticamente).
+    const ocorrencias: TablesInsert<"financeiro_lancamentos">[] = datasDaRecorrencia({
+      dataInicio,
+      frequencia,
+      dataFim,
+      numeroOcorrencias,
+      diaUtil: usaDiaUtil ? diaUtil : null,
+    }).map(({ vencimento, competencia }) => ({
+      ...dadosComuns,
+      valor,
+      vencimento,
+      competencia,
+      recorrencia_id: recorrencia.id,
+    }));
 
     if (ocorrencias.length > 0) {
       await checar(supabase.from("financeiro_lancamentos").insert(ocorrencias), "salvar");

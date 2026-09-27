@@ -1,0 +1,49 @@
+name: Verificação do código
+
+# Roda a cada envio e a cada pull request. Se algum passo falhar, o
+# GitHub marca o commit com um X vermelho — sinal para corrigir antes
+# que o problema chegue às pessoas que usam o Vitral.
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: verificacao-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Conferir tipos (TypeScript)
+        run: npm run typecheck
+
+      - name: Conferir padrões de código (lint)
+        run: npm run lint
+
+      - name: Testes automáticos
+        run: npm test
+
+      # O build não acessa o banco (as páginas são dinâmicas), mas o
+      # código exige que as variáveis existam — valores fictícios bastam.
+      - name: Compilar o site (build)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://exemplo.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: chave-ficticia-para-build
+          NEXT_TELEMETRY_DISABLED: "1"

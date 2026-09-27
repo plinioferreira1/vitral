@@ -7,23 +7,26 @@ import type { Aviso } from "@/lib/aviso";
 const COOKIE_AVISO = "vitral_aviso";
 
 // Notificação no canto da tela para o aviso deixado pela última ação.
-// Apaga o cookie assim que aparece (pra não repetir na próxima página).
+// Cada aviso novo tem um id diferente; usá-lo como `key` remonta a
+// notificação do zero (estado limpo), sem precisar de setState no efeito.
 export function AvisoTela({ aviso }: { aviso: Aviso | null }) {
-  const [visivel, setVisivel] = useState<Aviso | null>(aviso);
+  if (!aviso) return null;
+  return <Notificacao key={aviso.id} aviso={aviso} />;
+}
+
+function Notificacao({ aviso }: { aviso: Aviso }) {
+  const [visivel, setVisivel] = useState(true);
 
   useEffect(() => {
-    if (!aviso) return;
-    setVisivel(aviso);
+    // Apaga o cookie assim que aparece (pra não repetir na próxima página).
     document.cookie = `${COOKIE_AVISO}=; Max-Age=0; path=/`;
     // Erro fica mais tempo na tela que sucesso.
-    const t = setTimeout(() => setVisivel(null), aviso.tipo === "erro" ? 10_000 : 4_000);
+    const t = setTimeout(() => setVisivel(false), aviso.tipo === "erro" ? 10_000 : 4_000);
     return () => clearTimeout(t);
-    // O id muda a cada aviso novo — é o que dispara de novo.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [aviso?.id]);
+  }, [aviso.tipo]);
 
   if (!visivel) return null;
-  const erro = visivel.tipo === "erro";
+  const erro = aviso.tipo === "erro";
 
   return (
     <div
@@ -37,11 +40,11 @@ export function AvisoTela({ aviso }: { aviso: Aviso | null }) {
       ) : (
         <CheckCircle2 size={18} strokeWidth={2} className="mt-0.5 shrink-0" />
       )}
-      <p className="flex-1">{visivel.mensagem}</p>
+      <p className="flex-1">{aviso.mensagem}</p>
       <button
         type="button"
         aria-label="Fechar aviso"
-        onClick={() => setVisivel(null)}
+        onClick={() => setVisivel(false)}
         className="shrink-0 opacity-60 hover:opacity-100"
       >
         <X size={16} strokeWidth={2} />

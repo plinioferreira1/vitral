@@ -312,7 +312,9 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     ["direcao", f.direcao],
     ["por_pagina", f.por_pagina],
   ];
-  function CamposOcultos({ omitir = [] }: { omitir?: (keyof Filtros)[] }) {
+  // Função simples (não componente) — criar componente dentro da
+  // renderização recria o estado dele a cada render.
+  const camposOcultosSem = (omitir: (keyof Filtros)[] = []) => {
     return (
       <>
         {camposOcultos
@@ -413,7 +415,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           <BotaoEnviar className="sr-only">
             Buscar
           </BotaoEnviar>
-          <CamposOcultos omitir={["q"]} />
+          {camposOcultosSem(["q"])}
         </form>
         <details className="shrink-0">
           <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
@@ -1020,7 +1022,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                   </Link>
                 </div>
                 <form method="get" action={`${rota}#lista`} className="flex items-center gap-1.5">
-                  <CamposOcultos omitir={["por_pagina"]} />
+                  {camposOcultosSem(["por_pagina"])}
                   <SelectAutoSubmit
                     name="por_pagina"
                     defaultValue={String(porPagina)}

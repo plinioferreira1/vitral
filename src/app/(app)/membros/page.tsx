@@ -169,6 +169,8 @@ export default async function MembrosPage({
             Convites pendentes
           </p>
           {(convites ?? []).map((c) => {
+            // Server Component: renderiza uma vez por requisição, então ler o relógio aqui é seguro.
+            // eslint-disable-next-line react-hooks/purity
             const expirado = new Date(c.expira_em).getTime() < Date.now();
             return (
               <div

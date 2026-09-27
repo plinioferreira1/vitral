@@ -430,7 +430,7 @@ export async function reconciliarAlertaContratoFinal(
     const processoAtivo =
       processo.status !== "cancelado" && processo.status !== "arquivado" && processo.status !== "concluido";
 
-    let datasAlvo: string[] = [];
+    const datasAlvo: string[] = [];
     if (processoAtivo && processo.data_final_contrato) {
       for (let i = JANELA_DIAS_ALERTA_CONTRATO; i >= 0; i--) {
         datasAlvo.push(somarDias(processo.data_final_contrato, -i));
