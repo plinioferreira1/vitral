@@ -132,16 +132,26 @@ export default async function AppLayout({ children }: { children: React.ReactNod
               {
                 label: "Financeiro",
                 children: [
-                  { href: "/financeiro", label: "Painel" },
-                  { href: "/financeiro/contas-a-pagar", label: "A pagar" },
-                  { href: "/financeiro/contas-a-receber", label: "A receber" },
-                  { href: "/financeiro/contas-bancarias", label: "Bancos" },
-                  { href: "/financeiro/pessoas", label: "Pessoas" },
-                  { href: "/financeiro/categorias", label: "Categorias" },
+                  { href: "/financeiro", label: "Resumo" },
+                  {
+                    label: "Movimentações",
+                    children: [
+                      { href: "/financeiro/contas-a-pagar", label: "A Pagar" },
+                      { href: "/financeiro/contas-a-receber", label: "A Receber" },
+                      { href: "/financeiro/agenda", label: "Agenda" },
+                    ],
+                  },
+                  {
+                    label: "Cadastros",
+                    children: [
+                      { href: "/financeiro/contas-bancarias", label: "Bancos" },
+                      { href: "/financeiro/pessoas", label: "Contatos" },
+                      { href: "/financeiro/categorias", label: "Categorias" },
+                    ],
+                  },
                   { href: "/financeiro/relatorios", label: "Relatórios" },
-                  { href: "/financeiro/cartao-corporativo", label: "Cartão" },
-                  { href: "/financeiro/agenda", label: "Agenda" },
-                  { href: "/financeiro/configuracoes-email", label: "E-mail" },
+                  { href: "/financeiro/cartao-corporativo", label: "Cartões" },
+                  { href: "/financeiro/configuracoes-email", label: "E-mails" },
                 ],
               },
             ]
