@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { TrendingUp, TrendingDown, Landmark, Pencil } from "lucide-react";
 import { criarCategoria, editarCategoria, apagarCategoria, criarCentroCusto, apagarCentroCusto } from "./actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -103,9 +104,9 @@ export default async function FinanceiroCategoriasPage({
                       <span className="text-ink">{c.nome}</span>
                       <form action={apagarCentroCusto}>
                         <input type="hidden" name="id" value={c.id} />
-                        <button type="submit" className="text-xs text-ink-muted hover:text-rose-600">
+                        <BotaoEnviar className="text-xs text-ink-muted hover:text-rose-600">
                           apagar
-                        </button>
+                        </BotaoEnviar>
                       </form>
                     </li>
                   ))}
@@ -175,19 +176,18 @@ export default async function FinanceiroCategoriasPage({
                                     </option>
                                   ))}
                                 </select>
-                                <button
-                                  type="submit"
+                                <BotaoEnviar
                                   className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                                 >
                                   Salvar
-                                </button>
+                                </BotaoEnviar>
                               </form>
                             </details>
                             <form action={apagarCategoria}>
                               <input type="hidden" name="id" value={c.id} />
-                              <button type="submit" className="text-xs text-ink-muted hover:text-rose-600">
+                              <BotaoEnviar className="text-xs text-ink-muted hover:text-rose-600">
                                 apagar
-                              </button>
+                              </BotaoEnviar>
                             </form>
                           </div>
                         </td>
@@ -226,12 +226,11 @@ export default async function FinanceiroCategoriasPage({
             >
               <p className="text-sm font-semibold text-ink">Novo centro de resultado</p>
               <input name="nome" required placeholder="Ex: Comercial, Administrativo..." className={campoClasse} />
-              <button
-                type="submit"
+              <BotaoEnviar
                 className="w-full rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
               >
                 Salvar centro
-              </button>
+              </BotaoEnviar>
             </form>
           ) : (
             <form
@@ -261,12 +260,11 @@ export default async function FinanceiroCategoriasPage({
                   ))}
                 </select>
               </div>
-              <button
-                type="submit"
+              <BotaoEnviar
                 className="w-full rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
               >
                 Salvar categoria
-              </button>
+              </BotaoEnviar>
             </form>
           )}
 

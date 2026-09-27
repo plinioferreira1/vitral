@@ -1,5 +1,7 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -9,7 +11,7 @@ export async function apagarAutorizacoesSelecionadas(formData: FormData) {
   if (ids.length === 0) return;
 
   const supabase = await createClient();
-  await supabase.from("autorizacoes_venda").delete().in("id", ids);
+  await checar(supabase.from("autorizacoes_venda").delete().in("id", ids), "excluir");
 
   revalidatePath("/autorizacoes");
 }
@@ -19,7 +21,7 @@ export async function apagarAutorizacao(formData: FormData) {
   if (!id) return;
 
   const supabase = await createClient();
-  await supabase.from("autorizacoes_venda").delete().eq("id", id);
+  await checar(supabase.from("autorizacoes_venda").delete().eq("id", id), "excluir");
 
   revalidatePath("/autorizacoes");
   redirect("/autorizacoes");

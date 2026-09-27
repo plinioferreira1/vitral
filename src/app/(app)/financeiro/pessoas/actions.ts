@@ -1,7 +1,10 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { valorDaLista } from "@/lib/validacao";
 
 function categoriaFornecedorOuNull(formData: FormData, papel: string): string | null {
   if (papel === "cliente") return null;
@@ -23,9 +26,9 @@ export async function criarPessoaFinanceiro(formData: FormData) {
 
   const nome = String(formData.get("nome") ?? "").trim();
   if (!nome) return;
-  const papel = String(formData.get("papel") ?? "fornecedor");
+  const papel = valorDaLista("financeiro_papel_pessoa", formData.get("papel"), "fornecedor");
 
-  await supabase.from("financeiro_pessoas").insert({
+  await checar(supabase.from("financeiro_pessoas").insert({
     tenant_id: usuario.tenant_id,
     nome,
     cpf_cnpj: String(formData.get("cpf_cnpj") ?? "").trim() || null,
@@ -34,7 +37,7 @@ export async function criarPessoaFinanceiro(formData: FormData) {
     telefone: String(formData.get("telefone") ?? "").trim() || null,
     email: String(formData.get("email") ?? "").trim() || null,
     observacoes: String(formData.get("observacoes") ?? "").trim() || null,
-  });
+  }), "salvar");
 
   revalidatePath("/financeiro/pessoas");
 }
@@ -46,9 +49,9 @@ export async function editarPessoaFinanceiro(formData: FormData) {
 
   const nome = String(formData.get("nome") ?? "").trim();
   if (!nome) return;
-  const papel = String(formData.get("papel") ?? "fornecedor");
+  const papel = valorDaLista("financeiro_papel_pessoa", formData.get("papel"), "fornecedor");
 
-  await supabase
+  await checar(supabase
     .from("financeiro_pessoas")
     .update({
       nome,
@@ -59,7 +62,7 @@ export async function editarPessoaFinanceiro(formData: FormData) {
       email: String(formData.get("email") ?? "").trim() || null,
       observacoes: String(formData.get("observacoes") ?? "").trim() || null,
     })
-    .eq("id", id);
+    .eq("id", id), "atualizar");
 
   revalidatePath("/financeiro/pessoas");
 }
@@ -69,7 +72,7 @@ export async function apagarPessoaFinanceiro(formData: FormData) {
   if (!id) return;
 
   const supabase = await createClient();
-  await supabase.from("financeiro_pessoas").delete().eq("id", id);
+  await checar(supabase.from("financeiro_pessoas").delete().eq("id", id), "excluir");
 
   revalidatePath("/financeiro/pessoas");
 }

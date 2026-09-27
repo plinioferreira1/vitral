@@ -5,6 +5,7 @@ import { MateriaisCorretor } from "@/components/materiais-corretor";
 import { TutoriaisSistema } from "@/components/tutoriais-sistema";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { Sparkles, ListChecks, Check } from "lucide-react";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 export default async function CorretorPage() {
   const supabase = await createClient();
@@ -82,15 +83,14 @@ export default async function CorretorPage() {
                   <input type="hidden" name="etapa_id" value={e.id} />
                   <input type="hidden" name="concluida_atual" value={String(concluida)} />
                   {status && <input type="hidden" name="status_id" value={status.id} />}
-                  <button
-                    type="submit"
+                  <BotaoEnviar
                     className={`flex h-5 w-5 items-center justify-center rounded border ${
                       concluida ? "border-brand bg-brand text-white" : "border-border-strong bg-surface"
                     }`}
                     aria-label={`Marcar ${e.nome} como ${concluida ? "não concluído" : "concluído"}`}
                   >
                     {concluida && <Check size={12} strokeWidth={3} />}
-                  </button>
+                  </BotaoEnviar>
                 </form>
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
                   <ListChecks size={18} strokeWidth={2} />

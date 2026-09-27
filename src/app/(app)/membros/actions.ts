@@ -1,5 +1,9 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
+import { valorDaLista } from "@/lib/validacao";
+
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { redirect } from "next/navigation";
@@ -45,8 +49,8 @@ async function exigirPermissaoSobreMembro(usuarioAlvoId: string) {
 export async function adicionarMembro(formData: FormData) {
   const supabase = await createClient();
   const email = String(formData.get("email") ?? "").trim();
-  const perfil = String(formData.get("perfil") ?? "corretor");
-  const nivelAcesso = String(formData.get("nivel_acesso") ?? "supervisor") as NivelAcesso;
+  const perfil = valorDaLista("perfil_usuario", formData.get("perfil"), "corretor");
+  const nivelAcesso = valorDaLista("nivel_acesso_usuario", formData.get("nivel_acesso"), "supervisor");
   const categorias = formData.getAll("categorias") as CategoriaProcesso[];
 
   const { error } = await supabase.rpc("add_member", {
@@ -89,7 +93,7 @@ export async function editarNomeMembro(formData: FormData) {
 
   const { supabase } = await exigirPermissaoSobreMembro(usuarioId);
 
-  await supabase.from("usuarios").update({ nome: novoNome }).eq("id", usuarioId);
+  await checar(supabase.from("usuarios").update({ nome: novoNome }).eq("id", usuarioId), "atualizar");
 
   revalidatePath("/membros");
 }
@@ -121,7 +125,7 @@ export async function editarEmailMembro(formData: FormData) {
     redirect(`/membros?erro=${encodeURIComponent(errAuth.message)}`);
   }
 
-  await supabase.from("usuarios").update({ email: novoEmail }).eq("id", usuarioId);
+  await checar(supabase.from("usuarios").update({ email: novoEmail }).eq("id", usuarioId), "atualizar");
 
   revalidatePath("/membros");
 }
@@ -204,8 +208,8 @@ export async function criarConvite(formData: FormData) {
   if (!eu?.tenant_id) return;
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const perfil = String(formData.get("perfil") ?? "corretor");
-  const nivelAcesso = String(formData.get("nivel_acesso") ?? "supervisor");
+  const perfil = valorDaLista("perfil_usuario", formData.get("perfil"), "corretor");
+  const nivelAcesso = valorDaLista("nivel_acesso_usuario", formData.get("nivel_acesso"), "supervisor");
   const categorias = formData.getAll("categorias") as CategoriaProcesso[];
 
   if (!email) return;
@@ -231,7 +235,7 @@ export async function cancelarConvite(formData: FormData) {
   if (!id) return;
 
   const supabase = await createClient();
-  await supabase.from("convites").delete().eq("id", id);
+  await checar(supabase.from("convites").delete().eq("id", id), "excluir");
 
   revalidatePath("/membros");
 }

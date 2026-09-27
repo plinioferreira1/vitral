@@ -1,5 +1,7 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -15,23 +17,23 @@ export async function alternarTarefaMensal(formData: FormData) {
   const statusId = String(formData.get("status_id") ?? "") || null;
 
   if (concluidaAtual && statusId) {
-    await supabase
+    await checar(supabase
       .from("tarefas_mensais_status")
       .update({ concluida: false, concluida_por: null, concluida_em: null })
-      .eq("id", statusId);
+      .eq("id", statusId), "atualizar");
   } else if (statusId) {
-    await supabase
+    await checar(supabase
       .from("tarefas_mensais_status")
       .update({ concluida: true, concluida_por: user?.id ?? null, concluida_em: new Date().toISOString() })
-      .eq("id", statusId);
+      .eq("id", statusId), "atualizar");
   } else {
-    await supabase.from("tarefas_mensais_status").insert({
+    await checar(supabase.from("tarefas_mensais_status").insert({
       tarefa_id: tarefaId,
       competencia,
       concluida: true,
       concluida_por: user?.id ?? null,
       concluida_em: new Date().toISOString(),
-    });
+    }), "salvar");
   }
 
   revalidatePath("/locacao");

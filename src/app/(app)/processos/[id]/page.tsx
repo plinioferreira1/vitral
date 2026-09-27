@@ -1,3 +1,4 @@
+import type { Etapa } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
 import { anexarUrgencia, URGENCIA_COR, formatarPrazo } from "@/lib/alertas";
@@ -24,6 +25,7 @@ import {
 import { EditorLinhaTempo } from "@/components/editor-linha-tempo";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { MessageSquare, History } from "lucide-react";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 export default async function ProcessoDetalhePage({
   params,
@@ -86,7 +88,7 @@ export default async function ProcessoDetalhePage({
 
   if (!processo) notFound();
 
-  const etapas = anexarUrgencia(etapasRaw ?? []);
+  const etapas = anexarUrgencia((etapasRaw ?? []) as Etapa[]); // status é texto livre no banco
   const etapaIds = (etapasRaw ?? []).map((e) => e.id);
 
   // 2ª rodada: o que depende da categoria do processo e dos ids das etapas.
@@ -94,7 +96,7 @@ export default async function ProcessoDetalhePage({
     supabase
       .from("etapas_padrao")
       .select("id, nome, ordem, categoria, tipo")
-      .eq("categoria", (processo as unknown as { categoria: string }).categoria)
+      .eq("categoria", processo.categoria)
       .order("ordem", { ascending: true }),
     etapaIds.length
       ? supabase.from("checklist_itens").select("*").in("etapa_id", etapaIds).order("ordem")
@@ -290,12 +292,11 @@ export default async function ProcessoDetalhePage({
                     placeholder="Código SAN"
                     className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                   />
-                  <button
-                    type="submit"
+                  <BotaoEnviar
                     className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                   >
                     Salvar
-                  </button>
+                  </BotaoEnviar>
                 </form>
               </details>
             </div>
@@ -511,7 +512,7 @@ export default async function ProcessoDetalhePage({
                           name="concluido_atual"
                           value={String(item.concluido)}
                         />
-                        <button type="submit" className="flex items-center gap-2 text-left">
+                        <BotaoEnviar className="flex items-center gap-2 text-left">
                           <span
                             className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
                               item.concluido
@@ -534,7 +535,7 @@ export default async function ProcessoDetalhePage({
                           <span className={item.concluido ? "text-ink-muted line-through" : "text-ink"}>
                             {item.descricao}
                           </span>
-                        </button>
+                        </BotaoEnviar>
                       </form>
                     </li>
                   ))}
@@ -555,12 +556,11 @@ export default async function ProcessoDetalhePage({
                       placeholder="Número do registro (ex: TJDFT20260310047259GSXO)"
                       className="w-full max-w-sm rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
                     />
-                    <button
-                      type="submit"
+                    <BotaoEnviar
                       className="shrink-0 rounded-md border border-border px-2 py-1 text-xs text-ink-muted hover:bg-background"
                     >
                       Salvar
-                    </button>
+                    </BotaoEnviar>
                   </form>
                 </div>
               )}
@@ -570,23 +570,21 @@ export default async function ProcessoDetalhePage({
                   <form action={concluirEtapa} className="flex items-center gap-2">
                     <input type="hidden" name="etapa_id" value={etapa.id} />
                     <input type="hidden" name="processo_id" value={p.id} />
-                    <button
-                      type="submit"
+                    <BotaoEnviar
                       className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
                     >
                       Marcar como concluída
-                    </button>
+                    </BotaoEnviar>
                   </form>
                 ) : (
                   <form action={reabrirEtapa}>
                     <input type="hidden" name="etapa_id" value={etapa.id} />
                     <input type="hidden" name="processo_id" value={p.id} />
-                    <button
-                      type="submit"
+                    <BotaoEnviar
                       className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background"
                     >
                       Reabrir
-                    </button>
+                    </BotaoEnviar>
                   </form>
                 )}
 
@@ -599,12 +597,11 @@ export default async function ProcessoDetalhePage({
                     defaultValue={etapa.data_prevista ?? ""}
                     className="rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
                   />
-                  <button
-                    type="submit"
+                  <BotaoEnviar
                     className="rounded-md border border-border px-2 py-1 text-xs text-ink-muted hover:bg-background"
                   >
                     Ajustar prazo
-                  </button>
+                  </BotaoEnviar>
                 </form>
               </div>
             </div>
@@ -641,12 +638,11 @@ export default async function ProcessoDetalhePage({
               placeholder="Escreva uma observação..."
               className="flex-1 rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
             />
-            <button
-              type="submit"
+            <BotaoEnviar
               className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
             >
               Enviar
-            </button>
+            </BotaoEnviar>
           </form>
           <ul className="max-h-72 space-y-2 overflow-y-auto">
             {(comentarios ?? []).length === 0 ? (
@@ -733,8 +729,7 @@ export default async function ProcessoDetalhePage({
                       {etapaExistente && (
                         <input type="hidden" name="etapa_id" value={etapaExistente.id} />
                       )}
-                      <button
-                        type="submit"
+                      <BotaoEnviar
                         className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
                           aplicada
                             ? "border-brand bg-brand/10 font-medium text-brand"
@@ -759,7 +754,7 @@ export default async function ProcessoDetalhePage({
                           )}
                         </span>
                         {ep.nome}
-                      </button>
+                      </BotaoEnviar>
                     </form>
                   );
                 })}
@@ -785,8 +780,7 @@ export default async function ProcessoDetalhePage({
                       {etapaExistente && (
                         <input type="hidden" name="etapa_id" value={etapaExistente.id} />
                       )}
-                      <button
-                        type="submit"
+                      <BotaoEnviar
                         className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
                           aplicada
                             ? "border-amber-400 bg-amber-100 font-medium text-amber-900"
@@ -811,7 +805,7 @@ export default async function ProcessoDetalhePage({
                           )}
                         </span>
                         {ep.nome}
-                      </button>
+                      </BotaoEnviar>
                     </form>
                   );
                 })}
@@ -953,12 +947,11 @@ function ComissaoForm({
       </div>
 
       <div className="sm:col-span-2">
-        <button
-          type="submit"
+        <BotaoEnviar
           className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
           {comissao ? "Salvar comissão" : "Adicionar comissão"}
-        </button>
+        </BotaoEnviar>
       </div>
     </form>
   );

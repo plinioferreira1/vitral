@@ -1,5 +1,7 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -62,13 +64,13 @@ export async function criarContratoLocacao(formData: FormData) {
   if (locadorId) {
     const dadosLocador = objetoParcial({ telefone: campo("locador_telefone"), email: campo("locador_email") });
     if (!objetoVazio(dadosLocador)) {
-      await supabase.from("clientes").update(dadosLocador).eq("id", locadorId);
+      await checar(supabase.from("clientes").update(dadosLocador).eq("id", locadorId), "atualizar");
     }
   }
   if (locatarioId) {
     const dadosLocatario = objetoParcial({ telefone: campo("locatario_telefone"), email: campo("locatario_email") });
     if (!objetoVazio(dadosLocatario)) {
-      await supabase.from("clientes").update(dadosLocatario).eq("id", locatarioId);
+      await checar(supabase.from("clientes").update(dadosLocatario).eq("id", locatarioId), "atualizar");
     }
   }
 

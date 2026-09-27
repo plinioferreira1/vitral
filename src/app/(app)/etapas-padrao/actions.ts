@@ -1,5 +1,7 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import type { CategoriaProcesso, TipoEtapaPadrao } from "@/lib/types";
@@ -33,9 +35,9 @@ export async function adicionarEtapaPadrao(formData: FormData) {
 
   const proximaOrdem = (existentes?.[0]?.ordem ?? 0) + 1;
 
-  await supabase
+  await checar(supabase
     .from("etapas_padrao")
-    .insert({ tenant_id: usuario.tenant_id, nome, ordem: proximaOrdem, categoria, tipo });
+    .insert({ tenant_id: usuario.tenant_id, nome, ordem: proximaOrdem, categoria, tipo }), "salvar");
 
   revalidatePath("/etapas-padrao");
 }
@@ -43,7 +45,7 @@ export async function adicionarEtapaPadrao(formData: FormData) {
 export async function removerEtapaPadrao(formData: FormData) {
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
-  await supabase.from("etapas_padrao").delete().eq("id", id);
+  await checar(supabase.from("etapas_padrao").delete().eq("id", id), "excluir");
   revalidatePath("/etapas-padrao");
 }
 
@@ -53,7 +55,7 @@ export async function editarEtapaPadrao(formData: FormData) {
   const nome = String(formData.get("nome") ?? "").trim();
   const tipo = String(formData.get("tipo") ?? "") as TipoEtapaPadrao;
   if (!nome) return;
-  await supabase.from("etapas_padrao").update({ nome, tipo }).eq("id", id);
+  await checar(supabase.from("etapas_padrao").update({ nome, tipo }).eq("id", id), "atualizar");
   revalidatePath("/etapas-padrao");
 }
 
@@ -82,9 +84,9 @@ export async function moverEtapaPadrao(formData: FormData) {
 
   // troca as ordens entre os dois (usa um valor temporário pra não
   // colidir com a constraint de ordem única, se houver)
-  await supabase.from("etapas_padrao").update({ ordem: -1 }).eq("id", atual.id);
-  await supabase.from("etapas_padrao").update({ ordem: atual.ordem }).eq("id", vizinho.id);
-  await supabase.from("etapas_padrao").update({ ordem: vizinho.ordem }).eq("id", atual.id);
+  await checar(supabase.from("etapas_padrao").update({ ordem: -1 }).eq("id", atual.id), "atualizar");
+  await checar(supabase.from("etapas_padrao").update({ ordem: atual.ordem }).eq("id", vizinho.id), "atualizar");
+  await checar(supabase.from("etapas_padrao").update({ ordem: vizinho.ordem }).eq("id", atual.id), "atualizar");
 
   revalidatePath("/etapas-padrao");
 }

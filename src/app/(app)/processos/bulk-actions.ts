@@ -1,5 +1,7 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { after } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
@@ -48,13 +50,16 @@ export async function moverProcessoParaEtapa(processoId: string, etapaNomeAlvo: 
     novoStatusPorId.set(etapa.id, novoStatus);
     if (etapa.status === novoStatus) return [];
     return [
-      supabase
-        .from("etapas")
-        .update({
-          status: novoStatus,
-          data_realizada: novoStatus === "concluida" ? (etapa.data_realizada ?? hojeISO()) : null,
-        })
-        .eq("id", etapa.id),
+      checar(
+        supabase
+          .from("etapas")
+          .update({
+            status: novoStatus,
+            data_realizada: novoStatus === "concluida" ? (etapa.data_realizada ?? hojeISO()) : null,
+          })
+          .eq("id", etapa.id),
+        "mover o processo"
+      ),
     ];
   });
   await Promise.all(atualizacoes);
@@ -64,9 +69,9 @@ export async function moverProcessoParaEtapa(processoId: string, etapaNomeAlvo: 
   const todasConcluidas = statusFinais.length > 0 && statusFinais.every((st) => st === "concluida");
 
   if (todasConcluidas && processo.status !== "concluido") {
-    await supabase.from("processos").update({ status: "concluido" }).eq("id", processoId);
+    await checar(supabase.from("processos").update({ status: "concluido" }).eq("id", processoId), "atualizar");
   } else if (!todasConcluidas && processo.status === "concluido") {
-    await supabase.from("processos").update({ status: "ativo" }).eq("id", processoId);
+    await checar(supabase.from("processos").update({ status: "ativo" }).eq("id", processoId), "atualizar");
   }
 
   after(() => reconciliarAgendaProcesso(supabase, processoId));
@@ -90,7 +95,7 @@ export async function apagarProcessosSelecionados(formData: FormData) {
   );
   await removerAlertasContratoDeProcessos(supabase, ids);
 
-  await supabase.from("processos").delete().in("id", ids);
+  await checar(supabase.from("processos").delete().in("id", ids), "excluir");
 
   revalidatePath("/vendas");
   revalidatePath("/financiamentos");
@@ -114,7 +119,7 @@ export async function apagarProcesso(formData: FormData) {
   );
   await removerAlertasContratoDeProcessos(supabase, [id]);
 
-  await supabase.from("processos").delete().eq("id", id);
+  await checar(supabase.from("processos").delete().eq("id", id), "excluir");
 
   revalidatePath("/vendas");
   revalidatePath("/financiamentos");

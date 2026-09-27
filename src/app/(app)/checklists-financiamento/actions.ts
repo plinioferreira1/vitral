@@ -1,5 +1,7 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -39,13 +41,13 @@ export async function criarChecklist(formData: FormData) {
     .limit(1)
     .maybeSingle();
 
-  await supabase.from("checklists_modelo").insert({
+  await checar(supabase.from("checklists_modelo").insert({
     tenant_id: tid,
     categoria: "financiamento",
     nome,
     descricao,
     ordem: (maxOrdem?.ordem ?? 0) + 1,
-  });
+  }), "salvar");
 
   revalidarTudo();
 }
@@ -57,7 +59,7 @@ export async function editarChecklist(formData: FormData) {
   const descricao = String(formData.get("descricao") ?? "").trim() || null;
   if (!id || !nome) return;
 
-  await supabase.from("checklists_modelo").update({ nome, descricao }).eq("id", id);
+  await checar(supabase.from("checklists_modelo").update({ nome, descricao }).eq("id", id), "atualizar");
   revalidarTudo();
 }
 
@@ -66,7 +68,7 @@ export async function removerChecklist(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
-  await supabase.from("checklists_modelo").delete().eq("id", id);
+  await checar(supabase.from("checklists_modelo").delete().eq("id", id), "excluir");
   revalidarTudo();
 }
 
@@ -86,11 +88,11 @@ export async function criarGrupo(formData: FormData) {
     .limit(1)
     .maybeSingle();
 
-  await supabase.from("checklist_grupos").insert({
+  await checar(supabase.from("checklist_grupos").insert({
     checklist_id: checklistId,
     nome,
     ordem: (maxOrdem?.ordem ?? 0) + 1,
-  });
+  }), "salvar");
 
   revalidarTudo();
 }
@@ -102,7 +104,7 @@ export async function editarGrupo(formData: FormData) {
   const observacao = String(formData.get("observacao") ?? "").trim() || null;
   if (!id || !nome) return;
 
-  await supabase.from("checklist_grupos").update({ nome, observacao }).eq("id", id);
+  await checar(supabase.from("checklist_grupos").update({ nome, observacao }).eq("id", id), "atualizar");
   revalidarTudo();
 }
 
@@ -111,7 +113,7 @@ export async function removerGrupo(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
-  await supabase.from("checklist_grupos").delete().eq("id", id);
+  await checar(supabase.from("checklist_grupos").delete().eq("id", id), "excluir");
   revalidarTudo();
 }
 
@@ -131,11 +133,11 @@ export async function criarItem(formData: FormData) {
     .limit(1)
     .maybeSingle();
 
-  await supabase.from("checklist_grupo_itens").insert({
+  await checar(supabase.from("checklist_grupo_itens").insert({
     grupo_id: grupoId,
     texto,
     ordem: (maxOrdem?.ordem ?? 0) + 1,
-  });
+  }), "salvar");
 
   revalidarTudo();
 }
@@ -146,7 +148,7 @@ export async function editarItem(formData: FormData) {
   const texto = String(formData.get("texto") ?? "").trim();
   if (!id || !texto) return;
 
-  await supabase.from("checklist_grupo_itens").update({ texto }).eq("id", id);
+  await checar(supabase.from("checklist_grupo_itens").update({ texto }).eq("id", id), "atualizar");
   revalidarTudo();
 }
 
@@ -155,6 +157,6 @@ export async function removerItem(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
-  await supabase.from("checklist_grupo_itens").delete().eq("id", id);
+  await checar(supabase.from("checklist_grupo_itens").delete().eq("id", id), "excluir");
   revalidarTudo();
 }

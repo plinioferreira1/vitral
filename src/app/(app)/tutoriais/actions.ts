@@ -1,5 +1,7 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -25,7 +27,7 @@ export async function adicionarTutorial(formData: FormData) {
 
   if (!categoria || !titulo) return;
 
-  await supabase.from("tutoriais").insert({
+  await checar(supabase.from("tutoriais").insert({
     tenant_id: usuario.tenant_id,
     categoria,
     tipo,
@@ -34,7 +36,7 @@ export async function adicionarTutorial(formData: FormData) {
     conteudo,
     link,
     ordem,
-  });
+  }), "salvar");
 
   revalidatePath("/tutoriais");
   revalidatePath("/corretor");
@@ -53,10 +55,10 @@ export async function editarTutorial(formData: FormData) {
   const link = String(formData.get("link") ?? "").trim() || null;
   const ordem = Number(formData.get("ordem") ?? 0);
 
-  await supabase
+  await checar(supabase
     .from("tutoriais")
     .update({ categoria, tipo, titulo, descricao, conteudo, link, ordem })
-    .eq("id", id);
+    .eq("id", id), "atualizar");
 
   revalidatePath("/tutoriais");
   revalidatePath("/corretor");
@@ -67,7 +69,7 @@ export async function removerTutorial(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
-  await supabase.from("tutoriais").delete().eq("id", id);
+  await checar(supabase.from("tutoriais").delete().eq("id", id), "excluir");
 
   revalidatePath("/tutoriais");
   revalidatePath("/corretor");

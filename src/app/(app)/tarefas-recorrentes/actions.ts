@@ -1,5 +1,7 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -52,7 +54,7 @@ export async function adicionarTarefaRecorrente(formData: FormData) {
     .limit(1)
     .maybeSingle();
 
-  await supabase.from("tarefas_mensais").insert({
+  await checar(supabase.from("tarefas_mensais").insert({
     tenant_id: usuario.tenant_id,
     nome,
     regra: regraTexto(tipoRegra, diaFixo),
@@ -60,7 +62,7 @@ export async function adicionarTarefaRecorrente(formData: FormData) {
     dia_fixo: diaFixo,
     periodicidade: periodicidadeDe(tipoRegra),
     ordem: (maxOrdem?.ordem ?? 0) + 1,
-  });
+  }), "salvar");
 
   revalidatePath("/tarefas-recorrentes");
   revalidatePath("/locacao");
@@ -76,7 +78,7 @@ export async function editarTarefaRecorrente(formData: FormData) {
 
   if (!id || !nome) return;
 
-  await supabase
+  await checar(supabase
     .from("tarefas_mensais")
     .update({
       nome,
@@ -85,7 +87,7 @@ export async function editarTarefaRecorrente(formData: FormData) {
       dia_fixo: diaFixo,
       periodicidade: periodicidadeDe(tipoRegra),
     })
-    .eq("id", id);
+    .eq("id", id), "atualizar");
 
   revalidatePath("/tarefas-recorrentes");
   revalidatePath("/locacao");
@@ -96,7 +98,7 @@ export async function removerTarefaRecorrente(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
-  await supabase.from("tarefas_mensais").delete().eq("id", id);
+  await checar(supabase.from("tarefas_mensais").delete().eq("id", id), "excluir");
 
   revalidatePath("/tarefas-recorrentes");
   revalidatePath("/locacao");

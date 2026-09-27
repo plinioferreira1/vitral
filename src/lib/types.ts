@@ -310,4 +310,6 @@ export interface SimulacaoCustas {
 // (Não é um schema gerado automaticamente — ver README para gerar
 // com `supabase gen types typescript` quando o projeto já existir.)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type Database = any;
+// Gerado automaticamente a partir do banco (Supabase). Para atualizar,
+// regenerar src/lib/database.types.ts após cada migration.
+export type { Database } from "./database.types";

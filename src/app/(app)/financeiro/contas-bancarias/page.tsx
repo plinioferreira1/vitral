@@ -3,6 +3,7 @@ import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { Landmark, ArrowUp, ArrowDown } from "lucide-react";
 import { identidadeBanco } from "@/lib/bancos";
 import { criarContaBancaria, arquivarContaBancaria } from "./actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -96,9 +97,9 @@ export default async function ContasBancariasPage({
           <input name="saldo_inicial" type="number" step="0.01" placeholder="Saldo inicial (R$) — cartão: negativo" className={campoClasse} />
           <input name="data_abertura" type="date" className={campoClasse} />
         </div>
-        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+        <BotaoEnviar className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
           Adicionar
-        </button>
+        </BotaoEnviar>
       </form>
 
       <div className="rounded-xl border border-border/60 bg-surface shadow-sm">
@@ -112,9 +113,9 @@ export default async function ContasBancariasPage({
                 <option value="ativa">Ativas</option>
                 <option value="arquivada">Arquivadas</option>
               </select>
-              <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm text-ink-muted hover:bg-background">
+              <BotaoEnviar className="rounded-md border border-border px-3 py-2 text-sm text-ink-muted hover:bg-background">
                 Filtrar
-              </button>
+              </BotaoEnviar>
             </form>
             <span
               title="Importação de extratos OFX ainda não foi implementada"
@@ -186,9 +187,9 @@ export default async function ContasBancariasPage({
                       {c.ativa && (
                         <form action={arquivarContaBancaria}>
                           <input type="hidden" name="id" value={c.id} />
-                          <button type="submit" className="text-xs text-ink-muted hover:text-rose-600">
+                          <BotaoEnviar className="text-xs text-ink-muted hover:text-rose-600">
                             arquivar
-                          </button>
+                          </BotaoEnviar>
                         </form>
                       )}
                     </td>

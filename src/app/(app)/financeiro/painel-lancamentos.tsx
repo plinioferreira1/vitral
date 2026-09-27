@@ -30,6 +30,7 @@ import {
 import { hojeISO } from "@/lib/data-br";
 import { SelecionarTodos } from "@/components/selecionar-todos";
 import { SelectAutoSubmit } from "@/components/select-auto-submit";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -409,9 +410,9 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
             placeholder={`Buscar por descrição, ${rotuloPessoa.toLowerCase()}, categoria...`}
             className={`${campoClasse} pl-9`}
           />
-          <button type="submit" className="sr-only">
+          <BotaoEnviar className="sr-only">
             Buscar
-          </button>
+          </BotaoEnviar>
           <CamposOcultos omitir={["q"]} />
         </form>
         <details className="shrink-0">
@@ -567,9 +568,9 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
               <textarea name="observacoes" rows={2} placeholder="Observações (opcional)" className={campoClasse} />
             </div>
 
-            <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+            <BotaoEnviar className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
               Criar lançamento
-            </button>
+            </BotaoEnviar>
           </form>
         </details>
       </div>
@@ -644,9 +645,9 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         <input type="hidden" name="ordenar" value={f.ordenar ?? ""} />
         <input type="hidden" name="direcao" value={f.direcao ?? ""} />
         <input type="hidden" name="por_pagina" value={f.por_pagina ?? ""} />
-        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+        <BotaoEnviar className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
           Filtrar
-        </button>
+        </BotaoEnviar>
         {temFiltro && (
           <a href={`${rota}#lista`} className="text-xs text-ink-muted hover:text-brand hover:underline">
             Limpar filtros
@@ -661,12 +662,11 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           className="flex items-center justify-between rounded-xl border border-border/60 bg-surface px-4 py-2.5 text-xs text-ink-muted shadow-sm"
         >
           <span>Marque um ou mais lançamentos pendentes na tabela abaixo pra apagar de uma vez.</span>
-          <button
-            type="submit"
+          <BotaoEnviar
             className="rounded-md border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50"
           >
             Apagar selecionados
-          </button>
+          </BotaoEnviar>
         </form>
       )}
 
@@ -793,12 +793,11 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                                     </option>
                                   ))}
                                 </select>
-                                <button
-                                  type="submit"
+                                <BotaoEnviar
                                   className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                                 >
                                   Salvar categoria
-                                </button>
+                                </BotaoEnviar>
                               </form>
                             </details>
                           )}
@@ -888,12 +887,11 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                                     </p>
                                   </div>
                                 )}
-                                <button
-                                  type="submit"
+                                <BotaoEnviar
                                   className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                                 >
                                   Salvar alterações
-                                </button>
+                                </BotaoEnviar>
                               </form>
                             </details>
                           )}
@@ -941,24 +939,22 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                                       </option>
                                     ))}
                                   </select>
-                                  <button
-                                    type="submit"
+                                  <BotaoEnviar
                                     className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                                   >
                                     Confirmar
-                                  </button>
+                                  </BotaoEnviar>
                                 </form>
                               </details>
                               <form action={cancelarLancamento}>
                                 <input type="hidden" name="id" value={l.id} />
-                                <button
-                                  type="submit"
+                                <BotaoEnviar
                                   className="rounded-md p-1.5 text-ink-muted hover:bg-background hover:text-rose-600"
                                   aria-label="Cancelar"
                                   title="Cancelar"
                                 >
                                   <Ban size={15} strokeWidth={2} />
-                                </button>
+                                </BotaoEnviar>
                               </form>
                             </>
                           )}

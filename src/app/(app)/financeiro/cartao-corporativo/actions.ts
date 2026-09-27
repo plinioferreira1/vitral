@@ -1,5 +1,7 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -23,12 +25,12 @@ export async function criarCartao(formData: FormData) {
   const nome = String(formData.get("nome") ?? "").trim();
   if (!nome) return;
 
-  await supabase.from("financeiro_cartoes").insert({
+  await checar(supabase.from("financeiro_cartoes").insert({
     tenant_id: tenantId,
     nome,
     banco: String(formData.get("banco") ?? "").trim() || null,
     final_digitos: String(formData.get("final_digitos") ?? "").trim() || null,
-  });
+  }), "salvar");
 
   revalidatePath("/financeiro/cartao-corporativo");
 }
@@ -150,7 +152,7 @@ export async function importarFatura(formData: FormData) {
     .single();
   if (!fatura) return;
 
-  await supabase.from("financeiro_fatura_itens").insert(
+  await checar(supabase.from("financeiro_fatura_itens").insert(
     itens.map((it) => ({
       tenant_id: tenantId,
       fatura_id: fatura.id,
@@ -161,7 +163,7 @@ export async function importarFatura(formData: FormData) {
       parcela_atual: it.parcela_atual,
       parcela_total: it.parcela_total,
     }))
-  );
+  ), "salvar");
 
   revalidatePath("/financeiro/cartao-corporativo");
 }
@@ -173,10 +175,10 @@ export async function categorizarItemFatura(formData: FormData) {
   const centroCustoId = String(formData.get("centro_custo_id") ?? "").trim() || null;
 
   const supabase = await createClient();
-  await supabase
+  await checar(supabase
     .from("financeiro_fatura_itens")
     .update({ categoria_id: categoriaId, centro_custo_id: centroCustoId })
-    .eq("id", id);
+    .eq("id", id), "atualizar");
 
   revalidatePath("/financeiro/cartao-corporativo");
 }
@@ -208,10 +210,13 @@ export async function aplicarSugestaoCategoria(formData: FormData) {
       const sugestao = sugestaoPorEstabelecimento.get(item.estabelecimento.trim().toLowerCase());
       if (!sugestao) return [];
       return [
-        supabase
-          .from("financeiro_fatura_itens")
-          .update({ categoria_id: sugestao.categoria_id, centro_custo_id: sugestao.centro_custo_id })
-          .eq("id", item.id),
+        checar(
+          supabase
+            .from("financeiro_fatura_itens")
+            .update({ categoria_id: sugestao.categoria_id, centro_custo_id: sugestao.centro_custo_id })
+            .eq("id", item.id),
+          "aplicar a categoria sugerida"
+        ),
       ];
     })
   );
@@ -223,10 +228,10 @@ export async function limparCategorizacoes(formData: FormData) {
   const faturaId = String(formData.get("fatura_id") ?? "");
   if (!faturaId) return;
   const supabase = await createClient();
-  await supabase
+  await checar(supabase
     .from("financeiro_fatura_itens")
     .update({ categoria_id: null, centro_custo_id: null })
-    .eq("fatura_id", faturaId);
+    .eq("fatura_id", faturaId), "atualizar");
   revalidatePath("/financeiro/cartao-corporativo");
 }
 
@@ -234,6 +239,6 @@ export async function apagarFatura(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();
-  await supabase.from("financeiro_faturas").delete().eq("id", id);
+  await checar(supabase.from("financeiro_faturas").delete().eq("id", id), "excluir");
   revalidatePath("/financeiro/cartao-corporativo");
 }

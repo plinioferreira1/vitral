@@ -1,5 +1,7 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -18,7 +20,7 @@ export async function criarContaBancaria(formData: FormData) {
   const nome = String(formData.get("nome") ?? "").trim();
   if (!nome) return;
 
-  await supabase.from("financeiro_contas_bancarias").insert({
+  await checar(supabase.from("financeiro_contas_bancarias").insert({
     tenant_id: usuario.tenant_id,
     nome,
     banco: String(formData.get("banco") ?? "").trim() || null,
@@ -28,7 +30,7 @@ export async function criarContaBancaria(formData: FormData) {
     tipo: String(formData.get("tipo") ?? "corrente"),
     saldo_inicial: formData.get("saldo_inicial") ? Number(formData.get("saldo_inicial")) : 0,
     data_abertura: String(formData.get("data_abertura") ?? "").trim() || null,
-  });
+  }), "salvar");
 
   revalidatePath("/financeiro/contas-bancarias");
   revalidatePath("/financeiro");
@@ -38,6 +40,6 @@ export async function arquivarContaBancaria(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();
-  await supabase.from("financeiro_contas_bancarias").update({ ativa: false }).eq("id", id);
+  await checar(supabase.from("financeiro_contas_bancarias").update({ ativa: false }).eq("id", id), "atualizar");
   revalidatePath("/financeiro/contas-bancarias");
 }

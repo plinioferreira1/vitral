@@ -4,6 +4,7 @@ import {
   editarTarefaRecorrente,
   removerTarefaRecorrente,
 } from "./actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 interface TarefaRow {
   id: string;
@@ -56,12 +57,11 @@ export default async function TarefasRecorrentesPage() {
         />
         <div className="flex flex-wrap items-center gap-2">
           <SeletorRegra />
-          <button
-            type="submit"
+          <BotaoEnviar
             className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             Adicionar
-          </button>
+          </BotaoEnviar>
         </div>
       </form>
 
@@ -96,23 +96,21 @@ export default async function TarefasRecorrentesPage() {
                           className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                         />
                         <SeletorRegra tipoAtual={t.tipo_regra} diaFixoAtual={t.dia_fixo} />
-                        <button
-                          type="submit"
+                        <BotaoEnviar
                           className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                         >
                           Salvar
-                        </button>
+                        </BotaoEnviar>
                       </form>
                     </details>
                     <form action={removerTarefaRecorrente}>
                       <input type="hidden" name="id" value={t.id} />
-                      <button
-                        type="submit"
+                      <BotaoEnviar
                         aria-label={`Remover ${t.nome}`}
                         className="rounded-md p-1.5 text-ink-muted hover:bg-background hover:text-rose-600"
                       >
                         🗑
-                      </button>
+                      </BotaoEnviar>
                     </form>
                   </div>
                 </div>

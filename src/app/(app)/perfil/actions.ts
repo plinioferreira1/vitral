@@ -1,8 +1,11 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { TablesUpdate } from "@/lib/database.types";
 
 export async function atualizarPerfil(formData: FormData) {
   const supabase = await createClient();
@@ -15,7 +18,7 @@ export async function atualizarPerfil(formData: FormData) {
   const cargo = String(formData.get("cargo") ?? "").trim();
   const fotoBase64 = String(formData.get("foto_base64") ?? "");
 
-  const updates: Record<string, string | null> = {
+  const updates: TablesUpdate<"usuarios"> = {
     nome,
     cargo: cargo || null,
   };
@@ -37,7 +40,7 @@ export async function atualizarPerfil(formData: FormData) {
     updates.foto_url = `${publicUrlData.publicUrl}?t=${Date.now()}`;
   }
 
-  await supabase.from("usuarios").update(updates).eq("id", user.id);
+  await checar(supabase.from("usuarios").update(updates).eq("id", user.id), "atualizar");
 
   revalidatePath("/perfil");
   revalidatePath("/", "layout");

@@ -1,5 +1,7 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 
 export async function registrarSimulacaoCustas(dados: {
@@ -23,7 +25,7 @@ export async function registrarSimulacaoCustas(dados: {
     .single();
   if (!usuario?.tenant_id) return;
 
-  await supabase.from("simulacoes_custas").insert({
+  await checar(supabase.from("simulacoes_custas").insert({
     tenant_id: usuario.tenant_id,
     usuario_id: user.id,
     valor: dados.valor,
@@ -32,5 +34,5 @@ export async function registrarSimulacaoCustas(dados: {
     primeiro_imovel: dados.primeiroImovel,
     instrumento_particular: dados.instrumentoParticular,
     total: dados.total,
-  });
+  }), "salvar");
 }

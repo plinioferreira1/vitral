@@ -1,8 +1,12 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { addWeeks, addMonths } from "date-fns";
+import { valorDaLista } from "@/lib/validacao";
+import type { TablesInsert } from "@/lib/database.types";
 
 async function contexto(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
@@ -79,7 +83,7 @@ export async function criarLancamento(formData: FormData) {
   const { userId, tenantId } = await contexto(supabase);
   if (!tenantId) return;
 
-  const tipo = String(formData.get("tipo") ?? "despesa");
+  const tipo = valorDaLista("financeiro_tipo_categoria", formData.get("tipo"), "despesa");
   const descricao = String(formData.get("descricao") ?? "").trim();
   const valor = Number(formData.get("valor") ?? 0);
   if (!descricao || !valor) return;
@@ -105,14 +109,14 @@ export async function criarLancamento(formData: FormData) {
   if (!recorrente) {
     const vencimento = campo("vencimento");
     if (!vencimento) return;
-    await supabase.from("financeiro_lancamentos").insert({
+    await checar(supabase.from("financeiro_lancamentos").insert({
       ...dadosComuns,
       valor,
       vencimento,
       competencia: campo("competencia") ?? vencimento,
-    });
+    }), "salvar");
   } else {
-    const frequencia = String(formData.get("frequencia") ?? "mensal");
+    const frequencia = valorDaLista("financeiro_frequencia", formData.get("frequencia"), "mensal");
     const dataInicio = campo("data_inicio");
     const dataFim = campo("data_fim");
     const numeroOcorrenciasRaw = campo("numero_ocorrencias");
@@ -151,7 +155,7 @@ export async function criarLancamento(formData: FormData) {
     if (error || !recorrencia) return;
 
     const limiteData = dataFim ? new Date(`${dataFim}T00:00:00`) : null;
-    const ocorrencias: Record<string, unknown>[] = [];
+    const ocorrencias: TablesInsert<"financeiro_lancamentos">[] = [];
 
     if (usaDiaUtil && diaUtil && mesesStep) {
       const base = new Date(`${dataInicio}T00:00:00`);
@@ -188,7 +192,7 @@ export async function criarLancamento(formData: FormData) {
     }
 
     if (ocorrencias.length > 0) {
-      await supabase.from("financeiro_lancamentos").insert(ocorrencias);
+      await checar(supabase.from("financeiro_lancamentos").insert(ocorrencias), "salvar");
     }
   }
 
@@ -211,7 +215,7 @@ export async function registrarBaixa(formData: FormData) {
   const data = String(formData.get("data") ?? "").trim();
   if (!lancamentoId || !valor || !data) return;
 
-  await supabase.from("financeiro_baixas").insert({
+  await checar(supabase.from("financeiro_baixas").insert({
     tenant_id: tenantId,
     lancamento_id: lancamentoId,
     valor,
@@ -220,7 +224,7 @@ export async function registrarBaixa(formData: FormData) {
     forma_pagamento: String(formData.get("forma_pagamento") ?? "").trim() || null,
     observacoes: String(formData.get("observacoes") ?? "").trim() || null,
     criado_por: userId,
-  });
+  }), "salvar");
 
   const { data: lancamento } = await supabase
     .from("financeiro_lancamentos")
@@ -236,7 +240,7 @@ export async function registrarBaixa(formData: FormData) {
   const novoStatus =
     totalBaixado >= Number(lancamento?.valor ?? 0) ? "pago" : totalBaixado > 0 ? "pago_parcial" : "pendente";
 
-  await supabase.from("financeiro_lancamentos").update({ status: novoStatus }).eq("id", lancamentoId);
+  await checar(supabase.from("financeiro_lancamentos").update({ status: novoStatus }).eq("id", lancamentoId), "atualizar");
 
   revalidatePath("/financeiro/contas-a-pagar");
   revalidatePath("/financeiro/contas-a-receber");
@@ -295,14 +299,14 @@ export async function editarLancamento(formData: FormData) {
   };
 
   if (escopo === "todos_futuros" && atual.recorrencia_id) {
-    await supabase
+    await checar(supabase
       .from("financeiro_lancamentos")
       .update(dadosCadastrais)
       .eq("recorrencia_id", atual.recorrencia_id)
       .in("status", ["pendente", "pago_parcial"])
-      .gte("vencimento", atual.vencimento);
+      .gte("vencimento", atual.vencimento), "atualizar");
 
-    await supabase
+    await checar(supabase
       .from("financeiro_recorrencias")
       .update({
         descricao: dadosCadastrais.descricao,
@@ -313,16 +317,16 @@ export async function editarLancamento(formData: FormData) {
         unidade_id: dadosCadastrais.unidade_id,
         conta_bancaria_id: dadosCadastrais.conta_bancaria_id,
       })
-      .eq("id", atual.recorrencia_id);
+      .eq("id", atual.recorrencia_id), "atualizar");
   } else {
-    await supabase
+    await checar(supabase
       .from("financeiro_lancamentos")
       .update({
         ...dadosCadastrais,
         vencimento,
         competencia: campo("competencia") ?? vencimento,
       })
-      .eq("id", id);
+      .eq("id", id), "atualizar");
   }
 
   const caminho = atual.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
@@ -345,10 +349,10 @@ export async function categorizarLancamento(formData: FormData) {
   const { data: atual } = await supabase.from("financeiro_lancamentos").select("tipo").eq("id", id).single();
   if (!atual) return;
 
-  await supabase
+  await checar(supabase
     .from("financeiro_lancamentos")
     .update({ categoria_id: categoriaId, centro_custo_id: centroCustoId })
-    .eq("id", id);
+    .eq("id", id), "atualizar");
 
   const caminho = atual.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath(caminho);
@@ -359,7 +363,7 @@ export async function cancelarLancamento(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();
-  await supabase.from("financeiro_lancamentos").update({ status: "cancelado" }).eq("id", id);
+  await checar(supabase.from("financeiro_lancamentos").update({ status: "cancelado" }).eq("id", id), "atualizar");
   revalidatePath("/financeiro/contas-a-pagar");
   revalidatePath("/financeiro/contas-a-receber");
   revalidatePath("/financeiro");
@@ -377,7 +381,7 @@ export async function apagarLancamentos(formData: FormData) {
   if (ids.length === 0) return;
 
   const supabase = await createClient();
-  await supabase.from("financeiro_lancamentos").delete().in("id", ids).eq("status", "pendente");
+  await checar(supabase.from("financeiro_lancamentos").delete().in("id", ids).eq("status", "pendente"), "excluir");
 
   revalidatePath("/financeiro/contas-a-pagar");
   revalidatePath("/financeiro/contas-a-receber");

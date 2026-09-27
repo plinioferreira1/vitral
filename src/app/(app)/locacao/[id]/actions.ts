@@ -1,11 +1,14 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { StatusContaLocacao } from "@/lib/types";
 import { hojeISO } from "@/lib/data-br";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { valorDaLista } from "@/lib/validacao";
 
 const PROXIMO_STATUS: Record<StatusContaLocacao, StatusContaLocacao> = {
   nao_aplicavel: "pago",
@@ -17,7 +20,7 @@ export async function alternarStatusConta(formData: FormData) {
   const supabase = await createClient();
 
   const contratoId = String(formData.get("contrato_id") ?? "");
-  const tipo = String(formData.get("tipo") ?? "");
+  const tipo = valorDaLista("tipo_conta_locacao", formData.get("tipo"));
   const competencia = String(formData.get("competencia") ?? "");
   const statusAtual = String(formData.get("status_atual") ?? "nao_aplicavel") as StatusContaLocacao;
   const contaId = String(formData.get("conta_id") ?? "") || null;
@@ -25,20 +28,21 @@ export async function alternarStatusConta(formData: FormData) {
   const proximoStatus = PROXIMO_STATUS[statusAtual];
 
   if (contaId) {
-    await supabase.from("contas_locacao").update({ status: proximoStatus }).eq("id", contaId);
+    await checar(supabase.from("contas_locacao").update({ status: proximoStatus }).eq("id", contaId), "atualizar");
   } else {
     // Vencimento padrão: dia 15 do mês de competência (mesma regra já
     // usada pro resto da base). Sem isso, a conta cai como "atrasada"
     // a partir do dia 2 do mês (a urgência usa a competência como
     // fallback quando não há vencimento).
+    if (!tipo) return; // tipo de conta inválido — não grava nada
     const vencimentoPadrao = `${competencia.slice(0, 7)}-15`;
-    await supabase.from("contas_locacao").insert({
+    await checar(supabase.from("contas_locacao").insert({
       contrato_id: contratoId,
       tipo,
       competencia,
       status: proximoStatus,
       vencimento: vencimentoPadrao,
-    });
+    }), "salvar");
   }
 
   revalidatePath(`/locacao/${contratoId}`);
@@ -52,13 +56,13 @@ export async function atualizarDetalhesConta(formData: FormData) {
   const valor = String(formData.get("valor") ?? "");
   const vencimento = String(formData.get("vencimento") ?? "");
 
-  await supabase
+  await checar(supabase
     .from("contas_locacao")
     .update({
       valor: valor ? Number(valor) : null,
       vencimento: vencimento || null,
     })
-    .eq("id", contaId);
+    .eq("id", contaId), "atualizar");
 
   revalidatePath(`/locacao/${contratoId}`);
 }
@@ -119,7 +123,7 @@ export async function atualizarContrato(formData: FormData) {
     locatario_id: locatarioId,
     emite_nf: formData.get("emite_nf") === "on",
     iptu_inscricao: String(formData.get("iptu_inscricao") ?? "").trim() || null,
-    iptu_tipo: String(formData.get("iptu_tipo") ?? "") || null,
+    iptu_tipo: valorDaLista("tipo_iptu_locacao", formData.get("iptu_tipo")),
     condominio_administradora: String(formData.get("condominio_administradora") ?? "").trim() || null,
     condominio_contato: String(formData.get("condominio_contato") ?? "").trim() || null,
     portal_administradora_url: String(formData.get("portal_administradora_url") ?? "").trim() || null,
@@ -127,15 +131,15 @@ export async function atualizarContrato(formData: FormData) {
     portal_administradora_senha: String(formData.get("portal_administradora_senha") ?? "").trim() || null,
     agua_inscricao: String(formData.get("agua_inscricao") ?? "").trim() || null,
     luz_codigo_cliente: String(formData.get("luz_codigo_cliente") ?? "").trim() || null,
-    responsavel_iptu: String(formData.get("responsavel_iptu") ?? "") || null,
-    responsavel_condominio: String(formData.get("responsavel_condominio") ?? "") || null,
-    responsavel_agua: String(formData.get("responsavel_agua") ?? "") || null,
-    responsavel_luz: String(formData.get("responsavel_luz") ?? "") || null,
-    responsavel_gas: String(formData.get("responsavel_gas") ?? "") || null,
+    responsavel_iptu: valorDaLista("responsavel_pagamento_locacao", formData.get("responsavel_iptu")),
+    responsavel_condominio: valorDaLista("responsavel_pagamento_locacao", formData.get("responsavel_condominio")),
+    responsavel_agua: valorDaLista("responsavel_pagamento_locacao", formData.get("responsavel_agua")),
+    responsavel_luz: valorDaLista("responsavel_pagamento_locacao", formData.get("responsavel_luz")),
+    responsavel_gas: valorDaLista("responsavel_pagamento_locacao", formData.get("responsavel_gas")),
     observacoes: String(formData.get("observacoes") ?? "").trim() || null,
   };
 
-  await supabase.from("contratos_locacao").update(campos).eq("id", id);
+  await checar(supabase.from("contratos_locacao").update(campos).eq("id", id), "atualizar");
   revalidatePath(`/locacao/${id}`);
   redirect(`/locacao/${id}?salvo=1`);
 }
@@ -144,10 +148,10 @@ export async function encerrarContrato(formData: FormData) {
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
 
-  await supabase
+  await checar(supabase
     .from("contratos_locacao")
     .update({ ativo: false, data_encerramento: hojeISO() })
-    .eq("id", id);
+    .eq("id", id), "atualizar");
 
   revalidatePath(`/locacao/${id}`);
   revalidatePath("/locacao");
@@ -158,10 +162,10 @@ export async function reativarContrato(formData: FormData) {
   const supabase = await createClient();
   const id = String(formData.get("id") ?? "");
 
-  await supabase
+  await checar(supabase
     .from("contratos_locacao")
     .update({ ativo: true, data_encerramento: null })
-    .eq("id", id);
+    .eq("id", id), "atualizar");
 
   revalidatePath(`/locacao/${id}`);
   revalidatePath("/locacao");

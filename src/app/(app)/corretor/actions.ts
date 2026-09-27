@@ -1,5 +1,7 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 
@@ -16,20 +18,20 @@ export async function alternarEtapaOnboarding(formData: FormData) {
   if (!etapaId) return;
 
   if (statusId) {
-    await supabase
+    await checar(supabase
       .from("onboarding_status")
       .update({
         concluida: !concluidaAtual,
         concluida_em: !concluidaAtual ? new Date().toISOString() : null,
       })
-      .eq("id", statusId);
+      .eq("id", statusId), "atualizar");
   } else {
-    await supabase.from("onboarding_status").insert({
+    await checar(supabase.from("onboarding_status").insert({
       etapa_id: etapaId,
       usuario_id: user.id,
       concluida: true,
       concluida_em: new Date().toISOString(),
-    });
+    }), "salvar");
   }
 
   revalidatePath("/corretor");

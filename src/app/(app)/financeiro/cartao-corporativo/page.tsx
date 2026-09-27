@@ -11,6 +11,7 @@ import {
   limparCategorizacoes,
   apagarFatura,
 } from "./actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -56,9 +57,9 @@ export default async function CartaoCorporativoPage({
             <input name="banco" placeholder="Banco (opcional)" className={campoClasse} />
           </div>
           <input name="final_digitos" placeholder="Final do cartão (ex: 1234, opcional)" className={campoClasse} />
-          <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+          <BotaoEnviar className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
             Cadastrar cartão
-          </button>
+          </BotaoEnviar>
         </form>
       </div>
     );
@@ -144,9 +145,9 @@ export default async function CartaoCorporativoPage({
             <input name="nome" required placeholder="Nome (ex: Itaú Empresas)" className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand" />
             <input name="banco" placeholder="Banco (opcional)" className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand" />
             <input name="final_digitos" placeholder="Final do cartão (opcional)" className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand" />
-            <button type="submit" className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90">
+            <BotaoEnviar className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90">
               Cadastrar
-            </button>
+            </BotaoEnviar>
           </form>
         </details>
       </div>
@@ -190,9 +191,9 @@ export default async function CartaoCorporativoPage({
                 (formato &quot;2/10&quot;). A 1ª linha deve ser o cabeçalho.
               </p>
             </div>
-            <button type="submit" className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90">
+            <BotaoEnviar className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90">
               Importar
-            </button>
+            </BotaoEnviar>
           </form>
         </details>
       </div>
@@ -299,12 +300,11 @@ export default async function CartaoCorporativoPage({
                                 </option>
                               ))}
                             </select>
-                            <button
-                              type="submit"
+                            <BotaoEnviar
                               className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                             >
                               Salvar
-                            </button>
+                            </BotaoEnviar>
                           </form>
                         </details>
                       </td>
@@ -327,13 +327,12 @@ export default async function CartaoCorporativoPage({
               <p className="text-sm font-semibold text-ink">Ações em lote</p>
               <form action={aplicarSugestaoCategoria}>
                 <input type="hidden" name="fatura_id" value={faturaAtiva.id} />
-                <button
-                  type="submit"
+                <BotaoEnviar
                   className="flex w-full items-center gap-2 rounded-md border border-border px-3 py-2 text-left text-sm text-ink hover:bg-background"
                 >
                   <Sparkles size={15} strokeWidth={2} className="text-brand" />
                   Aplicar sugestão de categoria
-                </button>
+                </BotaoEnviar>
               </form>
               <p className="text-[11px] text-ink-muted">
                 Categoriza automaticamente os itens pendentes cujo estabelecimento já foi categorizado antes,
@@ -341,19 +340,18 @@ export default async function CartaoCorporativoPage({
               </p>
               <form action={limparCategorizacoes}>
                 <input type="hidden" name="fatura_id" value={faturaAtiva.id} />
-                <button
-                  type="submit"
+                <BotaoEnviar
                   className="flex w-full items-center gap-2 rounded-md border border-border px-3 py-2 text-left text-sm text-ink hover:bg-background"
                 >
                   <Eraser size={15} strokeWidth={2} className="text-ink-muted" />
                   Limpar categorizações desta fatura
-                </button>
+                </BotaoEnviar>
               </form>
               <form action={apagarFatura}>
                 <input type="hidden" name="id" value={faturaAtiva.id} />
-                <button type="submit" className="mt-2 text-xs text-ink-muted hover:text-rose-600">
+                <BotaoEnviar className="mt-2 text-xs text-ink-muted hover:text-rose-600">
                   apagar esta fatura
-                </button>
+                </BotaoEnviar>
               </form>
             </div>
           </div>

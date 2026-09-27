@@ -14,6 +14,7 @@ import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
 import { obterSiteUrl } from "@/lib/site-url";
 import { CATEGORIA_LABEL, NIVEL_ACESSO_LABEL, type CategoriaProcesso, type NivelAcesso } from "@/lib/types";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 export const maxDuration = 60;
 
@@ -155,12 +156,11 @@ export default async function MembrosPage({
             ))}
           </div>
         </div>
-        <button
-          type="submit"
+        <BotaoEnviar
           className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
           Convidar
-        </button>
+        </BotaoEnviar>
       </form>
 
       {(convites ?? []).length > 0 && (
@@ -198,12 +198,11 @@ export default async function MembrosPage({
                   )}
                   <form action={cancelarConvite}>
                     <input type="hidden" name="id" value={c.id} />
-                    <button
-                      type="submit"
+                    <BotaoEnviar
                       className="text-xs font-medium text-ink-muted hover:text-rose-600"
                     >
                       Cancelar
-                    </button>
+                    </BotaoEnviar>
                   </form>
                 </div>
               </div>
@@ -252,12 +251,11 @@ export default async function MembrosPage({
                         defaultValue={m.nome}
                         className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                       />
-                      <button
-                        type="submit"
+                      <BotaoEnviar
                         className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                       >
                         Salvar
-                      </button>
+                      </BotaoEnviar>
                     </form>
                   </details>
                   <details key={`${m.id}-${m.email}`} className="relative">
@@ -276,12 +274,11 @@ export default async function MembrosPage({
                         defaultValue={m.email}
                         className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                       />
-                      <button
-                        type="submit"
+                      <BotaoEnviar
                         className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                       >
                         Salvar
-                      </button>
+                      </BotaoEnviar>
                     </form>
                   </details>
                   <details className="relative">
@@ -301,12 +298,11 @@ export default async function MembrosPage({
                         placeholder="Nova senha (mín. 6 caracteres)"
                         className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
                       />
-                      <button
-                        type="submit"
+                      <BotaoEnviar
                         className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                       >
                         Salvar
-                      </button>
+                      </BotaoEnviar>
                     </form>
                   </details>
                   <form action={excluirMembro}>
@@ -347,12 +343,11 @@ export default async function MembrosPage({
                     </label>
                   ))}
                 </div>
-                <button
-                  type="submit"
+                <BotaoEnviar
                   className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-background"
                 >
                   Salvar
-                </button>
+                </BotaoEnviar>
               </form>
             </div>
           );

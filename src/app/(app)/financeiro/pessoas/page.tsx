@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Users, User, Landmark, Briefcase, UserCog, Wrench } from "lucide-react";
 import { criarPessoaFinanceiro, editarPessoaFinanceiro, apagarPessoaFinanceiro } from "./actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const PAPEL_LABEL: Record<string, string> = {
   cliente: "Cliente",
@@ -125,12 +126,11 @@ export default async function FinanceiroPessoasPage({
               <input name="email" placeholder="E-mail (opcional)" className={campoClasse} />
             </div>
             <input name="observacoes" placeholder="Observações (opcional)" className={campoClasse} />
-            <button
-              type="submit"
+            <BotaoEnviar
               className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
             >
               Adicionar
-            </button>
+            </BotaoEnviar>
           </form>
         </details>
       </div>
@@ -170,9 +170,9 @@ export default async function FinanceiroPessoasPage({
           placeholder="Buscar por nome, documento, e-mail ou telefone..."
           className={`${campoClasse} max-w-sm`}
         />
-        <button type="submit" className="rounded-md border border-border px-3 py-2 text-sm text-ink-muted hover:bg-background">
+        <BotaoEnviar className="rounded-md border border-border px-3 py-2 text-sm text-ink-muted hover:bg-background">
           Buscar
-        </button>
+        </BotaoEnviar>
       </form>
 
       <div className="overflow-x-auto rounded-xl border border-border/60 bg-surface shadow-sm">
@@ -265,22 +265,20 @@ export default async function FinanceiroPessoasPage({
                               placeholder="Observações"
                               className={campoClasse}
                             />
-                            <button
-                              type="submit"
+                            <BotaoEnviar
                               className="w-full rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
                             >
                               Salvar
-                            </button>
+                            </BotaoEnviar>
                           </form>
                         </details>
                         <form action={apagarPessoaFinanceiro}>
                           <input type="hidden" name="id" value={p.id} />
-                          <button
-                            type="submit"
+                          <BotaoEnviar
                             className="text-xs font-medium text-ink-muted hover:text-rose-600"
                           >
                             apagar
-                          </button>
+                          </BotaoEnviar>
                         </form>
                       </div>
                     </td>

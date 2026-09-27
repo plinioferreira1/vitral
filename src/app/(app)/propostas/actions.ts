@@ -1,5 +1,7 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -79,7 +81,7 @@ export async function criarCartaProposta(formData: FormData) {
 
   const dadosProponente = objetoParcial({ cpf_cnpj: campo("proponente_cpf") });
   if (!objetoVazio(dadosProponente)) {
-    await supabase.from("clientes").update(dadosProponente).eq("id", proponenteId);
+    await checar(supabase.from("clientes").update(dadosProponente).eq("id", proponenteId), "atualizar");
   }
 
   let segundoProponenteId: string | null = null;
@@ -89,7 +91,7 @@ export async function criarCartaProposta(formData: FormData) {
     if (segundoProponenteId) {
       const dadosSegundo = objetoParcial({ cpf_cnpj: campo("segundo_proponente_cpf") });
       if (!objetoVazio(dadosSegundo)) {
-        await supabase.from("clientes").update(dadosSegundo).eq("id", segundoProponenteId);
+        await checar(supabase.from("clientes").update(dadosSegundo).eq("id", segundoProponenteId), "atualizar");
       }
     }
   }
@@ -120,18 +122,18 @@ export async function criarCartaProposta(formData: FormData) {
 
   const condicoes = condicoesDoFormulario(formData);
   if (condicoes.length > 0) {
-    await supabase
+    await checar(supabase
       .from("carta_proposta_condicoes")
-      .insert(condicoes.map((c) => ({ ...c, carta_proposta_id: proposta.id })));
+      .insert(condicoes.map((c) => ({ ...c, carta_proposta_id: proposta.id }))), "salvar");
   }
 
   const signatarios = [{ nome_esperado: "Proponente 1", ordem: 1 }];
   if (segundoProponenteId) {
     signatarios.push({ nome_esperado: "Proponente 2", ordem: 2 });
   }
-  await supabase
+  await checar(supabase
     .from("carta_proposta_signatarios")
-    .insert(signatarios.map((s) => ({ ...s, carta_proposta_id: proposta.id })));
+    .insert(signatarios.map((s) => ({ ...s, carta_proposta_id: proposta.id }))), "salvar");
 
   redirect(`/propostas/${proposta.id}`);
 }
@@ -156,12 +158,12 @@ export async function atualizarCartaProposta(formData: FormData) {
     cpf_cnpj: campo("proponente_cpf"),
   });
   if (!objetoVazio(dadosProponente)) {
-    await supabase.from("clientes").update(dadosProponente).eq("id", existente.proponente_id);
+    await checar(supabase.from("clientes").update(dadosProponente).eq("id", existente.proponente_id), "atualizar");
   }
 
   const dadosImovel = objetoParcial({ endereco: campo("imovel") });
   if (!objetoVazio(dadosImovel)) {
-    await supabase.from("imoveis").update(dadosImovel).eq("id", existente.imovel_id);
+    await checar(supabase.from("imoveis").update(dadosImovel).eq("id", existente.imovel_id), "atualizar");
   }
 
   let segundoProponenteId = existente.segundo_proponente_id as string | null;
@@ -182,7 +184,7 @@ export async function atualizarCartaProposta(formData: FormData) {
         cpf_cnpj: campo("segundo_proponente_cpf"),
       });
       if (!objetoVazio(dadosSegundo)) {
-        await supabase.from("clientes").update(dadosSegundo).eq("id", segundoProponenteId);
+        await checar(supabase.from("clientes").update(dadosSegundo).eq("id", segundoProponenteId), "atualizar");
       }
     }
   } else {
@@ -194,7 +196,7 @@ export async function atualizarCartaProposta(formData: FormData) {
   const observacoes = campo("observacoes");
   const codigoSan = campo("codigo_san");
 
-  await supabase
+  await checar(supabase
     .from("cartas_proposta")
     .update({
       segundo_proponente_id: segundoProponenteId,
@@ -203,14 +205,14 @@ export async function atualizarCartaProposta(formData: FormData) {
       observacoes,
       codigo_san: codigoSan,
     })
-    .eq("id", id);
+    .eq("id", id), "atualizar");
 
-  await supabase.from("carta_proposta_condicoes").delete().eq("carta_proposta_id", id);
+  await checar(supabase.from("carta_proposta_condicoes").delete().eq("carta_proposta_id", id), "excluir");
   const condicoes = condicoesDoFormulario(formData);
   if (condicoes.length > 0) {
-    await supabase
+    await checar(supabase
       .from("carta_proposta_condicoes")
-      .insert(condicoes.map((c) => ({ ...c, carta_proposta_id: id })));
+      .insert(condicoes.map((c) => ({ ...c, carta_proposta_id: id }))), "salvar");
   }
 
   const querSegundo = !!segundoProponenteId;
@@ -221,11 +223,11 @@ export async function atualizarCartaProposta(formData: FormData) {
   const signatario2 = (signatarios ?? []).find((s) => s.ordem === 2);
 
   if (querSegundo && !signatario2) {
-    await supabase
+    await checar(supabase
       .from("carta_proposta_signatarios")
-      .insert({ carta_proposta_id: id, nome_esperado: "Proponente 2", ordem: 2 });
+      .insert({ carta_proposta_id: id, nome_esperado: "Proponente 2", ordem: 2 }), "salvar");
   } else if (!querSegundo && signatario2 && !signatario2.assinado_em) {
-    await supabase.from("carta_proposta_signatarios").delete().eq("id", signatario2.id);
+    await checar(supabase.from("carta_proposta_signatarios").delete().eq("id", signatario2.id), "excluir");
   }
 
   revalidatePath(`/propostas/${id}`);
@@ -238,7 +240,7 @@ export async function cancelarCartaProposta(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
-  await supabase.from("cartas_proposta").update({ status: "cancelado" }).eq("id", id);
+  await checar(supabase.from("cartas_proposta").update({ status: "cancelado" }).eq("id", id), "atualizar");
 
   revalidatePath(`/propostas/${id}`);
   revalidatePath("/propostas");
@@ -250,7 +252,7 @@ export async function salvarResponsavelCartaProposta(formData: FormData) {
   const responsavelId = String(formData.get("responsavel_id") ?? "").trim() || null;
   if (!id) return;
 
-  await supabase.from("cartas_proposta").update({ responsavel_id: responsavelId }).eq("id", id);
+  await checar(supabase.from("cartas_proposta").update({ responsavel_id: responsavelId }).eq("id", id), "atualizar");
 
   revalidatePath(`/propostas/${id}`);
   revalidatePath("/propostas");

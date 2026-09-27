@@ -27,6 +27,7 @@ import {
   Clock,
   Calendar,
 } from "lucide-react";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const COR_PRAZO_FUNDO: Record<CardPrazo["cor"], string> = {
   vermelho: "border-rose-200 bg-rose-50",
@@ -317,7 +318,7 @@ export default async function DashboardPage({
                 <input type="hidden" name="competencia" value={t.competencia} />
                 <input type="hidden" name="concluida_atual" value={String(t.concluida)} />
                 {t.statusId && <input type="hidden" name="status_id" value={t.statusId} />}
-                <button type="submit" className="flex w-full items-center gap-2.5 text-left text-sm">
+                <BotaoEnviar className="flex w-full items-center gap-2.5 text-left text-sm">
                   <span
                     className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
                       t.concluida ? "border-brand bg-brand text-white" : "border-border-strong bg-surface"
@@ -326,7 +327,7 @@ export default async function DashboardPage({
                     {t.concluida && <Check size={12} strokeWidth={3} />}
                   </span>
                   <span className={t.concluida ? "text-ink-muted line-through" : "text-ink"}>{t.nome}</span>
-                </button>
+                </BotaoEnviar>
               </form>
             ))}
           </div>

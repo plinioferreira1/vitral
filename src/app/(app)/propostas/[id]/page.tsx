@@ -7,6 +7,7 @@ import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { obterSiteUrl } from "@/lib/site-url";
 import { cancelarCartaProposta, salvarResponsavelCartaProposta } from "../actions";
 import { apagarCartaProposta } from "../bulk-actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 const STATUS_COR: Record<string, string> = {
   pendente: "bg-amber-50 text-amber-700 border-amber-100",
@@ -113,12 +114,11 @@ export default async function PropostaDetalhePage({
               </option>
             ))}
           </select>
-          <button
-            type="submit"
+          <BotaoEnviar
             className="rounded-md border border-border px-2 py-1 text-xs font-medium text-ink hover:opacity-80"
           >
             Salvar
-          </button>
+          </BotaoEnviar>
         </form>
         <p className="mt-0.5 text-[11px] text-ink-muted">
           Só quem criou ou o responsável enxerga o formulário completo desta proposta.
@@ -232,9 +232,9 @@ export default async function PropostaDetalhePage({
       {p.status === "pendente" && (
         <form action={cancelarCartaProposta}>
           <input type="hidden" name="id" value={p.id} />
-          <button type="submit" className="text-xs font-medium text-ink-muted hover:text-rose-600">
+          <BotaoEnviar className="text-xs font-medium text-ink-muted hover:text-rose-600">
             Cancelar esta proposta
-          </button>
+          </BotaoEnviar>
         </form>
       )}
 

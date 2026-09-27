@@ -1,4 +1,5 @@
 "use client";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 export function BotaoComConfirmacao({
   mensagem,
@@ -10,8 +11,7 @@ export function BotaoComConfirmacao({
   className?: string;
 }) {
   return (
-    <button
-      type="submit"
+    <BotaoEnviar
       className={className}
       onClick={(e) => {
         if (!window.confirm(mensagem)) {
@@ -20,6 +20,6 @@ export function BotaoComConfirmacao({
       }}
     >
       {children}
-    </button>
+    </BotaoEnviar>
   );
 }

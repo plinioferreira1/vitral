@@ -7,6 +7,7 @@ import { CATEGORIA_LABEL } from "@/lib/types";
 import { hojeISO } from "@/lib/data-br";
 import { addMonths, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 export default async function CalendarioPage({
   searchParams,
@@ -73,12 +74,11 @@ export default async function CalendarioPage({
               ))}
             </select>
             {mes && <input type="hidden" name="mes" value={mes} />}
-            <button
-              type="submit"
+            <BotaoEnviar
               className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface"
             >
               Filtrar
-            </button>
+            </BotaoEnviar>
           </form>
           <Link
             href={`/calendario?mes=${mesAnterior}${responsavel ? `&responsavel=${responsavel}` : ""}${categoria ? `&categoria=${categoria}` : ""}`}

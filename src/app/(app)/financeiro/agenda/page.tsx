@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { AlertTriangle } from "lucide-react";
 import { registrarBaixa, cancelarLancamento, editarLancamento } from "../lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 function brl(v: number): string {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -134,12 +135,11 @@ export default async function AgendaFinanceiraPage() {
                                   </label>
                                 </div>
                               )}
-                              <button
-                                type="submit"
+                              <BotaoEnviar
                                 className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                               >
                                 Salvar alterações
-                              </button>
+                              </BotaoEnviar>
                             </form>
                           </details>
                           <details className="relative">
@@ -178,19 +178,18 @@ export default async function AgendaFinanceiraPage() {
                                   </option>
                                 ))}
                               </select>
-                              <button
-                                type="submit"
+                              <BotaoEnviar
                                 className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
                               >
                                 Confirmar
-                              </button>
+                              </BotaoEnviar>
                             </form>
                           </details>
                           <form action={cancelarLancamento}>
                             <input type="hidden" name="id" value={l.id} />
-                            <button type="submit" className="text-xs text-ink-muted hover:text-rose-600">
+                            <BotaoEnviar className="text-xs text-ink-muted hover:text-rose-600">
                               cancelar
-                            </button>
+                            </BotaoEnviar>
                           </form>
                         </div>
                       </li>

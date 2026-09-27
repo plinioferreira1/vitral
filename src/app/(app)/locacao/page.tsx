@@ -12,6 +12,7 @@ import { CalculadoraMultaRescisoria } from "@/components/calculadora-multa-resci
 import { hojeISO } from "@/lib/data-br";
 import { addMonths, format, parseISO, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 function primeiroDiaDoMes(): string {
   return `${hojeISO().slice(0, 7)}-01`;
@@ -292,7 +293,7 @@ export default async function LocacaoPage({
                     {statusExistente && (
                       <input type="hidden" name="status_id" value={statusExistente.id} />
                     )}
-                    <button type="submit" className="flex w-full items-center gap-2.5 text-left text-sm">
+                    <BotaoEnviar className="flex w-full items-center gap-2.5 text-left text-sm">
                       <span
                         className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
                           concluida ? "border-brand bg-brand text-white" : "border-border-strong bg-surface"
@@ -314,7 +315,7 @@ export default async function LocacaoPage({
                         {t.nome}
                       </span>
                       {t.regra && <span className="text-xs text-ink-muted">· {t.regra}</span>}
-                    </button>
+                    </BotaoEnviar>
                   </form>
                 );
               })}

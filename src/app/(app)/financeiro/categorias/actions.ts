@@ -1,7 +1,10 @@
 "use server";
 
+import { checar } from "@/lib/aviso";
+
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { valorDaLista } from "@/lib/validacao";
 
 async function tenantAtual(supabase: Awaited<ReturnType<typeof createClient>>) {
   const {
@@ -21,14 +24,14 @@ export async function criarCategoria(formData: FormData) {
   if (!tenantId) return;
 
   const nome = String(formData.get("nome") ?? "").trim();
-  const tipo = String(formData.get("tipo") ?? "despesa");
+  const tipo = valorDaLista("financeiro_tipo_categoria", formData.get("tipo"), "despesa");
   const grupo = String(formData.get("grupo") ?? "").trim() || null;
   const centroCustoPadraoId = String(formData.get("centro_custo_padrao_id") ?? "").trim() || null;
   if (!nome) return;
 
-  await supabase
+  await checar(supabase
     .from("financeiro_categorias")
-    .insert({ tenant_id: tenantId, nome, tipo, grupo, centro_custo_padrao_id: centroCustoPadraoId });
+    .insert({ tenant_id: tenantId, nome, tipo, grupo, centro_custo_padrao_id: centroCustoPadraoId }), "salvar");
   revalidatePath("/financeiro/categorias");
 }
 
@@ -41,10 +44,10 @@ export async function editarCategoria(formData: FormData) {
   if (!nome) return;
 
   const supabase = await createClient();
-  await supabase
+  await checar(supabase
     .from("financeiro_categorias")
     .update({ nome, grupo, centro_custo_padrao_id: centroCustoPadraoId })
-    .eq("id", id);
+    .eq("id", id), "atualizar");
   revalidatePath("/financeiro/categorias");
 }
 
@@ -52,7 +55,7 @@ export async function apagarCategoria(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();
-  await supabase.from("financeiro_categorias").delete().eq("id", id);
+  await checar(supabase.from("financeiro_categorias").delete().eq("id", id), "excluir");
   revalidatePath("/financeiro/categorias");
 }
 
@@ -64,7 +67,7 @@ export async function criarCentroCusto(formData: FormData) {
   const nome = String(formData.get("nome") ?? "").trim();
   if (!nome) return;
 
-  await supabase.from("financeiro_centros_custo").insert({ tenant_id: tenantId, nome });
+  await checar(supabase.from("financeiro_centros_custo").insert({ tenant_id: tenantId, nome }), "salvar");
   revalidatePath("/financeiro/categorias");
 }
 
@@ -72,6 +75,6 @@ export async function apagarCentroCusto(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();
-  await supabase.from("financeiro_centros_custo").delete().eq("id", id);
+  await checar(supabase.from("financeiro_centros_custo").delete().eq("id", id), "excluir");
   revalidatePath("/financeiro/categorias");
 }
