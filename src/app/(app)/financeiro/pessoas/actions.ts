@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 function categoriaFornecedorOuNull(formData: FormData, papel: string): string | null {
   if (papel === "cliente") return null;
@@ -62,6 +63,9 @@ export async function editarPessoaFinanceiro(formData: FormData) {
     .eq("id", id);
 
   revalidatePath("/financeiro/pessoas");
+
+  const returnTo = String(formData.get("return_to") ?? "");
+  if (returnTo.startsWith("/financeiro/")) redirect(returnTo);
 }
 
 export async function apagarPessoaFinanceiro(formData: FormData) {

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { CartaoIndicador } from "@/components/cartao-indicador";
 import { GraficoFluxoCaixa } from "@/components/grafico-fluxo-caixa";
-import { identidadeBanco } from "@/lib/bancos";
+import { LogoBanco } from "@/components/financeiro/logo-banco";
 import {
   Wallet,
   TrendingUp,
@@ -277,15 +277,9 @@ export default async function FinanceiroDashboardPage({
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {(contas ?? []).map((c) => {
               const saldo = Number(c.saldo_inicial) + (movimentoPorConta.get(c.id) ?? 0);
-              const id = identidadeBanco(c.banco);
               return (
                 <div key={c.id} className="flex items-center gap-3 rounded-lg border border-border/60 p-3">
-                  <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[10px] font-bold"
-                    style={{ backgroundColor: id.bg, color: id.fg }}
-                  >
-                    {id.sigla.length <= 3 ? id.sigla.toUpperCase() : id.sigla.slice(0, 2).toUpperCase()}
-                  </div>
+                  <LogoBanco banco={c.banco} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs text-ink-muted">{c.nome}</p>
                     <p className={`num text-sm font-semibold ${saldo < 0 ? "text-rose-600" : "text-ink"}`}>{brl(saldo)}</p>

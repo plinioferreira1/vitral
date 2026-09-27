@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Users, User, Landmark, Briefcase, UserCog, Wrench } from "lucide-react";
-import { criarPessoaFinanceiro, editarPessoaFinanceiro, apagarPessoaFinanceiro } from "./actions";
+import { criarPessoaFinanceiro, apagarPessoaFinanceiro } from "./actions";
 
 const PAPEL_LABEL: Record<string, string> = {
   cliente: "Cliente",
@@ -216,63 +216,12 @@ export default async function FinanceiroPessoasPage({
                     </td>
                     <td className="px-4 py-2.5 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <details className="relative">
-                          <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
-                            editar
-                          </summary>
-                          <form
-                            action={editarPessoaFinanceiro}
-                            className="absolute right-0 z-10 mt-1 w-72 space-y-2 rounded-md border border-border bg-surface p-3 shadow-md"
-                          >
-                            <input type="hidden" name="id" value={p.id} />
-                            <input name="nome" required defaultValue={p.nome} className={campoClasse} />
-                            <input
-                              name="cpf_cnpj"
-                              defaultValue={p.cpf_cnpj ?? ""}
-                              placeholder="CPF/CNPJ"
-                              className={campoClasse}
-                            />
-                            <select name="papel" defaultValue={p.papel} className={campoClasse}>
-                              <option value="fornecedor">Fornecedor</option>
-                              <option value="cliente">Cliente</option>
-                              <option value="ambos">Cliente e fornecedor</option>
-                            </select>
-                            <select
-                              name="categoria_fornecedor"
-                              defaultValue={p.categoria_fornecedor ?? ""}
-                              className={campoClasse}
-                            >
-                              <option value="">Categoria do fornecedor (opcional)</option>
-                              <option value="funcionario">Funcionário</option>
-                              <option value="corretor">Corretor</option>
-                              <option value="prestador_servico">Prestador de Serviço</option>
-                            </select>
-                            <input
-                              name="telefone"
-                              defaultValue={p.telefone ?? ""}
-                              placeholder="Telefone"
-                              className={campoClasse}
-                            />
-                            <input
-                              name="email"
-                              defaultValue={p.email ?? ""}
-                              placeholder="E-mail"
-                              className={campoClasse}
-                            />
-                            <input
-                              name="observacoes"
-                              defaultValue={p.observacoes ?? ""}
-                              placeholder="Observações"
-                              className={campoClasse}
-                            />
-                            <button
-                              type="submit"
-                              className="w-full rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                            >
-                              Salvar
-                            </button>
-                          </form>
-                        </details>
+                        <Link
+                          href={`/financeiro/pessoas/${p.id}/editar`}
+                          className="text-xs font-medium text-brand hover:underline"
+                        >
+                          editar
+                        </Link>
                         <form action={apagarPessoaFinanceiro}>
                           <input type="hidden" name="id" value={p.id} />
                           <button

@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { Landmark, ArrowUp, ArrowDown } from "lucide-react";
-import { identidadeBanco } from "@/lib/bancos";
+import { LogoBanco } from "@/components/financeiro/logo-banco";
 import { criarContaBancaria, arquivarContaBancaria } from "./actions";
 
 const campoClasse =
@@ -143,17 +143,11 @@ export default async function ContasBancariasPage({
                 const saldoAtual = Number(c.saldo_inicial) + (movimentoPorConta.get(c.id) ?? 0);
                 const saldoHa30Dias = Number(c.saldo_inicial) + (movimentoPorContaHa30Dias.get(c.id) ?? 0);
                 const variacao = saldoHa30Dias !== 0 ? ((saldoAtual - saldoHa30Dias) / Math.abs(saldoHa30Dias)) * 100 : null;
-                const id = identidadeBanco(c.banco);
                 return (
                   <tr key={c.id} className={c.ativa ? "" : "opacity-60"}>
                     <td className="px-4 py-2.5">
                       <div className="flex items-center gap-3">
-                        <div
-                          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[10px] font-bold"
-                          style={{ backgroundColor: id.bg, color: id.fg }}
-                        >
-                          {id.sigla.length <= 3 ? id.sigla.toUpperCase() : id.sigla.slice(0, 2).toUpperCase()}
-                        </div>
+                        <LogoBanco banco={c.banco} />
                         <div>
                           <p className="text-sm font-medium text-ink">{c.nome}</p>
                           <p className="text-xs text-ink-muted">
