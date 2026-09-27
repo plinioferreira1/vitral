@@ -23,11 +23,8 @@ import {
 } from "lucide-react";
 import { CartaoKpi } from "@/components/cartao-kpi";
 import {
-  criarLancamento,
-  registrarBaixa,
   cancelarLancamento,
   reativarLancamento,
-  editarLancamento,
   apagarLancamentos,
   categorizarLancamento,
 } from "./lancamentos-actions";
@@ -35,7 +32,6 @@ import { hojeISO } from "@/lib/data-br";
 import { SelecionarTodos } from "@/components/selecionar-todos";
 import { SelectAutoSubmit } from "@/components/select-auto-submit";
 import { PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
-import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -195,10 +191,6 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
       .order("vencimento"),
     supabase.from("financeiro_baixas").select("lancamento_id, valor, data"),
   ]);
-  const baixadoPorLancamento = new Map<string, number>();
-  (baixasRaw ?? []).forEach((b) => {
-    baixadoPorLancamento.set(b.lancamento_id, (baixadoPorLancamento.get(b.lancamento_id) ?? 0) + Number(b.valor));
-  });
 
   const todos = (lancamentosTodos ?? []) as unknown as LancamentoLinha[];
 
@@ -434,161 +426,10 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           </button>
           <CamposOcultos omitir={["q"]} />
         </form>
-        <details className="relative shrink-0">
-          <summary className={`${PRIMARY_BUTTON_CLASS} cursor-pointer list-none`}>
+        <Link href={`/financeiro/lancamentos/novo?tipo=${tipo}`} className={`${PRIMARY_BUTTON_CLASS} shrink-0`}>
             <Plus size={16} strokeWidth={2.2} />
             Novo lançamento
-          </summary>
-          <form
-            action={criarLancamento}
-            className="absolute right-0 z-30 mt-2 max-h-[80vh] w-[min(calc(100vw-2rem),960px)] space-y-5 overflow-y-auto rounded-2xl border border-border/70 bg-surface p-5 shadow-xl sm:p-7"
-          >
-            <input type="hidden" name="tipo" value={tipo} />
-
-            <div className="border-b border-border pb-4">
-              <p className="text-lg font-bold tracking-tight text-ink">Novo lançamento</p>
-              <p className="mt-1 text-sm text-ink-muted">Cadastre {tipo === "receita" ? "uma conta a receber" : "uma conta a pagar"} e acompanhe vencimentos e baixas.</p>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">1. Dados principais</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input name="descricao" required placeholder="Descrição" className={campoClasse} />
-                <input name="valor" type="number" step="0.01" required placeholder="Valor (R$)" className={campoClasse} />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <BuscaOpcaoFinanceira name="pessoa_id" label={rotuloPessoa} options={pessoas ?? []} />
-                <BuscaOpcaoFinanceira name="categoria_id" label="Categoria" options={categorias ?? []} />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <select name="centro_custo_id" defaultValue="" className={campoClasse}>
-                  <option value="">Centro de resultado (opcional)</option>
-                  {(centros ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
-                <select name="unidade_id" defaultValue="" className={campoClasse}>
-                  <option value="">Unidade (opcional)</option>
-                  {(unidades ?? []).map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.nome}
-                    </option>
-                  ))}
-                </select>
-                <select name="conta_bancaria_id" defaultValue="" className={campoClasse}>
-                  <option value="">Conta bancária prevista (opcional)</option>
-                  {(contas ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">2. Datas e pagamento</p>
-              <label className="flex items-center gap-2 text-sm font-medium text-ink">
-                <input type="checkbox" name="recorrente" className="accent-brand" />
-                <Repeat size={14} strokeWidth={2} />
-                Isso é uma conta recorrente
-              </label>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-muted">
-                    Vencimento (só pra lançamento avulso)
-                  </label>
-                  <input name="vencimento" type="date" className={campoClasse} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-muted">Competência (opcional)</label>
-                  <input name="competencia" type="date" className={campoClasse} />
-                </div>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input name="forma_pagamento" placeholder="Forma de pagamento (opcional)" className={campoClasse} />
-                <input name="numero_documento" placeholder="Número do documento (opcional)" className={campoClasse} />
-              </div>
-            </div>
-
-            <div className="space-y-3 rounded-lg bg-background p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                3. Recorrência (se marcou o campo acima)
-              </p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <select name="frequencia" defaultValue="mensal" className={campoClasse}>
-                  <option value="semanal">Semanal</option>
-                  <option value="mensal">Mensal</option>
-                  <option value="trimestral">Trimestral</option>
-                  <option value="semestral">Semestral</option>
-                  <option value="anual">Anual</option>
-                </select>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-muted">Data da 1ª ocorrência</label>
-                  <input name="data_inicio" type="date" className={campoClasse} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-muted">
-                    Repetir até (data final)
-                  </label>
-                  <input name="data_fim" type="date" className={campoClasse} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-muted">
-                    ...ou por quantas vezes
-                  </label>
-                  <input name="numero_ocorrencias" type="number" min={1} placeholder="Ex: 12" className={campoClasse} />
-                </div>
-              </div>
-              <p className="text-[11px] text-ink-muted">
-                Preencha &quot;repetir até&quot; OU &quot;quantas vezes&quot; — só precisa de um dos dois. As
-                ocorrências já são criadas todas de uma vez (limite de 60 lançamentos por recorrência).
-              </p>
-
-              <div className="space-y-2 border-t border-border pt-3">
-                <p className="text-xs font-medium text-ink">Vencimento de cada ocorrência</p>
-                <div className="flex flex-wrap gap-4">
-                  <label className="flex items-center gap-1.5 text-xs text-ink">
-                    <input type="radio" name="tipo_vencimento" value="fixo" defaultChecked className="accent-brand" />
-                    Sempre no mesmo dia (usa a data da 1ª ocorrência)
-                  </label>
-                  <label className="flex items-center gap-1.5 text-xs text-ink">
-                    <input type="radio" name="tipo_vencimento" value="dia_util" className="accent-brand" />
-                    Num dia útil do mês
-                  </label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    name="dia_util"
-                    type="number"
-                    min={1}
-                    max={23}
-                    placeholder="Ex: 5"
-                    className={`${campoClasse} max-w-[100px]`}
-                  />
-                  <span className="text-xs text-ink-muted">
-                    º dia útil do mês (só vale se marcar a opção acima — a data da 1ª ocorrência
-                    serve só pra indicar o mês/ano de início). Vale para mensal, trimestral, semestral
-                    e anual; não se aplica à semanal.
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">4. Observações</p>
-              <textarea name="observacoes" rows={2} placeholder="Observações (opcional)" className={campoClasse} />
-            </div>
-
-            <div className="flex justify-end border-t border-border/70 pt-4">
-              <button type="submit" className={PRIMARY_BUTTON_CLASS}>
-                Criar lançamento
-              </button>
-            </div>
-          </form>
-        </details>
+        </Link>
       </div>
 
       <details open className="group rounded-2xl border border-border/70 bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
@@ -757,7 +598,6 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                   const pessoa = l.financeiro_pessoas;
                   const categoria = l.financeiro_categorias;
                   const conta = l.financeiro_contas_bancarias;
-                  const restante = Number(l.valor) - (baixadoPorLancamento.get(l.id) ?? 0);
                   const editavel = l.status === "pendente" || l.status === "pago_parcial";
                   const estado = estadoExibicao(l, hoje);
                   return (
@@ -846,152 +686,21 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                             </details>
                           )}
                           {editavel && (
-                            <details className="relative">
-                              <summary
-                                className="flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1.5 text-xs text-ink-muted hover:bg-background hover:text-brand"
-                                aria-label="Editar"
-                                title="Editar"
-                              >
-                                <Pencil size={15} strokeWidth={2} /> Editar
-                              </summary>
-                              <form
-                                action={editarLancamento}
-                                className="mt-2 w-full space-y-2 rounded-md border border-border bg-background p-3"
-                              >
-                                <input type="hidden" name="id" value={l.id} />
-                                <input
-                                  name="descricao"
-                                  defaultValue={l.descricao}
-                                  required
-                                  placeholder="Descrição"
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                />
-                                <input
-                                  name="valor"
-                                  type="number"
-                                  step="0.01"
-                                  defaultValue={l.valor}
-                                  required
-                                  placeholder="Valor"
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                />
-                                <input
-                                  name="vencimento"
-                                  type="date"
-                                  defaultValue={l.vencimento}
-                                  required
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                />
-                                <input
-                                  name="competencia"
-                                  type="date"
-                                  defaultValue={l.competencia ?? l.vencimento}
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                />
-                                <select
-                                  name="pessoa_id"
-                                  defaultValue={l.pessoa_id ?? ""}
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                >
-                                  <option value="">{rotuloPessoa} (opcional)</option>
-                                  {(pessoas ?? []).map((p) => (
-                                    <option key={p.id} value={p.id}>
-                                      {p.nome}
-                                    </option>
-                                  ))}
-                                </select>
-                                <select
-                                  name="categoria_id"
-                                  defaultValue={l.categoria_id ?? ""}
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                >
-                                  <option value="">Categoria (opcional)</option>
-                                  {(categorias ?? []).map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                      {c.nome}
-                                    </option>
-                                  ))}
-                                </select>
-                                {l.recorrencia_id && (
-                                  <div className="space-y-1 rounded-md bg-background p-2">
-                                    <p className="text-[10px] font-medium text-ink-muted">
-                                      Faz parte de uma recorrência. Aplicar a:
-                                    </p>
-                                    <label className="flex items-center gap-1.5 text-[11px] text-ink">
-                                      <input type="radio" name="escopo" value="um" defaultChecked className="accent-brand" />
-                                      Somente este lançamento
-                                    </label>
-                                    <label className="flex items-center gap-1.5 text-[11px] text-ink">
-                                      <input type="radio" name="escopo" value="todos_futuros" className="accent-brand" />
-                                      Este e todos os futuros da recorrência
-                                    </label>
-                                    <p className="text-[10px] text-ink-muted">
-                                      Nesse caso o vencimento de cada ocorrência é mantido — só descrição, valor,
-                                      categoria e demais dados cadastrais são replicados.
-                                    </p>
-                                  </div>
-                                )}
-                                <button
-                                  type="submit"
-                                  className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                                >
-                                  Salvar alterações
-                                </button>
-                              </form>
-                            </details>
+                            <Link
+                              href={`/financeiro/lancamentos/${l.id}/editar`}
+                              className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-ink-muted hover:bg-background hover:text-brand"
+                            >
+                              <Pencil size={15} strokeWidth={2} /> Editar
+                            </Link>
                           )}
                           {l.status !== "pago" && l.status !== "cancelado" && (
                             <>
-                              <details className="relative">
-                                <summary
-                                  className="flex cursor-pointer list-none items-center gap-2 rounded-md px-2 py-1.5 text-xs text-brand hover:bg-background"
-                                  aria-label={tipo === "receita" ? "Receber" : "Pagar"}
-                                  title={tipo === "receita" ? "Receber" : "Pagar"}
-                                >
-                                  <CheckCircle2 size={15} strokeWidth={2} /> {tipo === "receita" ? "Receber" : "Pagar"}
-                                </summary>
-                                <form
-                                  action={registrarBaixa}
-                                  className="mt-2 w-full space-y-2 rounded-md border border-border bg-background p-3"
-                                >
-                                  <input type="hidden" name="lancamento_id" value={l.id} />
-                                  <p className="text-xs text-ink-muted">Restante: {brl(restante)}</p>
-                                  <input
-                                    name="valor"
-                                    type="number"
-                                    step="0.01"
-                                    required
-                                    defaultValue={restante}
-                                    placeholder="Valor"
-                                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                  />
-                                  <input
-                                    name="data"
-                                    type="date"
-                                    required
-                                    defaultValue={new Date().toISOString().slice(0, 10)}
-                                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                  />
-                                  <select
-                                    name="conta_bancaria_id"
-                                    defaultValue=""
-                                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                  >
-                                    <option value="">Conta bancária</option>
-                                    {(contas ?? []).map((c) => (
-                                      <option key={c.id} value={c.id}>
-                                        {c.nome}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <button
-                                    type="submit"
-                                    className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                                  >
-                                    Confirmar
-                                  </button>
-                                </form>
-                              </details>
+                              <Link
+                                href={`/financeiro/lancamentos/${l.id}/baixar`}
+                                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-brand hover:bg-background"
+                              >
+                                <CheckCircle2 size={15} strokeWidth={2} /> {tipo === "receita" ? "Receber" : "Pagar"}
+                              </Link>
                               <form action={cancelarLancamento}>
                                 <input type="hidden" name="id" value={l.id} />
                                 <button

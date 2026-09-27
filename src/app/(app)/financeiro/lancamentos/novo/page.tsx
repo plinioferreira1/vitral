@@ -1,0 +1,237 @@
+import Link from "next/link";
+import { ArrowLeft, CalendarDays, FileText, Repeat, Wallet } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
+import { criarLancamento } from "../../lancamentos-actions";
+import { hojeISO } from "@/lib/data-br";
+
+const campoClasse =
+  "w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10";
+
+export default async function NovoLancamentoFinanceiroPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ tipo?: string }>;
+}) {
+  const { tipo: tipoParam } = await searchParams;
+  const tipo = tipoParam === "receita" ? "receita" : "despesa";
+  const supabase = await createClient();
+  const hoje = hojeISO();
+
+  const [{ data: pessoas }, { data: categorias }, { data: centros }, { data: unidades }, { data: contas }] =
+    await Promise.all([
+      supabase.from("financeiro_pessoas").select("id, nome").order("nome"),
+      supabase.from("financeiro_categorias").select("id, nome").eq("tipo", tipo).order("nome"),
+      supabase.from("financeiro_centros_custo").select("id, nome").order("nome"),
+      supabase.from("financeiro_unidades").select("id, nome").order("nome"),
+      supabase.from("financeiro_contas_bancarias").select("id, nome").eq("ativa", true).order("nome"),
+    ]);
+
+  const titulo = tipo === "receita" ? "Nova conta a receber" : "Nova despesa";
+  const rotuloPessoa = tipo === "receita" ? "Cliente" : "Fornecedor";
+  const retorno = tipo === "receita" ? "/financeiro/contas-a-receber#lista" : "/financeiro/contas-a-pagar#lista";
+
+  return (
+    <form action={criarLancamento} className="financeiro-ui mx-auto max-w-[1180px] space-y-5 pb-24">
+      <input type="hidden" name="tipo" value={tipo} />
+      <input type="hidden" name="return_to" value={retorno} />
+
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <Link href={retorno} className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline">
+            <ArrowLeft size={16} />
+            Voltar
+          </Link>
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">{titulo}</h1>
+          <p className="mt-1 text-sm text-ink-muted">
+            Lance uma movimentacao no modelo operacional do financeiro, com dados principais, condicao de pagamento e recorrencia.
+          </p>
+        </div>
+        <button type="submit" className="rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90">
+          Salvar lancamento
+        </button>
+      </div>
+
+      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
+          <FileText size={18} className="text-brand" />
+          <h2 className="text-base font-bold text-ink">Informacoes do lancamento</h2>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-[1.2fr_170px_1.8fr_170px]">
+          <BuscaOpcaoFinanceira name="pessoa_id" label={rotuloPessoa} options={pessoas ?? []} />
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Data de competencia</label>
+            <input name="competencia" type="date" defaultValue={hoje} className={campoClasse} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Descricao *</label>
+            <input name="descricao" required placeholder="Ex: aluguel, comissao, taxa, reembolso..." className={campoClasse} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Valor *</label>
+            <input name="valor" type="number" step="0.01" required placeholder="0,00" className={campoClasse} />
+          </div>
+        </div>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-[180px_1.4fr_1.4fr_1fr]">
+          <div>
+            <p className="mb-1 text-xs font-medium text-ink-muted">Habilitar rateio</p>
+            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-2 py-1 text-xs text-ink-muted">
+              <span className="h-6 w-6 rounded-full bg-surface shadow-sm" />
+              Nao
+            </div>
+          </div>
+          <BuscaOpcaoFinanceira name="categoria_id" label="Categoria" options={categorias ?? []} />
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Centro de resultado</label>
+            <select name="centro_custo_id" defaultValue="" className={campoClasse}>
+              <option value="">Selecione...</option>
+              {(centros ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Codigo de referencia</label>
+            <input name="numero_documento" placeholder="Opcional" className={campoClasse} />
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
+          <Wallet size={18} className="text-brand" />
+          <h2 className="text-base font-bold text-ink">Condicao de pagamento</h2>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-[150px_170px_1.2fr_1.2fr_auto_auto] lg:items-end">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Parcelamento</label>
+            <select className={campoClasse} defaultValue="avista">
+              <option value="avista">A vista</option>
+              <option value="parcelado">Parcelado</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Vencimento *</label>
+            <input name="vencimento" type="date" defaultValue={hoje} required className={campoClasse} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>
+            <input name="forma_pagamento" placeholder="Pix, boleto, transferencia..." className={campoClasse} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Conta prevista</label>
+            <select name="conta_bancaria_id" defaultValue="" className={campoClasse}>
+              <option value="">Selecione...</option>
+              {(contas ?? []).map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nome}
+                </option>
+              ))}
+            </select>
+          </div>
+          <label className="flex items-center gap-2 pb-2 text-sm text-ink">
+            <input type="checkbox" className="accent-brand" disabled />
+            Pago
+          </label>
+          <label className="flex items-center gap-2 pb-2 text-sm text-ink">
+            <input type="checkbox" className="accent-brand" disabled />
+            Agendado
+          </label>
+        </div>
+
+        <div className="mt-5 rounded-xl border border-brand/15 bg-brand-soft/60 p-4">
+          <p className="text-sm font-bold text-ink">Rotina da Sacra</p>
+          <div className="mt-2 grid gap-2 text-sm text-ink-muted md:grid-cols-3">
+            <span className="text-brand">✓ <span className="text-ink-muted">Vencimento entra na agenda financeira</span></span>
+            <span className="text-brand">✓ <span className="text-ink-muted">Baixa pode ser total ou parcial</span></span>
+            <span className="text-brand">✓ <span className="text-ink-muted">Categoria ajuda nos relatorios</span></span>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
+          <Repeat size={18} className="text-brand" />
+          <h2 className="text-base font-bold text-ink">Recorrencia</h2>
+        </div>
+        <label className="mb-4 flex items-center gap-2 text-sm font-medium text-ink">
+          <input type="checkbox" name="recorrente" className="accent-brand" />
+          Repetir lancamento
+        </label>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Frequencia</label>
+            <select name="frequencia" defaultValue="mensal" className={campoClasse}>
+              <option value="semanal">Semanal</option>
+              <option value="mensal">Mensal</option>
+              <option value="trimestral">Trimestral</option>
+              <option value="semestral">Semestral</option>
+              <option value="anual">Anual</option>
+            </select>
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Data da 1a ocorrencia</label>
+            <input name="data_inicio" type="date" className={campoClasse} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Repetir ate</label>
+            <input name="data_fim" type="date" className={campoClasse} />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Ou por quantas vezes</label>
+            <input name="numero_ocorrencias" type="number" min={1} placeholder="Ex: 12" className={campoClasse} />
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-2 rounded-lg bg-background p-3">
+          <p className="text-xs font-semibold text-ink">Vencimento de cada ocorrencia</p>
+          <div className="flex flex-wrap gap-4">
+            <label className="flex items-center gap-2 text-xs text-ink">
+              <input type="radio" name="tipo_vencimento" value="fixo" defaultChecked className="accent-brand" />
+              Mesmo dia da primeira ocorrencia
+            </label>
+            <label className="flex items-center gap-2 text-xs text-ink">
+              <input type="radio" name="tipo_vencimento" value="dia_util" className="accent-brand" />
+              Dia util do mes
+            </label>
+          </div>
+          <input name="dia_util" type="number" min={1} max={23} placeholder="Ex: 5" className={`${campoClasse} max-w-[120px]`} />
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
+          <CalendarDays size={18} className="text-brand" />
+          <h2 className="text-base font-bold text-ink">Observacoes e anexos</h2>
+        </div>
+        <div className="grid gap-4 lg:grid-cols-[1fr_280px]">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Observacoes</label>
+            <textarea name="observacoes" rows={4} placeholder="Detalhes relevantes sobre este lancamento..." className={campoClasse} />
+          </div>
+          <div className="rounded-lg border border-dashed border-border bg-background p-4 text-sm text-ink-muted">
+            <p className="font-semibold text-ink">Anexo</p>
+            <p className="mt-1">Espaco reservado para nota fiscal, boleto, comprovante ou contrato em uma proxima etapa.</p>
+          </div>
+        </div>
+      </section>
+
+      <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 px-6 py-3 backdrop-blur">
+        <div className="mx-auto flex max-w-[1180px] justify-between gap-3">
+          <Link href={retorno} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-ink-muted hover:bg-background">
+            Voltar
+          </Link>
+          <button type="submit" className="rounded-lg bg-brand px-5 py-2 text-sm font-bold text-white shadow-sm hover:opacity-90">
+            Salvar
+          </button>
+        </div>
+      </div>
+    </form>
+  );
+}
