@@ -233,6 +233,8 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   let lancamentos = todos.filter((l) => {
     if (f.status === "sem_categoria") {
       if (l.categoria_id !== null || (l.status !== "pago" && l.status !== "pago_parcial")) return false;
+    } else if (f.status === "em_aberto") {
+      if (l.status !== "pendente" && l.status !== "pago_parcial") return false;
     } else if (f.status && estadoExibicao(l, hoje) !== f.status) {
       return false;
     } else if (!f.status && l.status === "cancelado") {
@@ -304,6 +306,21 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const rotuloPessoa = tipo === "receita" ? "Cliente" : "Fornecedor";
   const rota = tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   const temFiltro = !!(f.status || f.categoria || f.pessoa || f.conta_bancaria || f.unidade || f.competencia || f.q);
+  const abasSituacao: [string, string, number][] = [
+    ["", "Todos", todos.filter((l) => l.status !== "cancelado").length],
+    ["em_aberto", "Em aberto", todos.filter((l) => l.status === "pendente" || l.status === "pago_parcial").length],
+    ["vencido", "Vencidos", vencidos.length],
+    ["recorrente", "Recorrentes", recorrentes.length],
+    ["pago", tipo === "receita" ? "Recebidos" : "Pagos", todos.filter((l) => l.status === "pago").length],
+    ["cancelado", "Cancelados", todos.filter((l) => l.status === "cancelado").length],
+  ];
+  if (tipo === "receita") {
+    abasSituacao.splice(5, 0, [
+      "sem_categoria",
+      "Sem categoria",
+      todos.filter((l) => l.categoria_id === null && (l.status === "pago" || l.status === "pago_parcial")).length,
+    ]);
+  }
 
   function linkOrdenar(campo: CampoOrdenacao): string {
     const novaDirecao = ordenar === campo && direcao === "asc" ? "desc" : "asc";
@@ -347,23 +364,11 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         </p>
       </div>
 
-      {tipo === "receita" && (
-        <div className="flex flex-wrap gap-2 border-b border-border">
-          {(
-            [
-              ["", "Todos", todos.length],
-              ["pendente", "Pendentes", todos.filter((l) => l.status === "pendente" || l.status === "pago_parcial").length],
-              ["pago", "Recebidos", todos.filter((l) => l.status === "pago").length],
-              [
-                "sem_categoria",
-                "Sem categoria",
-                todos.filter((l) => l.categoria_id === null && (l.status === "pago" || l.status === "pago_parcial")).length,
-              ],
-            ] as [string, string, number][]
-          ).map(([valor, label, contagem]) => (
+      <div className="flex flex-wrap gap-2 border-b border-border">
+          {abasSituacao.map(([valor, label, contagem]) => (
             <Link
               key={valor || "todos"}
-              href={valor ? `${rota}?status=${valor}` : rota}
+              href={valor ? `${rota}?status=${valor}#lista` : `${rota}#lista`}
               className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
                 (f.status ?? "") === valor
                   ? "border-brand text-brand"
@@ -373,8 +378,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
               {label} {contagem > 0 && <span className="text-xs">({contagem})</span>}
             </Link>
           ))}
-        </div>
-      )}
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <CartaoKpi
@@ -382,7 +386,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           tom="marca"
           label={`${tipo === "receita" ? "A receber" : "A pagar"} no mês`}
           valor={brl(totalNoMes)}
-          href={`${rota}?status=pendente#lista`}
+          href={`${rota}?status=em_aberto#lista`}
           rodape={linhaComparativo(variacao(comprometidoMes, comprometidoMesAnterior), false)}
         />
         <CartaoKpi
@@ -612,6 +616,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           <label className="mb-1 block text-xs font-medium text-ink-muted">Status</label>
           <select name="status" defaultValue={f.status ?? ""} className={campoClasse}>
             <option value="">Todos</option>
+            <option value="em_aberto">Em aberto</option>
             <option value="pendente">Pendente</option>
             <option value="vencido">Vencido</option>
             <option value="recorrente">Recorrente</option>
