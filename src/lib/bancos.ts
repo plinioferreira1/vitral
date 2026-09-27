@@ -1,8 +1,8 @@
 /**
  * Identidade visual simplificada dos bancos mais comuns, usada nos
  * badges de "Contas Bancárias" e na Visão Geral do Financeiro.
- * Sem depender de logos externos: cada banco vira um selo com sigla,
- * nome canônico e cores aproximadas da marca.
+ * Usa logos locais quando disponíveis. Quando não há asset, cada banco vira
+ * um selo com sigla, nome canônico e cores aproximadas da marca.
  */
 export type BancoIdentidade = {
   sigla: string;
@@ -10,6 +10,7 @@ export type BancoIdentidade = {
   bg: string;
   fg: string;
   accent: string;
+  logo?: string;
   border?: string;
   generico?: boolean;
 };
@@ -18,12 +19,26 @@ const BANCOS: Record<string, BancoIdentidade> = {
   itau: { sigla: "Itaú", nome: "Itaú", bg: "#EC7000", fg: "#ffffff", accent: "#1F3C88" },
   bradesco: { sigla: "Bradesco", nome: "Bradesco", bg: "#CC092F", fg: "#ffffff", accent: "#8B001B" },
   santander: { sigla: "Santander", nome: "Santander", bg: "#EC0000", fg: "#ffffff", accent: "#B00000" },
-  caixa: { sigla: "Caixa", nome: "Caixa", bg: "#0070AD", fg: "#ffffff", accent: "#F58220" },
-  "banco do brasil": { sigla: "BB", nome: "Banco do Brasil", bg: "#F8D117", fg: "#00338D", accent: "#FFE76A" },
-  bb: { sigla: "BB", nome: "Banco do Brasil", bg: "#F8D117", fg: "#00338D", accent: "#FFE76A" },
-  inter: { sigla: "Inter", nome: "Inter", bg: "#FF7A00", fg: "#ffffff", accent: "#E45F00" },
+  caixa: { sigla: "Caixa", nome: "Caixa", bg: "#0070AD", fg: "#ffffff", accent: "#F58220", logo: "/bancos/caixa.png" },
+  "banco do brasil": {
+    sigla: "BB",
+    nome: "Banco do Brasil",
+    bg: "#F8D117",
+    fg: "#00338D",
+    accent: "#FFE76A",
+    logo: "/bancos/banco-do-brasil.jpg",
+  },
+  bb: {
+    sigla: "BB",
+    nome: "Banco do Brasil",
+    bg: "#F8D117",
+    fg: "#00338D",
+    accent: "#FFE76A",
+    logo: "/bancos/banco-do-brasil.jpg",
+  },
+  inter: { sigla: "Inter", nome: "Inter", bg: "#FF7A00", fg: "#ffffff", accent: "#E45F00", logo: "/bancos/inter.png" },
   nubank: { sigla: "Nu", nome: "Nubank", bg: "#820AD1", fg: "#ffffff", accent: "#5F069D" },
-  sicoob: { sigla: "Sicoob", nome: "Sicoob", bg: "#00A650", fg: "#ffffff", accent: "#007C41" },
+  sicoob: { sigla: "Sicoob", nome: "Sicoob", bg: "#00A650", fg: "#ffffff", accent: "#007C41", logo: "/bancos/sicoob.png" },
   sicredi: { sigla: "Sicredi", nome: "Sicredi", bg: "#6AB023", fg: "#ffffff", accent: "#3F7E1F" },
   original: { sigla: "Original", nome: "Original", bg: "#00AA4F", fg: "#ffffff", accent: "#007A37" },
   btg: { sigla: "BTG", nome: "BTG Pactual", bg: "#0B2A4A", fg: "#ffffff", accent: "#153F68" },

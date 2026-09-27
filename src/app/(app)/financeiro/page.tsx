@@ -277,12 +277,17 @@ export default async function FinanceiroDashboardPage({
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {(contas ?? []).map((c) => {
               const saldo = Number(c.saldo_inicial) + (movimentoPorConta.get(c.id) ?? 0);
+              const saldoNaoInformado = Number(c.saldo_inicial) === 0 && !movimentoPorConta.has(c.id);
               return (
                 <div key={c.id} className="flex items-center gap-3 rounded-lg border border-border/60 p-3">
                   <LogoBanco banco={c.banco} size="sm" />
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs text-ink-muted">{c.nome}</p>
-                    <p className={`num text-sm font-semibold ${saldo < 0 ? "text-rose-600" : "text-ink"}`}>{brl(saldo)}</p>
+                    {saldoNaoInformado ? (
+                      <p className="text-sm font-semibold text-ink-muted">A confirmar</p>
+                    ) : (
+                      <p className={`num text-sm font-semibold ${saldo < 0 ? "text-rose-600" : "text-ink"}`}>{brl(saldo)}</p>
+                    )}
                   </div>
                 </div>
               );

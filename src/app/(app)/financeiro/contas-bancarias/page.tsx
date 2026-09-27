@@ -93,7 +93,7 @@ export default async function ContasBancariasPage({
         </div>
         <div className="grid gap-3 sm:grid-cols-3">
           <input name="titular" placeholder="Titular" className={campoClasse} />
-          <input name="saldo_inicial" type="number" step="0.01" placeholder="Saldo inicial (R$) — cartão: negativo" className={campoClasse} />
+          <input name="saldo_inicial" type="number" step="0.01" placeholder="Saldo inicial (R$) — deixe em branco se ainda não souber" className={campoClasse} />
           <input name="data_abertura" type="date" className={campoClasse} />
         </div>
         <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
@@ -142,6 +142,7 @@ export default async function ContasBancariasPage({
               {listaContas.map((c) => {
                 const saldoAtual = Number(c.saldo_inicial) + (movimentoPorConta.get(c.id) ?? 0);
                 const saldoHa30Dias = Number(c.saldo_inicial) + (movimentoPorContaHa30Dias.get(c.id) ?? 0);
+                const saldoNaoInformado = Number(c.saldo_inicial) === 0 && !movimentoPorConta.has(c.id);
                 const variacao = saldoHa30Dias !== 0 ? ((saldoAtual - saldoHa30Dias) / Math.abs(saldoHa30Dias)) * 100 : null;
                 return (
                   <tr key={c.id} className={c.ativa ? "" : "opacity-60"}>
@@ -158,8 +159,15 @@ export default async function ContasBancariasPage({
                     </td>
                     <td className="px-4 py-2.5 text-ink-muted">{TIPO_LABEL[c.tipo ?? "corrente"] ?? c.tipo}</td>
                     <td className="px-4 py-2.5">
-                      <p className={`num font-semibold ${saldoAtual < 0 ? "text-rose-600" : "text-ink"}`}>{brl(saldoAtual)}</p>
-                      {variacao !== null && Math.abs(variacao) > 0.05 && (
+                      {saldoNaoInformado ? (
+                        <>
+                          <p className="font-semibold text-ink-muted">A confirmar</p>
+                          <p className="text-xs text-ink-muted">Informe o saldo inicial quando tiver o extrato.</p>
+                        </>
+                      ) : (
+                        <p className={`num font-semibold ${saldoAtual < 0 ? "text-rose-600" : "text-ink"}`}>{brl(saldoAtual)}</p>
+                      )}
+                      {!saldoNaoInformado && variacao !== null && Math.abs(variacao) > 0.05 && (
                         <p className={`flex items-center gap-1 text-xs ${variacao >= 0 ? "text-emerald-600" : "text-rose-600"}`}>
                           {variacao >= 0 ? <ArrowUp size={11} strokeWidth={2.5} /> : <ArrowDown size={11} strokeWidth={2.5} />}
                           {Math.abs(variacao).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}% em 30 dias

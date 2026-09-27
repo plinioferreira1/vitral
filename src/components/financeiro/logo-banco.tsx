@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Landmark } from "lucide-react";
 import { identidadeBanco } from "@/lib/bancos";
 
@@ -23,11 +24,17 @@ export function LogoBanco({ banco, size = "md", mostrarNome = false }: LogoBanco
           color: id.fg,
         }}
       >
-        <span className="absolute -right-3 -top-4 h-9 w-9 rounded-full bg-white/20" />
-        <span className="absolute -bottom-5 -left-4 h-10 w-10 rounded-full bg-black/10" />
-        <span className="relative z-10 max-w-[52px] truncate px-1 leading-none">
-          {id.generico ? <Landmark size={compacto ? 14 : 16} strokeWidth={2.4} /> : id.sigla}
-        </span>
+        {id.logo ? (
+          <Image src={id.logo} alt={id.nome} width={compacto ? 72 : 96} height={compacto ? 44 : 60} className="h-full w-full object-contain bg-white p-1" />
+        ) : (
+          <>
+            <span className="absolute -right-3 -top-4 h-9 w-9 rounded-full bg-white/20" />
+            <span className="absolute -bottom-5 -left-4 h-10 w-10 rounded-full bg-black/10" />
+            <span className="relative z-10 max-w-[52px] truncate px-1 leading-none">
+              {id.generico ? <Landmark size={compacto ? 14 : 16} strokeWidth={2.4} /> : id.sigla}
+            </span>
+          </>
+        )}
       </div>
       {mostrarNome && <span className="truncate text-xs font-semibold text-ink">{id.nome}</span>}
     </div>
