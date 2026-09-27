@@ -71,7 +71,8 @@ export async function atualizarCategoriasMembro(formData: FormData) {
   const supabase = await createClient();
   const usuarioId = String(formData.get("usuario_id") ?? "");
   const categorias = formData.getAll("categorias") as CategoriaProcesso[];
-  const nivelAcesso = String(formData.get("nivel_acesso") ?? "") || null;
+  // Nível inválido ou vazio = não mexe no nível (só nas categorias).
+  const nivelAcesso = valorDaLista("nivel_acesso_usuario", formData.get("nivel_acesso")) ?? undefined;
 
   const { error } = await supabase.rpc("atualizar_categorias_membro", {
     p_usuario_id: usuarioId,

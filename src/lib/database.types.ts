@@ -2790,31 +2790,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      add_member:
-        | {
-            Args: {
-              p_email: string
-              p_perfil: Database["public"]["Enums"]["perfil_usuario"]
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_categorias: Database["public"]["Enums"]["categoria_processo"][]
-              p_email: string
-              p_perfil: Database["public"]["Enums"]["perfil_usuario"]
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_categorias: Database["public"]["Enums"]["categoria_processo"][]
-              p_email: string
-              p_nivel_acesso?: Database["public"]["Enums"]["nivel_acesso_usuario"]
-              p_perfil: Database["public"]["Enums"]["perfil_usuario"]
-            }
-            Returns: undefined
-          }
+      add_member: {
+        Args: {
+          p_categorias: Database["public"]["Enums"]["categoria_processo"][]
+          p_email: string
+          p_nivel_acesso?: Database["public"]["Enums"]["nivel_acesso_usuario"]
+          p_perfil: Database["public"]["Enums"]["perfil_usuario"]
+        }
+        Returns: undefined
+      }
       assinatura_buscar: {
         Args: { p_token: string }
         Returns: {
@@ -2857,22 +2841,14 @@ export type Database = {
         }
         Returns: boolean
       }
-      atualizar_categorias_membro:
-        | {
-            Args: {
-              p_categorias: Database["public"]["Enums"]["categoria_processo"][]
-              p_usuario_id: string
-            }
-            Returns: undefined
-          }
-        | {
-            Args: {
-              p_categorias: Database["public"]["Enums"]["categoria_processo"][]
-              p_nivel_acesso?: Database["public"]["Enums"]["nivel_acesso_usuario"]
-              p_usuario_id: string
-            }
-            Returns: undefined
-          }
+      atualizar_categorias_membro: {
+        Args: {
+          p_categorias: Database["public"]["Enums"]["categoria_processo"][]
+          p_nivel_acesso?: Database["public"]["Enums"]["nivel_acesso_usuario"]
+          p_usuario_id: string
+        }
+        Returns: undefined
+      }
       auth_tenant_id: { Args: never; Returns: string }
       bootstrap_tenant: { Args: { p_nome_empresa: string }; Returns: string }
       carta_proposta_assinatura_buscar: {
