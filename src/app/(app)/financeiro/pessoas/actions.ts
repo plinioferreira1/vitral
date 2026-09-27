@@ -1,12 +1,12 @@
 "use server";
 
-import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
-
 import { checar } from "@/lib/aviso";
-
+import { formatarCpfCnpj, formatarTelefone } from "@/lib/mascaras";
 import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
+import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
 import { valorDaLista } from "@/lib/validacao";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
 function categoriaFornecedorOuNull(formData: FormData, papel: string): string | null {
   if (papel === "cliente") return null;
@@ -18,23 +18,25 @@ export async function criarPessoaFinanceiro(formData: FormData) {
   const supabase = await createClient();
   const sessao = await exigirUsuario(GESTORES);
   if (!sessao) return;
-  const usuario = sessao.usuario;
-  if (!usuario?.tenant_id) return;
 
   const nome = String(formData.get("nome") ?? "").trim();
   if (!nome) return;
   const papel = valorDaLista("financeiro_papel_pessoa", formData.get("papel"), "fornecedor");
 
-  await checar(supabase.from("financeiro_pessoas").insert({
-    tenant_id: usuario.tenant_id,
-    nome,
-    cpf_cnpj: String(formData.get("cpf_cnpj") ?? "").trim() || null,
-    papel,
-    categoria_fornecedor: categoriaFornecedorOuNull(formData, papel),
-    telefone: String(formData.get("telefone") ?? "").trim() || null,
-    email: String(formData.get("email") ?? "").trim() || null,
-    observacoes: String(formData.get("observacoes") ?? "").trim() || null,
-  }), "salvar");
+  const salvou = await checar(
+    supabase.from("financeiro_pessoas").insert({
+      tenant_id: sessao.tenantId,
+      nome,
+      cpf_cnpj: formatarCpfCnpj(formData.get("cpf_cnpj")) || null,
+      papel,
+      categoria_fornecedor: categoriaFornecedorOuNull(formData, papel),
+      telefone: formatarTelefone(formData.get("telefone")) || null,
+      email: String(formData.get("email") ?? "").trim() || null,
+      observacoes: String(formData.get("observacoes") ?? "").trim() || null,
+    }),
+    "salvar"
+  );
+  if (!salvou) return;
 
   revalidatePath("/financeiro/pessoas");
 }
@@ -49,20 +51,27 @@ export async function editarPessoaFinanceiro(formData: FormData) {
   if (!nome) return;
   const papel = valorDaLista("financeiro_papel_pessoa", formData.get("papel"), "fornecedor");
 
-  await checar(supabase
-    .from("financeiro_pessoas")
-    .update({
-      nome,
-      cpf_cnpj: String(formData.get("cpf_cnpj") ?? "").trim() || null,
-      papel,
-      categoria_fornecedor: categoriaFornecedorOuNull(formData, papel),
-      telefone: String(formData.get("telefone") ?? "").trim() || null,
-      email: String(formData.get("email") ?? "").trim() || null,
-      observacoes: String(formData.get("observacoes") ?? "").trim() || null,
-    })
-    .eq("id", id), "atualizar");
+  const atualizou = await checar(
+    supabase
+      .from("financeiro_pessoas")
+      .update({
+        nome,
+        cpf_cnpj: formatarCpfCnpj(formData.get("cpf_cnpj")) || null,
+        papel,
+        categoria_fornecedor: categoriaFornecedorOuNull(formData, papel),
+        telefone: formatarTelefone(formData.get("telefone")) || null,
+        email: String(formData.get("email") ?? "").trim() || null,
+        observacoes: String(formData.get("observacoes") ?? "").trim() || null,
+      })
+      .eq("id", id),
+    "atualizar"
+  );
+  if (!atualizou) return;
 
   revalidatePath("/financeiro/pessoas");
+
+  const returnTo = String(formData.get("return_to") ?? "");
+  if (returnTo.startsWith("/financeiro/")) redirect(returnTo);
 }
 
 export async function apagarPessoaFinanceiro(formData: FormData) {

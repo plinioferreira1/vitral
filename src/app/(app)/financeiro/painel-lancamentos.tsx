@@ -14,23 +14,17 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Pencil,
-  Ban,
-  Tag,
+  SlidersHorizontal,
+  Plus,
 } from "lucide-react";
 import { CartaoKpi } from "@/components/cartao-kpi";
-import {
-  criarLancamento,
-  registrarBaixa,
-  cancelarLancamento,
-  editarLancamento,
-  apagarLancamentos,
-  categorizarLancamento,
-} from "./lancamentos-actions";
+import { apagarLancamentos } from "./lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
 import { SelecionarTodos } from "@/components/selecionar-todos";
 import { SelectAutoSubmit } from "@/components/select-auto-submit";
-import { BotaoEnviar } from "@/components/botao-enviar";
+import { PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
+import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
+import { MenuAcoesLancamento } from "@/components/financeiro/menu-acoes-lancamento";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -116,6 +110,7 @@ type Filtros = {
 };
 
 type CampoOrdenacao = "descricao" | "pessoa" | "categoria" | "vencimento" | "valor" | "status";
+type CampoOculto = [keyof Filtros, string | undefined];
 
 function construirUrl(base: string, params: Filtros): string {
   const sp = new URLSearchParams();
@@ -146,6 +141,12 @@ function variacao(atual: number, anterior: number): number | null {
   return ((atual - anterior) / anterior) * 100;
 }
 
+function renderCamposOcultos(campos: CampoOculto[], omitir: (keyof Filtros)[] = []) {
+  return campos
+    .filter(([campo]) => !omitir.includes(campo))
+    .map(([campo, valor]) => (valor ? <input key={campo} type="hidden" name={campo} value={valor} /> : null));
+}
+
 export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita" | "despesa"; searchParams?: Filtros }) {
   const supabase = await createClient();
   const hoje = hojeISO();
@@ -158,7 +159,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const inicioMesAnterior = `${anoAnterior}-${String(mesAnterior).padStart(2, "0")}-01`;
   const fimMesAnterior = new Date(anoAnterior, mesAnterior, 0).toISOString().slice(0, 10);
 
-  // Todas as consultas desta tela são independentes — uma única rodada.
+  // Consultas independentes em uma rodada, preservando a otimização da branch principal.
   const [
     { data: pessoas },
     { data: categorias },
@@ -182,10 +183,6 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
       .order("vencimento"),
     supabase.from("financeiro_baixas").select("lancamento_id, valor, data"),
   ]);
-  const baixadoPorLancamento = new Map<string, number>();
-  (baixasRaw ?? []).forEach((b) => {
-    baixadoPorLancamento.set(b.lancamento_id, (baixadoPorLancamento.get(b.lancamento_id) ?? 0) + Number(b.valor));
-  });
 
   const todos = (lancamentosTodos ?? []) as unknown as LancamentoLinha[];
 
@@ -214,14 +211,16 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const baixasMesAnterior = (baixasRaw ?? [])
     .filter((b) => b.data >= inicioMesAnterior && b.data <= fimMesAnterior && todos.some((l) => l.id === b.lancamento_id))
     .reduce((s, b) => s + Number(b.valor), 0);
-  const percentualRecorrentes = todos.length > 0 ? (recorrentes.length / todos.length) * 100 : 0;
-
   // Filtros (via querystring, navegação simples sem JS).
   const f = searchParams ?? {};
   let lancamentos = todos.filter((l) => {
     if (f.status === "sem_categoria") {
       if (l.categoria_id !== null || (l.status !== "pago" && l.status !== "pago_parcial")) return false;
+    } else if (f.status === "em_aberto") {
+      if (l.status !== "pendente" && l.status !== "pago_parcial") return false;
     } else if (f.status && estadoExibicao(l, hoje) !== f.status) {
+      return false;
+    } else if (!f.status && l.status === "cancelado") {
       return false;
     }
     if (f.categoria && l.categoria_id !== f.categoria) return false;
@@ -290,6 +289,21 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const rotuloPessoa = tipo === "receita" ? "Cliente" : "Fornecedor";
   const rota = tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   const temFiltro = !!(f.status || f.categoria || f.pessoa || f.conta_bancaria || f.unidade || f.competencia || f.q);
+  const abasSituacao: [string, string, number][] = [
+    ["", "Todos", todos.filter((l) => l.status !== "cancelado").length],
+    ["em_aberto", "Em aberto", todos.filter((l) => l.status === "pendente" || l.status === "pago_parcial").length],
+    ["vencido", "Vencidos", vencidos.length],
+    ["recorrente", "Recorrentes", recorrentes.length],
+    ["pago", tipo === "receita" ? "Recebidos" : "Pagos", todos.filter((l) => l.status === "pago").length],
+    ["cancelado", "Cancelados", todos.filter((l) => l.status === "cancelado").length],
+  ];
+  if (tipo === "receita") {
+    abasSituacao.splice(5, 0, [
+      "sem_categoria",
+      "Sem categoria",
+      todos.filter((l) => l.categoria_id === null && (l.status === "pago" || l.status === "pago_parcial")).length,
+    ]);
+  }
 
   function linkOrdenar(campo: CampoOrdenacao): string {
     const novaDirecao = ordenar === campo && direcao === "asc" ? "desc" : "asc";
@@ -300,7 +314,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     return direcao === "asc" ? <ChevronUp size={12} /> : <ChevronDown size={12} />;
   }
 
-  const camposOcultos: [keyof Filtros, string | undefined][] = [
+  const camposOcultos: CampoOculto[] = [
     ["q", f.q],
     ["status", f.status],
     ["categoria", f.categoria],
@@ -312,20 +326,8 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     ["direcao", f.direcao],
     ["por_pagina", f.por_pagina],
   ];
-  // Função simples (não componente) — criar componente dentro da
-  // renderização recria o estado dele a cada render.
-  const camposOcultosSem = (omitir: (keyof Filtros)[] = []) => {
-    return (
-      <>
-        {camposOcultos
-          .filter(([campo]) => !omitir.includes(campo))
-          .map(([campo, valor]) => (valor ? <input key={campo} type="hidden" name={campo} value={valor} /> : null))}
-      </>
-    );
-  }
-
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
       <div>
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">{titulo}</h1>
         <p className="mt-1 text-sm text-ink-muted">
@@ -335,23 +337,11 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         </p>
       </div>
 
-      {tipo === "receita" && (
-        <div className="flex flex-wrap gap-2 border-b border-border">
-          {(
-            [
-              ["", "Todos", todos.length],
-              ["pendente", "Pendentes", todos.filter((l) => l.status === "pendente" || l.status === "pago_parcial").length],
-              ["pago", "Recebidos", todos.filter((l) => l.status === "pago").length],
-              [
-                "sem_categoria",
-                "Sem categoria",
-                todos.filter((l) => l.categoria_id === null && (l.status === "pago" || l.status === "pago_parcial")).length,
-              ],
-            ] as [string, string, number][]
-          ).map(([valor, label, contagem]) => (
+      <div className="flex flex-wrap gap-2 border-b border-border">
+          {abasSituacao.map(([valor, label, contagem]) => (
             <Link
               key={valor || "todos"}
-              href={valor ? `${rota}?status=${valor}` : rota}
+              href={valor ? `${rota}?status=${valor}#lista` : `${rota}#lista`}
               className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
                 (f.status ?? "") === valor
                   ? "border-brand text-brand"
@@ -361,8 +351,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
               {label} {contagem > 0 && <span className="text-xs">({contagem})</span>}
             </Link>
           ))}
-        </div>
-      )}
+      </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <CartaoKpi
@@ -370,7 +359,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           tom="marca"
           label={`${tipo === "receita" ? "A receber" : "A pagar"} no mês`}
           valor={brl(totalNoMes)}
-          href={`${rota}?status=pendente#lista`}
+          href={`${rota}?status=em_aberto#lista`}
           rodape={linhaComparativo(variacao(comprometidoMes, comprometidoMesAnterior), false)}
         />
         <CartaoKpi
@@ -387,11 +376,6 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           label="Recorrentes em aberto"
           valor={recorrentes.length}
           href={`${rota}?status=recorrente#lista`}
-          rodape={
-            <p className="mt-2 text-xs text-ink-muted">
-              {percentualRecorrentes.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}% do total de lançamentos
-            </p>
-          }
         />
         <CartaoKpi
           icon={CheckCircle2}
@@ -412,181 +396,44 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
             placeholder={`Buscar por descrição, ${rotuloPessoa.toLowerCase()}, categoria...`}
             className={`${campoClasse} pl-9`}
           />
-          <BotaoEnviar className="sr-only">
+          <button type="submit" className="sr-only">
             Buscar
-          </BotaoEnviar>
-          {camposOcultosSem(["q"])}
+          </button>
+          {renderCamposOcultos(camposOcultos, ["q"])}
         </form>
-        <details className="shrink-0">
-          <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
-            + Novo lançamento
-          </summary>
-          <form action={criarLancamento} className="mt-3 space-y-5 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-            <input type="hidden" name="tipo" value={tipo} />
-
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">1. Dados principais</p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input name="descricao" required placeholder="Descrição" className={campoClasse} />
-                <input name="valor" type="number" step="0.01" required placeholder="Valor (R$)" className={campoClasse} />
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <select name="pessoa_id" defaultValue="" className={campoClasse}>
-                  <option value="">{rotuloPessoa} (opcional)</option>
-                  {(pessoas ?? []).map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nome}
-                    </option>
-                  ))}
-                </select>
-                <select name="categoria_id" defaultValue="" className={campoClasse}>
-                  <option value="">Categoria (opcional)</option>
-                  {(categorias ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-3">
-                <select name="centro_custo_id" defaultValue="" className={campoClasse}>
-                  <option value="">Centro de resultado (opcional)</option>
-                  {(centros ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
-                <select name="unidade_id" defaultValue="" className={campoClasse}>
-                  <option value="">Unidade (opcional)</option>
-                  {(unidades ?? []).map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.nome}
-                    </option>
-                  ))}
-                </select>
-                <select name="conta_bancaria_id" defaultValue="" className={campoClasse}>
-                  <option value="">Conta bancária prevista (opcional)</option>
-                  {(contas ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.nome}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">2. Datas e pagamento</p>
-              <label className="flex items-center gap-2 text-sm font-medium text-ink">
-                <input type="checkbox" name="recorrente" className="accent-brand" />
-                <Repeat size={14} strokeWidth={2} />
-                Isso é uma conta recorrente
-              </label>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-muted">
-                    Vencimento (só pra lançamento avulso)
-                  </label>
-                  <input name="vencimento" type="date" className={campoClasse} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-muted">Competência (opcional)</label>
-                  <input name="competencia" type="date" className={campoClasse} />
-                </div>
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <input name="forma_pagamento" placeholder="Forma de pagamento (opcional)" className={campoClasse} />
-                <input name="numero_documento" placeholder="Número do documento (opcional)" className={campoClasse} />
-              </div>
-            </div>
-
-            <div className="space-y-3 rounded-lg bg-background p-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
-                3. Recorrência (se marcou o campo acima)
-              </p>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <select name="frequencia" defaultValue="mensal" className={campoClasse}>
-                  <option value="semanal">Semanal</option>
-                  <option value="mensal">Mensal</option>
-                  <option value="trimestral">Trimestral</option>
-                  <option value="semestral">Semestral</option>
-                  <option value="anual">Anual</option>
-                </select>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-muted">Data da 1ª ocorrência</label>
-                  <input name="data_inicio" type="date" className={campoClasse} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-muted">
-                    Repetir até (data final)
-                  </label>
-                  <input name="data_fim" type="date" className={campoClasse} />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-ink-muted">
-                    ...ou por quantas vezes
-                  </label>
-                  <input name="numero_ocorrencias" type="number" min={1} placeholder="Ex: 12" className={campoClasse} />
-                </div>
-              </div>
-              <p className="text-[11px] text-ink-muted">
-                Preencha &quot;repetir até&quot; OU &quot;quantas vezes&quot; — só precisa de um dos dois. As
-                ocorrências já são criadas todas de uma vez (limite de 60 lançamentos por recorrência).
-              </p>
-
-              <div className="space-y-2 border-t border-border pt-3">
-                <p className="text-xs font-medium text-ink">Vencimento de cada ocorrência</p>
-                <div className="flex flex-wrap gap-4">
-                  <label className="flex items-center gap-1.5 text-xs text-ink">
-                    <input type="radio" name="tipo_vencimento" value="fixo" defaultChecked className="accent-brand" />
-                    Sempre no mesmo dia (usa a data da 1ª ocorrência)
-                  </label>
-                  <label className="flex items-center gap-1.5 text-xs text-ink">
-                    <input type="radio" name="tipo_vencimento" value="dia_util" className="accent-brand" />
-                    Num dia útil do mês
-                  </label>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    name="dia_util"
-                    type="number"
-                    min={1}
-                    max={23}
-                    placeholder="Ex: 5"
-                    className={`${campoClasse} max-w-[100px]`}
-                  />
-                  <span className="text-xs text-ink-muted">
-                    º dia útil do mês (só vale se marcar a opção acima — a data da 1ª ocorrência
-                    serve só pra indicar o mês/ano de início). Vale para mensal, trimestral, semestral
-                    e anual; não se aplica à semanal.
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">4. Observações</p>
-              <textarea name="observacoes" rows={2} placeholder="Observações (opcional)" className={campoClasse} />
-            </div>
-
-            <BotaoEnviar className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
-              Criar lançamento
-            </BotaoEnviar>
-          </form>
-        </details>
+        <Link href={`/financeiro/lancamentos/novo?tipo=${tipo}`} className={`${PRIMARY_BUTTON_CLASS} shrink-0`}>
+            <Plus size={16} strokeWidth={2.2} />
+            Novo lançamento
+        </Link>
       </div>
 
-      <form
-        method="get"
-        action={`${rota}#lista`}
-        className="flex flex-wrap items-end gap-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm"
-      >
+      <details open className="group rounded-2xl border border-border/70 bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-ink-muted">
+              <SlidersHorizontal size={16} strokeWidth={2} />
+            </span>
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-ink">Filtros</p>
+              <p className="truncate text-xs text-ink-muted">
+                {temFiltro ? "Há filtros aplicados à lista." : "Refine por status, categoria, pessoa, conta, competência ou unidade."}
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-medium text-brand group-open:hidden">Abrir</span>
+          <span className="hidden text-xs font-medium text-brand group-open:inline">Fechar</span>
+        </summary>
+        <form
+          method="get"
+          action={`${rota}#lista`}
+          className="grid grid-cols-2 gap-3 border-t border-border/70 px-4 py-4 md:grid-cols-3 xl:grid-cols-6"
+        >
         <input type="hidden" name="q" value={f.q ?? ""} />
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">Status</label>
           <select name="status" defaultValue={f.status ?? ""} className={campoClasse}>
             <option value="">Todos</option>
+            <option value="em_aberto">Em aberto</option>
             <option value="pendente">Pendente</option>
             <option value="vencido">Vencido</option>
             <option value="recorrente">Recorrente</option>
@@ -596,66 +443,27 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
             {tipo === "receita" && <option value="sem_categoria">Sem categoria</option>}
           </select>
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">Categoria</label>
-          <select name="categoria" defaultValue={f.categoria ?? ""} className={campoClasse}>
-            <option value="">Todas</option>
-            {(categorias ?? []).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">{rotuloPessoa}</label>
-          <select name="pessoa" defaultValue={f.pessoa ?? ""} className={campoClasse}>
-            <option value="">Todos</option>
-            {(pessoas ?? []).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">Conta bancária</label>
-          <select name="conta_bancaria" defaultValue={f.conta_bancaria ?? ""} className={campoClasse}>
-            <option value="">Todas</option>
-            {(contas ?? []).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+        <BuscaOpcaoFinanceira name="categoria" label="Categoria" options={categorias ?? []} initialId={f.categoria ?? ""} placeholder="Todas" emptyLabel="Todas" />
+        <BuscaOpcaoFinanceira name="pessoa" label={rotuloPessoa} options={pessoas ?? []} initialId={f.pessoa ?? ""} placeholder="Todos" emptyLabel="Todos" />
+        <BuscaOpcaoFinanceira name="conta_bancaria" label="Conta bancária" options={contas ?? []} initialId={f.conta_bancaria ?? ""} placeholder="Todas" emptyLabel="Todas" />
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">Competência</label>
           <input name="competencia" type="month" defaultValue={f.competencia ?? ""} className={campoClasse} />
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">Unidade</label>
-          <select name="unidade" defaultValue={f.unidade ?? ""} className={campoClasse}>
-            <option value="">Todas</option>
-            {(unidades ?? []).map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+        <BuscaOpcaoFinanceira name="unidade" label="Unidade" options={unidades ?? []} initialId={f.unidade ?? ""} placeholder="Todas" emptyLabel="Todas" />
         <input type="hidden" name="ordenar" value={f.ordenar ?? ""} />
         <input type="hidden" name="direcao" value={f.direcao ?? ""} />
         <input type="hidden" name="por_pagina" value={f.por_pagina ?? ""} />
-        <BotaoEnviar className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
           Filtrar
-        </BotaoEnviar>
+        </button>
         {temFiltro && (
           <a href={`${rota}#lista`} className="text-xs text-ink-muted hover:text-brand hover:underline">
             Limpar filtros
           </a>
         )}
-      </form>
+        </form>
+      </details>
 
       {lancamentos.length > 0 && (
         <form
@@ -664,43 +472,45 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           className="flex items-center justify-between rounded-xl border border-border/60 bg-surface px-4 py-2.5 text-xs text-ink-muted shadow-sm"
         >
           <span>Marque um ou mais lançamentos pendentes na tabela abaixo pra apagar de uma vez.</span>
-          <BotaoEnviar
+          <button
+            type="submit"
             className="rounded-md border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50"
           >
             Apagar selecionados
-          </BotaoEnviar>
+          </button>
         </form>
       )}
 
-      <div id="lista" className="scroll-mt-4 overflow-x-auto rounded-xl border border-border/60 bg-surface shadow-sm">
+      <div id="lista" className="financeiro-lista scroll-mt-4 rounded-xl border border-border/60 bg-surface shadow-sm">
         {lancamentos.length === 0 ? (
           <p className="p-8 text-center text-sm text-ink-muted">
             {temFiltro ? "Nenhum lançamento encontrado com esses filtros." : "Nenhum lançamento ainda."}
           </p>
         ) : (
           <>
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[1320px] text-sm">
               <thead>
                 <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
-                  <th className="w-8 px-4 py-2.5">
+                  <th className="w-10 px-2 py-2.5">
                     <SelecionarTodos formId="form-apagar-lote" className="accent-brand" />
                   </th>
-                  <th className="px-4 py-2.5 font-medium">
+                  <th className="min-w-[330px] px-4 py-2.5 font-medium">
                     <Link href={linkOrdenar("descricao")} className="inline-flex items-center gap-1 hover:text-ink">
                       Descrição {iconeOrdenacao("descricao")}
                     </Link>
                   </th>
-                  <th className="px-4 py-2.5 font-medium">
+                  <th className="hidden min-w-[210px] px-4 py-2.5 font-medium lg:table-cell">
                     <Link href={linkOrdenar("pessoa")} className="inline-flex items-center gap-1 hover:text-ink">
                       {rotuloPessoa} {iconeOrdenacao("pessoa")}
                     </Link>
                   </th>
-                  <th className="px-4 py-2.5 font-medium">
+                  <th className="hidden min-w-[230px] px-4 py-2.5 font-medium lg:table-cell">
                     <Link href={linkOrdenar("categoria")} className="inline-flex items-center gap-1 hover:text-ink">
                       Categoria {iconeOrdenacao("categoria")}
                     </Link>
                   </th>
-                  <th className="px-4 py-2.5 font-medium">
+                  <th className="hidden px-4 py-2.5 font-medium md:table-cell">
                     <Link href={linkOrdenar("vencimento")} className="inline-flex items-center gap-1 hover:text-ink">
                       Vencimento {iconeOrdenacao("vencimento")}
                     </Link>
@@ -710,13 +520,13 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                       Valor {iconeOrdenacao("valor")}
                     </Link>
                   </th>
-                  <th className="px-4 py-2.5 font-medium">
+                  <th className="hidden px-4 py-2.5 font-medium md:table-cell">
                     <Link href={linkOrdenar("status")} className="inline-flex items-center gap-1 hover:text-ink">
                       Status {iconeOrdenacao("status")}
                     </Link>
                   </th>
-                  <th className="px-4 py-2.5 font-medium">Conta</th>
-                  <th className="px-4 py-2.5 font-medium text-right">Ações</th>
+                  <th className="hidden min-w-[170px] px-4 py-2.5 font-medium xl:table-cell">Conta</th>
+                  <th className="w-28 px-4 py-2.5 font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -724,249 +534,54 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                   const pessoa = l.financeiro_pessoas;
                   const categoria = l.financeiro_categorias;
                   const conta = l.financeiro_contas_bancarias;
-                  const restante = Number(l.valor) - (baixadoPorLancamento.get(l.id) ?? 0);
                   const editavel = l.status === "pendente" || l.status === "pago_parcial";
                   const estado = estadoExibicao(l, hoje);
                   return (
                     <tr key={l.id}>
-                      <td className="px-4 py-2.5">
+                      <td className="px-2 py-2.5">
                         {l.status === "pendente" && (
                           <input type="checkbox" name="ids" value={l.id} form="form-apagar-lote" className="accent-brand" />
                         )}
                       </td>
-                      <td className="px-4 py-2.5 text-ink">
-                        {l.descricao}
-                        {l.recorrencia_id && (
-                          <Repeat size={11} strokeWidth={2} className="ml-1.5 inline text-ink-muted" />
-                        )}
+
+                      <td className="px-4 py-3 text-ink">
+                        <div className="max-w-[380px] break-words font-medium" title={l.descricao}>{l.descricao} {l.recorrencia_id && <Repeat size={12} className="inline text-ink-muted" />}</div>
+                        <div className="mt-1 text-xs text-ink-muted lg:hidden">
+                          {[pessoa?.nome, categoria?.nome ?? "Sem categoria", conta?.nome].filter(Boolean).join(" · ")}
+                        </div>
+                        <div className="mt-1 text-xs text-ink-muted md:hidden">{dataBR(l.vencimento)} · {ESTADO_ROTULO[estado]}</div>
                       </td>
-                      <td className="px-4 py-2.5 text-ink-muted">{pessoa?.nome ?? "—"}</td>
-                      <td className="px-4 py-2.5 text-ink-muted">{categoria?.nome ?? "—"}</td>
-                      <td className="px-4 py-2.5 text-ink-muted">{dataBR(l.vencimento)}</td>
-                      <td className="num px-4 py-2.5 text-ink">{brl(l.valor)}</td>
-                      <td className="px-4 py-2.5">
-                        <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${ESTADO_TEXTO[estado]}`}>
+                      <td className="hidden max-w-[240px] break-words px-4 py-2.5 text-ink-muted lg:table-cell" title={pessoa?.nome ?? ""}>{pessoa?.nome ?? "—"}</td>
+                      <td className="hidden max-w-[260px] break-words px-4 py-2.5 text-ink-muted lg:table-cell" title={categoria?.nome ?? "Sem categoria"}>
+                        {categoria?.nome ?? <span className="font-medium text-amber-700">Sem categoria</span>}
+                      </td>
+                      <td className="hidden px-4 py-2.5 text-ink-muted md:table-cell">{dataBR(l.vencimento)}</td>
+                      <td className="num w-28 px-2 py-2.5 text-right text-xs font-medium text-ink sm:text-sm">{brl(l.valor)}</td>
+                      <td className="hidden px-4 py-2.5 md:table-cell">
+                        <span className={`inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium ${ESTADO_TEXTO[estado]}`}>
                           <span className={`h-1.5 w-1.5 rounded-full ${ESTADO_COR[estado]}`} />
                           {ESTADO_ROTULO[estado]}
                         </span>
                       </td>
-                      <td className="px-4 py-2.5 text-ink-muted">{conta?.nome ?? "—"}</td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex items-center justify-end gap-1">
-                          {tipo === "receita" && !l.categoria_id && (l.status === "pago" || l.status === "pago_parcial") && (
-                            <details className="relative">
-                              <summary
-                                className="cursor-pointer list-none rounded-md p-1.5 text-amber-600 hover:bg-background"
-                                aria-label="Categorizar agora"
-                                title="Categorizar agora"
-                              >
-                                <Tag size={15} strokeWidth={2} />
-                              </summary>
-                              <form
-                                action={categorizarLancamento}
-                                className="absolute right-0 z-20 mt-1 w-64 space-y-2 rounded-md border border-border bg-surface p-3 shadow-md"
-                              >
-                                <input type="hidden" name="id" value={l.id} />
-                                <p className="text-xs font-medium text-ink">Categorizar agora</p>
-                                <select
-                                  name="categoria_id"
-                                  required
-                                  defaultValue=""
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                >
-                                  <option value="" disabled>
-                                    Selecione a categoria...
-                                  </option>
-                                  {(categorias ?? []).map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                      {c.nome}
-                                    </option>
-                                  ))}
-                                </select>
-                                <select
-                                  name="centro_custo_id"
-                                  defaultValue=""
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                >
-                                  <option value="">Centro de resultado (opcional)</option>
-                                  {(centros ?? []).map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                      {c.nome}
-                                    </option>
-                                  ))}
-                                </select>
-                                <BotaoEnviar
-                                  className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                                >
-                                  Salvar categoria
-                                </BotaoEnviar>
-                              </form>
-                            </details>
-                          )}
-                          {editavel && (
-                            <details className="relative">
-                              <summary
-                                className="cursor-pointer list-none rounded-md p-1.5 text-ink-muted hover:bg-background hover:text-brand"
-                                aria-label="Editar"
-                                title="Editar"
-                              >
-                                <Pencil size={15} strokeWidth={2} />
-                              </summary>
-                              <form
-                                action={editarLancamento}
-                                className="absolute right-0 z-20 mt-1 w-72 space-y-2 rounded-md border border-border bg-surface p-3 shadow-md"
-                              >
-                                <input type="hidden" name="id" value={l.id} />
-                                <input
-                                  name="descricao"
-                                  defaultValue={l.descricao}
-                                  required
-                                  placeholder="Descrição"
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                />
-                                <input
-                                  name="valor"
-                                  type="number"
-                                  step="0.01"
-                                  defaultValue={l.valor}
-                                  required
-                                  placeholder="Valor"
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                />
-                                <input
-                                  name="vencimento"
-                                  type="date"
-                                  defaultValue={l.vencimento}
-                                  required
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                />
-                                <input
-                                  name="competencia"
-                                  type="date"
-                                  defaultValue={l.competencia ?? l.vencimento}
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                />
-                                <select
-                                  name="pessoa_id"
-                                  defaultValue={l.pessoa_id ?? ""}
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                >
-                                  <option value="">{rotuloPessoa} (opcional)</option>
-                                  {(pessoas ?? []).map((p) => (
-                                    <option key={p.id} value={p.id}>
-                                      {p.nome}
-                                    </option>
-                                  ))}
-                                </select>
-                                <select
-                                  name="categoria_id"
-                                  defaultValue={l.categoria_id ?? ""}
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                >
-                                  <option value="">Categoria (opcional)</option>
-                                  {(categorias ?? []).map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                      {c.nome}
-                                    </option>
-                                  ))}
-                                </select>
-                                {l.recorrencia_id && (
-                                  <div className="space-y-1 rounded-md bg-background p-2">
-                                    <p className="text-[10px] font-medium text-ink-muted">
-                                      Faz parte de uma recorrência. Aplicar a:
-                                    </p>
-                                    <label className="flex items-center gap-1.5 text-[11px] text-ink">
-                                      <input type="radio" name="escopo" value="um" defaultChecked className="accent-brand" />
-                                      Somente este lançamento
-                                    </label>
-                                    <label className="flex items-center gap-1.5 text-[11px] text-ink">
-                                      <input type="radio" name="escopo" value="todos_futuros" className="accent-brand" />
-                                      Este e todos os futuros da recorrência
-                                    </label>
-                                    <p className="text-[10px] text-ink-muted">
-                                      Nesse caso o vencimento de cada ocorrência é mantido — só descrição, valor,
-                                      categoria e demais dados cadastrais são replicados.
-                                    </p>
-                                  </div>
-                                )}
-                                <BotaoEnviar
-                                  className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                                >
-                                  Salvar alterações
-                                </BotaoEnviar>
-                              </form>
-                            </details>
-                          )}
-                          {l.status !== "pago" && l.status !== "cancelado" && (
-                            <>
-                              <details className="relative">
-                                <summary
-                                  className="cursor-pointer list-none rounded-md p-1.5 text-brand hover:bg-background"
-                                  aria-label={tipo === "receita" ? "Receber" : "Pagar"}
-                                  title={tipo === "receita" ? "Receber" : "Pagar"}
-                                >
-                                  <CheckCircle2 size={15} strokeWidth={2} />
-                                </summary>
-                                <form
-                                  action={registrarBaixa}
-                                  className="absolute right-0 z-10 mt-1 w-64 space-y-2 rounded-md border border-border bg-surface p-3 shadow-md"
-                                >
-                                  <input type="hidden" name="lancamento_id" value={l.id} />
-                                  <p className="text-xs text-ink-muted">Restante: {brl(restante)}</p>
-                                  <input
-                                    name="valor"
-                                    type="number"
-                                    step="0.01"
-                                    required
-                                    defaultValue={restante}
-                                    placeholder="Valor"
-                                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                  />
-                                  <input
-                                    name="data"
-                                    type="date"
-                                    required
-                                    defaultValue={new Date().toISOString().slice(0, 10)}
-                                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                  />
-                                  <select
-                                    name="conta_bancaria_id"
-                                    defaultValue=""
-                                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                  >
-                                    <option value="">Conta bancária</option>
-                                    {(contas ?? []).map((c) => (
-                                      <option key={c.id} value={c.id}>
-                                        {c.nome}
-                                      </option>
-                                    ))}
-                                  </select>
-                                  <BotaoEnviar
-                                    className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                                  >
-                                    Confirmar
-                                  </BotaoEnviar>
-                                </form>
-                              </details>
-                              <form action={cancelarLancamento}>
-                                <input type="hidden" name="id" value={l.id} />
-                                <BotaoEnviar
-                                  className="rounded-md p-1.5 text-ink-muted hover:bg-background hover:text-rose-600"
-                                  aria-label="Cancelar"
-                                  title="Cancelar"
-                                >
-                                  <Ban size={15} strokeWidth={2} />
-                                </BotaoEnviar>
-                              </form>
-                            </>
-                          )}
-                        </div>
+                      <td className="hidden max-w-[220px] break-words px-4 py-2.5 text-ink-muted xl:table-cell" title={conta?.nome ?? ""}>{conta?.nome ?? "—"}</td>
+                      <td className="px-4 py-2.5 text-right">
+                        <MenuAcoesLancamento
+                          id={l.id}
+                          descricao={l.descricao}
+                          tipo={tipo}
+                          status={l.status}
+                          editavel={editavel}
+                          podeCategorizar={tipo === "receita" && !l.categoria_id && (l.status === "pago" || l.status === "pago_parcial")}
+                          categorias={categorias ?? []}
+                          centros={centros ?? []}
+                        />
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+            </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-xs text-ink-muted">
               <span>
@@ -1022,7 +637,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                   </Link>
                 </div>
                 <form method="get" action={`${rota}#lista`} className="flex items-center gap-1.5">
-                  {camposOcultosSem(["por_pagina"])}
+                  {renderCamposOcultos(camposOcultos, ["por_pagina"])}
                   <SelectAutoSubmit
                     name="por_pagina"
                     defaultValue={String(porPagina)}

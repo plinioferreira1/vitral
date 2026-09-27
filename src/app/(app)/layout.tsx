@@ -139,9 +139,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   {
                     label: "Movimentações",
                     children: [
-                      { href: "/financeiro/contas-a-pagar", label: "Pagar" },
-                      { href: "/financeiro/contas-a-receber", label: "Receber" },
-                      { href: "/financeiro/agenda", label: "Agenda" },
+                      { href: "/financeiro/contas-a-pagar", label: "A Pagar" },
+                      { href: "/financeiro/contas-a-receber", label: "A Receber" },
+                      { href: "/financeiro/cartao-corporativo", label: "Cartões" },
                     ],
                   },
                   {
@@ -150,11 +150,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                       { href: "/financeiro/contas-bancarias", label: "Bancos" },
                       { href: "/financeiro/pessoas", label: "Contatos" },
                       { href: "/financeiro/categorias", label: "Categorias" },
+                      { href: "/financeiro/configuracoes-email", label: "E-mails" },
                     ],
                   },
                   { href: "/financeiro/relatorios", label: "Relatórios" },
-                  { href: "/financeiro/cartao-corporativo", label: "Cartões" },
-                  { href: "/financeiro/configuracoes-email", label: "E-mails" },
                 ],
               },
             ]

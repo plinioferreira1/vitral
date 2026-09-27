@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { ImprimirRelatorio } from "@/components/financeiro/imprimir-relatorio";
 import { TrendingUp, TrendingDown, Landmark, Clock, Tag, Download } from "lucide-react";
 import { CartaoKpi } from "@/components/cartao-kpi";
 import { GraficoFluxoCaixa } from "@/components/grafico-fluxo-caixa";
@@ -189,12 +190,15 @@ export default async function RelatoriosFinanceirosPage({
   })();
 
   return (
-    <div className="max-w-6xl space-y-6">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Relatórios Financeiros</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Visualize e exporte os dados de recebimentos e despesas da sua imobiliária.
-        </p>
+    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Relatórios financeiros</h1>
+          <p className="mt-1 text-sm text-ink-muted">
+            Visualize e exporte os dados de recebimentos e despesas da sua imobiliária.
+          </p>
+        </div>
+        <ImprimirRelatorio />
       </div>
 
       <form method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm">

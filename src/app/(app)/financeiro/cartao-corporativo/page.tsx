@@ -42,9 +42,9 @@ export default async function CartaoCorporativoPage({
 
   if (!cartoes || cartoes.length === 0) {
     return (
-      <div className="max-w-2xl space-y-6">
+      <div className="financeiro-ui mx-auto max-w-[1100px] space-y-5">
         <div>
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Fatura do Cartão Corporativo</h1>
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Cartão corporativo</h1>
           <p className="mt-1 text-sm text-ink-muted">
             Importe a fatura do cartão da empresa e categorize os lançamentos pra controlar os gastos por
             categoria e centro de resultado.
@@ -113,9 +113,9 @@ export default async function CartaoCorporativoPage({
   })();
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
       <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Fatura do Cartão Corporativo</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Cartão corporativo</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Importe a fatura do cartão da empresa e categorize os lançamentos pra controlar os gastos por
           categoria e centro de resultado.

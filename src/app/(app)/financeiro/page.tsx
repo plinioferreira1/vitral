@@ -3,7 +3,7 @@ import Link from "next/link";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { CartaoIndicador } from "@/components/cartao-indicador";
 import { GraficoFluxoCaixa } from "@/components/grafico-fluxo-caixa";
-import { identidadeBanco } from "@/lib/bancos";
+import { LogoBanco } from "@/components/financeiro/logo-banco";
 import {
   Wallet,
   TrendingUp,
@@ -12,6 +12,7 @@ import {
   CalendarClock,
   Clock,
   Landmark,
+  Layers,
   LineChart,
   FileText,
   Users,
@@ -54,7 +55,7 @@ export default async function FinanceiroDashboardPage({
   const [{ data: contas }, { data: baixasPeriodo }, { data: pendentes }, { data: todasBaixas }] = await Promise.all([
     supabase
       .from("financeiro_contas_bancarias")
-      .select("id, nome, banco, saldo_inicial, ativa")
+      .select("id, nome, banco, tipo, saldo_inicial, ativa")
       .eq("ativa", true),
     supabase
       .from("financeiro_baixas")
@@ -68,6 +69,7 @@ export default async function FinanceiroDashboardPage({
     supabase.from("financeiro_baixas").select("conta_bancaria_id, valor, financeiro_lancamentos ( tipo )"),
   ]);
 
+  type ContaResumo = { id: string; nome: string; banco: string | null; tipo: string | null; saldo_inicial: number };
   type BaixaComTipo = { valor: number; financeiro_lancamentos: { tipo: string } | null };
 
   const saldoInicialTotal = (contas ?? []).reduce((soma, c) => soma + Number(c.saldo_inicial), 0);
@@ -84,6 +86,37 @@ export default async function FinanceiroDashboardPage({
     const delta = tipo === "receita" ? Number(b.valor) : -Number(b.valor);
     movimentoPorConta.set(b.conta_bancaria_id, (movimentoPorConta.get(b.conta_bancaria_id) ?? 0) + delta);
   });
+
+  const contasAtivas = (contas ?? []) as unknown as ContaResumo[];
+  const contasInvestimento = contasAtivas.filter((c) => c.tipo === "investimento");
+  const contasOperacionais = contasAtivas.filter((c) => c.tipo !== "investimento");
+  const saldoInvestimentos = contasInvestimento.reduce(
+    (soma, c) => soma + Number(c.saldo_inicial) + (movimentoPorConta.get(c.id) ?? 0),
+    0
+  );
+  const investimentoSemSaldo = contasInvestimento.every((c) => Number(c.saldo_inicial) === 0 && !movimentoPorConta.has(c.id));
+  const saldosContas = [
+    ...(contasInvestimento.length > 0
+      ? [
+          {
+            id: "investimentos",
+            nome: "Investimentos",
+            banco: null,
+            saldo: saldoInvestimentos,
+            saldoNaoInformado: investimentoSemSaldo,
+            investimentos: true,
+          },
+        ]
+      : []),
+    ...contasOperacionais.map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      banco: c.banco,
+      saldo: Number(c.saldo_inicial) + (movimentoPorConta.get(c.id) ?? 0),
+      saldoNaoInformado: Number(c.saldo_inicial) === 0 && !movimentoPorConta.has(c.id),
+      investimentos: false,
+    })),
+  ];
 
   const recebidoNoPeriodo = ((baixasPeriodo ?? []) as unknown as BaixaComTipo[])
     .filter((b) => b.financeiro_lancamentos?.tipo === "receita")
@@ -126,11 +159,11 @@ export default async function FinanceiroDashboardPage({
   const saldoPrevisto = saldoConsolidado + totalEntradas30 - totalSaidas30;
 
   return (
-    <div className="max-w-6xl space-y-6">
+    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Financeiro</h1>
-          <p className="mt-1 text-sm text-ink-muted">Visão geral — Sacra Netimóveis e Sacra Cred.</p>
+          <p className="mt-1 text-sm text-ink-muted">Acompanhe saldos, recebimentos e compromissos em um só lugar.</p>
         </div>
         <div className="flex gap-1 rounded-lg border border-border/60 bg-surface p-1 text-sm">
           {Object.entries(PERIODOS).map(([valor, label]) => (
@@ -147,7 +180,7 @@ export default async function FinanceiroDashboardPage({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 financeiro-indicadores">
         <CartaoIndicador
           icon={Wallet}
           valor={brl(saldoConsolidado)}
@@ -183,28 +216,36 @@ export default async function FinanceiroDashboardPage({
             titulo="Vencidos"
             descricao="Ainda não liquidados, com vencimento no passado."
             acao={
-              <Link href="/financeiro/agenda" className="text-xs font-medium text-brand hover:underline">
-                Ver todos ({vencidos.length})
-              </Link>
+              <div className="flex gap-2 text-xs font-medium">
+                <Link href="/financeiro/contas-a-pagar?status=vencido#lista" className="text-brand hover:underline">
+                  A pagar
+                </Link>
+                <span className="text-ink-muted">·</span>
+                <Link href="/financeiro/contas-a-receber?status=vencido#lista" className="text-brand hover:underline">
+                  A receber
+                </Link>
+              </div>
             }
           />
           {vencidos.length === 0 ? (
-            <p className="text-sm text-ink-muted">Nenhum lançamento vencido. ✅</p>
+            <p className="rounded-lg bg-background px-4 py-6 text-center text-sm text-ink-muted">Nenhum lançamento vencido.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="divide-y divide-border">
               {vencidos.slice(0, 6).map((l) => {
                 const pessoa = (l as unknown as { financeiro_pessoas: { nome: string } | null }).financeiro_pessoas;
                 return (
-                  <li key={l.id} className="rounded-lg border border-rose-100 bg-rose-50 p-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-ink">
-                        {l.tipo === "despesa" ? "Pagar" : "Receber"}: {l.descricao}
-                      </p>
+                  <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-ink">{l.descricao}</p>
+                      <p className="text-xs text-ink-muted">{pessoa?.nome ?? "Sem pessoa vinculada"} · {dataBR(l.vencimento)}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${l.tipo === "despesa" ? "text-rose-700" : "text-emerald-700"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${l.tipo === "despesa" ? "bg-rose-600" : "bg-emerald-600"}`} />
+                        {l.tipo === "despesa" ? "A pagar" : "A receber"}
+                      </span>
                       <p className="num font-semibold text-rose-700">{brl(l.valor)}</p>
                     </div>
-                    <p className="text-xs text-rose-700">
-                      {pessoa?.nome ?? "—"} · venceu em {dataBR(l.vencimento)}
-                    </p>
                   </li>
                 );
               })}
@@ -218,28 +259,36 @@ export default async function FinanceiroDashboardPage({
             titulo="Próximos vencimentos"
             descricao="Nos próximos 7 dias."
             acao={
-              <Link href="/financeiro/agenda" className="text-xs font-medium text-brand hover:underline">
-                Ver todos ({proximosVencimentos.length})
-              </Link>
+              <div className="flex gap-2 text-xs font-medium">
+                <Link href="/financeiro/contas-a-pagar?status=em_aberto#lista" className="text-brand hover:underline">
+                  A pagar
+                </Link>
+                <span className="text-ink-muted">·</span>
+                <Link href="/financeiro/contas-a-receber?status=em_aberto#lista" className="text-brand hover:underline">
+                  A receber
+                </Link>
+              </div>
             }
           />
           {proximosVencimentos.length === 0 ? (
-            <p className="text-sm text-ink-muted">Nada vencendo nos próximos 7 dias.</p>
+            <p className="rounded-lg bg-background px-4 py-6 text-center text-sm text-ink-muted">Nada vencendo nos próximos 7 dias.</p>
           ) : (
-            <ul className="space-y-2">
+            <ul className="divide-y divide-border">
               {proximosVencimentos.slice(0, 6).map((l) => {
                 const pessoa = (l as unknown as { financeiro_pessoas: { nome: string } | null }).financeiro_pessoas;
                 return (
-                  <li key={l.id} className="rounded-lg border border-amber-100 bg-amber-50 p-3 text-sm">
-                    <div className="flex items-center justify-between">
-                      <p className="font-medium text-ink">
-                        {l.tipo === "despesa" ? "Pagar" : "Receber"}: {l.descricao}
-                      </p>
-                      <p className="num font-semibold text-amber-700">{brl(l.valor)}</p>
+                  <li key={l.id} className="flex flex-wrap items-center justify-between gap-2 py-3 text-sm">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-ink">{l.descricao}</p>
+                      <p className="text-xs text-ink-muted">{pessoa?.nome ?? "Sem pessoa vinculada"} · {dataBR(l.vencimento)}</p>
                     </div>
-                    <p className="text-xs text-amber-700">
-                      {pessoa?.nome ?? "—"} · vence em {dataBR(l.vencimento)}
-                    </p>
+                    <div className="flex items-center gap-3">
+                      <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${l.tipo === "despesa" ? "text-rose-700" : "text-emerald-700"}`}>
+                        <span className={`h-1.5 w-1.5 rounded-full ${l.tipo === "despesa" ? "bg-rose-600" : "bg-emerald-600"}`} />
+                        {l.tipo === "despesa" ? "A pagar" : "A receber"}
+                      </span>
+                      <p className="num font-semibold text-ink">{brl(l.valor)}</p>
+                    </div>
                   </li>
                 );
               })}
@@ -253,7 +302,7 @@ export default async function FinanceiroDashboardPage({
           <CabecalhoSecao icon={LineChart} titulo="Fluxo de caixa (próximos 30 dias)" descricao="Com base nos lançamentos pendentes." />
           <GraficoFluxoCaixa dias={diasChart} />
         </div>
-        <div className="grid grid-rows-3 gap-3">
+        <div className="grid grid-rows-3 gap-3 financeiro-projecao">
           <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
             <p className="text-xs text-ink-muted">Saldo previsto (30 dias)</p>
             <p className={`num text-xl font-bold ${saldoPrevisto < 0 ? "text-rose-600" : "text-ink"}`}>{brl(saldoPrevisto)}</p>
@@ -279,24 +328,27 @@ export default async function FinanceiroDashboardPage({
             </Link>
           }
         />
-        {(contas ?? []).length === 0 ? (
+        {contasAtivas.length === 0 ? (
           <p className="text-sm text-ink-muted">Nenhuma conta bancária cadastrada ainda.</p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {(contas ?? []).map((c) => {
-              const saldo = Number(c.saldo_inicial) + (movimentoPorConta.get(c.id) ?? 0);
-              const id = identidadeBanco(c.banco);
+            {saldosContas.map((c) => {
               return (
                 <div key={c.id} className="flex items-center gap-3 rounded-lg border border-border/60 p-3">
-                  <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[10px] font-bold"
-                    style={{ backgroundColor: id.bg, color: id.fg }}
-                  >
-                    {id.sigla.length <= 3 ? id.sigla.toUpperCase() : id.sigla.slice(0, 2).toUpperCase()}
-                  </div>
+                  {c.investimentos ? (
+                    <div className="flex h-9 w-12 shrink-0 items-center justify-center rounded-md border border-border bg-background text-brand">
+                      <Layers size={16} strokeWidth={2.2} />
+                    </div>
+                  ) : (
+                    <LogoBanco banco={c.banco} size="sm" />
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-xs text-ink-muted">{c.nome}</p>
-                    <p className={`num text-sm font-semibold ${saldo < 0 ? "text-rose-600" : "text-ink"}`}>{brl(saldo)}</p>
+                    {c.saldoNaoInformado ? (
+                      <p className="text-sm font-semibold text-ink-muted">A confirmar</p>
+                    ) : (
+                      <p className={`num text-sm font-semibold ${c.saldo < 0 ? "text-rose-600" : "text-ink"}`}>{brl(c.saldo)}</p>
+                    )}
                   </div>
                 </div>
               );
@@ -305,15 +357,15 @@ export default async function FinanceiroDashboardPage({
         )}
       </div>
 
-      <div>
+      <div className="financeiro-atalhos">
         <p className="mb-2 text-sm font-semibold text-ink">Acessos rápidos</p>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <Link href="/financeiro/contas-a-pagar" className="rounded-xl border border-rose-100 bg-rose-50 p-4 text-sm hover:opacity-90">
+          <Link href="/financeiro/contas-a-pagar" className="rounded-xl border border-border bg-surface p-4 text-sm hover:opacity-90">
             <FileText size={18} className="mb-2 text-rose-700" />
             <p className="font-medium text-ink">Contas a Pagar</p>
             <p className="text-xs text-ink-muted">Cadastrar e gerenciar títulos</p>
           </Link>
-          <Link href="/financeiro/contas-a-receber" className="rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-sm hover:opacity-90">
+          <Link href="/financeiro/contas-a-receber" className="rounded-xl border border-border bg-surface p-4 text-sm hover:opacity-90">
             <TrendingUp size={18} className="mb-2 text-emerald-700" />
             <p className="font-medium text-ink">Contas a Receber</p>
             <p className="text-xs text-ink-muted">Acompanhar recebimentos</p>

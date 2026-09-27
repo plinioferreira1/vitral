@@ -1,15 +1,19 @@
 "use server";
 
-import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
-
-import { createClient } from "@/lib/supabase/server";
-import { revalidatePath } from "next/cache";
-import { datasDaRecorrencia, mesesPorFrequencia } from "@/lib/recorrencia";
 import { avisar, checar } from "@/lib/aviso";
-import { valorDaLista } from "@/lib/validacao";
 import type { TablesInsert } from "@/lib/database.types";
+import { moedaParaNumero } from "@/lib/moeda";
+import { datasDaRecorrencia, mesesPorFrequencia } from "@/lib/recorrencia";
+import { createClient } from "@/lib/supabase/server";
+import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
+import { valorDaLista } from "@/lib/validacao";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
-
+function retornoSeguro(formData: FormData, fallback: string): string {
+  const retorno = String(formData.get("return_to") ?? "").trim();
+  return retorno.startsWith("/financeiro") ? retorno : fallback;
+}
 
 /**
  * Cria um lançamento avulso, ou — se "recorrente" vier marcado —
@@ -21,11 +25,10 @@ export async function criarLancamento(formData: FormData) {
   const sessao = await exigirUsuario(GESTORES);
   if (!sessao) return;
   const { userId, tenantId } = sessao;
-  if (!tenantId) return;
 
   const tipo = valorDaLista("financeiro_tipo_categoria", formData.get("tipo"), "despesa");
   const descricao = String(formData.get("descricao") ?? "").trim();
-  const valor = Number(formData.get("valor") ?? 0);
+  const valor = moedaParaNumero(formData.get("valor"));
   if (!descricao || !valor) return;
 
   const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
@@ -49,25 +52,29 @@ export async function criarLancamento(formData: FormData) {
   if (!recorrente) {
     const vencimento = campo("vencimento");
     if (!vencimento) return;
-    await checar(supabase.from("financeiro_lancamentos").insert({
-      ...dadosComuns,
-      valor,
-      vencimento,
-      competencia: campo("competencia") ?? vencimento,
-    }), "salvar");
+    const salvou = await checar(
+      supabase.from("financeiro_lancamentos").insert({
+        ...dadosComuns,
+        valor,
+        vencimento,
+        competencia: campo("competencia") ?? vencimento,
+      }),
+      "salvar"
+    );
+    if (!salvou) return;
   } else {
     const frequencia = valorDaLista("financeiro_frequencia", formData.get("frequencia"), "mensal");
-    const dataInicio = campo("data_inicio");
+    const dataInicio = campo("data_inicio") ?? campo("vencimento");
     const dataFim = campo("data_fim");
     const numeroOcorrenciasRaw = campo("numero_ocorrencias");
-    const numeroOcorrencias = numeroOcorrenciasRaw ? Number(numeroOcorrenciasRaw) : null;
+    const numeroOcorrencias = numeroOcorrenciasRaw ? Number(numeroOcorrenciasRaw) : dataFim ? null : 12;
     if (!dataInicio || (!dataFim && !numeroOcorrencias)) return;
 
     const tipoVencimento = String(formData.get("tipo_vencimento") ?? "fixo");
     const diaUtilRaw = campo("dia_util");
     const diaUtil = diaUtilRaw ? Number(diaUtilRaw) : null;
     const mesesStep = mesesPorFrequencia(frequencia);
-    const usaDiaUtil = tipoVencimento === "dia_util" && diaUtil && mesesStep !== null;
+    const usaDiaUtil = tipoVencimento === "dia_util" && Boolean(diaUtil) && mesesStep !== null;
 
     const { data: recorrencia, error } = await supabase
       .from("financeiro_recorrencias")
@@ -93,11 +100,11 @@ export async function criarLancamento(formData: FormData) {
       .single();
 
     if (error || !recorrencia) {
+      console.error("Falha ao salvar recorrência:", error);
       await avisar("erro", "Não foi possível salvar a recorrência. Confira os dados e tente de novo.");
       return;
     }
 
-    // Datas calculadas em src/lib/recorrencia.ts (testado automaticamente).
     const ocorrencias: TablesInsert<"financeiro_lancamentos">[] = datasDaRecorrencia({
       dataInicio,
       frequencia,
@@ -113,13 +120,18 @@ export async function criarLancamento(formData: FormData) {
     }));
 
     if (ocorrencias.length > 0) {
-      await checar(supabase.from("financeiro_lancamentos").insert(ocorrencias), "salvar");
+      const salvouOcorrencias = await checar(
+        supabase.from("financeiro_lancamentos").insert(ocorrencias),
+        "salvar"
+      );
+      if (!salvouOcorrencias) return;
     }
   }
 
   const caminho = tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath(caminho);
   revalidatePath("/financeiro");
+  redirect(retornoSeguro(formData, caminho));
 }
 
 /**
@@ -131,14 +143,14 @@ export async function registrarBaixa(formData: FormData) {
   const sessao = await exigirUsuario(GESTORES);
   if (!sessao) return;
   const { userId, tenantId } = sessao;
-  if (!tenantId) return;
 
   const lancamentoId = String(formData.get("lancamento_id") ?? "");
-  const valor = Number(formData.get("valor") ?? 0);
+  const valor = moedaParaNumero(formData.get("valor"));
   const data = String(formData.get("data") ?? "").trim();
   if (!lancamentoId || !valor || !data) return;
+  const gerarRecibo = formData.get("gerar_recibo") === "on";
 
-  await checar(supabase.from("financeiro_baixas").insert({
+  const dadosBaixa: TablesInsert<"financeiro_baixas"> = {
     tenant_id: tenantId,
     lancamento_id: lancamentoId,
     valor,
@@ -147,11 +159,29 @@ export async function registrarBaixa(formData: FormData) {
     forma_pagamento: String(formData.get("forma_pagamento") ?? "").trim() || null,
     observacoes: String(formData.get("observacoes") ?? "").trim() || null,
     criado_por: userId,
-  }), "salvar");
+  };
+
+  if (gerarRecibo) {
+    dadosBaixa.gerar_recibo = true;
+    dadosBaixa.recibo_emitido_para = String(formData.get("recibo_emitido_para") ?? "").trim() || null;
+    dadosBaixa.recibo_documento = String(formData.get("recibo_documento") ?? "").trim() || null;
+  }
+
+  const { data: baixa, error: erroBaixa } = await supabase
+    .from("financeiro_baixas")
+    .insert(dadosBaixa)
+    .select("id")
+    .single();
+
+  if (erroBaixa) {
+    console.error("Falha ao salvar baixa:", erroBaixa);
+    await avisar("erro", "Não foi possível salvar a baixa. Confira os dados e tente de novo.");
+    return;
+  }
 
   const { data: lancamento } = await supabase
     .from("financeiro_lancamentos")
-    .select("valor")
+    .select("valor, tipo")
     .eq("id", lancamentoId)
     .single();
   const { data: baixas } = await supabase
@@ -163,11 +193,20 @@ export async function registrarBaixa(formData: FormData) {
   const novoStatus =
     totalBaixado >= Number(lancamento?.valor ?? 0) ? "pago" : totalBaixado > 0 ? "pago_parcial" : "pendente";
 
-  await checar(supabase.from("financeiro_lancamentos").update({ status: novoStatus }).eq("id", lancamentoId), "atualizar");
+  const atualizou = await checar(
+    supabase.from("financeiro_lancamentos").update({ status: novoStatus }).eq("id", lancamentoId),
+    "atualizar"
+  );
+  if (!atualizou) return;
 
+  const caminho = lancamento?.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath("/financeiro/contas-a-pagar");
   revalidatePath("/financeiro/contas-a-receber");
   revalidatePath("/financeiro");
+  if (gerarRecibo && baixa?.id) {
+    redirect(`/financeiro/baixas/${baixa.id}/recibo`);
+  }
+  redirect(retornoSeguro(formData, caminho));
 }
 
 /**
@@ -189,8 +228,6 @@ export async function editarLancamento(formData: FormData) {
   const supabase = await createClient();
   const sessao = await exigirUsuario(GESTORES);
   if (!sessao) return;
-  const { tenantId } = sessao;
-  if (!tenantId) return;
 
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -203,7 +240,7 @@ export async function editarLancamento(formData: FormData) {
   if (!atual || atual.status === "pago" || atual.status === "cancelado") return;
 
   const descricao = String(formData.get("descricao") ?? "").trim();
-  const valor = Number(formData.get("valor") ?? 0);
+  const valor = moedaParaNumero(formData.get("valor"));
   const vencimento = String(formData.get("vencimento") ?? "").trim();
   if (!descricao || !valor || !vencimento) return;
 
@@ -224,40 +261,53 @@ export async function editarLancamento(formData: FormData) {
   };
 
   if (escopo === "todos_futuros" && atual.recorrencia_id) {
-    await checar(supabase
-      .from("financeiro_lancamentos")
-      .update(dadosCadastrais)
-      .eq("recorrencia_id", atual.recorrencia_id)
-      .in("status", ["pendente", "pago_parcial"])
-      .gte("vencimento", atual.vencimento), "atualizar");
+    const atualizouLancamentos = await checar(
+      supabase
+        .from("financeiro_lancamentos")
+        .update(dadosCadastrais)
+        .eq("recorrencia_id", atual.recorrencia_id)
+        .in("status", ["pendente", "pago_parcial"])
+        .gte("vencimento", atual.vencimento),
+      "atualizar"
+    );
 
-    await checar(supabase
-      .from("financeiro_recorrencias")
-      .update({
-        descricao: dadosCadastrais.descricao,
-        valor: dadosCadastrais.valor,
-        pessoa_id: dadosCadastrais.pessoa_id,
-        categoria_id: dadosCadastrais.categoria_id,
-        centro_custo_id: dadosCadastrais.centro_custo_id,
-        unidade_id: dadosCadastrais.unidade_id,
-        conta_bancaria_id: dadosCadastrais.conta_bancaria_id,
-      })
-      .eq("id", atual.recorrencia_id), "atualizar");
+    const atualizouRecorrencia = await checar(
+      supabase
+        .from("financeiro_recorrencias")
+        .update({
+          descricao: dadosCadastrais.descricao,
+          valor: dadosCadastrais.valor,
+          pessoa_id: dadosCadastrais.pessoa_id,
+          categoria_id: dadosCadastrais.categoria_id,
+          centro_custo_id: dadosCadastrais.centro_custo_id,
+          unidade_id: dadosCadastrais.unidade_id,
+          conta_bancaria_id: dadosCadastrais.conta_bancaria_id,
+        })
+        .eq("id", atual.recorrencia_id),
+      "atualizar"
+    );
+
+    if (!atualizouLancamentos || !atualizouRecorrencia) return;
   } else {
-    await checar(supabase
-      .from("financeiro_lancamentos")
-      .update({
-        ...dadosCadastrais,
-        vencimento,
-        competencia: campo("competencia") ?? vencimento,
-      })
-      .eq("id", id), "atualizar");
+    const atualizou = await checar(
+      supabase
+        .from("financeiro_lancamentos")
+        .update({
+          ...dadosCadastrais,
+          vencimento,
+          competencia: campo("competencia") ?? vencimento,
+        })
+        .eq("id", id),
+      "atualizar"
+    );
+    if (!atualizou) return;
   }
 
   const caminho = atual.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath(caminho);
   revalidatePath("/financeiro");
   revalidatePath("/financeiro/agenda");
+  redirect(retornoSeguro(formData, caminho));
 }
 
 /** Define (ou troca) só a categoria/centro de resultado de um lançamento já
@@ -275,10 +325,13 @@ export async function categorizarLancamento(formData: FormData) {
   const { data: atual } = await supabase.from("financeiro_lancamentos").select("tipo").eq("id", id).single();
   if (!atual) return;
 
-  await checar(supabase
-    .from("financeiro_lancamentos")
-    .update({ categoria_id: categoriaId, centro_custo_id: centroCustoId })
-    .eq("id", id), "atualizar");
+  await checar(
+    supabase
+      .from("financeiro_lancamentos")
+      .update({ categoria_id: categoriaId, centro_custo_id: centroCustoId })
+      .eq("id", id),
+    "atualizar"
+  );
 
   const caminho = atual.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath(caminho);
@@ -294,6 +347,33 @@ export async function cancelarLancamento(formData: FormData) {
   revalidatePath("/financeiro/contas-a-pagar");
   revalidatePath("/financeiro/contas-a-receber");
   revalidatePath("/financeiro");
+  revalidatePath("/financeiro/agenda");
+}
+
+export async function reativarLancamento(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  const supabase = await createClient();
+  const { data: lancamento } = await supabase
+    .from("financeiro_lancamentos")
+    .select("valor, tipo")
+    .eq("id", id)
+    .single();
+  if (!lancamento) return;
+
+  const { data: baixas } = await supabase.from("financeiro_baixas").select("valor").eq("lancamento_id", id);
+  const totalBaixado = (baixas ?? []).reduce((soma, b) => soma + Number(b.valor), 0);
+  const novoStatus =
+    totalBaixado >= Number(lancamento.valor) ? "pago" : totalBaixado > 0 ? "pago_parcial" : "pendente";
+
+  await checar(supabase.from("financeiro_lancamentos").update({ status: novoStatus }).eq("id", id), "atualizar");
+
+  const caminho = lancamento.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
+  revalidatePath(caminho);
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/agenda");
 }
 
 /**

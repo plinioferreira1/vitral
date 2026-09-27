@@ -19,7 +19,8 @@
     "nodemailer": "^10.0.10",
     "pdf-lib": "^1.17.1",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "react-native-brazil-bank-icons": "^1.0.2"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

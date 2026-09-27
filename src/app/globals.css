@@ -55,3 +55,128 @@ body {
 ::selection {
   background: color-mix(in srgb, var(--brand) 25%, transparent);
 }
+
+/* Identidade editorial do módulo Financeiro. Escopo local para não alterar
+   Vendas, Financiamentos e Locação. */
+.financeiro-ui {
+  --brand: #920c18;
+  --brand-soft: #fcebed;
+  --ink: #111827;
+  --ink-muted: #667085;
+  --border: #e7e9ee;
+  --background: #f8f9fb;
+  color: var(--ink);
+}
+
+.financeiro-ui > :first-child h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.12;
+}
+
+.financeiro-ui > :first-child p {
+  max-width: 78ch;
+  line-height: 1.5;
+}
+
+.financeiro-ui :is(.rounded-xl.border, .rounded-2xl.border) {
+  border-color: var(--border);
+  border-radius: .5rem;
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.04);
+}
+
+.financeiro-ui a:has(> .num.text-xl),
+.financeiro-ui a:has(> .num.text-2xl) {
+  text-decoration: none;
+}
+
+.financeiro-ui :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  min-height: 2.45rem;
+  border-radius: .5rem;
+  border-color: #dfe3e9;
+  background: #fff;
+}
+
+.financeiro-ui :is(input, select, textarea):focus-visible,
+.financeiro-ui button:focus-visible,
+.financeiro-ui a:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--brand) 65%, white);
+  outline-offset: 2px;
+}
+
+.financeiro-ui table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.financeiro-ui thead tr {
+  background: #f8f9fb;
+}
+
+.financeiro-ui th {
+  color: #667085;
+  font-size: .69rem;
+  font-weight: 650;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.financeiro-ui tbody tr {
+  transition: background-color .15s ease;
+}
+
+.financeiro-ui tbody tr:hover {
+  background: #faf8f8;
+}
+
+.financeiro-ui tbody td {
+  border-bottom: 1px solid #eef0f3;
+}
+
+.financeiro-ui summary::-webkit-details-marker { display: none; }
+
+.financeiro-page {
+  margin-inline: auto;
+  max-width: 92.5rem;
+  color: var(--ink);
+}
+
+.financeiro-card {
+  border: 1px solid var(--border);
+  border-radius: .5rem;
+  background: var(--surface);
+  box-shadow: 0 1px 2px rgb(16 24 40 / 0.04);
+}
+
+.financeiro-muted {
+  color: var(--ink-muted);
+}
+
+.financeiro-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+@media (max-width: 767px) {
+  .financeiro-ui { overflow-x: clip; }
+  .financeiro-ui > :first-child h1 { font-size: 1.75rem; }
+  .financeiro-ui table { min-width: 640px; }
+  .financeiro-ui .financeiro-lista table { min-width: 0; }
+}
+
+@media print {
+  @page { size: A4 landscape; margin: 12mm; }
+  body { background: #fff; }
+  body:has(.financeiro-ui) aside,
+  body:has(.financeiro-ui) main > div > div:first-child,
+  .financeiro-ui form,
+  .financeiro-ui button,
+  .financeiro-ui .print\:hidden { display: none !important; }
+  body:has(.financeiro-ui) main { overflow: visible; }
+  .financeiro-ui { max-width: none; color: #111827; }
+  .financeiro-ui .rounded-xl,
+  .financeiro-ui .rounded-2xl { break-inside: avoid; box-shadow: none; }
+}

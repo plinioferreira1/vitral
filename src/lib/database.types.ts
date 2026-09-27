@@ -1076,9 +1076,12 @@ export type Database = {
           criado_por: string | null
           data: string
           forma_pagamento: string | null
+          gerar_recibo: boolean
           id: string
           lancamento_id: string
           observacoes: string | null
+          recibo_documento: string | null
+          recibo_emitido_para: string | null
           tenant_id: string
           valor: number
         }
@@ -1088,9 +1091,12 @@ export type Database = {
           criado_por?: string | null
           data: string
           forma_pagamento?: string | null
+          gerar_recibo?: boolean
           id?: string
           lancamento_id: string
           observacoes?: string | null
+          recibo_documento?: string | null
+          recibo_emitido_para?: string | null
           tenant_id: string
           valor: number
         }
@@ -1100,9 +1106,12 @@ export type Database = {
           criado_por?: string | null
           data?: string
           forma_pagamento?: string | null
+          gerar_recibo?: boolean
           id?: string
           lancamento_id?: string
           observacoes?: string | null
+          recibo_documento?: string | null
+          recibo_emitido_para?: string | null
           tenant_id?: string
           valor?: number
         }
