@@ -365,6 +365,31 @@ export async function cancelarLancamento(formData: FormData) {
   revalidatePath("/financeiro");
 }
 
+export async function reativarLancamento(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  const supabase = await createClient();
+  const { data: lancamento } = await supabase
+    .from("financeiro_lancamentos")
+    .select("valor, tipo")
+    .eq("id", id)
+    .single();
+  if (!lancamento) return;
+
+  const { data: baixas } = await supabase.from("financeiro_baixas").select("valor").eq("lancamento_id", id);
+  const totalBaixado = (baixas ?? []).reduce((soma, b) => soma + Number(b.valor), 0);
+  const novoStatus =
+    totalBaixado >= Number(lancamento.valor) ? "pago" : totalBaixado > 0 ? "pago_parcial" : "pendente";
+
+  await supabase.from("financeiro_lancamentos").update({ status: novoStatus }).eq("id", id);
+
+  const caminho = lancamento.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
+  revalidatePath(caminho);
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/agenda");
+}
+
 /**
  * Apaga em lote lançamentos selecionados por checkbox. Só apaga de
  * fato quem está "pendente" (nada foi pago ainda) — quem já tem

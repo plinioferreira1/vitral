@@ -26,6 +26,7 @@ import {
   criarLancamento,
   registrarBaixa,
   cancelarLancamento,
+  reativarLancamento,
   editarLancamento,
   apagarLancamentos,
   categorizarLancamento,
@@ -1003,6 +1004,19 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                                 </button>
                               </form>
                             </>
+                          )}
+                          {l.status === "cancelado" && (
+                            <form action={reativarLancamento}>
+                              <input type="hidden" name="id" value={l.id} />
+                              <button
+                                type="submit"
+                                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-brand hover:bg-background"
+                                aria-label="Reativar"
+                                title="Reativar"
+                              >
+                                <RefreshCcw size={15} strokeWidth={2} /> Reativar
+                              </button>
+                            </form>
                           )}
                           </div>
                         </details>
