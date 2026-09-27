@@ -14,25 +14,17 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
-  Pencil,
-  Ban,
-  Tag,
   SlidersHorizontal,
   Plus,
-  Copy,
 } from "lucide-react";
 import { CartaoKpi } from "@/components/cartao-kpi";
-import {
-  cancelarLancamento,
-  reativarLancamento,
-  apagarLancamentos,
-  categorizarLancamento,
-} from "./lancamentos-actions";
+import { apagarLancamentos } from "./lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
 import { SelecionarTodos } from "@/components/selecionar-todos";
 import { SelectAutoSubmit } from "@/components/select-auto-submit";
 import { PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
+import { MenuAcoesLancamento } from "@/components/financeiro/menu-acoes-lancamento";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -534,7 +526,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                     </Link>
                   </th>
                   <th className="hidden min-w-[170px] px-4 py-2.5 font-medium xl:table-cell">Conta</th>
-                  <th className="min-w-[260px] px-4 py-2.5 font-medium text-right">Ações</th>
+                  <th className="w-28 px-4 py-2.5 font-medium text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
@@ -572,108 +564,17 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                         </span>
                       </td>
                       <td className="hidden max-w-[220px] break-words px-4 py-2.5 text-ink-muted xl:table-cell" title={conta?.nome ?? ""}>{conta?.nome ?? "—"}</td>
-                      <td className="px-4 py-2.5">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          {tipo === "receita" && !l.categoria_id && (l.status === "pago" || l.status === "pago_parcial") && (
-                            <details className="w-full">
-                              <summary
-                                className="ml-auto flex w-fit cursor-pointer list-none items-center gap-2 rounded-md border border-amber-200 px-2 py-1.5 text-xs font-medium text-amber-700 hover:bg-amber-50"
-                                aria-label="Categorizar agora"
-                                title="Categorizar agora"
-                              >
-                                <Tag size={15} strokeWidth={2} /> Categorizar
-                              </summary>
-                              <form
-                                action={categorizarLancamento}
-                                className="mt-2 w-full space-y-2 rounded-md border border-border bg-background p-3 text-left"
-                              >
-                                <input type="hidden" name="id" value={l.id} />
-                                <p className="text-xs font-medium text-ink">Categorizar agora</p>
-                                <select
-                                  name="categoria_id"
-                                  required
-                                  defaultValue=""
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                >
-                                  <option value="" disabled>
-                                    Selecione a categoria...
-                                  </option>
-                                  {(categorias ?? []).map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                      {c.nome}
-                                    </option>
-                                  ))}
-                                </select>
-                                <select
-                                  name="centro_custo_id"
-                                  defaultValue=""
-                                  className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                                >
-                                  <option value="">Centro de resultado (opcional)</option>
-                                  {(centros ?? []).map((c) => (
-                                    <option key={c.id} value={c.id}>
-                                      {c.nome}
-                                    </option>
-                                  ))}
-                                </select>
-                                <button
-                                  type="submit"
-                                  className="w-full rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                                >
-                                  Salvar categoria
-                                </button>
-                              </form>
-                            </details>
-                          )}
-                          {editavel && (
-                            <Link
-                              href={`/financeiro/lancamentos/${l.id}/editar`}
-                              className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink-muted hover:bg-background hover:text-brand"
-                            >
-                              <Pencil size={15} strokeWidth={2} /> Editar
-                            </Link>
-                          )}
-                          <Link
-                            href={`/financeiro/lancamentos/novo?tipo=${tipo}&clonar=${l.id}`}
-                            className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink-muted hover:bg-background hover:text-brand"
-                          >
-                            <Copy size={15} strokeWidth={2} /> Clonar {tipo === "receita" ? "receita" : "despesa"}
-                          </Link>
-                          {l.status !== "pago" && l.status !== "cancelado" && (
-                            <>
-                              <Link
-                                href={`/financeiro/lancamentos/${l.id}/baixar`}
-                                className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 px-2 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-50"
-                              >
-                                <CheckCircle2 size={15} strokeWidth={2} /> {tipo === "receita" ? "Receber" : "Pagar"}
-                              </Link>
-                              <form action={cancelarLancamento}>
-                                <input type="hidden" name="id" value={l.id} />
-                                <button
-                                  type="submit"
-                                  className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink-muted hover:bg-background hover:text-rose-600"
-                                  aria-label="Cancelar"
-                                  title="Cancelar"
-                                >
-                                  <Ban size={15} strokeWidth={2} /> Cancelar
-                                </button>
-                              </form>
-                            </>
-                          )}
-                          {l.status === "cancelado" && (
-                            <form action={reativarLancamento}>
-                              <input type="hidden" name="id" value={l.id} />
-                              <button
-                                type="submit"
-                                className="inline-flex items-center gap-1.5 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-brand hover:bg-background"
-                                aria-label="Reativar"
-                                title="Reativar"
-                              >
-                                <RefreshCcw size={15} strokeWidth={2} /> Reativar
-                              </button>
-                            </form>
-                          )}
-                        </div>
+                      <td className="px-4 py-2.5 text-right">
+                        <MenuAcoesLancamento
+                          id={l.id}
+                          descricao={l.descricao}
+                          tipo={tipo}
+                          status={l.status}
+                          editavel={editavel}
+                          podeCategorizar={tipo === "receita" && !l.categoria_id && (l.status === "pago" || l.status === "pago_parcial")}
+                          categorias={categorias ?? []}
+                          centros={centros ?? []}
+                        />
                       </td>
                     </tr>
                   );
