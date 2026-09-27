@@ -9,15 +9,40 @@ import { hojeISO } from "@/lib/data-br";
 const campoClasse =
   "w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10";
 
+type LancamentoClone = {
+  tipo: "receita" | "despesa";
+  descricao: string;
+  valor: number;
+  vencimento: string;
+  competencia: string | null;
+  pessoa_id: string | null;
+  categoria_id: string | null;
+  centro_custo_id: string | null;
+  conta_bancaria_id: string | null;
+  forma_pagamento: string | null;
+  numero_documento: string | null;
+  observacoes: string | null;
+};
+
 export default async function NovoLancamentoFinanceiroPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tipo?: string }>;
+  searchParams: Promise<{ tipo?: string; clonar?: string }>;
 }) {
-  const { tipo: tipoParam } = await searchParams;
-  const tipo = tipoParam === "receita" ? "receita" : "despesa";
+  const { tipo: tipoParam, clonar } = await searchParams;
   const supabase = await createClient();
   const hoje = hojeISO();
+  const { data: cloneRaw } = clonar
+    ? await supabase
+        .from("financeiro_lancamentos")
+        .select(
+          "tipo, descricao, valor, vencimento, competencia, pessoa_id, categoria_id, centro_custo_id, conta_bancaria_id, forma_pagamento, numero_documento, observacoes"
+        )
+        .eq("id", clonar)
+        .single()
+    : { data: null };
+  const clone = cloneRaw as LancamentoClone | null;
+  const tipo = clone ? clone.tipo : tipoParam === "receita" ? "receita" : "despesa";
 
   const [{ data: pessoas }, { data: categorias }, { data: centros }, { data: contas }] = await Promise.all([
     supabase.from("financeiro_pessoas").select("id, nome").order("nome"),
@@ -26,7 +51,13 @@ export default async function NovoLancamentoFinanceiroPage({
     supabase.from("financeiro_contas_bancarias").select("id, nome").eq("ativa", true).order("nome"),
   ]);
 
-  const titulo = tipo === "receita" ? "Nova conta a receber" : "Nova despesa";
+  const titulo = clone
+    ? tipo === "receita"
+      ? "Clonar conta a receber"
+      : "Clonar despesa"
+    : tipo === "receita"
+      ? "Nova conta a receber"
+      : "Nova despesa";
   const rotuloPessoa = tipo === "receita" ? "Cliente" : "Fornecedor";
   const retorno = tipo === "receita" ? "/financeiro/contas-a-receber#lista" : "/financeiro/contas-a-pagar#lista";
 
@@ -43,7 +74,9 @@ export default async function NovoLancamentoFinanceiroPage({
           </Link>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">{titulo}</h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Lance uma movimentação no modelo operacional do financeiro, com dados principais, condição de pagamento e recorrência.
+            {clone
+              ? "Revise os dados clonados, ajuste vencimento/valor se necessário e salve como um novo lançamento."
+              : "Lance uma movimentação no modelo operacional do financeiro, com dados principais, condição de pagamento e recorrência."}
           </p>
         </div>
         <button type="submit" className="rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90">
@@ -58,37 +91,33 @@ export default async function NovoLancamentoFinanceiroPage({
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[1.2fr_170px_1.8fr_170px]">
-          <BuscaOpcaoFinanceira name="pessoa_id" label={rotuloPessoa} options={pessoas ?? []} />
+          <BuscaOpcaoFinanceira name="pessoa_id" label={rotuloPessoa} options={pessoas ?? []} initialId={clone?.pessoa_id ?? ""} />
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Data de competência</label>
-            <input name="competencia" type="date" defaultValue={hoje} className={campoClasse} />
+            <input name="competencia" type="date" defaultValue={clone?.competencia ?? hoje} className={campoClasse} />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Descrição *</label>
-            <input name="descricao" required placeholder="Ex: aluguel, comissão, taxa, reembolso..." className={campoClasse} />
+            <input
+              name="descricao"
+              required
+              defaultValue={clone?.descricao ?? ""}
+              placeholder="Ex: aluguel, comissão, taxa, reembolso..."
+              className={campoClasse}
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Valor *</label>
-            <CampoMoeda name="valor" required className={campoClasse} />
+            <CampoMoeda name="valor" required defaultValue={clone?.valor ?? ""} className={campoClasse} />
           </div>
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1.4fr_1fr]">
-          <BuscaOpcaoFinanceira name="categoria_id" label="Categoria" options={categorias ?? []} />
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Centro de resultado</label>
-            <select name="centro_custo_id" defaultValue="" className={campoClasse}>
-              <option value="">Selecione...</option>
-              {(centros ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
-          </div>
+          <BuscaOpcaoFinanceira name="categoria_id" label="Categoria" options={categorias ?? []} initialId={clone?.categoria_id ?? ""} />
+          <BuscaOpcaoFinanceira name="centro_custo_id" label="Centro de resultado" options={centros ?? []} initialId={clone?.centro_custo_id ?? ""} />
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Código de referência</label>
-            <input name="numero_documento" placeholder="Opcional" className={campoClasse} />
+            <input name="numero_documento" defaultValue={clone?.numero_documento ?? ""} placeholder="Opcional" className={campoClasse} />
           </div>
         </div>
       </section>
@@ -109,23 +138,19 @@ export default async function NovoLancamentoFinanceiroPage({
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Vencimento *</label>
-            <input name="vencimento" type="date" defaultValue={hoje} required className={campoClasse} />
+            <input name="vencimento" type="date" defaultValue={clone?.vencimento ?? hoje} required className={campoClasse} />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>
-            <input name="forma_pagamento" placeholder="Pix, boleto, transferência..." className={campoClasse} />
+            <input
+              name="forma_pagamento"
+              defaultValue={clone?.forma_pagamento ?? ""}
+              placeholder="Pix, boleto, transferência..."
+              autoComplete="off"
+              className={campoClasse}
+            />
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Conta prevista</label>
-            <select name="conta_bancaria_id" defaultValue="" className={campoClasse}>
-              <option value="">Selecione...</option>
-              {(contas ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
-          </div>
+          <BuscaOpcaoFinanceira name="conta_bancaria_id" label="Conta prevista" options={contas ?? []} initialId={clone?.conta_bancaria_id ?? ""} />
         </div>
 
         <div className="mt-5 rounded-xl border border-brand/15 bg-brand-soft/60 p-4">
@@ -161,7 +186,7 @@ export default async function NovoLancamentoFinanceiroPage({
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Data da 1ª ocorrência</label>
-            <input name="data_inicio" type="date" className={campoClasse} />
+            <input name="data_inicio" type="date" defaultValue={clone?.vencimento ?? hoje} className={campoClasse} />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Repetir até</label>
@@ -169,7 +194,7 @@ export default async function NovoLancamentoFinanceiroPage({
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Ou por quantas vezes</label>
-            <input name="numero_ocorrencias" type="number" min={1} placeholder="Ex: 12" className={campoClasse} />
+            <input name="numero_ocorrencias" type="number" min={1} defaultValue={12} placeholder="Ex: 12" className={campoClasse} />
           </div>
         </div>
 
@@ -196,7 +221,13 @@ export default async function NovoLancamentoFinanceiroPage({
         </div>
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">Observações</label>
-          <textarea name="observacoes" rows={4} placeholder="Detalhes relevantes sobre este lançamento..." className={campoClasse} />
+          <textarea
+            name="observacoes"
+            rows={4}
+            defaultValue={clone?.observacoes ?? ""}
+            placeholder="Detalhes relevantes sobre este lançamento..."
+            className={campoClasse}
+          />
         </div>
       </section>
 

@@ -12,6 +12,9 @@ const campoClasse =
 function brl(v: number): string {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
+function dataBR(iso: string): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR");
+}
 
 type Lancamento = {
   id: string;
@@ -30,6 +33,13 @@ type Lancamento = {
   forma_pagamento: string | null;
   numero_documento: string | null;
   observacoes: string | null;
+};
+
+type OcorrenciaResumo = {
+  id: string;
+  status: string;
+  vencimento: string;
+  valor: number;
 };
 
 export default async function EditarLancamentoFinanceiroPage({
@@ -60,10 +70,22 @@ export default async function EditarLancamentoFinanceiroPage({
       supabase.from("financeiro_baixas").select("valor").eq("lancamento_id", id),
     ]);
 
+  const { data: ocorrenciasRaw } = lancamento.recorrencia_id
+    ? await supabase
+        .from("financeiro_lancamentos")
+        .select("id, status, vencimento, valor")
+        .eq("recorrencia_id", lancamento.recorrencia_id)
+        .order("vencimento")
+    : { data: [] };
+
   const totalBaixado = (baixas ?? []).reduce((s, b) => s + Number(b.valor), 0);
   const saldoAberto = Math.max(0, Number(lancamento.valor) - totalBaixado);
   const rotuloPessoa = lancamento.tipo === "receita" ? "Cliente" : "Fornecedor";
   const retorno = lancamento.tipo === "receita" ? "/financeiro/contas-a-receber#lista" : "/financeiro/contas-a-pagar#lista";
+  const ocorrencias = (ocorrenciasRaw ?? []) as OcorrenciaResumo[];
+  const ocorrenciasAbertas = ocorrencias.filter((o) => o.status === "pendente" || o.status === "pago_parcial");
+  const primeiraOcorrencia = ocorrencias[0]?.vencimento;
+  const ultimaOcorrencia = ocorrencias[ocorrencias.length - 1]?.vencimento;
 
   return (
     <form action={editarLancamento} className="financeiro-ui mx-auto max-w-[1180px] space-y-5 pb-24">
@@ -94,6 +116,22 @@ export default async function EditarLancamentoFinanceiroPage({
               <p className="font-bold text-ink">Lançamento recorrente</p>
               <p className="mt-1 text-sm text-ink-muted">
                 Você pode editar somente este lançamento ou aplicar os dados cadastrais nas próximas ocorrências em aberto.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div className="rounded-lg bg-surface px-3 py-2">
+              <p className="text-xs text-ink-muted">Ocorrências geradas</p>
+              <p className="num text-lg font-bold text-ink">{ocorrencias.length}</p>
+            </div>
+            <div className="rounded-lg bg-surface px-3 py-2">
+              <p className="text-xs text-ink-muted">Em aberto</p>
+              <p className="num text-lg font-bold text-ink">{ocorrenciasAbertas.length}</p>
+            </div>
+            <div className="rounded-lg bg-surface px-3 py-2">
+              <p className="text-xs text-ink-muted">Período</p>
+              <p className="text-sm font-semibold text-ink">
+                {primeiraOcorrencia && ultimaOcorrencia ? `${dataBR(primeiraOcorrencia)} a ${dataBR(ultimaOcorrencia)}` : "A confirmar"}
               </p>
             </div>
           </div>
@@ -129,17 +167,12 @@ export default async function EditarLancamentoFinanceiroPage({
             options={categorias ?? []}
             initialId={lancamento.categoria_id ?? ""}
           />
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Centro de resultado</label>
-            <select name="centro_custo_id" defaultValue={lancamento.centro_custo_id ?? ""} className={campoClasse}>
-              <option value="">Selecione...</option>
-              {(centros ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
-          </div>
+          <BuscaOpcaoFinanceira
+            name="centro_custo_id"
+            label="Centro de resultado"
+            options={centros ?? []}
+            initialId={lancamento.centro_custo_id ?? ""}
+          />
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Código de referência</label>
             <input name="numero_documento" defaultValue={lancamento.numero_documento ?? ""} className={campoClasse} />
@@ -164,32 +197,36 @@ export default async function EditarLancamentoFinanceiroPage({
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>
-            <input name="forma_pagamento" defaultValue={lancamento.forma_pagamento ?? ""} className={campoClasse} />
+            <input name="forma_pagamento" defaultValue={lancamento.forma_pagamento ?? ""} autoComplete="off" className={campoClasse} />
           </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Conta prevista</label>
-            <select name="conta_bancaria_id" defaultValue={lancamento.conta_bancaria_id ?? ""} className={campoClasse}>
-              <option value="">Selecione...</option>
-              {(contas ?? []).map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.nome}
-                </option>
-              ))}
-            </select>
-          </div>
+          <BuscaOpcaoFinanceira
+            name="conta_bancaria_id"
+            label="Conta prevista"
+            options={contas ?? []}
+            initialId={lancamento.conta_bancaria_id ?? ""}
+          />
         </div>
 
         {lancamento.recorrencia_id && (
           <div className="mt-5 rounded-xl border border-border bg-background p-4">
             <p className="text-sm font-bold text-ink">Aplicar alterações</p>
-            <div className="mt-3 flex flex-wrap gap-4">
-              <label className="flex items-center gap-2 text-sm text-ink">
+            <p className="mt-1 text-xs text-ink-muted">
+              Valor, categoria, pessoa, conta e observações podem ser replicados nas ocorrências futuras ainda em aberto.
+            </p>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <label className="flex items-start gap-2 rounded-lg border border-border bg-surface p-3 text-sm text-ink">
                 <input type="radio" name="escopo" value="um" defaultChecked className="accent-brand" />
-                Somente este lançamento
+                <span>
+                  <span className="block font-semibold">Somente este lançamento</span>
+                  <span className="text-xs text-ink-muted">Use para uma correção pontual.</span>
+                </span>
               </label>
-              <label className="flex items-center gap-2 text-sm text-ink">
+              <label className="flex items-start gap-2 rounded-lg border border-border bg-surface p-3 text-sm text-ink">
                 <input type="radio" name="escopo" value="todos_futuros" className="accent-brand" />
-                Este e todos os futuros
+                <span>
+                  <span className="block font-semibold">Este e todos os futuros em aberto</span>
+                  <span className="text-xs text-ink-muted">Mantém pagamentos já feitos e atualiza a sequência.</span>
+                </span>
               </label>
             </div>
           </div>

@@ -20,6 +20,7 @@ import {
   MoreHorizontal,
   SlidersHorizontal,
   Plus,
+  Copy,
 } from "lucide-react";
 import { CartaoKpi } from "@/components/cartao-kpi";
 import {
@@ -32,6 +33,7 @@ import { hojeISO } from "@/lib/data-br";
 import { SelecionarTodos } from "@/components/selecionar-todos";
 import { SelectAutoSubmit } from "@/components/select-auto-submit";
 import { PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
+import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -218,8 +220,6 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const baixasMesAnterior = (baixasRaw ?? [])
     .filter((b) => b.data >= inicioMesAnterior && b.data <= fimMesAnterior && todos.some((l) => l.id === b.lancamento_id))
     .reduce((s, b) => s + Number(b.valor), 0);
-  const percentualRecorrentes = todos.length > 0 ? (recorrentes.length / todos.length) * 100 : 0;
-
   // Filtros (via querystring, navegação simples sem JS).
   const f = searchParams ?? {};
   let lancamentos = todos.filter((l) => {
@@ -385,11 +385,6 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           label="Recorrentes em aberto"
           valor={recorrentes.length}
           href={`${rota}?status=recorrente#lista`}
-          rodape={
-            <p className="mt-2 text-xs text-ink-muted">
-              {percentualRecorrentes.toLocaleString("pt-BR", { maximumFractionDigits: 0 })}% do total de lançamentos
-            </p>
-          }
         />
         <CartaoKpi
           icon={CheckCircle2}
@@ -457,54 +452,14 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
             {tipo === "receita" && <option value="sem_categoria">Sem categoria</option>}
           </select>
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">Categoria</label>
-          <select name="categoria" defaultValue={f.categoria ?? ""} className={campoClasse}>
-            <option value="">Todas</option>
-            {(categorias ?? []).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">{rotuloPessoa}</label>
-          <select name="pessoa" defaultValue={f.pessoa ?? ""} className={campoClasse}>
-            <option value="">Todos</option>
-            {(pessoas ?? []).map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.nome}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">Conta bancária</label>
-          <select name="conta_bancaria" defaultValue={f.conta_bancaria ?? ""} className={campoClasse}>
-            <option value="">Todas</option>
-            {(contas ?? []).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+        <BuscaOpcaoFinanceira name="categoria" label="Categoria" options={categorias ?? []} initialId={f.categoria ?? ""} placeholder="Todas" emptyLabel="Todas" />
+        <BuscaOpcaoFinanceira name="pessoa" label={rotuloPessoa} options={pessoas ?? []} initialId={f.pessoa ?? ""} placeholder="Todos" emptyLabel="Todos" />
+        <BuscaOpcaoFinanceira name="conta_bancaria" label="Conta bancária" options={contas ?? []} initialId={f.conta_bancaria ?? ""} placeholder="Todas" emptyLabel="Todas" />
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">Competência</label>
           <input name="competencia" type="month" defaultValue={f.competencia ?? ""} className={campoClasse} />
         </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">Unidade</label>
-          <select name="unidade" defaultValue={f.unidade ?? ""} className={campoClasse}>
-            <option value="">Todas</option>
-            {(unidades ?? []).map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.nome}
-              </option>
-            ))}
-          </select>
-        </div>
+        <BuscaOpcaoFinanceira name="unidade" label="Unidade" options={unidades ?? []} initialId={f.unidade ?? ""} placeholder="Todas" emptyLabel="Todas" />
         <input type="hidden" name="ordenar" value={f.ordenar ?? ""} />
         <input type="hidden" name="direcao" value={f.direcao ?? ""} />
         <input type="hidden" name="por_pagina" value={f.por_pagina ?? ""} />
@@ -542,23 +497,24 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           </p>
         ) : (
           <>
-            <table className="w-full table-fixed text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full min-w-[1320px] text-sm">
               <thead>
                 <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
                   <th className="w-10 px-2 py-2.5">
                     <SelecionarTodos formId="form-apagar-lote" className="accent-brand" />
                   </th>
-                  <th className="w-[28%] px-4 py-2.5 font-medium">
+                  <th className="min-w-[330px] px-4 py-2.5 font-medium">
                     <Link href={linkOrdenar("descricao")} className="inline-flex items-center gap-1 hover:text-ink">
                       Descrição {iconeOrdenacao("descricao")}
                     </Link>
                   </th>
-                  <th className="hidden px-4 py-2.5 font-medium lg:table-cell">
+                  <th className="hidden min-w-[210px] px-4 py-2.5 font-medium lg:table-cell">
                     <Link href={linkOrdenar("pessoa")} className="inline-flex items-center gap-1 hover:text-ink">
                       {rotuloPessoa} {iconeOrdenacao("pessoa")}
                     </Link>
                   </th>
-                  <th className="hidden px-4 py-2.5 font-medium lg:table-cell">
+                  <th className="hidden min-w-[230px] px-4 py-2.5 font-medium lg:table-cell">
                     <Link href={linkOrdenar("categoria")} className="inline-flex items-center gap-1 hover:text-ink">
                       Categoria {iconeOrdenacao("categoria")}
                     </Link>
@@ -578,7 +534,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                       Status {iconeOrdenacao("status")}
                     </Link>
                   </th>
-                  <th className="hidden px-4 py-2.5 font-medium xl:table-cell">Conta</th>
+                  <th className="hidden min-w-[170px] px-4 py-2.5 font-medium xl:table-cell">Conta</th>
                   <th className="w-24 px-2 py-2.5 font-medium text-right">Ações</th>
                 </tr>
               </thead>
@@ -598,14 +554,14 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                       </td>
 
                       <td className="px-4 py-3 text-ink">
-                        <div className="font-medium">{l.descricao} {l.recorrencia_id && <Repeat size={12} className="inline text-ink-muted" />}</div>
+                        <div className="max-w-[380px] break-words font-medium" title={l.descricao}>{l.descricao} {l.recorrencia_id && <Repeat size={12} className="inline text-ink-muted" />}</div>
                         <div className="mt-1 text-xs text-ink-muted lg:hidden">
                           {[pessoa?.nome, categoria?.nome ?? "Sem categoria", conta?.nome].filter(Boolean).join(" · ")}
                         </div>
                         <div className="mt-1 text-xs text-ink-muted md:hidden">{dataBR(l.vencimento)} · {ESTADO_ROTULO[estado]}</div>
                       </td>
-                      <td className="hidden truncate px-4 py-2.5 text-ink-muted lg:table-cell">{pessoa?.nome ?? "—"}</td>
-                      <td className="hidden truncate px-4 py-2.5 text-ink-muted lg:table-cell">
+                      <td className="hidden max-w-[240px] break-words px-4 py-2.5 text-ink-muted lg:table-cell" title={pessoa?.nome ?? ""}>{pessoa?.nome ?? "—"}</td>
+                      <td className="hidden max-w-[260px] break-words px-4 py-2.5 text-ink-muted lg:table-cell" title={categoria?.nome ?? "Sem categoria"}>
                         {categoria?.nome ?? <span className="font-medium text-amber-700">Sem categoria</span>}
                       </td>
                       <td className="hidden px-4 py-2.5 text-ink-muted md:table-cell">{dataBR(l.vencimento)}</td>
@@ -616,7 +572,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                           {ESTADO_ROTULO[estado]}
                         </span>
                       </td>
-                      <td className="hidden truncate px-4 py-2.5 text-ink-muted xl:table-cell">{conta?.nome ?? "—"}</td>
+                      <td className="hidden max-w-[220px] break-words px-4 py-2.5 text-ink-muted xl:table-cell" title={conta?.nome ?? ""}>{conta?.nome ?? "—"}</td>
                       <td className="px-4 py-2.5">
                         <details className="relative">
                           <summary className="inline-flex cursor-pointer list-none items-center gap-1 rounded-md border border-border px-2 py-1.5 text-xs font-medium text-ink hover:bg-background" aria-label={`Ações para ${l.descricao}`}>
@@ -682,6 +638,12 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                               <Pencil size={15} strokeWidth={2} /> Editar
                             </Link>
                           )}
+                          <Link
+                            href={`/financeiro/lancamentos/novo?tipo=${tipo}&clonar=${l.id}`}
+                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-xs text-ink-muted hover:bg-background hover:text-brand"
+                          >
+                            <Copy size={15} strokeWidth={2} /> Clonar {tipo === "receita" ? "receita" : "despesa"}
+                          </Link>
                           {l.status !== "pago" && l.status !== "cancelado" && (
                             <>
                               <Link
@@ -724,6 +686,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                 })}
               </tbody>
             </table>
+            </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-xs text-ink-muted">
               <span>

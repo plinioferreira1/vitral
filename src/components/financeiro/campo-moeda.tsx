@@ -18,7 +18,7 @@ function formatarInteiro(valor: string) {
   return Number(digitos).toLocaleString("pt-BR", { maximumFractionDigits: 0 });
 }
 
-function normalizarEntrada(valor: string) {
+function limparEntrada(valor: string) {
   const limpo = valor.replace(/[^\d,.-]/g, "");
   const separador = Math.max(limpo.lastIndexOf(","), limpo.lastIndexOf("."));
   if (separador === -1) return formatarInteiro(limpo);
@@ -49,7 +49,9 @@ export function CampoMoeda({
         inputMode="decimal"
         autoComplete="off"
         value={valor}
-        onChange={(event) => setValor(normalizarEntrada(event.target.value))}
+        onFocus={(event) => event.currentTarget.select()}
+        onMouseUp={(event) => event.preventDefault()}
+        onChange={(event) => setValor(limparEntrada(event.target.value))}
         onBlur={() => setValor(formatarDecimalMoedaBR(valor))}
         placeholder={placeholder}
         required={required}

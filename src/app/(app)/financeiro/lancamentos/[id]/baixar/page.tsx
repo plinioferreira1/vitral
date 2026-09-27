@@ -124,7 +124,13 @@ export default async function BaixarLancamentoFinanceiroPage({
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>
-            <input name="forma_pagamento" defaultValue={lancamento.forma_pagamento ?? ""} placeholder="Pix, boleto, TED..." className={campoClasse} />
+            <input
+              name="forma_pagamento"
+              defaultValue={lancamento.forma_pagamento ?? ""}
+              placeholder="Pix, boleto, TED..."
+              autoComplete="off"
+              className={campoClasse}
+            />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Conta</label>

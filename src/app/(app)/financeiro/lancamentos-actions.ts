@@ -120,10 +120,10 @@ export async function criarLancamento(formData: FormData) {
     });
   } else {
     const frequencia = String(formData.get("frequencia") ?? "mensal");
-    const dataInicio = campo("data_inicio");
+    const dataInicio = campo("data_inicio") ?? campo("vencimento");
     const dataFim = campo("data_fim");
     const numeroOcorrenciasRaw = campo("numero_ocorrencias");
-    const numeroOcorrencias = numeroOcorrenciasRaw ? Number(numeroOcorrenciasRaw) : null;
+    const numeroOcorrencias = numeroOcorrenciasRaw ? Number(numeroOcorrenciasRaw) : dataFim ? null : 12;
     if (!dataInicio || (!dataFim && !numeroOcorrencias)) return;
 
     const tipoVencimento = String(formData.get("tipo_vencimento") ?? "fixo");

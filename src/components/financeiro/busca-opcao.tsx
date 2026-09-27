@@ -12,12 +12,14 @@ export function BuscaOpcaoFinanceira({
   options,
   initialId = "",
   placeholder,
+  emptyLabel = "Nenhum (opcional)",
 }: {
   name: string;
   label: string;
   options: Opcao[];
   initialId?: string;
   placeholder?: string;
+  emptyLabel?: string;
 }) {
   const listId = useId();
   const initial = options.find((option) => option.id === initialId);
@@ -74,7 +76,7 @@ export function BuscaOpcaoFinanceira({
       <input type="hidden" name={name} value={value} />
       {open && (
         <div id={`${listId}-options`} role="listbox" className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-xl">
-          <button type="button" role="option" aria-selected={!value} onMouseDown={(event) => event.preventDefault()} onClick={() => { setValue(""); setQuery(""); setOpen(false); }} className="block w-full rounded-md px-3 py-2 text-left text-sm text-ink-muted hover:bg-background">Nenhum (opcional)</button>
+          <button type="button" role="option" aria-selected={!value} onMouseDown={(event) => event.preventDefault()} onClick={() => { setValue(""); setQuery(""); setOpen(false); }} className="block w-full rounded-md px-3 py-2 text-left text-sm text-ink-muted hover:bg-background">{emptyLabel}</button>
           {filtered.map((option) => (
             <button key={option.id} type="button" role="option" aria-selected={value === option.id} onMouseDown={(event) => event.preventDefault()} onClick={() => { setValue(option.id); setQuery(option.nome); setOpen(false); }} className="block w-full rounded-md px-3 py-2 text-left text-sm text-ink hover:bg-brand-soft hover:text-brand">
               {option.nome}
