@@ -20,6 +20,7 @@ import {
 import { CartaoKpi } from "@/components/cartao-kpi";
 import { apagarLancamentos } from "./lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
+import { somarDias } from "@/lib/recorrencia";
 import { SelecionarTodos } from "@/components/selecionar-todos";
 import { SelectAutoSubmit } from "@/components/select-auto-submit";
 import { PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
@@ -98,6 +99,7 @@ function dataBR(iso: string): string {
 type Filtros = {
   q?: string;
   status?: string;
+  referencia?: string;
   categoria?: string;
   pessoa?: string;
   conta_bancaria?: string;
@@ -111,6 +113,18 @@ type Filtros = {
 
 type CampoOrdenacao = "descricao" | "pessoa" | "categoria" | "vencimento" | "valor" | "status";
 type CampoOculto = [keyof Filtros, string | undefined];
+type ReferenciaFiltro = "hoje" | "7dias" | "mes" | "todos";
+
+const REFERENCIAS: { value: ReferenciaFiltro; label: string }[] = [
+  { value: "hoje", label: "Hoje" },
+  { value: "7dias", label: "Próximos 7 dias" },
+  { value: "mes", label: "Mês atual" },
+  { value: "todos", label: "Todos" },
+];
+
+function normalizarReferencia(valor?: string): ReferenciaFiltro {
+  return valor === "7dias" || valor === "mes" || valor === "todos" ? valor : "hoje";
+}
 
 function construirUrl(base: string, params: Filtros): string {
   const sp = new URLSearchParams();
@@ -158,6 +172,9 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const mesAnterior = mes === 1 ? 12 : mes - 1;
   const inicioMesAnterior = `${anoAnterior}-${String(mesAnterior).padStart(2, "0")}-01`;
   const fimMesAnterior = new Date(anoAnterior, mesAnterior, 0).toISOString().slice(0, 10);
+  const f = searchParams ?? {};
+  const referencia = normalizarReferencia(f.referencia);
+  const fim7Dias = somarDias(hoje, 6);
 
   // Consultas independentes em uma rodada, preservando a otimização da branch principal.
   const [
@@ -212,8 +229,14 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     .filter((b) => b.data >= inicioMesAnterior && b.data <= fimMesAnterior && todos.some((l) => l.id === b.lancamento_id))
     .reduce((s, b) => s + Number(b.valor), 0);
   // Filtros (via querystring, navegação simples sem JS).
-  const f = searchParams ?? {};
-  let lancamentos = todos.filter((l) => {
+  const todosNaReferencia = todos.filter((l) => {
+    if (referencia === "todos") return true;
+    if (referencia === "hoje") return l.vencimento === hoje;
+    if (referencia === "7dias") return l.vencimento >= hoje && l.vencimento <= fim7Dias;
+    return l.vencimento >= inicioMes && l.vencimento <= fim;
+  });
+
+  let lancamentos = todosNaReferencia.filter((l) => {
     if (f.status === "sem_categoria") {
       if (l.categoria_id !== null || (l.status !== "pago" && l.status !== "pago_parcial")) return false;
     } else if (f.status === "em_aberto") {
@@ -288,20 +311,29 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const titulo = tipo === "receita" ? "Contas a Receber" : "Contas a Pagar";
   const rotuloPessoa = tipo === "receita" ? "Cliente" : "Fornecedor";
   const rota = tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
-  const temFiltro = !!(f.status || f.categoria || f.pessoa || f.conta_bancaria || f.unidade || f.competencia || f.q);
+  const temFiltro = !!(
+    f.status ||
+    f.categoria ||
+    f.pessoa ||
+    f.conta_bancaria ||
+    f.unidade ||
+    f.competencia ||
+    f.q ||
+    referencia !== "hoje"
+  );
   const abasSituacao: [string, string, number][] = [
-    ["", "Todos", todos.filter((l) => l.status !== "cancelado").length],
-    ["em_aberto", "Em aberto", todos.filter((l) => l.status === "pendente" || l.status === "pago_parcial").length],
-    ["vencido", "Vencidos", vencidos.length],
-    ["recorrente", "Recorrentes", recorrentes.length],
-    ["pago", tipo === "receita" ? "Recebidos" : "Pagos", todos.filter((l) => l.status === "pago").length],
-    ["cancelado", "Cancelados", todos.filter((l) => l.status === "cancelado").length],
+    ["", "Todos", todosNaReferencia.filter((l) => l.status !== "cancelado").length],
+    ["em_aberto", "Em aberto", todosNaReferencia.filter((l) => l.status === "pendente" || l.status === "pago_parcial").length],
+    ["vencido", "Vencidos", todosNaReferencia.filter((l) => estadoExibicao(l, hoje) === "vencido").length],
+    ["recorrente", "Recorrentes", todosNaReferencia.filter((l) => estadoExibicao(l, hoje) === "recorrente").length],
+    ["pago", tipo === "receita" ? "Recebidos" : "Pagos", todosNaReferencia.filter((l) => l.status === "pago").length],
+    ["cancelado", "Cancelados", todosNaReferencia.filter((l) => l.status === "cancelado").length],
   ];
   if (tipo === "receita") {
     abasSituacao.splice(5, 0, [
       "sem_categoria",
       "Sem categoria",
-      todos.filter((l) => l.categoria_id === null && (l.status === "pago" || l.status === "pago_parcial")).length,
+      todosNaReferencia.filter((l) => l.categoria_id === null && (l.status === "pago" || l.status === "pago_parcial")).length,
     ]);
   }
 
@@ -317,6 +349,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const camposOcultos: CampoOculto[] = [
     ["q", f.q],
     ["status", f.status],
+    ["referencia", referencia],
     ["categoria", f.categoria],
     ["pessoa", f.pessoa],
     ["conta_bancaria", f.conta_bancaria],
@@ -341,7 +374,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           {abasSituacao.map(([valor, label, contagem]) => (
             <Link
               key={valor || "todos"}
-              href={valor ? `${rota}?status=${valor}#lista` : `${rota}#lista`}
+              href={construirUrl(rota, { ...f, status: valor || undefined, pagina: undefined })}
               className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
                 (f.status ?? "") === valor
                   ? "border-brand text-brand"
@@ -359,7 +392,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           tom="marca"
           label={`${tipo === "receita" ? "A receber" : "A pagar"} no mês`}
           valor={brl(totalNoMes)}
-          href={`${rota}?status=em_aberto#lista`}
+          href={`${rota}?referencia=mes&status=em_aberto#lista`}
           rodape={linhaComparativo(variacao(comprometidoMes, comprometidoMesAnterior), false)}
         />
         <CartaoKpi
@@ -367,7 +400,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           tom="perigo"
           label={`Vencidos (${vencidos.length})`}
           valor={brl(totalVencidos)}
-          href={`${rota}?status=vencido#lista`}
+          href={`${rota}?referencia=todos&status=vencido#lista`}
           rodape={linhaComparativo(variacao(totalVencidos, vencidosMesAnterior), false)}
         />
         <CartaoKpi
@@ -375,14 +408,14 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           tom="info"
           label="Recorrentes em aberto"
           valor={recorrentes.length}
-          href={`${rota}?status=recorrente#lista`}
+          href={`${rota}?referencia=todos&status=recorrente#lista`}
         />
         <CartaoKpi
           icon={CheckCircle2}
           tom="sucesso"
           label={`${tipo === "receita" ? "Recebidos" : "Pagos"} no mês`}
           valor={brl(totalBaixadoNoMes)}
-          href={`${rota}?status=pago#lista`}
+          href={`${rota}?referencia=mes&status=pago#lista`}
           rodape={linhaComparativo(variacao(totalBaixadoNoMes, baixasMesAnterior), true)}
         />
       </div>
@@ -401,6 +434,18 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           </button>
           {renderCamposOcultos(camposOcultos, ["q"])}
         </form>
+        <form method="get" action={`${rota}#lista`} className="flex shrink-0 items-end gap-2">
+          {renderCamposOcultos(camposOcultos, ["referencia"])}
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Referência</label>
+            <SelectAutoSubmit
+              name="referencia"
+              defaultValue={referencia}
+              options={REFERENCIAS}
+              className="min-w-[170px] rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand"
+            />
+          </div>
+        </form>
         <Link href={`/financeiro/lancamentos/novo?tipo=${tipo}`} className={`${PRIMARY_BUTTON_CLASS} shrink-0`}>
             <Plus size={16} strokeWidth={2.2} />
             Novo lançamento
@@ -416,7 +461,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
             <div className="min-w-0">
               <p className="text-sm font-semibold text-ink">Filtros</p>
               <p className="truncate text-xs text-ink-muted">
-                {temFiltro ? "Há filtros aplicados à lista." : "Refine por status, categoria, pessoa, conta, competência ou unidade."}
+                {temFiltro ? "Há filtros aplicados à lista." : "Refine por referência, status, categoria, pessoa, conta, competência ou unidade."}
               </p>
             </div>
           </div>
@@ -429,6 +474,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           className="grid grid-cols-2 gap-3 border-t border-border/70 px-4 py-4 md:grid-cols-3 xl:grid-cols-6"
         >
         <input type="hidden" name="q" value={f.q ?? ""} />
+        <input type="hidden" name="referencia" value={referencia} />
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">Status</label>
           <select name="status" defaultValue={f.status ?? ""} className={campoClasse}>

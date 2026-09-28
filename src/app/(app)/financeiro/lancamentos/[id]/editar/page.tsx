@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { AlertCircle, ArrowLeft, CalendarDays, FileText, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
+import { CampoFormaPagamento } from "@/components/financeiro/campo-forma-pagamento";
 import { CampoMoeda } from "@/components/financeiro/campo-moeda";
 import { editarLancamento } from "../../../lancamentos-actions";
 
@@ -197,7 +198,7 @@ export default async function EditarLancamentoFinanceiroPage({
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>
-            <input name="forma_pagamento" defaultValue={lancamento.forma_pagamento ?? ""} autoComplete="off" className={campoClasse} />
+            <CampoFormaPagamento defaultValue={lancamento.forma_pagamento ?? ""} className={campoClasse} />
           </div>
           <BuscaOpcaoFinanceira
             name="conta_bancaria_id"
@@ -211,7 +212,7 @@ export default async function EditarLancamentoFinanceiroPage({
           <div className="mt-5 rounded-xl border border-border bg-background p-4">
             <p className="text-sm font-bold text-ink">Aplicar alterações</p>
             <p className="mt-1 text-xs text-ink-muted">
-              Valor, categoria, pessoa, conta e observações podem ser replicados nas ocorrências futuras ainda em aberto.
+              Vencimento, valor, categoria, pessoa, conta e observações podem ser replicados nas ocorrências futuras ainda em aberto.
             </p>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               <label className="flex items-start gap-2 rounded-lg border border-border bg-surface p-3 text-sm text-ink">

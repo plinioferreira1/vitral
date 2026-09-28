@@ -5,6 +5,7 @@ export default async function ContasAPagarPage({
 }: {
   searchParams: Promise<{
     status?: string;
+    referencia?: string;
     categoria?: string;
     pessoa?: string;
     conta_bancaria?: string;

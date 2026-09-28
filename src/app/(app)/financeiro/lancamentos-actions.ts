@@ -4,7 +4,7 @@ import { avisar, checar } from "@/lib/aviso";
 import type { TablesInsert } from "@/lib/database.types";
 import { formatarCpfCnpj, formatarTelefone } from "@/lib/mascaras";
 import { moedaParaNumero } from "@/lib/moeda";
-import { datasDaRecorrencia, mesesPorFrequencia } from "@/lib/recorrencia";
+import { datasDaRecorrencia, mesesPorFrequencia, type Frequencia } from "@/lib/recorrencia";
 import { createClient } from "@/lib/supabase/server";
 import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
 import { valorDaLista } from "@/lib/validacao";
@@ -257,8 +257,7 @@ export async function registrarBaixa(formData: FormData) {
  * - "todos_futuros": esse lançamento e todas as ocorrências futuras
  *   ainda em aberto (pendente/pago_parcial) da mesma recorrência, além
  *   da recorrência-base (pra manter as próximas gerações consistentes).
- *   Nesse modo o vencimento de cada ocorrência não é alterado — só os
- *   dados cadastrais (descrição, valor, categoria etc).
+ *   Nesse modo o novo vencimento vira a âncora da sequência futura.
  */
 export async function editarLancamento(formData: FormData) {
   const supabase = await createClient();
@@ -297,15 +296,57 @@ export async function editarLancamento(formData: FormData) {
   };
 
   if (escopo === "todos_futuros" && atual.recorrencia_id) {
-    const atualizouLancamentos = await checar(
+    const [{ data: recorrencia, error: erroRecorrencia }, { data: futuras, error: erroFuturas }] = await Promise.all([
+      supabase
+        .from("financeiro_recorrencias")
+        .select("frequencia")
+        .eq("id", atual.recorrencia_id)
+        .single(),
       supabase
         .from("financeiro_lancamentos")
-        .update(dadosCadastrais)
+        .select("id")
         .eq("recorrencia_id", atual.recorrencia_id)
         .in("status", ["pendente", "pago_parcial"])
-        .gte("vencimento", atual.vencimento),
-      "atualizar"
+        .gte("vencimento", atual.vencimento)
+        .order("vencimento"),
+    ]);
+
+    if (erroRecorrencia || erroFuturas || !recorrencia || !futuras) {
+      console.error("Falha ao carregar recorrência para edição em lote:", erroRecorrencia ?? erroFuturas);
+      await avisar("erro", "Não foi possível carregar as recorrências futuras. Tente novamente.");
+      return;
+    }
+
+    const frequencia = valorDaLista("financeiro_frequencia", recorrencia.frequencia, "mensal") as Frequencia;
+    const novasDatas = datasDaRecorrencia({
+      dataInicio: vencimento,
+      frequencia,
+      numeroOcorrencias: futuras.length,
+    });
+    const competenciaInformada = campo("competencia");
+
+    const atualizacoes = await Promise.all(
+      futuras.map((futura, index) =>
+        supabase
+          .from("financeiro_lancamentos")
+          .update({
+            ...dadosCadastrais,
+            vencimento: novasDatas[index]?.vencimento ?? vencimento,
+            competencia:
+              index === 0
+                ? competenciaInformada ?? novasDatas[index]?.competencia ?? vencimento
+                : novasDatas[index]?.competencia ?? vencimento,
+          })
+          .eq("id", futura.id)
+      )
     );
+
+    const erroAtualizacao = atualizacoes.find((resultado) => resultado.error)?.error;
+    if (erroAtualizacao) {
+      console.error("Falha ao atualizar ocorrências futuras:", erroAtualizacao);
+      await avisar("erro", "Não foi possível atualizar as recorrências futuras. Tente novamente.");
+      return;
+    }
 
     const atualizouRecorrencia = await checar(
       supabase
@@ -313,6 +354,9 @@ export async function editarLancamento(formData: FormData) {
         .update({
           descricao: dadosCadastrais.descricao,
           valor: dadosCadastrais.valor,
+          data_inicio: vencimento,
+          tipo_vencimento: "fixo",
+          dia_util: null,
           pessoa_id: dadosCadastrais.pessoa_id,
           categoria_id: dadosCadastrais.categoria_id,
           centro_custo_id: dadosCadastrais.centro_custo_id,
@@ -323,7 +367,7 @@ export async function editarLancamento(formData: FormData) {
       "atualizar"
     );
 
-    if (!atualizouLancamentos || !atualizouRecorrencia) return;
+    if (!atualizouRecorrencia) return;
   } else {
     const atualizou = await checar(
       supabase
