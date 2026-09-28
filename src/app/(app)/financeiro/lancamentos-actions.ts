@@ -2,6 +2,7 @@
 
 import { avisar, checar } from "@/lib/aviso";
 import type { TablesInsert } from "@/lib/database.types";
+import { formatarCpfCnpj, formatarTelefone } from "@/lib/mascaras";
 import { moedaParaNumero } from "@/lib/moeda";
 import { datasDaRecorrencia, mesesPorFrequencia } from "@/lib/recorrencia";
 import { createClient } from "@/lib/supabase/server";
@@ -13,6 +14,11 @@ import { redirect } from "next/navigation";
 function retornoSeguro(formData: FormData, fallback: string): string {
   const retorno = String(formData.get("return_to") ?? "").trim();
   return retorno.startsWith("/financeiro") ? retorno : fallback;
+}
+
+function categoriaFornecedorOuNull(valor: unknown): string | null {
+  const texto = String(valor ?? "").trim();
+  return texto === "funcionario" || texto === "corretor" || texto === "prestador_servico" ? texto : null;
 }
 
 /**
@@ -32,11 +38,40 @@ export async function criarLancamento(formData: FormData) {
   if (!descricao || !valor) return;
 
   const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
+  let pessoaId = campo("pessoa_id");
+  let criouPessoaInline = false;
+
+  const novoFornecedorNome = String(formData.get("novo_fornecedor_nome") ?? "").trim();
+  if (tipo === "despesa" && novoFornecedorNome) {
+    const { data: novoFornecedor, error: erroFornecedor } = await supabase
+      .from("financeiro_pessoas")
+      .insert({
+        tenant_id: tenantId,
+        nome: novoFornecedorNome,
+        papel: "fornecedor",
+        categoria_fornecedor: categoriaFornecedorOuNull(formData.get("novo_fornecedor_categoria")),
+        cpf_cnpj: formatarCpfCnpj(formData.get("novo_fornecedor_cpf_cnpj")) || null,
+        telefone: formatarTelefone(formData.get("novo_fornecedor_telefone")) || null,
+        email: campo("novo_fornecedor_email"),
+      })
+      .select("id")
+      .single();
+
+    if (erroFornecedor || !novoFornecedor) {
+      console.error("Falha ao salvar fornecedor inline:", erroFornecedor);
+      await avisar("erro", "Não foi possível cadastrar o fornecedor. Confira os dados e tente de novo.");
+      return;
+    }
+
+    pessoaId = novoFornecedor.id;
+    criouPessoaInline = true;
+  }
+
   const dadosComuns = {
     tenant_id: tenantId,
     tipo,
     descricao,
-    pessoa_id: campo("pessoa_id"),
+    pessoa_id: pessoaId,
     categoria_id: campo("categoria_id"),
     centro_custo_id: campo("centro_custo_id"),
     unidade_id: campo("unidade_id"),
@@ -131,6 +166,7 @@ export async function criarLancamento(formData: FormData) {
   const caminho = tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath(caminho);
   revalidatePath("/financeiro");
+  if (criouPessoaInline) revalidatePath("/financeiro/pessoas");
   redirect(retornoSeguro(formData, caminho));
 }
 
