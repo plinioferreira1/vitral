@@ -116,10 +116,10 @@ type CampoOculto = [keyof Filtros, string | undefined];
 type ReferenciaFiltro = "hoje" | "7dias" | "mes" | "todos";
 
 const REFERENCIAS: { value: ReferenciaFiltro; label: string }[] = [
-  { value: "hoje", label: "Hoje" },
+  { value: "hoje", label: "Vencem hoje" },
   { value: "7dias", label: "Próximos 7 dias" },
   { value: "mes", label: "Mês atual" },
-  { value: "todos", label: "Todos" },
+  { value: "todos", label: "Todos os vencimentos" },
 ];
 
 function normalizarReferencia(valor?: string): ReferenciaFiltro {
@@ -434,15 +434,19 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           </button>
           {renderCamposOcultos(camposOcultos, ["q"])}
         </form>
-        <form method="get" action={`${rota}#lista`} className="flex shrink-0 items-end gap-2">
+        <form
+          method="get"
+          action={`${rota}#lista`}
+          className="flex w-full shrink-0 items-end gap-2 rounded-lg border border-brand/20 bg-brand/5 p-2 sm:w-auto"
+        >
           {renderCamposOcultos(camposOcultos, ["referencia"])}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Referência</label>
+          <div className="w-full sm:w-auto">
+            <label className="mb-1 block text-xs font-bold uppercase tracking-wide text-brand">Ver vencimentos</label>
             <SelectAutoSubmit
               name="referencia"
               defaultValue={referencia}
               options={REFERENCIAS}
-              className="min-w-[170px] rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand"
+              className="w-full min-w-[220px] rounded-md border border-brand/30 bg-surface px-3 py-2 text-sm font-semibold text-ink outline-none focus:border-brand"
             />
           </div>
         </form>
