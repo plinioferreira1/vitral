@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, FileText, Repeat, Wallet } from "lucide-react";
+import { ArrowLeft, CalendarDays, FileText, Repeat, UserPlus, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
+import { CampoMascarado } from "@/components/financeiro/campo-mascarado";
 import { CampoMoeda } from "@/components/financeiro/campo-moeda";
 import { criarLancamento } from "../../lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
@@ -91,7 +92,13 @@ export default async function NovoLancamentoFinanceiroPage({
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[1.2fr_170px_1.8fr_170px]">
-          <BuscaOpcaoFinanceira name="pessoa_id" label={rotuloPessoa} options={pessoas ?? []} initialId={clone?.pessoa_id ?? ""} />
+          <BuscaOpcaoFinanceira
+            name="pessoa_id"
+            label={rotuloPessoa}
+            options={pessoas ?? []}
+            initialId={clone?.pessoa_id ?? ""}
+            emptyLabel={tipo === "receita" ? "Sem cliente vinculado" : "Sem fornecedor vinculado"}
+          />
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Data de competência</label>
             <input name="competencia" type="date" defaultValue={clone?.competencia ?? hoje} className={campoClasse} />
@@ -111,6 +118,49 @@ export default async function NovoLancamentoFinanceiroPage({
             <CampoMoeda name="valor" required defaultValue={clone?.valor ?? ""} className={campoClasse} />
           </div>
         </div>
+
+        {tipo === "despesa" && (
+          <details className="mt-4 rounded-xl border border-dashed border-brand/30 bg-brand-soft/35 p-4">
+            <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-bold text-brand">
+              <UserPlus size={16} />
+              Cadastrar novo fornecedor nesta despesa
+            </summary>
+            <div className="mt-4 space-y-3">
+              <p className="text-xs text-ink-muted">
+                Preencha pelo menos o nome. Ao salvar, o fornecedor será criado em Clientes e fornecedores e já ficará vinculado a esta despesa.
+              </p>
+              <div className="grid gap-3 md:grid-cols-[1.5fr_1fr]">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ink-muted">Nome do fornecedor</label>
+                  <input name="novo_fornecedor_nome" placeholder="Ex: prestador, empresa, profissional..." className={campoClasse} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ink-muted">Categoria</label>
+                  <select name="novo_fornecedor_categoria" defaultValue="prestador_servico" className={campoClasse}>
+                    <option value="prestador_servico">Prestador de serviço</option>
+                    <option value="corretor">Corretor</option>
+                    <option value="funcionario">Funcionário</option>
+                    <option value="">Fornecedor sem categoria</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ink-muted">CPF/CNPJ</label>
+                  <CampoMascarado name="novo_fornecedor_cpf_cnpj" mask="cpf_cnpj" placeholder="Opcional" className={campoClasse} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ink-muted">Telefone</label>
+                  <CampoMascarado name="novo_fornecedor_telefone" mask="telefone" placeholder="Opcional" className={campoClasse} />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-ink-muted">E-mail</label>
+                  <input name="novo_fornecedor_email" type="email" placeholder="Opcional" className={campoClasse} />
+                </div>
+              </div>
+            </div>
+          </details>
+        )}
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1.4fr_1fr]">
           <BuscaOpcaoFinanceira name="categoria_id" label="Categoria" options={categorias ?? []} initialId={clone?.categoria_id ?? ""} />
