@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, FileText, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { CampoFormaPagamento } from "@/components/financeiro/campo-forma-pagamento";
 import { CampoMascarado } from "@/components/financeiro/campo-mascarado";
 import { CampoMoeda } from "@/components/financeiro/campo-moeda";
 import { registrarBaixa } from "../../../lancamentos-actions";
@@ -125,13 +126,7 @@ export default async function BaixarLancamentoFinanceiroPage({
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>
-            <input
-              name="forma_pagamento"
-              defaultValue={lancamento.forma_pagamento ?? ""}
-              placeholder="Pix, boleto, TED..."
-              autoComplete="off"
-              className={campoClasse}
-            />
+            <CampoFormaPagamento defaultValue={lancamento.forma_pagamento ?? ""} className={campoClasse} />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Conta</label>

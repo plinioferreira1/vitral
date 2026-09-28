@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, CalendarDays, FileText, Repeat, UserPlus, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
+import { CampoFormaPagamento } from "@/components/financeiro/campo-forma-pagamento";
 import { CampoMascarado } from "@/components/financeiro/campo-mascarado";
 import { CampoMoeda } from "@/components/financeiro/campo-moeda";
 import { criarLancamento } from "../../lancamentos-actions";
@@ -192,13 +193,7 @@ export default async function NovoLancamentoFinanceiroPage({
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>
-            <input
-              name="forma_pagamento"
-              defaultValue={clone?.forma_pagamento ?? ""}
-              placeholder="Pix, boleto, transferência..."
-              autoComplete="off"
-              className={campoClasse}
-            />
+            <CampoFormaPagamento defaultValue={clone?.forma_pagamento ?? ""} className={campoClasse} />
           </div>
           <BuscaOpcaoFinanceira name="conta_bancaria_id" label="Conta prevista" options={contas ?? []} initialId={clone?.conta_bancaria_id ?? ""} />
         </div>
