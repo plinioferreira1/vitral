@@ -171,6 +171,68 @@ export async function criarLancamento(formData: FormData) {
 }
 
 /**
+ * Recalcula o status do lançamento a partir das baixas que existem:
+ * tudo pago → "pago"; parte → "pago_parcial"; nada → "pendente".
+ * Lançamento cancelado não é mexido. Devolve o tipo, ou null se falhar.
+ */
+async function recalcularStatusLancamento(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  lancamentoId: string
+): Promise<{ tipo: string } | null> {
+  const [{ data: lancamento }, { data: baixas }] = await Promise.all([
+    supabase.from("financeiro_lancamentos").select("valor, tipo, status").eq("id", lancamentoId).single(),
+    supabase.from("financeiro_baixas").select("valor").eq("lancamento_id", lancamentoId),
+  ]);
+  if (!lancamento) return null;
+  if (lancamento.status === "cancelado") return { tipo: lancamento.tipo };
+
+  const totalBaixado = (baixas ?? []).reduce((soma, b) => soma + Number(b.valor), 0);
+  const novoStatus =
+    totalBaixado >= Number(lancamento.valor) - 0.005 ? "pago" : totalBaixado > 0 ? "pago_parcial" : "pendente";
+
+  const atualizou = await checar(
+    supabase.from("financeiro_lancamentos").update({ status: novoStatus }).eq("id", lancamentoId),
+    "atualizar"
+  );
+  return atualizou ? { tipo: lancamento.tipo } : null;
+}
+
+/**
+ * Desfaz um pagamento/recebimento registrado por engano: apaga a baixa
+ * (o dinheiro volta para o saldo da conta) e recalcula o status do
+ * lançamento, que volta a ficar em aberto ou parcial.
+ */
+export async function estornarBaixa(formData: FormData) {
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return;
+  const baixaId = String(formData.get("baixa_id") ?? "");
+  if (!baixaId) return;
+
+  const supabase = await createClient();
+  const { data: baixa } = await supabase
+    .from("financeiro_baixas")
+    .select("lancamento_id")
+    .eq("id", baixaId)
+    .single();
+  if (!baixa) {
+    await avisar("erro", "Pagamento não encontrado — talvez já tenha sido estornado.");
+    return;
+  }
+
+  const apagou = await checar(supabase.from("financeiro_baixas").delete().eq("id", baixaId), "estornar o pagamento");
+  if (!apagou) return;
+
+  await recalcularStatusLancamento(supabase, baixa.lancamento_id);
+  await avisar("sucesso", "Pagamento estornado. O lançamento voltou a ficar em aberto.");
+
+  revalidatePath("/financeiro/contas-a-pagar");
+  revalidatePath("/financeiro/contas-a-receber");
+  revalidatePath("/financeiro/contas-bancarias");
+  revalidatePath("/financeiro");
+  revalidatePath(`/financeiro/lancamentos/${baixa.lancamento_id}/baixar`);
+}
+
+/**
  * Registra uma baixa (pagamento/recebimento total ou parcial) e
  * recalcula o status do lançamento.
  */
@@ -215,25 +277,8 @@ export async function registrarBaixa(formData: FormData) {
     return;
   }
 
-  const { data: lancamento } = await supabase
-    .from("financeiro_lancamentos")
-    .select("valor, tipo")
-    .eq("id", lancamentoId)
-    .single();
-  const { data: baixas } = await supabase
-    .from("financeiro_baixas")
-    .select("valor")
-    .eq("lancamento_id", lancamentoId);
-
-  const totalBaixado = (baixas ?? []).reduce((soma, b) => soma + Number(b.valor), 0);
-  const novoStatus =
-    totalBaixado >= Number(lancamento?.valor ?? 0) ? "pago" : totalBaixado > 0 ? "pago_parcial" : "pendente";
-
-  const atualizou = await checar(
-    supabase.from("financeiro_lancamentos").update({ status: novoStatus }).eq("id", lancamentoId),
-    "atualizar"
-  );
-  if (!atualizou) return;
+  const lancamento = await recalcularStatusLancamento(supabase, lancamentoId);
+  if (!lancamento) return;
 
   const caminho = lancamento?.tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
   revalidatePath("/financeiro/contas-a-pagar");

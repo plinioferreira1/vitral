@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Landmark, Save } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { baixasParaMovimento, movimentoPorConta as calcularMovimento } from "@/lib/saldos";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { CampoMoeda } from "@/components/financeiro/campo-moeda";
 import { LogoBanco } from "@/components/financeiro/logo-banco";
@@ -22,7 +23,7 @@ export default async function EditarContaBancariaPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [{ data: conta }, { data: baixas }] = await Promise.all([
+  const [{ data: conta }, { data: baixas }, { data: transferencias }] = await Promise.all([
     supabase
       .from("financeiro_contas_bancarias")
       .select("id, nome, banco, agencia, numero_conta, titular, tipo, saldo_inicial, data_abertura, ativa")
@@ -32,14 +33,20 @@ export default async function EditarContaBancariaPage({
       .from("financeiro_baixas")
       .select("valor, financeiro_lancamentos ( tipo )")
       .eq("conta_bancaria_id", id),
+    supabase
+      .from("financeiro_transferencias")
+      .select("conta_origem_id, conta_destino_id, valor, data")
+      .or(`conta_origem_id.eq.${id},conta_destino_id.eq.${id}`),
   ]);
 
   if (!conta) notFound();
 
-  const movimento = (baixas ?? []).reduce((soma, baixa) => {
-    const tipo = (baixa as unknown as { financeiro_lancamentos: { tipo: string } | null }).financeiro_lancamentos?.tipo;
-    return soma + (tipo === "receita" ? Number(baixa.valor) : -Number(baixa.valor));
-  }, 0);
+  // Baixas + transferências (src/lib/saldos.ts).
+  const movimento =
+    calcularMovimento(
+      baixasParaMovimento((baixas ?? []).map((b) => ({ ...b, conta_bancaria_id: id }))),
+      transferencias ?? []
+    ).get(id) ?? 0;
   const saldoAtual = Number(conta.saldo_inicial) + movimento;
 
   return (

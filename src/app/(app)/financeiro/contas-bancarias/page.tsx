@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowDown, ArrowUp, Landmark, Layers, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
+import { baixasParaMovimento, movimentoPorConta as calcularMovimento } from "@/lib/saldos";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { CampoMoeda } from "@/components/financeiro/campo-moeda";
 import { LogoBanco } from "@/components/financeiro/logo-banco";
@@ -59,25 +60,22 @@ export default async function ContasBancariasPage({
     .order("ativa", { ascending: false })
     .order("nome");
 
-  const { data: baixas } = await supabase
-    .from("financeiro_baixas")
-    .select("conta_bancaria_id, valor, data, financeiro_lancamentos ( tipo )");
+  const [{ data: baixas }, { data: transferencias }] = await Promise.all([
+    supabase.from("financeiro_baixas").select("conta_bancaria_id, valor, data, financeiro_lancamentos ( tipo )"),
+    supabase
+      .from("financeiro_transferencias")
+      .select("id, conta_origem_id, conta_destino_id, valor, data, descricao")
+      .order("data", { ascending: false }),
+  ]);
 
   const ha30dias = new Date();
   ha30dias.setDate(ha30dias.getDate() - 30);
   const ha30diasISO = ha30dias.toISOString().slice(0, 10);
 
-  const movimentoPorConta = new Map<string, number>();
-  const movimentoPorContaHa30Dias = new Map<string, number>();
-  (baixas ?? []).forEach((b) => {
-    const tipo = (b as unknown as { financeiro_lancamentos: { tipo: string } | null }).financeiro_lancamentos?.tipo;
-    if (!b.conta_bancaria_id) return;
-    const delta = tipo === "receita" ? Number(b.valor) : -Number(b.valor);
-    movimentoPorConta.set(b.conta_bancaria_id, (movimentoPorConta.get(b.conta_bancaria_id) ?? 0) + delta);
-    if (b.data <= ha30diasISO) {
-      movimentoPorContaHa30Dias.set(b.conta_bancaria_id, (movimentoPorContaHa30Dias.get(b.conta_bancaria_id) ?? 0) + delta);
-    }
-  });
+  // Baixas + transferências entre contas (src/lib/saldos.ts).
+  const movimentos = baixasParaMovimento(baixas);
+  const movimentoPorConta = calcularMovimento(movimentos, transferencias ?? []);
+  const movimentoPorContaHa30Dias = calcularMovimento(movimentos, transferencias ?? [], ha30diasISO);
 
   let listaContas = (contas ?? []) as ContaBancaria[];
   if (status) listaContas = listaContas.filter((c) => (status === "ativa" ? c.ativa : !c.ativa));
@@ -113,9 +111,16 @@ export default async function ContasBancariasPage({
         <div>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Contas bancárias</h1>
           <p className="mt-1 text-sm text-ink-muted">
-            Saldo calculado a partir do saldo inicial + pagamentos e recebimentos registrados.
+            Saldo calculado a partir do saldo inicial + pagamentos, recebimentos e transferências entre contas.
           </p>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+        <Link
+          href="/financeiro/transferencias"
+          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+        >
+          Transferir entre contas
+        </Link>
         {(!temCaixa || !temBancoDoBrasil) && (
           <form action={criarContasPadrao}>
             <button type="submit" className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-background">
@@ -123,6 +128,7 @@ export default async function ContasBancariasPage({
             </button>
           </form>
         )}
+        </div>
       </div>
 
       <form action={criarContaBancaria} className="space-y-3 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">

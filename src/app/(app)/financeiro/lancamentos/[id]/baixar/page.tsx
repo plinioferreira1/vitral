@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CheckCircle2, FileText, Wallet } from "lucide-react";
+import { ArrowLeft, CheckCircle2, FileText, Undo2, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CampoFormaPagamento } from "@/components/financeiro/campo-forma-pagamento";
 import { CampoMascarado } from "@/components/financeiro/campo-mascarado";
 import { CampoMoeda } from "@/components/financeiro/campo-moeda";
-import { registrarBaixa } from "../../../lancamentos-actions";
+import { estornarBaixa, registrarBaixa } from "../../../lancamentos-actions";
+import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { hojeISO } from "@/lib/data-br";
 
 const campoClasse =
@@ -52,7 +53,11 @@ export default async function BaixarLancamentoFinanceiroPage({
       .eq("id", id)
       .single(),
     supabase.from("financeiro_contas_bancarias").select("id, nome").eq("ativa", true).order("nome"),
-    supabase.from("financeiro_baixas").select("valor").eq("lancamento_id", id),
+    supabase
+      .from("financeiro_baixas")
+      .select("id, valor, data, forma_pagamento, gerar_recibo, financeiro_contas_bancarias ( nome )")
+      .eq("lancamento_id", id)
+      .order("data"),
   ]);
 
   if (!lancamentoRaw) notFound();
@@ -64,8 +69,67 @@ export default async function BaixarLancamentoFinanceiroPage({
   const titulo = lancamento.tipo === "receita" ? "Registrar recebimento" : "Registrar pagamento";
   const botaoConfirmarClasse = "rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700";
 
+  const listaBaixas = (baixas ?? []) as unknown as {
+    id: string;
+    valor: number;
+    data: string;
+    forma_pagamento: string | null;
+    gerar_recibo: boolean;
+    financeiro_contas_bancarias: { nome: string } | null;
+  }[];
+  const quitado = lancamento.status === "pago";
+
   return (
-    <form action={registrarBaixa} className="financeiro-ui mx-auto max-w-[1180px] space-y-5 pb-24">
+    <div className="financeiro-ui mx-auto max-w-[1180px] space-y-5 pb-24">
+      {listaBaixas.length > 0 && (
+        <section id="pagamentos" className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+          <div className="mb-3 flex items-center gap-2 border-b border-border pb-3">
+            <Undo2 size={18} className="text-brand" />
+            <h2 className="text-base font-bold text-ink">
+              {lancamento.tipo === "receita" ? "Recebimentos registrados" : "Pagamentos registrados"}
+            </h2>
+          </div>
+          <p className="mb-3 text-xs text-ink-muted">
+            Registrou algo errado? Estorne o {acao} — o valor volta para o saldo da conta e o lançamento volta a ficar em
+            aberto. Depois é só registrar de novo com os dados certos.
+          </p>
+          <div className="divide-y divide-border">
+            {listaBaixas.map((b) => (
+              <div key={b.id} className="flex flex-wrap items-center justify-between gap-3 py-2.5 text-sm">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+                  <span className="num font-semibold text-ink">{brl(b.valor)}</span>
+                  <span className="num text-ink-muted">{dataBR(b.data)}</span>
+                  <span className="text-ink-muted">{b.financeiro_contas_bancarias?.nome ?? "Sem conta"}</span>
+                  {b.forma_pagamento && <span className="text-ink-muted">{b.forma_pagamento}</span>}
+                  {b.gerar_recibo && (
+                    <Link href={`/financeiro/baixas/${b.id}/recibo`} className="text-brand hover:underline">
+                      Recibo
+                    </Link>
+                  )}
+                </div>
+                <form action={estornarBaixa}>
+                  <input type="hidden" name="baixa_id" value={b.id} />
+                  <BotaoComConfirmacao
+                    mensagem={`Estornar este ${acao} de ${brl(b.valor)}? O valor volta para o saldo da conta.`}
+                    className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+                  >
+                    Estornar
+                  </BotaoComConfirmacao>
+                </form>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      {quitado ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-800">
+          Este lançamento já está totalmente {lancamento.tipo === "receita" ? "recebido" : "pago"}.{" "}
+          <Link href={retorno} className="font-semibold underline">
+            Voltar para a lista
+          </Link>
+        </div>
+      ) : (
+    <form action={registrarBaixa} className="space-y-5">
       <input type="hidden" name="lancamento_id" value={lancamento.id} />
       <input type="hidden" name="return_to" value={retorno} />
 
@@ -215,5 +279,7 @@ export default async function BaixarLancamentoFinanceiroPage({
         </div>
       </div>
     </form>
+      )}
+    </div>
   );
 }

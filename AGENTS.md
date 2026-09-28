@@ -12,5 +12,6 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Botões de envio**: usar `<BotaoEnviar>` (`src/components/botao-enviar.tsx`), que mostra "Salvando…" e bloqueia clique duplo.
 - **Usuário logado**: `getUsuarioAtual()` (`src/lib/usuario-atual.ts`, memorizado por requisição) em vez de repetir `auth.getUser()` + select em `usuarios`.
 - **Cálculos ficam em `src/lib/` com teste ao lado** (`*.test.ts`, Vitest): datas de recorrência, leitura de CSV, proporcionalidade, custas, urgência, motor de etapas. Antes de publicar: `npm run typecheck && npm run lint && npm test && npm run build` — o GitHub roda o mesmo (`.github/workflows/verificacao.yml`).
-- **Migrations**: todo arquivo novo em `supabase/migrations/` enviado à `main` é aplicado automaticamente no banco de produção pelo workflow `supabase-migrations.yml`.
+- **Migrations**: todo arquivo novo em `supabase/migrations/` enviado à `main` é aplicado automaticamente no banco de produção pelo workflow `supabase-migrations.yml`. Antes de criar uma, confira o maior número já usado na `main` **e** em `supabase_migrations.schema_migrations` — duas migrations com o mesmo número fazem a mais nova nunca rodar (aconteceu com a 0083).
+- **Saldo das contas**: sempre via `movimentoPorConta()` de `src/lib/saldos.ts` (baixas + transferências). Não recalcular à mão em cada tela.
 - **Desempenho**: funções rodam em `gru1` (mesma região do Supabase). Consultas independentes vão em `Promise.all`; chamadas ao Google Agenda vão em `after()` e com timeout.

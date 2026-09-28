@@ -1786,6 +1786,71 @@ export type Database = {
           },
         ]
       }
+      financeiro_transferencias: {
+        Row: {
+          conta_destino_id: string
+          conta_origem_id: string
+          criado_em: string
+          criado_por: string | null
+          data: string
+          descricao: string | null
+          id: string
+          tenant_id: string
+          valor: number
+        }
+        Insert: {
+          conta_destino_id: string
+          conta_origem_id: string
+          criado_em?: string
+          criado_por?: string | null
+          data: string
+          descricao?: string | null
+          id?: string
+          tenant_id: string
+          valor: number
+        }
+        Update: {
+          conta_destino_id?: string
+          conta_origem_id?: string
+          criado_em?: string
+          criado_por?: string | null
+          data?: string
+          descricao?: string | null
+          id?: string
+          tenant_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_transferencias_conta_destino_id_fkey"
+            columns: ["conta_destino_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_transferencias_conta_origem_id_fkey"
+            columns: ["conta_origem_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_transferencias_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_transferencias_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financeiro_unidades: {
         Row: {
           criado_em: string

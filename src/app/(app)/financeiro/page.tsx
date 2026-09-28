@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { CartaoIndicador } from "@/components/cartao-indicador";
+import { baixasParaMovimento, movimentoPorConta as calcularMovimento } from "@/lib/saldos";
 import { GraficoFluxoCaixa } from "@/components/grafico-fluxo-caixa";
 import { LogoBanco } from "@/components/financeiro/logo-banco";
 import {
@@ -52,7 +53,7 @@ export default async function FinanceiroDashboardPage({
   inicioPeriodo.setDate(inicioPeriodo.getDate() - Number(periodoDias));
   const inicioPeriodoStr = inicioPeriodo.toISOString().slice(0, 10);
 
-  const [{ data: contas }, { data: baixasPeriodo }, { data: pendentes }, { data: todasBaixas }] = await Promise.all([
+  const [{ data: contas }, { data: baixasPeriodo }, { data: pendentes }, { data: todasBaixas }, { data: transferencias }] = await Promise.all([
     supabase
       .from("financeiro_contas_bancarias")
       .select("id, nome, banco, tipo, saldo_inicial, ativa")
@@ -67,6 +68,7 @@ export default async function FinanceiroDashboardPage({
       .in("status", ["pendente", "pago_parcial"])
       .order("vencimento"),
     supabase.from("financeiro_baixas").select("conta_bancaria_id, valor, financeiro_lancamentos ( tipo )"),
+    supabase.from("financeiro_transferencias").select("conta_origem_id, conta_destino_id, valor, data"),
   ]);
 
   type ContaResumo = { id: string; nome: string; banco: string | null; tipo: string | null; saldo_inicial: number };
@@ -79,13 +81,8 @@ export default async function FinanceiroDashboardPage({
   }, 0);
   const saldoConsolidado = saldoInicialTotal + movimentoTotal;
 
-  const movimentoPorConta = new Map<string, number>();
-  ((todasBaixas ?? []) as unknown as (BaixaComTipo & { conta_bancaria_id: string | null })[]).forEach((b) => {
-    if (!b.conta_bancaria_id) return;
-    const tipo = b.financeiro_lancamentos?.tipo;
-    const delta = tipo === "receita" ? Number(b.valor) : -Number(b.valor);
-    movimentoPorConta.set(b.conta_bancaria_id, (movimentoPorConta.get(b.conta_bancaria_id) ?? 0) + delta);
-  });
+  // Baixas + transferências entre contas (src/lib/saldos.ts).
+  const movimentoPorConta = calcularMovimento(baixasParaMovimento(todasBaixas), transferencias ?? []);
 
   const contasAtivas = (contas ?? []) as unknown as ContaResumo[];
   const contasInvestimento = contasAtivas.filter((c) => c.tipo === "investimento");

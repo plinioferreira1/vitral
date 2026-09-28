@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Ban, CheckCircle2, Copy, MoreHorizontal, Pencil, RefreshCcw, Tag, X } from "lucide-react";
+import { Ban, CheckCircle2, Copy, MoreHorizontal, Pencil, RefreshCcw, Tag, X, Undo2 } from "lucide-react";
 import { cancelarLancamento, categorizarLancamento, reativarLancamento } from "@/app/(app)/financeiro/lancamentos-actions";
 
 type Opcao = { id: string; nome: string };
@@ -220,6 +220,11 @@ export function MenuAcoesLancamento({
                       </button>
                     </form>
                   </>
+                )}
+                {(status === "pago" || status === "pago_parcial") && (
+                  <Link href={`/financeiro/lancamentos/${id}/baixar#pagamentos`} className={itemClasse}>
+                    <Undo2 size={15} strokeWidth={2} /> Ver pagamentos / estornar
+                  </Link>
                 )}
                 {status === "cancelado" && (
                   <form action={reativarLancamento}>
