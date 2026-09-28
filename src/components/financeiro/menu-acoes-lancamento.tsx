@@ -8,6 +8,13 @@ import { cancelarLancamento, categorizarLancamento, reativarLancamento } from "@
 
 type Opcao = { id: string; nome: string };
 
+type PosicaoMenu = {
+  top?: number;
+  bottom?: number;
+  left: number;
+  maxHeight: number;
+};
+
 type MenuAcoesLancamentoProps = {
   id: string;
   descricao: string;
@@ -30,19 +37,43 @@ export function MenuAcoesLancamento({
   centros,
 }: MenuAcoesLancamentoProps) {
   const [aberto, setAberto] = useState(false);
-  const [posicao, setPosicao] = useState({ top: 0, left: 0 });
+  const [posicao, setPosicao] = useState<PosicaoMenu>({ top: 0, left: 0, maxHeight: 520 });
   const botaoRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const baixavel = status !== "pago" && status !== "cancelado";
 
-  function abrirMenu() {
+  function calcularPosicao(): PosicaoMenu | null {
     const rect = botaoRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    const largura = 360;
-    setPosicao({
-      top: rect.bottom + 8,
-      left: Math.min(window.innerWidth - largura - 16, Math.max(16, rect.right - largura)),
-    });
+    if (!rect) return null;
+    const margem = 16;
+    const espacamento = 8;
+    const largura = Math.min(360, window.innerWidth - margem * 2);
+    const espacoAbaixo = window.innerHeight - rect.bottom - margem - espacamento;
+    const espacoAcima = rect.top - margem - espacamento;
+    const abrirAcima = espacoAbaixo < 260 && espacoAcima > espacoAbaixo;
+    const espacoDisponivel = Math.max(120, abrirAcima ? espacoAcima : espacoAbaixo);
+    const base = {
+      left: Math.min(window.innerWidth - largura - margem, Math.max(margem, rect.right - largura)),
+      maxHeight: Math.min(520, espacoDisponivel),
+    };
+
+    if (abrirAcima) {
+      return {
+        ...base,
+        bottom: window.innerHeight - rect.top + espacamento,
+      };
+    }
+
+    return {
+      ...base,
+      top: rect.bottom + espacamento,
+    };
+  }
+
+  function abrirMenu() {
+    const novaPosicao = calcularPosicao();
+    if (!novaPosicao) return;
+    setPosicao(novaPosicao);
     setAberto((atual) => !atual);
   }
 
@@ -56,13 +87,21 @@ export function MenuAcoesLancamento({
     function fecharTecla(event: KeyboardEvent) {
       if (event.key === "Escape") setAberto(false);
     }
+    function reposicionarOuFechar(event: Event) {
+      const alvo = event.target as Node | null;
+      if (alvo && menuRef.current?.contains(alvo)) return;
+      const novaPosicao = calcularPosicao();
+      if (novaPosicao) setPosicao(novaPosicao);
+    }
     document.addEventListener("mousedown", fecharFora);
     document.addEventListener("keydown", fecharTecla);
-    window.addEventListener("resize", () => setAberto(false), { once: true });
-    window.addEventListener("scroll", () => setAberto(false), { once: true, capture: true });
+    window.addEventListener("resize", reposicionarOuFechar);
+    window.addEventListener("scroll", reposicionarOuFechar, true);
     return () => {
       document.removeEventListener("mousedown", fecharFora);
       document.removeEventListener("keydown", fecharTecla);
+      window.removeEventListener("resize", reposicionarOuFechar);
+      window.removeEventListener("scroll", reposicionarOuFechar, true);
     };
   }, [aberto]);
 
@@ -91,8 +130,14 @@ export function MenuAcoesLancamento({
               ref={menuRef}
               role="dialog"
               aria-label={`Ações para ${descricao}`}
-              className="pointer-events-auto max-h-[min(70vh,520px)] w-[min(360px,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-border bg-surface p-3 text-left shadow-2xl"
-              style={{ top: posicao.top, left: posicao.left, position: "fixed" }}
+              className="pointer-events-auto w-[min(360px,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-border bg-surface p-3 text-left shadow-2xl"
+              style={{
+                top: posicao.top,
+                bottom: posicao.bottom,
+                left: posicao.left,
+                maxHeight: posicao.maxHeight,
+                position: "fixed",
+              }}
             >
               <div className="mb-2 flex items-start justify-between gap-3 border-b border-border pb-2">
                 <div className="min-w-0">
