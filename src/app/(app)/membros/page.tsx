@@ -15,6 +15,8 @@ import { BotaoCopiarLink } from "@/components/botao-copiar-link";
 import { obterSiteUrl } from "@/lib/site-url";
 import { CATEGORIA_LABEL, NIVEL_ACESSO_LABEL, type CategoriaProcesso, type NivelAcesso } from "@/lib/types";
 import { BotaoEnviar } from "@/components/botao-enviar";
+import { Settings, ShieldCheck, UserRoundCog, WalletCards } from "lucide-react";
+import type { ReactNode } from "react";
 
 export const maxDuration = 60;
 
@@ -36,6 +38,59 @@ const NIVEIS: NivelAcesso[] = [
   "corretor",
   "social_media",
 ];
+
+const FINANCEIRO_NIVEIS: NivelAcesso[] = ["diretor", "gerente"];
+
+function temAcessoFinanceiro(nivel: string): boolean {
+  return FINANCEIRO_NIVEIS.includes(nivel as NivelAcesso);
+}
+
+function nivelLabel(nivel: string): string {
+  return NIVEL_ACESSO_LABEL[nivel as NivelAcesso] ?? nivel;
+}
+
+function acessosEfetivos(nivel: string, categorias: Set<CategoriaProcesso>): string[] {
+  if (nivel === "social_media") return ["Ferramentas", "Onboarding"];
+  if (nivel === "corretor") return ["Documentos", "Ferramentas"];
+
+  const acessos = ["Documentos", "Ferramentas", "Onboarding"];
+  const acessoTotalProcessos = nivel === "diretor" || nivel === "gerente" || nivel === "auxiliar";
+
+  if (acessoTotalProcessos || categorias.has("venda")) acessos.unshift("Vendas");
+  if (acessoTotalProcessos || categorias.has("financiamento")) acessos.unshift("Financiamentos");
+  if (acessoTotalProcessos || categorias.has("locacao")) acessos.unshift("Locação");
+  if (temAcessoFinanceiro(nivel)) acessos.push("Financeiro", "Configurações", "Relatório Semanal");
+
+  return Array.from(new Set(acessos));
+}
+
+function descricaoNivel(nivel: string): string {
+  if (nivel === "diretor") return "Acesso total, incluindo Financeiro e Configurações.";
+  if (nivel === "gerente") return "Acesso total, incluindo Financeiro e Configurações.";
+  if (nivel === "auxiliar") return "Vê as áreas operacionais, sem Financeiro e Configurações.";
+  if (nivel === "supervisor") return "Acessa somente as categorias marcadas.";
+  if (nivel === "corretor") return "Acessa documentos e ferramentas comerciais.";
+  if (nivel === "social_media") return "Acessa ferramentas e onboarding.";
+  return "Permissão personalizada.";
+}
+
+function Badge({
+  children,
+  destaque = false,
+}: {
+  children: ReactNode;
+  destaque?: boolean;
+}) {
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+        destaque ? "bg-brand-soft text-brand" : "bg-background text-ink-muted"
+      }`}
+    >
+      {children}
+    </span>
+  );
+}
 
 export default async function MembrosPage({
   searchParams,
@@ -65,9 +120,12 @@ export default async function MembrosPage({
     .order("criado_em", { ascending: false });
 
   const siteUrl = await obterSiteUrl();
+  const membrosAtivos = (membros ?? []).filter((m) => m.ativo);
+  const membrosComFinanceiro = membrosAtivos.filter((m) => temAcessoFinanceiro(m.nivel_acesso));
+  const nomesComFinanceiro = membrosComFinanceiro.map((m) => m.nome).join(", ") || "Ninguém";
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-5xl space-y-6">
       <div>
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Membros</h1>
         <p className="mt-1 text-sm text-ink-muted">
@@ -75,10 +133,39 @@ export default async function MembrosPage({
           criar conta no Vitral com um link de convite — ninguém de fora consegue se cadastrar
           sozinho.
         </p>
-        <p className="mt-2 text-xs text-ink-muted">
-          <b>Nível de acesso</b>: Diretor e Gerente veem e editam tudo · Supervisor só vê/edita
-          as categorias marcadas · Auxiliar vê tudo mas não pode editar nada.
-        </p>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-3">
+        <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
+          <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
+            <WalletCards size={18} strokeWidth={2.2} />
+          </div>
+          <p className="text-sm font-semibold text-ink">Financeiro</p>
+          <p className="mt-1 text-2xl font-bold text-ink">{membrosComFinanceiro.length}</p>
+          <p className="mt-1 text-xs leading-5 text-ink-muted">
+            Hoje acessam: {nomesComFinanceiro}.
+          </p>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
+          <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
+            <ShieldCheck size={18} strokeWidth={2.2} />
+          </div>
+          <p className="text-sm font-semibold text-ink">Regra principal</p>
+          <p className="mt-2 text-sm leading-6 text-ink-muted">
+            <b>Diretor</b> e <b>Gerente</b> acessam Financeiro e Configurações. O perfil
+            operacional não libera o Financeiro sozinho.
+          </p>
+        </div>
+        <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
+          <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-brand-soft text-brand">
+            <Settings size={18} strokeWidth={2.2} />
+          </div>
+          <p className="text-sm font-semibold text-ink">Categorias</p>
+          <p className="mt-2 text-sm leading-6 text-ink-muted">
+            As categorias só controlam o acesso de <b>Supervisor</b>. Diretor, Gerente e Auxiliar
+            seguem a regra do nível de acesso.
+          </p>
+        </div>
       </div>
 
       {sucesso && (
@@ -102,7 +189,19 @@ export default async function MembrosPage({
         </BotaoComConfirmacao>
       </form>
 
-      <form action={criarConvite} className="space-y-3 rounded-xl border border-border/60 bg-surface shadow-sm p-5">
+      <form action={criarConvite} className="space-y-4 rounded-xl border border-border/60 bg-surface shadow-sm p-5">
+        <div className="flex items-start gap-3">
+          <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-ink-muted">
+            <UserRoundCog size={16} strokeWidth={2} />
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-ink">Convidar novo membro</p>
+            <p className="mt-1 text-xs leading-5 text-ink-muted">
+              Escolha o nível com calma: é ele que manda no acesso real ao Financeiro,
+              Configurações e áreas internas.
+            </p>
+          </div>
+        </div>
         <div className="flex flex-wrap items-end gap-2">
           <div className="flex-1 min-w-[200px]">
             <label className="mb-1 block text-xs font-medium text-ink-muted">E-mail</label>
@@ -115,7 +214,7 @@ export default async function MembrosPage({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Perfil</label>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Perfil operacional</label>
             <select
               name="perfil"
               defaultValue="gerente"
@@ -129,7 +228,7 @@ export default async function MembrosPage({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Nível de acesso</label>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Nível de acesso real</label>
             <select
               name="nivel_acesso"
               defaultValue="supervisor"
@@ -145,9 +244,9 @@ export default async function MembrosPage({
         </div>
         <div>
           <p className="mb-1 text-xs font-medium text-ink-muted">
-            Categorias (só importa pra Supervisor)
+            Categorias visíveis para Supervisor
           </p>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {CATEGORIAS.map((c) => (
               <label key={c} className="flex items-center gap-1.5 text-sm text-ink">
                 <input type="checkbox" name="categorias" value={c} className="accent-brand" />
@@ -155,6 +254,9 @@ export default async function MembrosPage({
               </label>
             ))}
           </div>
+          <p className="mt-2 text-xs leading-5 text-ink-muted">
+            Para liberar Financeiro, use nível <b>Diretor</b> ou <b>Gerente</b>.
+          </p>
         </div>
         <BotaoEnviar
           className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
@@ -180,9 +282,17 @@ export default async function MembrosPage({
                 <div>
                   <p className="text-sm font-medium text-ink">{c.email}</p>
                   <p className="text-xs text-ink-muted">
-                    {c.perfil} · {NIVEL_ACESSO_LABEL[c.nivel_acesso as NivelAcesso]}
+                    {c.perfil} · {nivelLabel(c.nivel_acesso)}
                     {expirado ? " · expirado" : ""}
                   </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {temAcessoFinanceiro(c.nivel_acesso) ? (
+                      <Badge destaque>Terá Financeiro</Badge>
+                    ) : (
+                      <Badge>Sem Financeiro</Badge>
+                    )}
+                    <Badge>{descricaoNivel(c.nivel_acesso)}</Badge>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2">
                   {!expirado && (
@@ -216,6 +326,8 @@ export default async function MembrosPage({
       <div className="space-y-2">
         {(membros ?? []).map((m) => {
           const categoriasAtuais = categoriasPorUsuario.get(m.id) ?? new Set();
+          const acessos = acessosEfetivos(m.nivel_acesso, categoriasAtuais);
+          const financeiroLiberado = temAcessoFinanceiro(m.nivel_acesso);
           return (
             <div key={m.id} className="rounded-xl border border-border/60 bg-surface shadow-sm p-4">
               <div className="mb-3 flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
@@ -235,6 +347,12 @@ export default async function MembrosPage({
                       {m.cargo && <span className="ml-2 text-xs font-normal text-ink-muted">{m.cargo}</span>}
                     </p>
                     <p className="text-xs text-ink-muted">{m.email}</p>
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <Badge destaque>{nivelLabel(m.nivel_acesso)}</Badge>
+                      <Badge>{m.perfil}</Badge>
+                      {m.ativo ? <Badge>Ativo</Badge> : <Badge>Inativo</Badge>}
+                      {financeiroLiberado ? <Badge destaque>Financeiro</Badge> : <Badge>Sem Financeiro</Badge>}
+                    </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -318,6 +436,17 @@ export default async function MembrosPage({
                   </form>
                 </div>
               </div>
+              <div className="mb-3 rounded-lg border border-border/60 bg-background/60 px-3 py-2">
+                <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Acessos efetivos</p>
+                <div className="mt-2 flex flex-wrap gap-1.5">
+                  {acessos.map((acesso) => (
+                    <Badge key={acesso} destaque={acesso === "Financeiro" || acesso === "Configurações"}>
+                      {acesso}
+                    </Badge>
+                  ))}
+                </div>
+                <p className="mt-2 text-xs leading-5 text-ink-muted">{descricaoNivel(m.nivel_acesso)}</p>
+              </div>
               <form action={atualizarCategoriasMembro} className="flex flex-wrap items-center gap-3">
                 <input type="hidden" name="usuario_id" value={m.id} />
                 <select
@@ -348,7 +477,7 @@ export default async function MembrosPage({
                 <BotaoEnviar
                   className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-background"
                 >
-                  Salvar
+                  Salvar permissões
                 </BotaoEnviar>
               </form>
             </div>
