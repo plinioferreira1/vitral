@@ -19,6 +19,10 @@ import {
   type DashboardIndicadorItem,
   type DashboardIndicadoresDados,
 } from "@/components/dashboard-indicadores";
+import {
+  DashboardAreaCards,
+  type DashboardAreaResumo,
+} from "@/components/dashboard-area-cards";
 import { addMonths } from "date-fns";
 import {
   ArrowRight,
@@ -124,56 +128,6 @@ function AtalhoPrincipal({
           destaque ? "text-white/70" : "text-ink-muted"
         }`}
       />
-    </Link>
-  );
-}
-
-function CartaoArea({
-  titulo,
-  descricao,
-  href,
-  total,
-  atrasados,
-  venceHoje,
-  venceEmBreve,
-}: {
-  titulo: string;
-  descricao: string;
-  href: string;
-  total: number;
-  atrasados: number;
-  venceHoje: number;
-  venceEmBreve: number;
-}) {
-  return (
-    <Link
-      href={href}
-      className="group block rounded-xl border border-border/70 bg-surface p-4 shadow-sm transition hover:border-border-strong hover:shadow-md"
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-semibold text-ink">{titulo}</p>
-          <p className="mt-1 text-xs leading-5 text-ink-muted">{descricao}</p>
-        </div>
-        <ArrowRight size={16} className="mt-0.5 shrink-0 text-ink-muted transition group-hover:translate-x-0.5" />
-      </div>
-      <div className="mt-4 flex items-end justify-between gap-3">
-        <div>
-          <p className="num text-3xl font-bold leading-none text-ink">{total}</p>
-          <p className="mt-1 text-xs text-ink-muted">em andamento</p>
-        </div>
-        <div className="grid gap-1 text-right text-xs text-ink-muted">
-          <span>
-            <b className={atrasados > 0 ? "text-rose-700" : "text-ink"}>{atrasados}</b> atrasados
-          </span>
-          <span>
-            <b className={venceHoje > 0 ? "text-amber-700" : "text-ink"}>{venceHoje}</b> hoje
-          </span>
-          <span>
-            <b className="text-ink">{venceEmBreve}</b> em 7 dias
-          </span>
-        </div>
-      </div>
     </Link>
   );
 }
@@ -581,6 +535,76 @@ export default async function DashboardPage({
   const quadrosPorCategoria = new Map(quadrosKanban.map((q) => [q.categoria, q]));
   const quadroVendas = quadrosPorCategoria.get("venda");
   const quadroFinanciamento = quadrosPorCategoria.get("financiamento");
+  const itensDeProcessos = (quadro: QuadroKanban, tag: string) =>
+    quadro.indicadores.andamento.map((item) => ({
+      id: item.id,
+      titulo: item.titulo,
+      subtitulo: item.subtitulo,
+      detalhe: item.detalhe,
+      href: item.href,
+      tag,
+    }));
+  const areasDashboard: DashboardAreaResumo[] = [
+    ...(temVenda && quadroVendas
+      ? [
+          {
+            id: "venda",
+            titulo: "Vendas",
+            descricao: "Contratos, etapas comerciais e prazo final do contrato.",
+            href: "/vendas?aba=andamento",
+            total: quadroVendas.stats.total,
+            atrasados: quadroVendas.stats.atrasados,
+            venceHoje: quadroVendas.stats.venceHoje,
+            venceEmBreve: quadroVendas.stats.venceEmBreve,
+            itens: itensDeProcessos(quadroVendas, "Venda"),
+            vazio: "Nenhuma venda em andamento.",
+            acaoLabel: "Ver vendas",
+          },
+        ]
+      : []),
+    ...(temFinanciamento && quadroFinanciamento
+      ? [
+          {
+            id: "financiamento",
+            titulo: "Financiamento",
+            descricao: "Operações bancárias, pendências e checklists em aberto.",
+            href: "/financiamentos?aba=andamento",
+            total: quadroFinanciamento.stats.total,
+            atrasados: quadroFinanciamento.stats.atrasados,
+            venceHoje: quadroFinanciamento.stats.venceHoje,
+            venceEmBreve: quadroFinanciamento.stats.venceEmBreve,
+            itens: itensDeProcessos(quadroFinanciamento, "Financiamento"),
+            vazio: "Nenhum financiamento em andamento.",
+            acaoLabel: "Ver financiamentos",
+          },
+        ]
+      : []),
+    ...(temLocacao
+      ? [
+          {
+            id: "locacao",
+            titulo: "Locação",
+            descricao: "Contratos, inadimplências e rotinas recorrentes.",
+            href: "/locacao?aba=resumo",
+            total: tarefasHoje.length,
+            totalLabel: "tarefas hoje",
+            atrasados: 0,
+            venceHoje: tarefasHoje.length,
+            venceEmBreve: 0,
+            itens: tarefasHoje.map((t) => ({
+              id: `${t.tarefaId}-${t.competencia}`,
+              titulo: t.nome,
+              subtitulo: "Tarefa recorrente",
+              detalhe: t.concluida ? "Concluída hoje" : "Pendente para hoje",
+              href: "/locacao?aba=resumo",
+              tag: "Locação",
+            })),
+            vazio: "Nenhuma tarefa recorrente para hoje.",
+            acaoLabel: "Ver locação",
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div className="space-y-5">
@@ -754,55 +778,7 @@ export default async function DashboardPage({
 
       {ehAdmin && (
         <>
-          <div className="grid gap-4 lg:grid-cols-3">
-            {temVenda && quadroVendas && (
-              <CartaoArea
-                titulo="Vendas"
-                descricao="Contratos, etapas comerciais e prazo final do contrato."
-                href="/vendas?aba=andamento"
-                total={quadroVendas.stats.total}
-                atrasados={quadroVendas.stats.atrasados}
-                venceHoje={quadroVendas.stats.venceHoje}
-                venceEmBreve={quadroVendas.stats.venceEmBreve}
-              />
-            )}
-            {temFinanciamento && quadroFinanciamento && (
-              <CartaoArea
-                titulo="Financiamento"
-                descricao="Operações bancárias, pendências e checklists em aberto."
-                href="/financiamentos?aba=andamento"
-                total={quadroFinanciamento.stats.total}
-                atrasados={quadroFinanciamento.stats.atrasados}
-                venceHoje={quadroFinanciamento.stats.venceHoje}
-                venceEmBreve={quadroFinanciamento.stats.venceEmBreve}
-              />
-            )}
-            {temLocacao && (
-              <Link
-                href="/locacao?aba=resumo"
-                className="group block rounded-xl border border-border/70 bg-surface p-4 shadow-sm transition hover:border-border-strong hover:shadow-md"
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="text-sm font-semibold text-ink">Locação</p>
-                    <p className="mt-1 text-xs leading-5 text-ink-muted">
-                      Contratos, inadimplências e rotinas recorrentes.
-                    </p>
-                  </div>
-                  <ArrowRight size={16} className="mt-0.5 shrink-0 text-ink-muted transition group-hover:translate-x-0.5" />
-                </div>
-                <div className="mt-4 flex items-end justify-between gap-3">
-                  <div>
-                    <p className="num text-3xl font-bold leading-none text-ink">{tarefasHoje.length}</p>
-                    <p className="mt-1 text-xs text-ink-muted">tarefa(s) hoje</p>
-                  </div>
-                  <span className="rounded-full bg-brand-soft px-2.5 py-1 text-xs font-semibold text-brand">
-                    Ver locação
-                  </span>
-                </div>
-              </Link>
-            )}
-          </div>
+          <DashboardAreaCards areas={areasDashboard} />
 
           {quadrosKanban.length > 0 && (
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
