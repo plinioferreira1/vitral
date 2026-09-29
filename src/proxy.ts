@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/auth", "/redefinir-senha", "/assinar", "/visita"];
+const PUBLIC_PATHS = ["/login", "/auth", "/redefinir-senha", "/assinar", "/visita", "/cadastro"];
 const ROTAS_CORRETOR = [
   "/",
   "/corretor",
