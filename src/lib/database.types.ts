@@ -2119,6 +2119,38 @@ export type Database = {
           },
         ]
       }
+      notificacoes_dispensadas: {
+        Row: {
+          criado_em: string
+          data_prevista: string
+          etapa_id: string
+          id: string
+          usuario_id: string
+        }
+        Insert: {
+          criado_em?: string
+          data_prevista: string
+          etapa_id: string
+          id?: string
+          usuario_id: string
+        }
+        Update: {
+          criado_em?: string
+          data_prevista?: string
+          etapa_id?: string
+          id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notificacoes_dispensadas_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "etapas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       onboarding_etapas: {
         Row: {
           descricao: string | null

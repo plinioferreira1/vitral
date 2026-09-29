@@ -18,10 +18,12 @@ export function TopBar({
   dataFormatada,
   notificacoes = [],
   totalNotificacoes = 0,
+  limparTodasAction,
 }: {
   dataFormatada: string;
   notificacoes?: NotificacaoTopBar[];
   totalNotificacoes?: number;
+  limparTodasAction: () => Promise<void>;
 }) {
   const router = useRouter();
   const [termo, setTermo] = useState("");
@@ -92,9 +94,17 @@ export function TopBar({
                 <p className="text-xs text-ink-muted">Prazos vencidos e dos próximos 7 dias</p>
               </div>
               {totalNotificacoes > 0 && (
-                <span className="rounded-full bg-brand-soft px-2 py-1 text-xs font-semibold text-brand">
-                  {totalNotificacoes}
-                </span>
+                <form
+                  action={limparTodasAction}
+                  onSubmit={() => setNotificacoesAbertas(false)}
+                >
+                  <button
+                    type="submit"
+                    className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-brand transition hover:bg-brand-soft"
+                  >
+                    Limpar tudo
+                  </button>
+                </form>
               )}
             </div>
 
