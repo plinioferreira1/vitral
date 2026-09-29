@@ -219,7 +219,7 @@ export function AppShell({
   );
 
   const nav = (
-    <nav data-nav-root className="flex-1 space-y-0.5">
+    <nav data-nav-root className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
       {navItems.map((item) => {
         if (!item.children) {
           const ativo = ehAtivo(pathname, item.href!, searchParams);
@@ -348,7 +348,7 @@ export function AppShell({
   );
 
   const rodape = (
-    <div className="border-t border-border pt-3">
+    <div className="shrink-0 border-t border-border bg-surface pt-3">
       <Link
         href="/perfil"
         onClick={() => setMenuAberto(false)}
@@ -380,8 +380,8 @@ export function AppShell({
   return (
     <>
       {/* Desktop: sidebar fixa */}
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-surface px-3 py-4 md:flex">
-        <div className="mb-6">{logo}</div>
+      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col overflow-hidden border-r border-border bg-surface px-3 py-4 md:flex">
+        <div className="mb-4 shrink-0">{logo}</div>
         {nav}
         {rodape}
       </aside>
@@ -407,8 +407,8 @@ export function AppShell({
               onClick={() => setMenuAberto(false)}
               aria-hidden="true"
             />
-            <div className="relative flex w-64 max-w-[80%] flex-col bg-surface px-3 py-4 shadow-xl">
-              <div className="mb-6 flex items-center justify-between">
+            <div className="relative flex h-full w-64 max-w-[80%] flex-col overflow-hidden bg-surface px-3 py-4 shadow-xl">
+              <div className="mb-4 flex shrink-0 items-center justify-between">
                 {logo}
                 <button
                   type="button"
