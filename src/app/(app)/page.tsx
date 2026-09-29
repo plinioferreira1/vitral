@@ -12,7 +12,7 @@ import { ocorrenciasDaTarefa, type RegraTarefa } from "@/lib/tarefas-recorrentes
 import { alternarTarefaMensal } from "@/app/(app)/locacao/actions";
 import { format } from "date-fns";
 import type { CategoriaProcesso } from "@/lib/types";
-import { calcularUrgencia } from "@/lib/alertas";
+import { calcularUrgencia, type Urgencia } from "@/lib/alertas";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import {
   DashboardIndicadores,
@@ -84,16 +84,19 @@ function AtalhoPrincipal({
   titulo,
   descricao,
   destaque = false,
+  prefetch,
 }: {
   href: string;
   icon: LucideIcon;
   titulo: string;
   descricao: string;
   destaque?: boolean;
+  prefetch?: boolean;
 }) {
   return (
     <Link
       href={href}
+      prefetch={prefetch}
       className={`group flex min-w-[210px] flex-1 items-center gap-3 rounded-lg border p-3 text-left transition ${
         destaque
           ? "border-brand bg-brand text-white hover:brightness-105"
@@ -180,16 +183,23 @@ function CartaoCorretor({
   icon: Icon,
   titulo,
   descricao,
+  destaque = false,
+  prefetch,
 }: {
   href: string;
   icon: LucideIcon;
   titulo: string;
   descricao: string;
+  destaque?: boolean;
+  prefetch?: boolean;
 }) {
   return (
     <Link
       href={href}
-      className="group flex min-h-[132px] flex-col justify-between rounded-xl border border-border/70 bg-surface p-4 shadow-sm transition hover:border-border-strong hover:shadow-md"
+      prefetch={prefetch}
+      className={`group flex min-h-[132px] flex-col justify-between rounded-xl border p-4 shadow-sm transition hover:border-border-strong hover:shadow-md ${
+        destaque ? "border-brand/20 bg-brand-soft/50" : "border-border/70 bg-surface"
+      }`}
     >
       <div className="flex items-start justify-between gap-3">
         <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-soft text-brand">
@@ -326,15 +336,29 @@ export default async function DashboardPage({
         idsProcessos.length > 0
           ? await supabase
               .from("etapas")
-              .select("processo_id, status, data_prevista")
+              .select("processo_id, nome, status, data_prevista")
               .in("processo_id", idsProcessos)
-          : { data: [] as { processo_id: string; status: string; data_prevista: string | null }[] };
+          : { data: [] as { processo_id: string; nome: string; status: string; data_prevista: string | null }[] };
 
       const atrasosPorProcesso = new Map<string, number>();
+      const etapasPorProcesso = new Map<
+        string,
+        {
+          nome: string;
+          data: string | null;
+          urgencia: Urgencia;
+        }[]
+      >();
       (etapasRaw ?? []).forEach((e) => {
         const { urgencia } = calcularUrgencia({
           status: e.status as "pendente" | "em_andamento" | "concluida" | "bloqueada",
           data_prevista: e.data_prevista,
+        });
+        if (!etapasPorProcesso.has(e.processo_id)) etapasPorProcesso.set(e.processo_id, []);
+        etapasPorProcesso.get(e.processo_id)!.push({
+          nome: e.nome,
+          data: e.data_prevista,
+          urgencia,
         });
         if (urgencia === "atrasada") {
           atrasosPorProcesso.set(e.processo_id, (atrasosPorProcesso.get(e.processo_id) ?? 0) + 1);
@@ -386,6 +410,18 @@ export default async function DashboardPage({
 
       const ordenarItens = (itens: DashboardIndicadorItem[]) =>
         itens.sort((a, b) => a.titulo.localeCompare(b.titulo, "pt-BR"));
+      const formatarDataEtapa = (data: string | null) =>
+        data ? format(new Date(`${data}T00:00:00`), "dd/MM/yyyy") : "sem data";
+      const detalheEtapa = (
+        id: string,
+        urgencia: "atrasada" | "vence_hoje" | "vence_em_breve",
+        fallback: string
+      ) => {
+        const etapa = (etapasPorProcesso.get(id) ?? [])
+          .filter((e) => e.urgencia === urgencia)
+          .sort((a, b) => (a.data ?? "").localeCompare(b.data ?? ""))[0];
+        return etapa ? `${etapa.nome} · ${formatarDataEtapa(etapa.data)}` : fallback;
+      };
 
       const indicadores = {
         andamento: ordenarItens(
@@ -404,19 +440,23 @@ export default async function DashboardPage({
               const atrasos = atrasosPorProcesso.get(id) ?? 0;
               return itemIndicador(
                 id,
-                `${atrasos} etapa${atrasos === 1 ? "" : "s"} atrasada${atrasos === 1 ? "" : "s"}`
+                detalheEtapa(
+                  id,
+                  "atrasada",
+                  `${atrasos} etapa${atrasos === 1 ? "" : "s"} atrasada${atrasos === 1 ? "" : "s"}`
+                )
               );
             })
             .filter((item): item is DashboardIndicadorItem => Boolean(item))
         ),
         venceHoje: ordenarItens(
           Array.from(processosVenceHoje)
-            .map((id) => itemIndicador(id, "Alguma etapa vence hoje"))
+            .map((id) => itemIndicador(id, detalheEtapa(id, "vence_hoje", "Etapa vence hoje")))
             .filter((item): item is DashboardIndicadorItem => Boolean(item))
         ),
         venceEmBreve: ordenarItens(
           Array.from(processosVenceEmBreve)
-            .map((id) => itemIndicador(id, "Alguma etapa vence nos próximos 7 dias"))
+            .map((id) => itemIndicador(id, detalheEtapa(id, "vence_em_breve", "Etapa vence nos próximos 7 dias")))
             .filter((item): item is DashboardIndicadorItem => Boolean(item))
         ),
       };
@@ -588,6 +628,7 @@ export default async function DashboardPage({
             {ehCorretor && (
               <AtalhoPrincipal
                 href="/corretor"
+                prefetch={false}
                 icon={BookOpen}
                 titulo="Onboarding"
                 descricao="Guias e materiais"
@@ -627,6 +668,7 @@ export default async function DashboardPage({
             </div>
             <Link
               href="/corretor"
+              prefetch={false}
               className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-semibold text-ink hover:bg-background"
             >
               Abrir onboarding <ArrowRight size={14} />
@@ -636,9 +678,11 @@ export default async function DashboardPage({
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <CartaoCorretor
               href="/corretor"
+              prefetch={false}
               icon={BookOpen}
               titulo="Onboarding"
               descricao="Primeiros passos, tutoriais e materiais de referência."
+              destaque
             />
             <CartaoCorretor
               href="/autorizacoes"
