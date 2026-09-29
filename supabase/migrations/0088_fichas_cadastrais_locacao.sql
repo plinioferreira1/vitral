@@ -31,6 +31,7 @@ create table public.ficha_locacao_documentos (
 );
 
 create index fichas_locacao_tenant_status_idx on public.fichas_cadastrais_locacao(tenant_id, status, criado_em desc);
+create index fichas_locacao_criado_por_idx on public.fichas_cadastrais_locacao(criado_por);
 create index ficha_locacao_documentos_ficha_idx on public.ficha_locacao_documentos(ficha_id);
 
 alter table public.fichas_cadastrais_locacao enable row level security;
@@ -75,4 +76,3 @@ create policy "documentos locacao download tenant" on storage.objects
 
 grant select, insert, update on public.fichas_cadastrais_locacao to authenticated;
 grant select on public.ficha_locacao_documentos to authenticated;
-
