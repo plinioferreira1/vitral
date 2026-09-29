@@ -1,7 +1,10 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/auth", "/redefinir-senha", "/assinar", "/visita"];
+// "/api/cron": chamado pelo agendamento da Vercel, sem usuário logado — a
+// própria rota exige o CRON_SECRET. Antes caía no redirecionamento para
+// /login e o e-mail diário do financeiro nunca era enviado.
+const PUBLIC_PATHS = ["/login", "/auth", "/redefinir-senha", "/assinar", "/visita", "/api/cron"];
 const ROTAS_CORRETOR = [
   "/",
   "/corretor",
