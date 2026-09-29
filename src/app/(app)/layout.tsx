@@ -152,6 +152,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
                   { href: "/locacao?aba=contratos", label: "Contratos" },
                   { href: "/locacao?aba=inadimplencias", label: "Inadimplências" },
                   { href: "/locacao?aba=multa", label: "Multa Rescisória" },
+                  { href: "/locacao/ficha-cadastral", label: "Ficha Cadastral" },
                 ],
               },
             ]
