@@ -4,3 +4,6 @@ node_modules
 .env*.local
 .DS_Store
 *.log
+
+# cache da verificação de tipos (tsc --noEmit)
+*.tsbuildinfo
