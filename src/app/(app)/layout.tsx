@@ -11,6 +11,7 @@ import { TopBar, type NotificacaoTopBar } from "@/components/topbar";
 import { hojeISO } from "@/lib/data-br";
 import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { limparTodasNotificacoes } from "./notificacoes/actions";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -23,23 +24,37 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const limiteNotificacoes = format(addDays(parseISO(hoje), 7), "yyyy-MM-dd");
 
   // Empresa, permissões e notificações não dependem um do outro.
-  const [{ data: tenant }, permissoes, { data: etapasNotificacao, count: totalNotificacoes }] = await Promise.all([
+  const [{ data: tenant }, permissoes, { data: etapasNotificacao }] = await Promise.all([
     supabase.from("tenants").select("nome").eq("id", usuario.tenant_id).single(),
     getPermissoesUsuario(supabase, user.id, usuario.nivel_acesso),
     supabase
       .from("etapas")
       .select(
-        "id, nome, data_prevista, processo_id, processos!inner(id, status, numero_processo, imoveis(endereco))",
-        { count: "exact" }
+        "id, nome, data_prevista, processo_id, processos!inner(id, status, numero_processo, imoveis(endereco))"
       )
       .in("status", ["pendente", "em_andamento"])
       .lte("data_prevista", limiteNotificacoes)
       .not("processos.status", "in", "(concluido,cancelado,arquivado)")
       .order("data_prevista", { ascending: true })
-      .limit(40),
+      .limit(100),
   ]);
 
-  const notificacoes: NotificacaoTopBar[] = (etapasNotificacao ?? []).map((etapa) => {
+  const { data: notificacoesDispensadas } = await supabase
+    .from("notificacoes_dispensadas")
+    .select("etapa_id, data_prevista");
+
+  const chavesDispensadas = new Set(
+    (notificacoesDispensadas ?? []).map(
+      (notificacao) => `${notificacao.etapa_id}:${notificacao.data_prevista}`
+    )
+  );
+
+  const notificacoes: NotificacaoTopBar[] = (etapasNotificacao ?? [])
+    .filter(
+      (etapa) =>
+        !chavesDispensadas.has(`${etapa.id}:${etapa.data_prevista}`)
+    )
+    .map((etapa) => {
     const processo = etapa.processos as unknown as {
       id: string;
       numero_processo: string;
@@ -230,7 +245,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             <TopBar
               dataFormatada={dataHojeFormatada}
               notificacoes={notificacoes}
-              totalNotificacoes={totalNotificacoes ?? 0}
+              totalNotificacoes={notificacoes.length}
+              limparTodasAction={limparTodasNotificacoes}
             />
           </div>
           {children}
