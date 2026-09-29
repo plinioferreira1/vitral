@@ -298,6 +298,8 @@ export async function reconciliarAgendaProcesso(
         description: `Etapa "${etapa.nome}" do processo ${identificador} (Vitral).`,
         start: { date: etapa.data_prevista },
         end: { date: etapa.data_prevista },
+        // Não herda os lembretes padrão da agenda (principalmente e-mail).
+        reminders: { useDefault: false },
       };
 
       if (etapa.google_event_id) {
@@ -449,25 +451,48 @@ export async function reconciliarAlertaContratoFinal(
       }
     );
 
-    // Cria os dias que estão faltando.
+    // Cria os dias que estão faltando e atualiza os existentes. Além de
+    // manter título/data em sincronia, o PUT remove lembretes por e-mail
+    // dos eventos criados antes desta regra.
     const identificador = processo.imoveis?.endereco ?? processo.numero_processo;
-    const jaTem = new Set(restantes.map((e) => e.data));
-    await emLotes(datasAlvo.filter((d) => !jaTem.has(d)), LOTE_GOOGLE, async (data) => {
-
+    const eventosPorData = new Map(restantes.map((evento) => [evento.data, evento]));
+    await emLotes(datasAlvo, LOTE_GOOGLE, async (data) => {
       const dias = diferencaEmDias(processo.data_final_contrato!, data);
       const titulo =
         dias > 0
           ? `⚠️ ${identificador} — Prazo do contrato em ${dias} dia${dias > 1 ? "s" : ""}!`
           : `⚠️ ${identificador} — Prazo do contrato vence hoje!`;
 
-      const criado = await chamarGoogleCalendar("POST", agendaId, "", {
+      const corpoEvento = {
         summary: titulo,
         description: `Prazo final do contrato de ${identificador} (Vitral).`,
         start: { date: data },
         end: { date: somarDias(data, 1) }, // eventos de dia inteiro usam data final exclusiva
         colorId: "11", // vermelho (Tomato)
-      });
-      if (criado.ok && criado.id) restantes.push({ data, event_id: criado.id });
+        reminders: { useDefault: false },
+      };
+
+      const existente = eventosPorData.get(data);
+      if (existente) {
+        const atualizado = await chamarGoogleCalendar(
+          "PUT",
+          agendaId,
+          `/${existente.event_id}`,
+          corpoEvento
+        );
+        if (atualizado.ok) return;
+      }
+
+      const criado = await chamarGoogleCalendar("POST", agendaId, "", corpoEvento);
+      if (!criado.ok || !criado.id) return;
+
+      if (existente) {
+        existente.event_id = criado.id;
+      } else {
+        const novoEvento = { data, event_id: criado.id };
+        restantes.push(novoEvento);
+        eventosPorData.set(data, novoEvento);
+      }
     });
     restantes.sort((a, b) => a.data.localeCompare(b.data));
 
