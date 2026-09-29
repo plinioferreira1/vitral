@@ -41,6 +41,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const navItems: ItemMenu[] = ehSocialMedia
     ? [
         { href: "/", label: "Início" },
+        { href: "/corretor", label: "Onboarding" },
         {
           label: "Ferramentas",
           children: [
@@ -50,11 +51,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             { href: "/avaliacao-imovel", label: "Avaliação de Imóvel" },
           ],
         },
-        { href: "/corretor", label: "Onboarding" },
       ]
     : ehCorretor
     ? [
         { href: "/", label: "Início" },
+        { href: "/corretor", label: "Onboarding" },
         {
           label: "Documentos",
           children: [
@@ -72,7 +73,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             { href: "/avaliacao-imovel", label: "Avaliação de Imóvel" },
           ],
         },
-        { href: "/corretor", label: "Onboarding" },
       ]
     : [
         { href: "/", label: "Início" },
