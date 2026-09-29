@@ -4,10 +4,14 @@ import { NextResponse, type NextRequest } from "next/server";
 const PUBLIC_PATHS = ["/login", "/auth", "/redefinir-senha", "/assinar", "/visita"];
 const ROTAS_CORRETOR = [
   "/",
+  "/corretor",
   "/cartorio",
   "/calculadora",
+  "/calculadora-data",
+  "/avaliacao-imovel",
   "/perfil",
   "/onboarding",
+  "/propostas",
   "/termos-visita",
   "/autorizacoes",
 ];
