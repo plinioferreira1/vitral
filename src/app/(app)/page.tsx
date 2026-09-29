@@ -17,6 +17,7 @@ import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { CartaoIndicador } from "@/components/cartao-indicador";
 import { addMonths } from "date-fns";
 import {
+  ArrowRight,
   FileText,
   AlertTriangle,
   CalendarClock,
@@ -25,8 +26,14 @@ import {
   Check,
   Clock,
   Calendar,
+  Plus,
+  WalletCards,
+  Building2,
+  UserPlus,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { BotaoEnviar } from "@/components/botao-enviar";
+import type { ReactNode } from "react";
 
 const COR_PRAZO_FUNDO: Record<CardPrazo["cor"], string> = {
   vermelho: "border-rose-200 bg-rose-50",
@@ -52,6 +59,125 @@ function saudacao(): string {
   return "Boa noite";
 }
 
+function Painel({
+  children,
+  className = "",
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <section className={`rounded-xl border border-border/70 bg-surface shadow-sm ${className}`}>
+      {children}
+    </section>
+  );
+}
+
+function AtalhoPrincipal({
+  href,
+  icon: Icon,
+  titulo,
+  descricao,
+  destaque = false,
+}: {
+  href: string;
+  icon: LucideIcon;
+  titulo: string;
+  descricao: string;
+  destaque?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`group flex min-w-[210px] flex-1 items-center gap-3 rounded-lg border p-3 text-left transition ${
+        destaque
+          ? "border-brand bg-brand text-white hover:brightness-105"
+          : "border-border/70 bg-surface hover:border-border-strong hover:bg-background"
+      }`}
+    >
+      <span
+        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-md ${
+          destaque ? "bg-white/15 text-white" : "bg-brand-soft text-brand"
+        }`}
+      >
+        <Icon size={18} strokeWidth={2.2} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className={`block text-sm font-semibold ${destaque ? "text-white" : "text-ink"}`}>
+          {titulo}
+        </span>
+        <span className={`mt-0.5 block truncate text-xs ${destaque ? "text-white/75" : "text-ink-muted"}`}>
+          {descricao}
+        </span>
+      </span>
+      <ArrowRight
+        size={16}
+        className={`shrink-0 transition group-hover:translate-x-0.5 ${
+          destaque ? "text-white/70" : "text-ink-muted"
+        }`}
+      />
+    </Link>
+  );
+}
+
+function CartaoArea({
+  titulo,
+  descricao,
+  href,
+  total,
+  atrasados,
+  venceHoje,
+  venceEmBreve,
+}: {
+  titulo: string;
+  descricao: string;
+  href: string;
+  total: number;
+  atrasados: number;
+  venceHoje: number;
+  venceEmBreve: number;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group block rounded-xl border border-border/70 bg-surface p-4 shadow-sm transition hover:border-border-strong hover:shadow-md"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-sm font-semibold text-ink">{titulo}</p>
+          <p className="mt-1 text-xs leading-5 text-ink-muted">{descricao}</p>
+        </div>
+        <ArrowRight size={16} className="mt-0.5 shrink-0 text-ink-muted transition group-hover:translate-x-0.5" />
+      </div>
+      <div className="mt-4 flex items-end justify-between gap-3">
+        <div>
+          <p className="num text-3xl font-bold leading-none text-ink">{total}</p>
+          <p className="mt-1 text-xs text-ink-muted">em andamento</p>
+        </div>
+        <div className="grid gap-1 text-right text-xs text-ink-muted">
+          <span>
+            <b className={atrasados > 0 ? "text-rose-700" : "text-ink"}>{atrasados}</b> atrasados
+          </span>
+          <span>
+            <b className={venceHoje > 0 ? "text-amber-700" : "text-ink"}>{venceHoje}</b> hoje
+          </span>
+          <span>
+            <b className="text-ink">{venceEmBreve}</b> em 7 dias
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function LinhaVazia({ children }: { children: ReactNode }) {
+  return (
+    <p className="rounded-lg border border-dashed border-border bg-background px-4 py-5 text-center text-sm text-ink-muted">
+      {children}
+    </p>
+  );
+}
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -66,7 +192,7 @@ export default async function DashboardPage({
 
   const ehAdmin = usuario.perfil === "admin";
 
-  const { temVenda, temFinanciamento, temLocacao } = await getPermissoesUsuario(
+  const { temVenda, temFinanciamento, temLocacao, podeConfigurar } = await getPermissoesUsuario(
     supabase,
     user!.id,
     usuario.nivel_acesso
@@ -271,18 +397,81 @@ export default async function DashboardPage({
     { total: 0, atrasados: 0, venceHoje: 0, venceEmBreve: 0 }
   );
 
-  return (
-    <div className="space-y-6">
+  const hrefProcessos = temVenda
+    ? "/vendas?aba=andamento"
+    : temFinanciamento
+      ? "/financiamentos?aba=andamento"
+      : temLocacao
+        ? "/locacao?aba=contratos"
+        : "/";
 
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-          {saudacao()}, {usuario.nome.split(" ")[0]} 👋
-        </h1>
-        <p className="mt-1 text-sm text-ink-muted">Aqui está o panorama dos seus processos hoje.</p>
-      </div>
+  const quadrosPorCategoria = new Map(quadrosKanban.map((q) => [q.categoria, q]));
+  const quadroVendas = quadrosPorCategoria.get("venda");
+  const quadroFinanciamento = quadrosPorCategoria.get("financiamento");
+
+  return (
+    <div className="space-y-5">
+      <section className="rounded-2xl border border-brand/10 bg-surface p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+          <div className="max-w-3xl">
+            <span className="inline-flex rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand">
+              Painel de comando
+            </span>
+            <h1 className="mt-3 text-[30px] font-bold leading-tight tracking-tight text-ink sm:text-[34px]">
+              {saudacao()}, {usuario.nome.split(" ")[0]}.
+            </h1>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">
+              Um resumo direto do que precisa de atenção hoje: processos em aberto, prazos,
+              tarefas e os atalhos mais usados pela operação.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(temVenda || temFinanciamento) && (
+              <AtalhoPrincipal
+                href="/processos/novo"
+                icon={Plus}
+                titulo="Novo processo"
+                descricao="Venda ou financiamento"
+                destaque
+              />
+            )}
+            {temLocacao && !temVenda && !temFinanciamento && (
+              <AtalhoPrincipal
+                href="/locacao/novo"
+                icon={Plus}
+                titulo="Novo contrato"
+                descricao="Locação"
+                destaque
+              />
+            )}
+            {podeConfigurar && (
+              <AtalhoPrincipal
+                href="/financeiro/lancamentos/novo"
+                icon={WalletCards}
+                titulo="Lançar financeiro"
+                descricao="Despesa ou receita"
+              />
+            )}
+            <AtalhoPrincipal
+              href="/calendario"
+              icon={Calendar}
+              titulo="Calendário"
+              descricao="Prazos e agenda"
+            />
+            {podeConfigurar && (
+              <AtalhoPrincipal
+                href="/membros"
+                icon={UserPlus}
+                titulo="Membros"
+                descricao="Acessos e permissões"
+              />
+            )}
+          </div>
+        </div>
+      </section>
 
       {ehAdmin && quadrosKanban.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <CartaoIndicador
             icon={FileText}
             valor={totais.total}
@@ -312,9 +501,17 @@ export default async function DashboardPage({
         </div>
       )}
 
-      {tarefasHoje.length > 0 && (
-        <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-          <CabecalhoSecao icon={ListChecks} titulo="Tarefas do dia" />
+      {(!ehAdmin || quadrosKanban.length === 0) && tarefasHoje.length > 0 && (
+        <Painel className="p-5">
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div>
+              <CabecalhoSecao icon={ListChecks} titulo="Tarefas do dia" />
+              <p className="mt-1 text-sm text-ink-muted">Rotinas que vencem hoje.</p>
+            </div>
+            <span className="rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-ink-muted">
+              {tarefasHoje.length}
+            </span>
+          </div>
           <div className="space-y-2">
             {tarefasHoje.map((t) => (
               <form key={`${t.tarefaId}-${t.competencia}`} action={alternarTarefaMensal}>
@@ -322,7 +519,7 @@ export default async function DashboardPage({
                 <input type="hidden" name="competencia" value={t.competencia} />
                 <input type="hidden" name="concluida_atual" value={String(t.concluida)} />
                 {t.statusId && <input type="hidden" name="status_id" value={t.statusId} />}
-                <BotaoEnviar className="flex w-full items-center gap-2.5 text-left text-sm">
+                <BotaoEnviar className="flex w-full items-center gap-2.5 rounded-lg border border-border/60 bg-background px-3 py-2 text-left text-sm hover:border-border-strong">
                   <span
                     className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
                       t.concluida ? "border-brand bg-brand text-white" : "border-border-strong bg-surface"
@@ -335,21 +532,76 @@ export default async function DashboardPage({
               </form>
             ))}
           </div>
-        </div>
+        </Painel>
       )}
 
       {ehAdmin && (
         <>
+          <div className="grid gap-4 lg:grid-cols-3">
+            {temVenda && quadroVendas && (
+              <CartaoArea
+                titulo="Vendas"
+                descricao="Contratos, etapas comerciais e prazo final do contrato."
+                href="/vendas?aba=andamento"
+                total={quadroVendas.stats.total}
+                atrasados={quadroVendas.stats.atrasados}
+                venceHoje={quadroVendas.stats.venceHoje}
+                venceEmBreve={quadroVendas.stats.venceEmBreve}
+              />
+            )}
+            {temFinanciamento && quadroFinanciamento && (
+              <CartaoArea
+                titulo="Financiamento"
+                descricao="Operações bancárias, pendências e checklists em aberto."
+                href="/financiamentos?aba=andamento"
+                total={quadroFinanciamento.stats.total}
+                atrasados={quadroFinanciamento.stats.atrasados}
+                venceHoje={quadroFinanciamento.stats.venceHoje}
+                venceEmBreve={quadroFinanciamento.stats.venceEmBreve}
+              />
+            )}
+            {temLocacao && (
+              <Link
+                href="/locacao?aba=resumo"
+                className="group block rounded-xl border border-border/70 bg-surface p-4 shadow-sm transition hover:border-border-strong hover:shadow-md"
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">Locação</p>
+                    <p className="mt-1 text-xs leading-5 text-ink-muted">
+                      Contratos, inadimplências e rotinas recorrentes.
+                    </p>
+                  </div>
+                  <ArrowRight size={16} className="mt-0.5 shrink-0 text-ink-muted transition group-hover:translate-x-0.5" />
+                </div>
+                <div className="mt-4 flex items-end justify-between gap-3">
+                  <div>
+                    <p className="num text-3xl font-bold leading-none text-ink">{tarefasHoje.length}</p>
+                    <p className="mt-1 text-xs text-ink-muted">tarefa(s) hoje</p>
+                  </div>
+                  <span className="rounded-full bg-brand-soft px-2.5 py-1 text-xs font-semibold text-brand">
+                    Ver locação
+                  </span>
+                </div>
+              </Link>
+            )}
+          </div>
+
           {quadrosKanban.length > 0 && (
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-              <div className="min-w-0 flex-1 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-                <div className="mb-3 flex items-center justify-between gap-3">
-                  <div />
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
+              <Painel className="min-w-0 p-5">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <CabecalhoSecao icon={Building2} titulo="Operação em andamento" />
+                    <p className="mt-1 text-sm text-ink-muted">
+                      Kanban consolidado para enxergar gargalos sem sair do Início.
+                    </p>
+                  </div>
                   <Link
-                    href="/vendas?aba=andamento"
-                    className="shrink-0 text-xs font-medium text-brand hover:underline"
+                    href={hrefProcessos}
+                    className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-semibold text-ink hover:bg-background"
                   >
-                    Ver todos os processos →
+                    Ver processos <ArrowRight size={14} />
                   </Link>
                 </div>
                 <KanbanComAbas
@@ -361,52 +613,105 @@ export default async function DashboardPage({
                     cards: q.cards,
                   }))}
                 />
-              </div>
+              </Painel>
 
-              {quadroPrazos && (
-                <div className="w-full shrink-0 rounded-xl border border-border/60 bg-surface p-5 shadow-sm lg:w-80">
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <CabecalhoSecao icon={Clock} titulo="Prazos finais do contrato" />
+              <div className="space-y-4">
+                <Painel className="p-5">
+                  <div className="mb-4 flex items-start justify-between gap-3">
+                    <div>
+                      <CabecalhoSecao icon={ListChecks} titulo="Tarefas do dia" />
+                      <p className="mt-1 text-sm text-ink-muted">
+                        Rotinas que vencem hoje.
+                      </p>
+                    </div>
+                    <span className="rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-ink-muted">
+                      {tarefasHoje.length}
+                    </span>
                   </div>
-                  {quadroPrazos.cards.length === 0 ? (
-                    <p className="text-sm text-ink-muted">Nenhum prazo cadastrado.</p>
+                  {tarefasHoje.length === 0 ? (
+                    <LinhaVazia>Nenhuma tarefa recorrente para hoje.</LinhaVazia>
                   ) : (
-                    <div className="max-h-[560px] space-y-2 overflow-y-auto">
-                      {quadroPrazos.cards.map((card) => (
-                        <Link
-                          key={card.id}
-                          href={`/processos/${card.id}`}
-                          className={`flex items-center gap-2.5 rounded-xl border p-3 shadow-sm transition hover:opacity-80 ${
-                            COR_PRAZO_FUNDO[card.cor]
-                          }`}
-                        >
-                          <span
-                            className={`h-2 w-2 shrink-0 rounded-full ${
-                              card.cor === "vermelho"
-                                ? "bg-rose-500"
-                                : card.cor === "amarelo"
-                                  ? "bg-amber-500"
-                                  : "bg-emerald-500"
-                            }`}
-                          />
-                          <span className="min-w-0 flex-1">
-                            <p className="truncate text-sm font-medium text-ink">{card.titulo}</p>
-                            <p className={`mt-0.5 text-xs font-medium ${COR_PRAZO_TEXTO[card.cor]}`}>
-                              Venda · {card.subtitulo}
-                            </p>
-                          </span>
-                        </Link>
+                    <div className="space-y-2">
+                      {tarefasHoje.map((t) => (
+                        <form key={`${t.tarefaId}-${t.competencia}`} action={alternarTarefaMensal}>
+                          <input type="hidden" name="tarefa_id" value={t.tarefaId} />
+                          <input type="hidden" name="competencia" value={t.competencia} />
+                          <input type="hidden" name="concluida_atual" value={String(t.concluida)} />
+                          {t.statusId && <input type="hidden" name="status_id" value={t.statusId} />}
+                          <BotaoEnviar className="flex w-full items-center gap-2.5 rounded-lg border border-border/60 bg-background px-3 py-2 text-left text-sm hover:border-border-strong">
+                            <span
+                              className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
+                                t.concluida ? "border-brand bg-brand text-white" : "border-border-strong bg-surface"
+                              }`}
+                            >
+                              {t.concluida && <Check size={12} strokeWidth={3} />}
+                            </span>
+                            <span className={t.concluida ? "text-ink-muted line-through" : "text-ink"}>{t.nome}</span>
+                          </BotaoEnviar>
+                        </form>
                       ))}
                     </div>
                   )}
-                </div>
-              )}
+                </Painel>
+
+                {quadroPrazos && (
+                  <Painel className="p-5">
+                    <div className="mb-4 flex items-start justify-between gap-3">
+                      <div>
+                        <CabecalhoSecao icon={Clock} titulo="Prazos finais" />
+                        <p className="mt-1 text-sm text-ink-muted">
+                          Contratos de venda mais próximos do vencimento.
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-ink-muted">
+                        {quadroPrazos.cards.length}
+                      </span>
+                    </div>
+                    {quadroPrazos.cards.length === 0 ? (
+                      <LinhaVazia>Nenhum prazo cadastrado.</LinhaVazia>
+                    ) : (
+                      <div className="max-h-[420px] space-y-2 overflow-y-auto pr-1">
+                        {quadroPrazos.cards.map((card) => (
+                          <Link
+                            key={card.id}
+                            href={`/processos/${card.id}`}
+                            className={`flex items-center gap-2.5 rounded-lg border p-3 transition hover:opacity-85 ${
+                              COR_PRAZO_FUNDO[card.cor]
+                            }`}
+                          >
+                            <span
+                              className={`h-2 w-2 shrink-0 rounded-full ${
+                                card.cor === "vermelho"
+                                  ? "bg-rose-500"
+                                  : card.cor === "amarelo"
+                                    ? "bg-amber-500"
+                                    : "bg-emerald-500"
+                              }`}
+                            />
+                            <span className="min-w-0 flex-1">
+                              <p className="truncate text-sm font-medium text-ink">{card.titulo}</p>
+                              <p className={`mt-0.5 text-xs font-medium ${COR_PRAZO_TEXTO[card.cor]}`}>
+                                Venda · {card.subtitulo}
+                              </p>
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </Painel>
+                )}
+              </div>
             </div>
           )}
 
-          <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+          <Painel className="p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-              <CabecalhoSecao icon={Calendar} titulo="Calendário de processos" />
+              <div>
+                <CabecalhoSecao icon={Calendar} titulo="Calendário de processos" />
+                <p className="mt-1 text-sm text-ink-muted">
+                  Agenda consolidada de vendas, financiamento, locação e rotinas.
+                </p>
+              </div>
               <div className="flex items-center gap-2">
                 <Link
                   href={`/?mes=${mesAnterior}`}
@@ -445,7 +750,7 @@ export default async function DashboardPage({
               </span>
             </div>
             <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={3} />
-          </div>
+          </Painel>
         </>
       )}
     </div>
