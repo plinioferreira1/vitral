@@ -7,9 +7,9 @@ import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { cookies } from "next/headers";
 import { COOKIE_AVISO, lerAviso } from "@/lib/aviso";
 import { AvisoTela } from "@/components/aviso-tela";
-import { TopBar } from "@/components/topbar";
+import { TopBar, type NotificacaoTopBar } from "@/components/topbar";
 import { hojeISO } from "@/lib/data-br";
-import { format } from "date-fns";
+import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -20,18 +20,46 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   if (!usuario?.tenant_id) redirect("/onboarding");
 
   const hoje = hojeISO();
+  const limiteNotificacoes = format(addDays(parseISO(hoje), 7), "yyyy-MM-dd");
 
-  // Empresa, permissões e contador de atrasados não dependem um do outro.
-  const [{ data: tenant }, permissoes, { count: contagemAtrasados }] = await Promise.all([
+  // Empresa, permissões e notificações não dependem um do outro.
+  const [{ data: tenant }, permissoes, { data: etapasNotificacao, count: totalNotificacoes }] = await Promise.all([
     supabase.from("tenants").select("nome").eq("id", usuario.tenant_id).single(),
     getPermissoesUsuario(supabase, user.id, usuario.nivel_acesso),
     supabase
       .from("etapas")
-      .select("id, processos!inner(status)", { count: "exact", head: true })
+      .select(
+        "id, nome, data_prevista, processo_id, processos!inner(id, status, numero_processo, imoveis(endereco))",
+        { count: "exact" }
+      )
       .in("status", ["pendente", "em_andamento"])
-      .lt("data_prevista", hoje)
-      .not("processos.status", "in", "(concluido,cancelado)"),
+      .lte("data_prevista", limiteNotificacoes)
+      .not("processos.status", "in", "(concluido,cancelado,arquivado)")
+      .order("data_prevista", { ascending: true })
+      .limit(40),
   ]);
+
+  const notificacoes: NotificacaoTopBar[] = (etapasNotificacao ?? []).map((etapa) => {
+    const processo = etapa.processos as unknown as {
+      id: string;
+      numero_processo: string;
+      imoveis: { endereco: string } | null;
+    };
+    const dias = differenceInCalendarDays(parseISO(etapa.data_prevista!), parseISO(hoje));
+    return {
+      id: etapa.id,
+      processoId: processo.id,
+      etapa: etapa.nome,
+      contexto: processo.imoveis?.endereco ?? processo.numero_processo,
+      prazo:
+        dias < 0
+          ? `Venceu há ${Math.abs(dias)} dia${Math.abs(dias) === 1 ? "" : "s"} · ${format(parseISO(etapa.data_prevista!), "dd/MM/yyyy")}`
+          : dias === 0
+            ? `Vence hoje · ${format(parseISO(etapa.data_prevista!), "dd/MM/yyyy")}`
+            : `Vence em ${dias} dia${dias === 1 ? "" : "s"} · ${format(parseISO(etapa.data_prevista!), "dd/MM/yyyy")}`,
+      tipo: dias < 0 ? "atrasada" : dias === 0 ? "hoje" : "proxima",
+    };
+  });
 
   const { ehCorretor, ehSocialMedia, podeConfigurar, temVenda, temFinanciamento, temLocacao } = permissoes;
 
@@ -199,7 +227,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <main className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-8 sm:py-8">
           <div className="mb-6">
-            <TopBar dataFormatada={dataHojeFormatada} contagemAtrasados={contagemAtrasados ?? 0} />
+            <TopBar
+              dataFormatada={dataHojeFormatada}
+              notificacoes={notificacoes}
+              totalNotificacoes={totalNotificacoes ?? 0}
+            />
           </div>
           {children}
         </div>

@@ -24,7 +24,15 @@ import {
 } from "./actions";
 import { EditorLinhaTempo } from "@/components/editor-linha-tempo";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
-import { MessageSquare, History } from "lucide-react";
+import {
+  MessageSquare,
+  History,
+  CalendarDays,
+  CheckCircle2,
+  Clock3,
+  AlertTriangle,
+  type LucideIcon,
+} from "lucide-react";
 import { BotaoEnviar } from "@/components/botao-enviar";
 
 export default async function ProcessoDetalhePage({
@@ -128,20 +136,37 @@ export default async function ProcessoDetalhePage({
 
   const etapasSequenciais = etapas.filter((e) => !e.especial);
   const etapasEspeciaisAtivas = etapas.filter((e) => e.especial);
+  const etapasConcluidas = etapasSequenciais.filter((e) => e.status === "concluida").length;
+  const etapasAtrasadas = etapasSequenciais.filter((e) => e.urgencia === "atrasada").length;
+  const indiceEtapaAtual = etapasSequenciais.findIndex((e) => e.status !== "concluida");
+  const etapaAtual = indiceEtapaAtual >= 0 ? etapasSequenciais[indiceEtapaAtual] : null;
+  const progresso = etapasSequenciais.length
+    ? Math.round((etapasConcluidas / etapasSequenciais.length) * 100)
+    : 0;
 
   return (
-    <div className="max-w-3xl space-y-8 lg:max-w-5xl">
-      <div className="rounded-2xl border border-border bg-surface p-5 shadow-sm md:p-6">
+    <div className="mx-auto max-w-7xl space-y-6">
+      <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+        <div className="h-1.5 bg-gradient-to-r from-brand via-brand/80 to-gold" />
+        <div className="p-5 md:p-7">
         <VoltarLink
           href={p.categoria === "financiamento" ? "/financiamentos?aba=andamento" : "/vendas?aba=andamento"}
           label={p.categoria === "financiamento" ? "Financiamentos" : "Vendas"}
         />
-        <div className="mt-3 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="font-mono text-xs text-ink-muted">{p.numero_processo}</p>
-            <h1 className="mt-1 text-[28px] font-bold leading-tight tracking-tight text-ink">
-              {p.modelos_processo?.nome} — {p.comprador?.nome ?? "Sem comprador"}
+        <div className="mt-4 flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand">
+                {p.categoria === "financiamento" ? "Financiamento" : "Venda"}
+              </span>
+              <span className="font-mono text-xs text-ink-muted">{p.numero_processo}</span>
+            </div>
+            <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-ink md:text-[32px]">
+              {p.imoveis?.endereco ?? p.comprador?.nome ?? "Processo sem identificação"}
             </h1>
+            <p className="mt-1 text-sm text-ink-muted">
+              {p.modelos_processo?.nome ?? "Processo"} · {p.comprador?.nome ?? "Sem comprador"}
+            </p>
           </div>
 
           <details
@@ -266,7 +291,36 @@ export default async function ProcessoDetalhePage({
           </details>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-3 md:grid-cols-4">
+        <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-background md:grid-cols-4">
+          <ResumoProcesso
+            icon={CheckCircle2}
+            label="Progresso"
+            value={`${progresso}%`}
+            detail={`${etapasConcluidas} de ${etapasSequenciais.length} etapas`}
+            tom="verde"
+          />
+          <ResumoProcesso
+            icon={Clock3}
+            label="Etapa atual"
+            value={etapaAtual?.nome ?? "Concluído"}
+            detail={etapaAtual?.data_prevista ? `Prazo ${format(parseISO(etapaAtual.data_prevista), "dd/MM/yyyy")}` : "Sem prazo definido"}
+          />
+          <ResumoProcesso
+            icon={AlertTriangle}
+            label="Atenção"
+            value={etapasAtrasadas ? `${etapasAtrasadas} atrasada${etapasAtrasadas === 1 ? "" : "s"}` : "Tudo em dia"}
+            detail={etapasAtrasadas ? "Requer acompanhamento" : "Nenhuma etapa vencida"}
+            tom={etapasAtrasadas ? "vermelho" : "verde"}
+          />
+          <ResumoProcesso
+            icon={CalendarDays}
+            label="Prazo final"
+            value={p.data_final_contrato ? format(parseISO(p.data_final_contrato), "dd/MM/yyyy") : "Não definido"}
+            detail={p.data_assinatura ? `Assinado em ${format(parseISO(p.data_assinatura), "dd/MM/yyyy")}` : "Contrato sem assinatura"}
+          />
+        </div>
+
+        <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 rounded-xl border border-border/70 p-4 sm:grid-cols-3 lg:grid-cols-4">
           <Info label="Comprador" value={p.comprador?.nome} />
           {!ehFinanciamento && <Info label="Vendedor" value={p.vendedor?.nome} />}
           <Info label="Imóvel" value={p.imoveis?.endereco} />
@@ -336,6 +390,7 @@ export default async function ProcessoDetalhePage({
             value={format(parseISO(p.data_criacao), "dd/MM/yyyy", { locale: ptBR })}
           />
         </div>
+        </div>
       </div>
 
       {/* Situação especial ativa (se houver) */}
@@ -358,9 +413,14 @@ export default async function ProcessoDetalhePage({
       )}
 
       {/* Timeline */}
-      <section className="rounded-2xl border border-border bg-surface p-5 md:p-8">
+      <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm md:p-7">
         <div className="mb-5 flex items-center justify-between md:mb-8">
-          <h2 className="text-base font-semibold text-ink">Linha do tempo</h2>
+          <div>
+            <h2 className="text-lg font-semibold text-ink">Linha do tempo</h2>
+            <p className="mt-0.5 text-xs text-ink-muted">
+              {etapaAtual ? `Etapa atual: ${etapaAtual.nome}` : "Todas as etapas foram concluídas"}
+            </p>
+          </div>
           <div className="flex items-center gap-2">
             <details className="relative">
               <summary className="cursor-pointer list-none rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background">
@@ -460,17 +520,41 @@ export default async function ProcessoDetalhePage({
 
       {/* Etapas do processo */}
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-ink">Etapas do processo</h2>
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-semibold text-ink">Etapas do processo</h2>
+            <p className="mt-0.5 text-xs text-ink-muted">Prazos, responsáveis e checklists de cada fase.</p>
+          </div>
+          <span className="text-xs font-medium text-ink-muted">{etapasConcluidas}/{etapasSequenciais.length} concluídas</span>
+        </div>
 
-        {etapasSequenciais.map((etapa) => {
+        {etapasSequenciais.map((etapa, indice) => {
           const itensChecklist = (checklistItens ?? []).filter((c) => c.etapa_id === etapa.id);
           const nome = (etapa as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
 
           return (
-            <div key={etapa.id} className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
+            <div
+              id={`etapa-${etapa.id}`}
+              key={etapa.id}
+              className={`scroll-mt-24 rounded-xl border bg-surface p-5 shadow-sm transition ${
+                indice === indiceEtapaAtual
+                  ? "border-brand/40 ring-2 ring-brand/10"
+                  : "border-border/60"
+              }`}
+            >
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-medium text-ink">{etapa.nome}</p>
+                <div className="flex min-w-0 gap-3">
+                  <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                    etapa.status === "concluida"
+                      ? "bg-brand text-white"
+                      : indice === indiceEtapaAtual
+                        ? "bg-brand-soft text-brand"
+                        : "bg-background text-ink-muted"
+                  }`}>
+                    {etapa.status === "concluida" ? <CheckCircle2 size={16} /> : indice + 1}
+                  </span>
+                  <div className="min-w-0">
+                  <p className="text-sm font-semibold text-ink">{etapa.nome}</p>
                   <p className="mt-0.5 text-xs text-ink-muted">
                     Responsável: {nome ?? "—"}
                     {etapa.data_prevista && (
@@ -486,6 +570,7 @@ export default async function ProcessoDetalhePage({
                       </>
                     )}
                   </p>
+                  </div>
                 </div>
                 <span
                   className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${
@@ -824,6 +909,40 @@ export default async function ProcessoDetalhePage({
           Apagar processo
         </BotaoComConfirmacao>
       </form>
+    </div>
+  );
+}
+
+function ResumoProcesso({
+  icon: Icone,
+  label,
+  value,
+  detail,
+  tom = "neutro",
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  detail: string;
+  tom?: "neutro" | "verde" | "vermelho";
+}) {
+  const cores =
+    tom === "vermelho"
+      ? "bg-rose-50 text-rose-700"
+      : tom === "verde"
+        ? "bg-emerald-50 text-emerald-700"
+        : "bg-surface text-brand";
+
+  return (
+    <div className="border-b border-r border-border p-4 last:border-r-0 md:border-b-0">
+      <div className="flex items-center gap-2">
+        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${cores}`}>
+          <Icone size={16} strokeWidth={2} />
+        </span>
+        <p className="text-xs font-medium text-ink-muted">{label}</p>
+      </div>
+      <p className="mt-2 truncate text-sm font-semibold text-ink" title={value}>{value}</p>
+      <p className="mt-0.5 truncate text-[11px] text-ink-muted" title={detail}>{detail}</p>
     </div>
   );
 }
