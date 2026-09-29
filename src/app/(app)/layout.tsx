@@ -72,6 +72,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             { href: "/avaliacao-imovel", label: "Avaliação de Imóvel" },
           ],
         },
+        { href: "/corretor", label: "Onboarding" },
       ]
     : [
         { href: "/", label: "Início" },
