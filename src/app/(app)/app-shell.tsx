@@ -133,6 +133,10 @@ function ehAtivo(pathname: string, href: string, queryAtual: URLSearchParams) {
   return true;
 }
 
+function prefetchDoLink(href: string) {
+  return href === "/corretor" ? false : undefined;
+}
+
 export function AppShell({
   navItems,
   tenantName,
@@ -224,6 +228,7 @@ export function AppShell({
             <Link
               key={item.label}
               href={item.href!}
+              prefetch={prefetchDoLink(item.href!)}
               onClick={() => {
                 setMenuAberto(false);
                 setGruposAbertos(new Set());
@@ -299,6 +304,7 @@ export function AppShell({
                                 <Link
                                   key={neto.href}
                                   href={neto.href!}
+                                  prefetch={prefetchDoLink(neto.href!)}
                                   onClick={() => setMenuAberto(false)}
                                   className={`block rounded-lg px-2.5 py-1.5 text-sm transition ${
                                     ativo
@@ -321,6 +327,7 @@ export function AppShell({
                     <Link
                       key={child.href}
                       href={child.href!}
+                      prefetch={prefetchDoLink(child.href!)}
                       onClick={() => setMenuAberto(false)}
                       className={`block rounded-lg px-2.5 py-1.5 text-sm transition ${
                         ativo
