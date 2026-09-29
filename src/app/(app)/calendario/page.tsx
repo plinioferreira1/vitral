@@ -12,9 +12,9 @@ import { BotaoEnviar } from "@/components/botao-enviar";
 export default async function CalendarioPage({
   searchParams,
 }: {
-  searchParams: Promise<{ mes?: string; responsavel?: string; categoria?: string }>;
+  searchParams: Promise<{ mes?: string; responsavel?: string; categoria?: string; urgencia?: string }>;
 }) {
-  const { mes, responsavel, categoria } = await searchParams;
+  const { mes, responsavel, categoria, urgencia } = await searchParams;
   const supabase = await createClient();
 
   const referencia = mes ? parseISO(`${mes}-01`) : new Date(`${hojeISO()}T00:00:00`);
@@ -28,13 +28,19 @@ export default async function CalendarioPage({
   // continuam aparecendo mesmo com o filtro ativo.
   const eventosFiltrados = todosEventos
     .filter((e) => (responsavel ? e.href.startsWith("/locacao") || e.responsavelNome === nomeResponsavelFiltro : true))
-    .filter((e) => (categoria ? e.categoria === categoria : true));
+    .filter((e) => (categoria ? e.categoria === categoria : true))
+    .filter((e) =>
+      urgencia && ["atrasada", "vence_hoje", "vence_em_breve"].includes(urgencia)
+        ? !e.concluida && e.urgencia === urgencia
+        : true
+    );
 
   const mesAnterior = format(addMonths(referencia, -1), "yyyy-MM");
   const proximoMes = format(addMonths(referencia, 1), "yyyy-MM");
 
   const inicioMesStr = format(referencia, "yyyy-MM");
   const eventosDoMes = eventosFiltrados.filter((e) => e.data.startsWith(inicioMesStr));
+  const filtrosNavegacao = `${responsavel ? `&responsavel=${responsavel}` : ""}${categoria ? `&categoria=${categoria}` : ""}${urgencia ? `&urgencia=${urgencia}` : ""}`;
 
   const alertasCriticos = eventosDoMes
     .filter((e) => !e.concluida && (e.urgencia === "atrasada" || e.urgencia === "vence_hoje" || e.urgencia === "vence_em_breve"))
@@ -73,6 +79,16 @@ export default async function CalendarioPage({
                 </option>
               ))}
             </select>
+            <select
+              name="urgencia"
+              defaultValue={urgencia ?? ""}
+              className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-brand"
+            >
+              <option value="">Todos os prazos</option>
+              <option value="atrasada">Atrasados</option>
+              <option value="vence_hoje">Vencendo hoje</option>
+              <option value="vence_em_breve">Vencendo em 7 dias</option>
+            </select>
             {mes && <input type="hidden" name="mes" value={mes} />}
             <BotaoEnviar
               className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface"
@@ -81,13 +97,13 @@ export default async function CalendarioPage({
             </BotaoEnviar>
           </form>
           <Link
-            href={`/calendario?mes=${mesAnterior}${responsavel ? `&responsavel=${responsavel}` : ""}${categoria ? `&categoria=${categoria}` : ""}`}
+            href={`/calendario?mes=${mesAnterior}${filtrosNavegacao}`}
             className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface"
           >
             ← Anterior
           </Link>
           <Link
-            href={`/calendario?mes=${proximoMes}${responsavel ? `&responsavel=${responsavel}` : ""}${categoria ? `&categoria=${categoria}` : ""}`}
+            href={`/calendario?mes=${proximoMes}${filtrosNavegacao}`}
             className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface"
           >
             Próximo →

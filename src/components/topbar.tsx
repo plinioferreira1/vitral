@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Search, Bell, Calendar } from "lucide-react";
@@ -33,14 +34,22 @@ export function TopBar({
         />
       </form>
 
-      <div className="relative shrink-0 rounded-lg border border-border bg-surface p-2.5 text-ink-muted">
+      <Link
+        href="/calendario?urgencia=atrasada"
+        title={
+          contagemAtrasados > 0
+            ? `${contagemAtrasados} etapa${contagemAtrasados === 1 ? "" : "s"} atrasada${contagemAtrasados === 1 ? "" : "s"}`
+            : "Abrir alertas do calendário"
+        }
+        className="relative shrink-0 rounded-lg border border-border bg-surface p-2.5 text-ink-muted transition hover:border-border-strong hover:bg-background hover:text-ink"
+      >
         <Bell size={17} strokeWidth={2} />
         {contagemAtrasados > 0 && (
           <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-semibold text-white">
             {contagemAtrasados > 9 ? "9+" : contagemAtrasados}
           </span>
         )}
-      </div>
+      </Link>
 
       <div className="hidden shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink-muted sm:flex">
         <Calendar size={15} strokeWidth={2} />

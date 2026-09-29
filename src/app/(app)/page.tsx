@@ -14,14 +14,19 @@ import { format } from "date-fns";
 import type { CategoriaProcesso } from "@/lib/types";
 import { calcularUrgencia } from "@/lib/alertas";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
-import { CartaoIndicador } from "@/components/cartao-indicador";
+import {
+  DashboardIndicadores,
+  type DashboardIndicadorItem,
+  type DashboardIndicadoresDados,
+} from "@/components/dashboard-indicadores";
 import { addMonths } from "date-fns";
 import {
   ArrowRight,
+  BookOpen,
+  Calculator,
+  ClipboardCheck,
+  FileSignature,
   FileText,
-  AlertTriangle,
-  CalendarClock,
-  CalendarDays,
   ListChecks,
   Check,
   Clock,
@@ -170,6 +175,36 @@ function CartaoArea({
   );
 }
 
+function CartaoCorretor({
+  href,
+  icon: Icon,
+  titulo,
+  descricao,
+}: {
+  href: string;
+  icon: LucideIcon;
+  titulo: string;
+  descricao: string;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex min-h-[132px] flex-col justify-between rounded-xl border border-border/70 bg-surface p-4 shadow-sm transition hover:border-border-strong hover:shadow-md"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-soft text-brand">
+          <Icon size={18} strokeWidth={2.2} />
+        </span>
+        <ArrowRight size={16} className="text-ink-muted transition group-hover:translate-x-0.5" />
+      </div>
+      <div>
+        <p className="text-sm font-semibold text-ink">{titulo}</p>
+        <p className="mt-1 text-xs leading-5 text-ink-muted">{descricao}</p>
+      </div>
+    </Link>
+  );
+}
+
 function LinhaVazia({ children }: { children: ReactNode }) {
   return (
     <p className="rounded-lg border border-dashed border-border bg-background px-4 py-5 text-center text-sm text-ink-muted">
@@ -192,7 +227,7 @@ export default async function DashboardPage({
 
   const ehAdmin = usuario.perfil === "admin";
 
-  const { temVenda, temFinanciamento, temLocacao, podeConfigurar } = await getPermissoesUsuario(
+  const { ehCorretor, temVenda, temFinanciamento, temLocacao, podeConfigurar } = await getPermissoesUsuario(
     supabase,
     user!.id,
     usuario.nivel_acesso
@@ -257,6 +292,12 @@ export default async function DashboardPage({
     cards: CardKanban[];
     colunaPrazos?: { titulo: string; cards: CardPrazo[] };
     stats: { total: number; atrasados: number; venceHoje: number; venceEmBreve: number };
+    indicadores: {
+      andamento: DashboardIndicadorItem[];
+      atrasados: DashboardIndicadorItem[];
+      venceHoje: DashboardIndicadorItem[];
+      venceEmBreve: DashboardIndicadorItem[];
+    };
   };
 
   const quadrosPromise = (async (): Promise<QuadroKanban[]> => {
@@ -321,6 +362,65 @@ export default async function DashboardPage({
         etapaAtualPorProcesso(supabase, idsProcessos),
       ]);
 
+      const cards = processos.map((p) => ({
+        id: p.id,
+        titulo: p.imoveis?.endereco ?? p.numero_processo,
+        subtitulo: `${p.comprador?.nome ?? "—"} / ${p.vendedor?.nome ?? "—"}`,
+        etapaAtual: etapaAtualMap.get(p.id) ?? null,
+        atrasos: atrasosPorProcesso.get(p.id) ?? 0,
+      }));
+
+      const cardsPorId = new Map(cards.map((card) => [card.id, card]));
+      const itemIndicador = (id: string, detalhe: string): DashboardIndicadorItem | null => {
+        const card = cardsPorId.get(id);
+        if (!card) return null;
+        return {
+          id: card.id,
+          titulo: card.titulo,
+          subtitulo: card.subtitulo,
+          detalhe,
+          categoria,
+          href: `/processos/${card.id}`,
+        };
+      };
+
+      const ordenarItens = (itens: DashboardIndicadorItem[]) =>
+        itens.sort((a, b) => a.titulo.localeCompare(b.titulo, "pt-BR"));
+
+      const indicadores = {
+        andamento: ordenarItens(
+          cards.map((card) => ({
+            id: card.id,
+            titulo: card.titulo,
+            subtitulo: card.subtitulo,
+            detalhe: card.etapaAtual ? `Etapa atual: ${card.etapaAtual}` : "Sem etapa em aberto",
+            categoria,
+            href: `/processos/${card.id}`,
+          }))
+        ),
+        atrasados: ordenarItens(
+          Array.from(processosAtrasados)
+            .map((id) => {
+              const atrasos = atrasosPorProcesso.get(id) ?? 0;
+              return itemIndicador(
+                id,
+                `${atrasos} etapa${atrasos === 1 ? "" : "s"} atrasada${atrasos === 1 ? "" : "s"}`
+              );
+            })
+            .filter((item): item is DashboardIndicadorItem => Boolean(item))
+        ),
+        venceHoje: ordenarItens(
+          Array.from(processosVenceHoje)
+            .map((id) => itemIndicador(id, "Alguma etapa vence hoje"))
+            .filter((item): item is DashboardIndicadorItem => Boolean(item))
+        ),
+        venceEmBreve: ordenarItens(
+          Array.from(processosVenceEmBreve)
+            .map((id) => itemIndicador(id, "Alguma etapa vence nos próximos 7 dias"))
+            .filter((item): item is DashboardIndicadorItem => Boolean(item))
+        ),
+      };
+
       // Só pra Venda: coluna extra fixa com o prazo final do contrato
       // de cada processo, colorida por urgência.
       let colunaPrazos: { titulo: string; cards: CardPrazo[] } | undefined;
@@ -356,13 +456,7 @@ export default async function DashboardPage({
         categoria,
         titulo,
         colunas,
-        cards: processos.map((p) => ({
-          id: p.id,
-          titulo: p.imoveis?.endereco ?? p.numero_processo,
-          subtitulo: `${p.comprador?.nome ?? "—"} / ${p.vendedor?.nome ?? "—"}`,
-          etapaAtual: etapaAtualMap.get(p.id) ?? null,
-          atrasos: atrasosPorProcesso.get(p.id) ?? 0,
-        })),
+        cards,
         colunaPrazos,
         stats: {
           total: processos.length,
@@ -370,6 +464,7 @@ export default async function DashboardPage({
           venceHoje: processosVenceHoje.size,
           venceEmBreve: processosVenceEmBreve.size,
         },
+        indicadores,
       };
     }
 
@@ -396,6 +491,44 @@ export default async function DashboardPage({
     }),
     { total: 0, atrasados: 0, venceHoje: 0, venceEmBreve: 0 }
   );
+
+  const juntarIndicadores = (
+    chave: keyof QuadroKanban["indicadores"]
+  ): DashboardIndicadorItem[] =>
+    quadrosKanban
+      .flatMap((q) => q.indicadores[chave])
+      .sort((a, b) => a.titulo.localeCompare(b.titulo, "pt-BR"));
+
+  const indicadoresDashboard: DashboardIndicadoresDados = {
+    andamento: {
+      valor: totais.total,
+      label: "Processos em andamento",
+      descricao: "Todos os processos ativos de Vendas e Financiamento.",
+      itens: juntarIndicadores("andamento"),
+      tom: "neutro",
+    },
+    atrasados: {
+      valor: totais.atrasados,
+      label: "Atrasados",
+      descricao: "Processos com pelo menos uma etapa vencida e ainda não concluída.",
+      itens: juntarIndicadores("atrasados"),
+      tom: totais.atrasados > 0 ? "perigo" : "neutro",
+    },
+    venceHoje: {
+      valor: totais.venceHoje,
+      label: "Vencendo hoje",
+      descricao: "Processos com alguma etapa prevista para hoje.",
+      itens: juntarIndicadores("venceHoje"),
+      tom: totais.venceHoje > 0 ? "alerta" : "neutro",
+    },
+    venceEmBreve: {
+      valor: totais.venceEmBreve,
+      label: "Vencem em 7 dias",
+      descricao: "Processos com etapas vencendo nos próximos 7 dias.",
+      itens: juntarIndicadores("venceEmBreve"),
+      tom: "neutro",
+    },
+  };
 
   const hrefProcessos = temVenda
     ? "/vendas?aba=andamento"
@@ -452,6 +585,14 @@ export default async function DashboardPage({
                 descricao="Despesa ou receita"
               />
             )}
+            {ehCorretor && (
+              <AtalhoPrincipal
+                href="/corretor"
+                icon={BookOpen}
+                titulo="Onboarding"
+                descricao="Guias e materiais"
+              />
+            )}
             <AtalhoPrincipal
               href="/calendario"
               icon={Calendar}
@@ -471,34 +612,66 @@ export default async function DashboardPage({
       </section>
 
       {ehAdmin && quadrosKanban.length > 0 && (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <CartaoIndicador
-            icon={FileText}
-            valor={totais.total}
-            label="Processos em andamento"
-            href="/vendas?aba=andamento"
-          />
-          <CartaoIndicador
-            icon={AlertTriangle}
-            valor={totais.atrasados}
-            label="Atrasados"
-            tom={totais.atrasados > 0 ? "perigo" : "neutro"}
-            href="/vendas?aba=andamento"
-          />
-          <CartaoIndicador
-            icon={CalendarClock}
-            valor={totais.venceHoje}
-            label="Vencendo hoje"
-            tom={totais.venceHoje > 0 ? "alerta" : "neutro"}
-            href="/vendas?aba=andamento"
-          />
-          <CartaoIndicador
-            icon={CalendarDays}
-            valor={totais.venceEmBreve}
-            label="Vencem em 7 dias"
-            href="/vendas?aba=andamento"
-          />
-        </div>
+        <DashboardIndicadores indicadores={indicadoresDashboard} />
+      )}
+
+      {ehCorretor && (
+        <Painel className="p-5">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <CabecalhoSecao icon={BookOpen} titulo="Área do corretor" />
+              <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-muted">
+                Atalhos para os documentos, ferramentas e materiais que mais ajudam no atendimento
+                e na captação.
+              </p>
+            </div>
+            <Link
+              href="/corretor"
+              className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-semibold text-ink hover:bg-background"
+            >
+              Abrir onboarding <ArrowRight size={14} />
+            </Link>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+            <CartaoCorretor
+              href="/corretor"
+              icon={BookOpen}
+              titulo="Onboarding"
+              descricao="Primeiros passos, tutoriais e materiais de referência."
+            />
+            <CartaoCorretor
+              href="/autorizacoes"
+              icon={FileSignature}
+              titulo="Autorização de Venda"
+              descricao="Crie e acompanhe links de assinatura para captação."
+            />
+            <CartaoCorretor
+              href="/propostas"
+              icon={FileText}
+              titulo="Carta Proposta"
+              descricao="Monte propostas de compra para enviar ao cliente."
+            />
+            <CartaoCorretor
+              href="/termos-visita"
+              icon={ClipboardCheck}
+              titulo="Termo de Visita"
+              descricao="Registre visitas com assinatura digital."
+            />
+            <CartaoCorretor
+              href="/cartorio"
+              icon={Calculator}
+              titulo="Simulação de Custas"
+              descricao="Calcule ITBI, escritura, registro e taxas para orientar o cliente."
+            />
+            <CartaoCorretor
+              href="/avaliacao-imovel"
+              icon={Building2}
+              titulo="Avaliação de Imóvel"
+              descricao="Apoio para estudo comercial e definição de preço."
+            />
+          </div>
+        </Painel>
       )}
 
       {(!ehAdmin || quadrosKanban.length === 0) && tarefasHoje.length > 0 && (
@@ -749,7 +922,7 @@ export default async function DashboardPage({
                 <span className="h-2 w-2 rounded-full bg-violet-400" /> Tarefas recorrentes
               </span>
             </div>
-            <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={3} />
+            <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={2} />
           </Painel>
         </>
       )}
