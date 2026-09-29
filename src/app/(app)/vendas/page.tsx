@@ -223,12 +223,13 @@ export default async function VendasPage({
                 {prioridades.slice(0, 5).map((prioridade) => {
                   const atrasada = prioridade.urgencia === "atrasada";
                   const venceHoje = prioridade.urgencia === "vence_hoje";
+                  const diasParaVencer = prioridade.dias_para_vencer ?? 0;
                   const prazo =
-                    prioridade.dias_para_vencer < 0
-                      ? `Atrasada há ${Math.abs(prioridade.dias_para_vencer)} dia${Math.abs(prioridade.dias_para_vencer) === 1 ? "" : "s"}`
+                    diasParaVencer < 0
+                      ? `Atrasada há ${Math.abs(diasParaVencer)} dia${Math.abs(diasParaVencer) === 1 ? "" : "s"}`
                       : venceHoje
                         ? "Vence hoje"
-                        : `Vence em ${prioridade.dias_para_vencer} dia${prioridade.dias_para_vencer === 1 ? "" : "s"}`;
+                        : `Vence em ${diasParaVencer} dia${diasParaVencer === 1 ? "" : "s"}`;
                   return (
                     <Link
                       key={prioridade.id}
