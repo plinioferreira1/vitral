@@ -1069,6 +1069,122 @@ export type Database = {
           },
         ]
       }
+      ficha_locacao_documentos: {
+        Row: {
+          caminho_storage: string
+          criado_em: string
+          ficha_id: string
+          id: string
+          mime_type: string
+          nome_arquivo: string
+          tamanho_bytes: number
+          tipo: string
+        }
+        Insert: {
+          caminho_storage: string
+          criado_em?: string
+          ficha_id: string
+          id?: string
+          mime_type: string
+          nome_arquivo: string
+          tamanho_bytes: number
+          tipo: string
+        }
+        Update: {
+          caminho_storage?: string
+          criado_em?: string
+          ficha_id?: string
+          id?: string
+          mime_type?: string
+          nome_arquivo?: string
+          tamanho_bytes?: number
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ficha_locacao_documentos_ficha_id_fkey"
+            columns: ["ficha_id"]
+            isOneToOne: false
+            referencedRelation: "fichas_cadastrais_locacao"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fichas_cadastrais_locacao: {
+        Row: {
+          assinatura_imagem: string | null
+          atualizado_em: string
+          concluido_em: string | null
+          consentimento_lgpd: boolean
+          criado_em: string
+          criado_por: string | null
+          dados: Json
+          expira_em: string
+          id: string
+          imovel_referencia: string | null
+          ip_conclusao: string | null
+          proponente_email: string | null
+          proponente_nome: string | null
+          status: string
+          tenant_id: string
+          token: string
+          user_agent_conclusao: string | null
+        }
+        Insert: {
+          assinatura_imagem?: string | null
+          atualizado_em?: string
+          concluido_em?: string | null
+          consentimento_lgpd?: boolean
+          criado_em?: string
+          criado_por?: string | null
+          dados?: Json
+          expira_em?: string
+          id?: string
+          imovel_referencia?: string | null
+          ip_conclusao?: string | null
+          proponente_email?: string | null
+          proponente_nome?: string | null
+          status?: string
+          tenant_id: string
+          token?: string
+          user_agent_conclusao?: string | null
+        }
+        Update: {
+          assinatura_imagem?: string | null
+          atualizado_em?: string
+          concluido_em?: string | null
+          consentimento_lgpd?: boolean
+          criado_em?: string
+          criado_por?: string | null
+          dados?: Json
+          expira_em?: string
+          id?: string
+          imovel_referencia?: string | null
+          ip_conclusao?: string | null
+          proponente_email?: string | null
+          proponente_nome?: string | null
+          status?: string
+          tenant_id?: string
+          token?: string
+          user_agent_conclusao?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fichas_cadastrais_locacao_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fichas_cadastrais_locacao_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financeiro_baixas: {
         Row: {
           conta_bancaria_id: string | null
@@ -1355,6 +1471,7 @@ export type Database = {
           resumo: Json | null
           sucesso: boolean
           tenant_id: string
+          tipo: string
         }
         Insert: {
           destinatarios: string[]
@@ -1364,6 +1481,7 @@ export type Database = {
           resumo?: Json | null
           sucesso: boolean
           tenant_id: string
+          tipo?: string
         }
         Update: {
           destinatarios?: string[]
@@ -1373,6 +1491,7 @@ export type Database = {
           resumo?: Json | null
           sucesso?: boolean
           tenant_id?: string
+          tipo?: string
         }
         Relationships: [
           {

@@ -25,19 +25,19 @@ export default async function ConfiguracoesEmailPage() {
 
   const { data: ultimosEnvios } = await supabase
     .from("financeiro_email_envios")
-    .select("id, enviado_em, sucesso, erro, destinatarios")
+    .select("id, enviado_em, sucesso, erro, destinatarios, tipo")
     .order("enviado_em", { ascending: false })
-    .limit(5);
+    .limit(8);
 
   return (
     <div className="financeiro-ui mx-auto max-w-[1100px] space-y-5">
       <div>
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-          Resumo financeiro por e-mail
+          Resumos diários por e-mail
         </h1>
         <p className="mt-1 text-sm text-ink-muted">
-          O relatório financeiro diário é enviado automaticamente todo dia às 9h (horário de
-          Brasília) pra quem estiver ativo na lista abaixo.
+          Todo dia às 9h (horário de Brasília) quem estiver ativo na lista abaixo recebe dois e-mails: o resumo
+          financeiro e o resumo dos processos (etapas atrasadas, do dia, dos próximos 7 dias e prazos de contrato).
         </p>
       </div>
 
@@ -101,13 +101,24 @@ export default async function ConfiguracoesEmailPage() {
           <CabecalhoSecao
             icon={Send}
             titulo="Testar agora"
-            descricao="Envia o relatório imediatamente pros destinatários ativos, sem esperar as 9h."
+            descricao="Todo dia às 9h saem dois e-mails: o resumo financeiro e o resumo dos processos. Envie um deles agora, sem esperar."
           />
-          <BotaoEnviar
-            className="rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-background"
-          >
-            Enviar teste agora
-          </BotaoEnviar>
+          <div className="flex flex-wrap gap-2">
+            <BotaoEnviar
+              name="tipo"
+              value="financeiro"
+              className="rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-background"
+            >
+              Testar resumo financeiro
+            </BotaoEnviar>
+            <BotaoEnviar
+              name="tipo"
+              value="processos"
+              className="rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-background"
+            >
+              Testar resumo dos processos
+            </BotaoEnviar>
+          </div>
         </form>
       )}
 
@@ -118,6 +129,7 @@ export default async function ConfiguracoesEmailPage() {
             {(ultimosEnvios ?? []).map((e) => (
               <li key={e.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
                 <span className="text-ink-muted">
+                  {e.tipo === "processos" ? "Processos" : "Financeiro"} ·{" "}
                   {new Date(e.enviado_em).toLocaleString("pt-BR")} · {e.destinatarios.length} destinatário(s)
                 </span>
                 <span

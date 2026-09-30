@@ -7,6 +7,7 @@ import { checar } from "@/lib/aviso";
 import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
 import { enviarRelatorioFinanceiroDiario } from "@/lib/relatorio-financeiro-diario";
+import { enviarResumoProcessosDiario } from "@/lib/relatorio-processos-diario";
 
 export async function adicionarDestinatario(formData: FormData) {
   const supabase = await createClient();
@@ -50,6 +51,9 @@ export async function testarEnvioAgora(formData: FormData) {
   if (!(await exigirUsuario(GESTORES))) return;
   const tenantId = String(formData.get("tenant_id") ?? "");
   if (!tenantId) return;
-  await enviarRelatorioFinanceiroDiario(tenantId);
+  // Testa um dos dois e-mails diários (padrão: financeiro).
+  const tipo = formData.get("tipo") === "processos" ? "processos" : "financeiro";
+  if (tipo === "processos") await enviarResumoProcessosDiario(tenantId);
+  else await enviarRelatorioFinanceiroDiario(tenantId);
   revalidatePath("/financeiro/configuracoes-email");
 }

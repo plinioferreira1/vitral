@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enviarRelatorioFinanceiroDiario } from "@/lib/relatorio-financeiro-diario";
+import { enviarResumoProcessosDiario } from "@/lib/relatorio-processos-diario";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -16,10 +17,16 @@ export async function GET(request: Request) {
   const supabase = createAdminClient();
   const { data: tenants } = await supabase.from("tenants").select("id");
 
-  const resultados: { tenantId: string; sucesso: boolean; erro?: string }[] = [];
+  // Dois e-mails diários por empresa: resumo financeiro e resumo dos
+  // processos (este substitui as notificações por e-mail do Google Agenda).
+  const resultados: { tenantId: string; tipo: string; sucesso: boolean; erro?: string }[] = [];
   for (const t of tenants ?? []) {
-    const resultado = await enviarRelatorioFinanceiroDiario(t.id);
-    resultados.push({ tenantId: t.id, ...resultado });
+    const [financeiro, processos] = await Promise.all([
+      enviarRelatorioFinanceiroDiario(t.id),
+      enviarResumoProcessosDiario(t.id),
+    ]);
+    resultados.push({ tenantId: t.id, tipo: "financeiro", ...financeiro });
+    resultados.push({ tenantId: t.id, tipo: "processos", ...processos });
   }
 
   return NextResponse.json({ ok: true, resultados });
