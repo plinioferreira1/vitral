@@ -109,15 +109,16 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     font,
     color: muted,
   });
-  page.drawLine({
-    start: { x: margin, y: 562 },
-    end: { x: width - margin, y: 562 },
-    thickness: 1,
+  const recebidoEm = `Recebido em ${new Date(`${baixa.data}T00:00:00`).toLocaleDateString("pt-BR")}`;
+  page.drawText(recebidoEm, {
+    x: width - margin - font.widthOfTextAtSize(recebidoEm, 11),
+    y: 566,
+    size: 11,
+    font,
     color: muted,
-    dashArray: [5, 5],
   });
 
-  const texto = `Recebi de SACRA SOLUÇÕES IMOBILIÁRIAS LTDA a importância de ${valor} referente ao pagamento de ${lancamento.descricao}.`;
+  const texto = `Recebi de SACRA SOLUÇÕES IMOBILIÁRIAS LTDA a importância de ${valor} referente ao pagamento de ${lancamento.descricao}, recebida em ${dataLonga(baixa.data)}.`;
   let y = 505;
   wrapText(texto, font, 13, width - margin * 2).forEach((linha) => {
     page.drawText(linha, { x: margin + 8, y, size: 13, font, color: ink });
