@@ -44,7 +44,7 @@ type BaixaRecibo = {
   } | null;
 };
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
   const { data } = await supabase
@@ -74,8 +74,20 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   const muted = rgb(0.42, 0.39, 0.36);
 
   page.drawLine({ start: { x: margin, y: 782 }, end: { x: width - margin, y: 782 }, thickness: 1.4, color: ink });
-  page.drawText("SACRA", { x: margin, y: 718, size: 20, font: bold, color: brand });
-  page.drawText("netimóveis", { x: margin, y: 700, size: 10, font: bold, color: rgb(0.85, 0.42, 0.13) });
+  // Logo da Sacra (arquivo em /public/brand). Se não carregar, cai no nome escrito.
+  const logoLargura = 160;
+  let textoX = 150;
+  try {
+    const resposta = await fetch(new URL("/brand/sacra-logo-bordo.png", request.url));
+    if (!resposta.ok) throw new Error("logo indisponível");
+    const logo = await pdf.embedPng(await resposta.arrayBuffer());
+    const logoAltura = (logo.height / logo.width) * logoLargura;
+    page.drawImage(logo, { x: margin, y: 716 - logoAltura / 2, width: logoLargura, height: logoAltura });
+    textoX = margin + logoLargura + 24;
+  } catch {
+    page.drawText("SACRA", { x: margin, y: 718, size: 20, font: bold, color: brand });
+    page.drawText("netimóveis", { x: margin, y: 700, size: 10, font: bold, color: rgb(0.85, 0.42, 0.13) });
+  }
 
   const dadosEmpresa = [
     "SACRA SOLUÇÕES IMOBILIÁRIAS LTDA",
@@ -84,7 +96,7 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
     "CEP: 72005-350",
   ];
   dadosEmpresa.forEach((linha, index) => {
-    page.drawText(linha, { x: 150, y: 730 - index * 20, size: 11, font, color: muted });
+    page.drawText(linha, { x: textoX, y: 738 - index * 16, size: 10, font, color: muted });
   });
   page.drawLine({ start: { x: margin, y: 650 }, end: { x: width - margin, y: 650 }, thickness: 1.4, color: ink });
 
