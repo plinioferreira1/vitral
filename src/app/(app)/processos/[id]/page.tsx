@@ -34,6 +34,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { BotaoEnviar } from "@/components/botao-enviar";
+import { ModalEdicaoProcesso } from "@/components/modal-edicao-processo";
 
 export default async function ProcessoDetalhePage({
   params,
@@ -169,16 +170,12 @@ export default async function ProcessoDetalhePage({
             </p>
           </div>
 
-          <details
+          <ModalEdicaoProcesso
             key={`editar-${p.id}-${p.comprador?.nome}-${p.vendedor?.nome}-${p.imoveis?.endereco}-${p.bancos?.nome}-${p.corretores?.nome}-${p.usuarios?.nome}-${p.codigo_san}-${p.valor_total}-${p.valor_financiado}-${p.origem}-${p.indicacao?.nome}-${p.data_assinatura}-${p.data_final_contrato}`}
-            className="relative"
           >
-            <summary className="cursor-pointer list-none rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background">
-              ✎ Editar processo
-            </summary>
             <form
               action={salvarDadosProcesso}
-              className="absolute right-0 z-20 mt-2 max-h-[80vh] w-[min(92vw,480px)] space-y-3 overflow-y-auto rounded-xl border border-border bg-surface p-4 shadow-lg"
+              className="space-y-3"
             >
               <input type="hidden" name="processo_id" value={p.id} />
 
@@ -284,11 +281,11 @@ export default async function ProcessoDetalhePage({
                 ))}
               </datalist>
 
-              <BotaoSubmit className="w-full rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+              <BotaoSubmit className="sticky bottom-0 w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white shadow-lg hover:opacity-90">
                 Salvar alterações
               </BotaoSubmit>
             </form>
-          </details>
+          </ModalEdicaoProcesso>
         </div>
 
         <div className="mt-6 grid grid-cols-2 overflow-hidden rounded-xl border border-border bg-background md:grid-cols-4">
