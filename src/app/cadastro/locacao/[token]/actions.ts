@@ -31,6 +31,8 @@ export async function salvarRascunho(token: string, dados: DadosFicha): Promise<
 export async function prepararUpload(token: string, nome: string, mime: string, tamanho: number): Promise<{ ok: boolean; erro?: string; caminho?: string; uploadToken?: string }> {
   const contexto = await obterFicha(token);
   if (!contexto || contexto.ficha.status === "concluida") return { ok: false, erro: "Este link não está mais disponível." };
+  const { count } = await contexto.admin.from("ficha_locacao_documentos").select("id", { count: "exact", head: true }).eq("ficha_id", contexto.ficha.id);
+  if ((count ?? 0) >= 10) return { ok: false, erro: "O limite de 10 arquivos já foi atingido." };
   if (!TIPOS.has(mime) || tamanho <= 0 || tamanho > 10 * 1024 * 1024) return { ok: false, erro: "Use PDF, JPG, PNG ou WebP com até 10 MB." };
   const extensao = nome.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "arquivo";
   const caminho = `${contexto.ficha.tenant_id}/${contexto.ficha.id}/${crypto.randomUUID()}.${extensao}`;
@@ -44,6 +46,8 @@ export async function confirmarUpload(token: string, documento: { caminho: strin
   if (!contexto || contexto.ficha.status === "concluida") return { ok: false, erro: "Este link não está mais disponível." };
   const prefixo = `${contexto.ficha.tenant_id}/${contexto.ficha.id}/`;
   if (!documento.caminho.startsWith(prefixo) || !TIPOS.has(documento.mime) || documento.tamanho > 10 * 1024 * 1024) return { ok: false, erro: "Arquivo inválido." };
+  const { count } = await contexto.admin.from("ficha_locacao_documentos").select("id", { count: "exact", head: true }).eq("ficha_id", contexto.ficha.id);
+  if ((count ?? 0) >= 10) return { ok: false, erro: "O limite de 10 arquivos já foi atingido." };
   const { error } = await contexto.admin.from("ficha_locacao_documentos").insert({ ficha_id: contexto.ficha.id, tipo: documento.tipo.slice(0, 80), nome_arquivo: documento.nome.slice(0, 255), caminho_storage: documento.caminho, tamanho_bytes: documento.tamanho, mime_type: documento.mime });
   if (error) return { ok: false, erro: "O arquivo foi enviado, mas não pôde ser registrado." };
   return { ok: true };
@@ -54,6 +58,10 @@ export async function finalizarFicha(token: string, dados: DadosFicha, assinatur
   if (!contexto || contexto.ficha.status === "concluida") return { ok: false, erro: "Este link não está mais disponível." };
   const obrigatorios = ["nome_completo", "cpf", "nascimento", "telefone", "email", "endereco", "profissao", "renda_mensal", "imovel_interesse", "garantia"];
   if (obrigatorios.some((campo) => !String(dados[campo] ?? "").trim())) return { ok: false, erro: "Preencha todos os campos obrigatórios antes de enviar." };
+  if (dados.garantia === "Fiador") {
+    const camposFiador = ["fiador_nome", "fiador_cpf", "fiador_rg", "fiador_telefone", "fiador_email", "fiador_endereco", "fiador_profissao", "fiador_renda", "fiador_imovel_quitado"];
+    if (camposFiador.some((campo) => !String(dados[campo] ?? "").trim())) return { ok: false, erro: "Preencha todos os dados obrigatórios do fiador." };
+  }
   if (dados.consentimento_lgpd !== true) return { ok: false, erro: "É necessário aceitar o consentimento de tratamento de dados." };
   if (!assinatura.startsWith("data:image/png;base64,") || assinatura.length > 500000) return { ok: false, erro: "Faça sua assinatura antes de enviar." };
   const listaHeaders = await headers();
