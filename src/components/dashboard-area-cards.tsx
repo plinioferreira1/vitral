@@ -29,7 +29,7 @@ export type DashboardAreaResumo = {
 };
 
 export function DashboardAreaCards({ areas }: { areas: DashboardAreaResumo[] }) {
-  const [ativa, setAtiva] = useState<string | null>(areas[0]?.id ?? null);
+  const [ativa, setAtiva] = useState<string | null>(null);
   const areaAtiva = areas.find((area) => area.id === ativa) ?? null;
 
   if (areas.length === 0) return null;
