@@ -3,8 +3,15 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Ban, CheckCircle2, Copy, MoreHorizontal, Pencil, RefreshCcw, Tag, X, Undo2 } from "lucide-react";
-import { cancelarLancamento, categorizarLancamento, reativarLancamento } from "@/app/(app)/financeiro/lancamentos-actions";
+import { Ban, CheckCircle2, Copy, MoreHorizontal, Pencil, RefreshCcw, Tag, Trash2, X, Undo2 } from "lucide-react";
+import {
+  cancelarLancamento,
+  categorizarLancamento,
+  excluirLancamento,
+  reativarLancamento,
+} from "@/app/(app)/financeiro/lancamentos-actions";
+import { BotaoEnviar } from "@/components/botao-enviar";
+import { ESCOPOS_EXCLUSAO, ROTULO_ESCOPO_EXCLUSAO } from "@/lib/exclusao-lancamentos";
 
 type Opcao = { id: string; nome: string };
 
@@ -21,6 +28,8 @@ type MenuAcoesLancamentoProps = {
   tipo: "receita" | "despesa";
   status: string;
   editavel: boolean;
+  /** faz parte de uma série (recorrência/parcelamento) */
+  recorrente: boolean;
   podeCategorizar: boolean;
   categorias: Opcao[];
   centros: Opcao[];
@@ -32,11 +41,14 @@ export function MenuAcoesLancamento({
   tipo,
   status,
   editavel,
+  recorrente,
   podeCategorizar,
   categorias,
   centros,
 }: MenuAcoesLancamentoProps) {
   const [aberto, setAberto] = useState(false);
+  const [excluindo, setExcluindo] = useState(false);
+  const temBaixa = status === "pago" || status === "pago_parcial";
   const [posicao, setPosicao] = useState<PosicaoMenu>({ top: 0, left: 0, maxHeight: 520 });
   const botaoRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -234,8 +246,102 @@ export function MenuAcoesLancamento({
                     </button>
                   </form>
                 )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAberto(false);
+                    setExcluindo(true);
+                  }}
+                  className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-rose-700 hover:bg-rose-50"
+                >
+                  <Trash2 size={15} strokeWidth={2} /> Excluir
+                </button>
               </div>
             </div>
+          </div>,
+          document.body,
+        )}
+
+      {excluindo &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setExcluindo(false);
+            }}
+          >
+            <form
+              action={async (formData) => {
+                await excluirLancamento(formData);
+                setExcluindo(false);
+              }}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Excluir ${descricao}`}
+              className="w-full max-w-xl rounded-xl border border-border bg-surface p-5 text-left shadow-2xl"
+            >
+              <input type="hidden" name="id" value={id} />
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
+                Excluir {tipo === "receita" ? "receita" : "despesa"}
+              </p>
+              <p className="mt-0.5 text-sm font-bold text-ink">{descricao}</p>
+
+              {recorrente ? (
+                <fieldset className="mt-4">
+                  <legend className="text-sm text-ink">
+                    Ao confirmar esta ação, quais lançamentos você deseja excluir?
+                  </legend>
+                  <div className="mt-3 space-y-1">
+                    {ESCOPOS_EXCLUSAO.map((escopo) => (
+                      <label
+                        key={escopo}
+                        className="flex cursor-pointer items-start gap-3 rounded-md px-2 py-2 text-sm text-ink hover:bg-background"
+                      >
+                        <input
+                          type="radio"
+                          name="escopo"
+                          value={escopo}
+                          defaultChecked={escopo === "um"}
+                          className="mt-0.5 accent-brand"
+                        />
+                        {ROTULO_ESCOPO_EXCLUSAO[escopo]}
+                      </label>
+                    ))}
+                  </div>
+                  <p className="mt-3 rounded-md bg-background px-3 py-2 text-xs text-ink-muted">
+                    &quot;Todos os lançamentos&quot; apaga a série inteira, inclusive os já pagos e os pagamentos
+                    registrados neles — o saldo das contas muda.
+                  </p>
+                </fieldset>
+              ) : (
+                <p className="mt-4 text-sm text-ink">Tem certeza que deseja excluir este lançamento?</p>
+              )}
+
+              {temBaixa && (
+                <p className="mt-3 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">
+                  Este lançamento já tem pagamento registrado. Ao excluir, o pagamento também é apagado e o saldo da
+                  conta muda.
+                </p>
+              )}
+
+              <p className="mt-3 text-xs text-ink-muted">A exclusão não pode ser desfeita.</p>
+
+              <div className="mt-5 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setExcluindo(false)}
+                  className="rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-background"
+                >
+                  Voltar
+                </button>
+                <BotaoEnviar
+                  textoEnviando="Excluindo…"
+                  className="rounded-md bg-rose-700 px-4 py-2 text-sm font-bold text-white hover:opacity-90"
+                >
+                  Excluir
+                </BotaoEnviar>
+              </div>
+            </form>
           </div>,
           document.body,
         )}

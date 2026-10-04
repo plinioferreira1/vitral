@@ -4,6 +4,8 @@ import { avisar, checar } from "@/lib/aviso";
 import type { TablesInsert } from "@/lib/database.types";
 import { formatarCpfCnpj, formatarTelefone } from "@/lib/mascaras";
 import { moedaParaNumero } from "@/lib/moeda";
+import { hojeISO } from "@/lib/data-br";
+import { escopoExclusaoValido, idsParaExcluir, type EscopoExclusao } from "@/lib/exclusao-lancamentos";
 import { datasDaRecorrencia, mesesPorFrequencia, type Frequencia } from "@/lib/recorrencia";
 import { createClient } from "@/lib/supabase/server";
 import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
@@ -515,6 +517,79 @@ export async function apagarLancamentos(formData: FormData) {
 
   const supabase = await createClient();
   await checar(supabase.from("financeiro_lancamentos").delete().in("id", ids).eq("status", "pendente"), "excluir");
+
+  revalidatePath("/financeiro/contas-a-pagar");
+  revalidatePath("/financeiro/contas-a-receber");
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/agenda");
+}
+
+/**
+ * Exclui um lançamento pelo menu de ações. Se ele faz parte de uma série
+ * (recorrência/parcelamento), "escopo" diz o que mais vai junto — ver
+ * idsParaExcluir. Apagar um lançamento apaga também as baixas dele.
+ * Quando a exclusão alcança a série, a recorrência é encerrada (ou
+ * apagada, se não sobrar nenhum lançamento).
+ */
+export async function excluirLancamento(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  const supabase = await createClient();
+  const { data: atual } = await supabase
+    .from("financeiro_lancamentos")
+    .select("id, recorrencia_id")
+    .eq("id", id)
+    .single();
+  if (!atual) {
+    await avisar("erro", "Lançamento não encontrado.");
+    return;
+  }
+
+  const escopo: EscopoExclusao = atual.recorrencia_id
+    ? escopoExclusaoValido(formData.get("escopo"))
+    : "um";
+
+  let ids = [id];
+  if (escopo !== "um" && atual.recorrencia_id) {
+    const { data: serie, error } = await supabase
+      .from("financeiro_lancamentos")
+      .select("id, vencimento, status, financeiro_baixas ( id )")
+      .eq("recorrencia_id", atual.recorrencia_id);
+    if (error || !serie) {
+      await avisar("erro", "Não foi possível carregar os lançamentos da série. Nada foi excluído.");
+      return;
+    }
+    ids = idsParaExcluir(
+      id,
+      serie.map((l) => ({
+        id: l.id,
+        vencimento: l.vencimento,
+        status: l.status,
+        temBaixa: (l.financeiro_baixas ?? []).length > 0,
+      })),
+      escopo,
+      hojeISO()
+    );
+  }
+
+  const apagou = await checar(supabase.from("financeiro_lancamentos").delete().in("id", ids), "excluir");
+
+  if (apagou) {
+    if (escopo !== "um" && atual.recorrencia_id) {
+      const { count } = await supabase
+        .from("financeiro_lancamentos")
+        .select("id", { count: "exact", head: true })
+        .eq("recorrencia_id", atual.recorrencia_id);
+      if (count === 0) {
+        await supabase.from("financeiro_recorrencias").delete().eq("id", atual.recorrencia_id);
+      } else {
+        await supabase.from("financeiro_recorrencias").update({ ativa: false }).eq("id", atual.recorrencia_id);
+      }
+    }
+    await avisar("sucesso", ids.length === 1 ? "Lançamento excluído." : `${ids.length} lançamentos excluídos.`);
+  }
 
   revalidatePath("/financeiro/contas-a-pagar");
   revalidatePath("/financeiro/contas-a-receber");

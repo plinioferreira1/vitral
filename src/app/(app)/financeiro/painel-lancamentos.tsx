@@ -621,6 +621,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                           tipo={tipo}
                           status={l.status}
                           editavel={editavel}
+                          recorrente={!!l.recorrencia_id}
                           podeCategorizar={tipo === "receita" && !l.categoria_id && (l.status === "pago" || l.status === "pago_parcial")}
                           categorias={categorias ?? []}
                           centros={centros ?? []}
