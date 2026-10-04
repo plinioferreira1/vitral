@@ -54,6 +54,10 @@ export async function finalizarFicha(token: string, dados: DadosFicha, assinatur
   if (!contexto || contexto.ficha.status === "concluida") return { ok: false, erro: "Este link não está mais disponível." };
   const obrigatorios = ["nome_completo", "cpf", "nascimento", "telefone", "email", "endereco", "profissao", "renda_mensal", "imovel_interesse", "garantia"];
   if (obrigatorios.some((campo) => !String(dados[campo] ?? "").trim())) return { ok: false, erro: "Preencha todos os campos obrigatórios antes de enviar." };
+  if (dados.garantia === "Fiador") {
+    const camposFiador = ["fiador_nome", "fiador_cpf", "fiador_rg", "fiador_telefone", "fiador_email", "fiador_endereco", "fiador_profissao", "fiador_renda", "fiador_imovel_quitado"];
+    if (camposFiador.some((campo) => !String(dados[campo] ?? "").trim())) return { ok: false, erro: "Preencha todos os dados obrigatórios do fiador." };
+  }
   if (dados.consentimento_lgpd !== true) return { ok: false, erro: "É necessário aceitar o consentimento de tratamento de dados." };
   if (!assinatura.startsWith("data:image/png;base64,") || assinatura.length > 500000) return { ok: false, erro: "Faça sua assinatura antes de enviar." };
   const listaHeaders = await headers();
