@@ -1,0 +1,4 @@
+Liberation Serif e Liberation Sans (versão 2), usadas no PDF da Avaliação de Imóveis.
+Licença: SIL Open Font License 1.1 — https://github.com/liberationfonts/liberation-fonts
+As fontes são incorporadas ao PDF para que o documento apareça igual em qualquer leitor.
+Não são a tipografia oficial da marca Sacra; são um neutro de apoio até o manual definir uma.

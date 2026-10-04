@@ -168,6 +168,629 @@ export type Database = {
           },
         ]
       }
+      avaliacao_arquivos: {
+        Row: {
+          avaliacao_id: string
+          caminho_storage: string
+          capa: boolean
+          criado_em: string
+          criado_por: string | null
+          id: string
+          legenda: string | null
+          mime_type: string
+          nome_arquivo: string
+          ordem: number
+          tamanho_bytes: number
+          tenant_id: string
+          tipo: string
+        }
+        Insert: {
+          avaliacao_id: string
+          caminho_storage: string
+          capa?: boolean
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          legenda?: string | null
+          mime_type: string
+          nome_arquivo: string
+          ordem?: number
+          tamanho_bytes: number
+          tenant_id: string
+          tipo: string
+        }
+        Update: {
+          avaliacao_id?: string
+          caminho_storage?: string
+          capa?: boolean
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          legenda?: string | null
+          mime_type?: string
+          nome_arquivo?: string
+          ordem?: number
+          tamanho_bytes?: number
+          tenant_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_arquivos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_arquivos_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_arquivos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_assinaturas: {
+        Row: {
+          autorizada_em: string
+          consentimento: string
+          imagem: string
+          tenant_id: string
+          usuario_id: string
+        }
+        Insert: {
+          autorizada_em?: string
+          consentimento: string
+          imagem: string
+          tenant_id: string
+          usuario_id: string
+        }
+        Update: {
+          autorizada_em?: string
+          consentimento?: string
+          imagem?: string
+          tenant_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_assinaturas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_assinaturas_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: true
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_comparaveis: {
+        Row: {
+          ajustes: Json
+          area_m2: number | null
+          avaliacao_id: string
+          criado_em: string
+          data_atualizacao: string | null
+          data_coleta: string | null
+          diferencas: string | null
+          duplicata: boolean
+          excluido_em: string | null
+          excluido_por: string | null
+          finalidade: string
+          fonte_nome: string | null
+          fonte_tipo: string
+          fonte_url: string | null
+          foto_caminho: string | null
+          id: string
+          identificacao: string
+          incluido: boolean
+          inserido_por: string | null
+          motivo_exclusao: string | null
+          observacoes: string | null
+          ordem: number
+          preco: number | null
+          quartos: number | null
+          reconferir: boolean
+          referencia_interna: string | null
+          regiao: string | null
+          status_anuncio: string | null
+          suites: number | null
+          tenant_id: string
+          tipo_preco: string
+          tipologia: string | null
+          vagas: number | null
+        }
+        Insert: {
+          ajustes?: Json
+          area_m2?: number | null
+          avaliacao_id: string
+          criado_em?: string
+          data_atualizacao?: string | null
+          data_coleta?: string | null
+          diferencas?: string | null
+          duplicata?: boolean
+          excluido_em?: string | null
+          excluido_por?: string | null
+          finalidade: string
+          fonte_nome?: string | null
+          fonte_tipo: string
+          fonte_url?: string | null
+          foto_caminho?: string | null
+          id?: string
+          identificacao: string
+          incluido?: boolean
+          inserido_por?: string | null
+          motivo_exclusao?: string | null
+          observacoes?: string | null
+          ordem?: number
+          preco?: number | null
+          quartos?: number | null
+          reconferir?: boolean
+          referencia_interna?: string | null
+          regiao?: string | null
+          status_anuncio?: string | null
+          suites?: number | null
+          tenant_id: string
+          tipo_preco?: string
+          tipologia?: string | null
+          vagas?: number | null
+        }
+        Update: {
+          ajustes?: Json
+          area_m2?: number | null
+          avaliacao_id?: string
+          criado_em?: string
+          data_atualizacao?: string | null
+          data_coleta?: string | null
+          diferencas?: string | null
+          duplicata?: boolean
+          excluido_em?: string | null
+          excluido_por?: string | null
+          finalidade?: string
+          fonte_nome?: string | null
+          fonte_tipo?: string
+          fonte_url?: string | null
+          foto_caminho?: string | null
+          id?: string
+          identificacao?: string
+          incluido?: boolean
+          inserido_por?: string | null
+          motivo_exclusao?: string | null
+          observacoes?: string | null
+          ordem?: number
+          preco?: number | null
+          quartos?: number | null
+          reconferir?: boolean
+          referencia_interna?: string | null
+          regiao?: string | null
+          status_anuncio?: string | null
+          suites?: number | null
+          tenant_id?: string
+          tipo_preco?: string
+          tipologia?: string | null
+          vagas?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_comparaveis_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_comparaveis_excluido_por_fkey"
+            columns: ["excluido_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_comparaveis_inserido_por_fkey"
+            columns: ["inserido_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_comparaveis_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_config: {
+        Row: {
+          atualizado_em: string
+          atualizado_por: string | null
+          contato_email: string | null
+          contato_telefone: string | null
+          fontes_externas: Json
+          limiares: Json
+          responsavel_cnai: string | null
+          responsavel_creci: string | null
+          responsavel_curriculo: string | null
+          responsavel_nome: string | null
+          responsavel_usuario_id: string | null
+          tenant_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          contato_email?: string | null
+          contato_telefone?: string | null
+          fontes_externas?: Json
+          limiares?: Json
+          responsavel_cnai?: string | null
+          responsavel_creci?: string | null
+          responsavel_curriculo?: string | null
+          responsavel_nome?: string | null
+          responsavel_usuario_id?: string | null
+          tenant_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          contato_email?: string | null
+          contato_telefone?: string | null
+          fontes_externas?: Json
+          limiares?: Json
+          responsavel_cnai?: string | null
+          responsavel_creci?: string | null
+          responsavel_curriculo?: string | null
+          responsavel_nome?: string | null
+          responsavel_usuario_id?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_config_atualizado_por_fkey"
+            columns: ["atualizado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_config_responsavel_usuario_id_fkey"
+            columns: ["responsavel_usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_eventos: {
+        Row: {
+          autor_id: string | null
+          autor_nome: string | null
+          avaliacao_id: string
+          criado_em: string
+          dados: Json
+          descricao: string
+          id: string
+          tenant_id: string
+          tipo: string
+        }
+        Insert: {
+          autor_id?: string | null
+          autor_nome?: string | null
+          avaliacao_id: string
+          criado_em?: string
+          dados?: Json
+          descricao: string
+          id?: string
+          tenant_id: string
+          tipo: string
+        }
+        Update: {
+          autor_id?: string | null
+          autor_nome?: string | null
+          avaliacao_id?: string
+          criado_em?: string
+          dados?: Json
+          descricao?: string
+          id?: string
+          tenant_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_eventos_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_eventos_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_eventos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacao_versoes: {
+        Row: {
+          aprovado_em: string | null
+          aprovado_por: string | null
+          aprovado_por_nome: string | null
+          avaliacao_id: string
+          emitido_em: string
+          emitido_por: string
+          emitido_por_nome: string | null
+          faixa_max: number | null
+          faixa_min: number | null
+          finalidade: string
+          hash_conteudo: string
+          id: string
+          modalidade: string
+          numero: number
+          pdf_caminho: string
+          snapshot: Json
+          tenant_id: string
+          tipo_assinatura: string
+          valor_calculado: number | null
+          valor_sugerido: number | null
+        }
+        Insert: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          aprovado_por_nome?: string | null
+          avaliacao_id: string
+          emitido_em?: string
+          emitido_por: string
+          emitido_por_nome?: string | null
+          faixa_max?: number | null
+          faixa_min?: number | null
+          finalidade: string
+          hash_conteudo: string
+          id?: string
+          modalidade: string
+          numero: number
+          pdf_caminho: string
+          snapshot: Json
+          tenant_id: string
+          tipo_assinatura?: string
+          valor_calculado?: number | null
+          valor_sugerido?: number | null
+        }
+        Update: {
+          aprovado_em?: string | null
+          aprovado_por?: string | null
+          aprovado_por_nome?: string | null
+          avaliacao_id?: string
+          emitido_em?: string
+          emitido_por?: string
+          emitido_por_nome?: string | null
+          faixa_max?: number | null
+          faixa_min?: number | null
+          finalidade?: string
+          hash_conteudo?: string
+          id?: string
+          modalidade?: string
+          numero?: number
+          pdf_caminho?: string
+          snapshot?: Json
+          tenant_id?: string
+          tipo_assinatura?: string
+          valor_calculado?: number | null
+          valor_sugerido?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacao_versoes_aprovado_por_fkey"
+            columns: ["aprovado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_versoes_avaliacao_id_fkey"
+            columns: ["avaliacao_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_versoes_emitido_por_fkey"
+            columns: ["emitido_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacao_versoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      avaliacoes: {
+        Row: {
+          aprovado_em: string | null
+          aprovado_hash: string | null
+          aprovado_por: string | null
+          area_m2: number | null
+          atualizado_em: string
+          bairro: string | null
+          cidade: string | null
+          codigo: string
+          comentario_revisao: string | null
+          criado_em: string
+          criado_por: string
+          dados: Json
+          data_base: string | null
+          enviado_revisao_em: string | null
+          enviado_revisao_por: string | null
+          faixa_manual: boolean
+          faixa_max: number | null
+          faixa_min: number | null
+          finalidade: string
+          id: string
+          imovel_id: string | null
+          margem_negociacao_pct: number | null
+          modalidade: string
+          origem_id: string | null
+          proprietario_nome: string | null
+          revisao: number
+          status: string
+          tenant_id: string
+          tipologia: string
+          titulo: string
+          valor_calculado: number | null
+          valor_proprietario: number | null
+          valor_sugerido: number | null
+          versao_atual: number
+        }
+        Insert: {
+          aprovado_em?: string | null
+          aprovado_hash?: string | null
+          aprovado_por?: string | null
+          area_m2?: number | null
+          atualizado_em?: string
+          bairro?: string | null
+          cidade?: string | null
+          codigo: string
+          comentario_revisao?: string | null
+          criado_em?: string
+          criado_por: string
+          dados?: Json
+          data_base?: string | null
+          enviado_revisao_em?: string | null
+          enviado_revisao_por?: string | null
+          faixa_manual?: boolean
+          faixa_max?: number | null
+          faixa_min?: number | null
+          finalidade: string
+          id?: string
+          imovel_id?: string | null
+          margem_negociacao_pct?: number | null
+          modalidade: string
+          origem_id?: string | null
+          proprietario_nome?: string | null
+          revisao?: number
+          status?: string
+          tenant_id: string
+          tipologia: string
+          titulo: string
+          valor_calculado?: number | null
+          valor_proprietario?: number | null
+          valor_sugerido?: number | null
+          versao_atual?: number
+        }
+        Update: {
+          aprovado_em?: string | null
+          aprovado_hash?: string | null
+          aprovado_por?: string | null
+          area_m2?: number | null
+          atualizado_em?: string
+          bairro?: string | null
+          cidade?: string | null
+          codigo?: string
+          comentario_revisao?: string | null
+          criado_em?: string
+          criado_por?: string
+          dados?: Json
+          data_base?: string | null
+          enviado_revisao_em?: string | null
+          enviado_revisao_por?: string | null
+          faixa_manual?: boolean
+          faixa_max?: number | null
+          faixa_min?: number | null
+          finalidade?: string
+          id?: string
+          imovel_id?: string | null
+          margem_negociacao_pct?: number | null
+          modalidade?: string
+          origem_id?: string | null
+          proprietario_nome?: string | null
+          revisao?: number
+          status?: string
+          tenant_id?: string
+          tipologia?: string
+          titulo?: string
+          valor_calculado?: number | null
+          valor_proprietario?: number | null
+          valor_sugerido?: number | null
+          versao_atual?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_aprovado_por_fkey"
+            columns: ["aprovado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_enviado_revisao_por_fkey"
+            columns: ["enviado_revisao_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: false
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_origem_id_fkey"
+            columns: ["origem_id"]
+            isOneToOne: false
+            referencedRelation: "avaliacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bancos: {
         Row: {
           contato: string | null
@@ -3075,6 +3698,13 @@ export type Database = {
         Returns: undefined
       }
       auth_tenant_id: { Args: never; Returns: string }
+      avaliacao_equipe_interna: { Args: never; Returns: boolean }
+      avaliacao_pode_aprovar: {
+        Args: { p_modalidade: string }
+        Returns: boolean
+      }
+      avaliacao_pode_criar: { Args: never; Returns: boolean }
+      avaliacao_proximo_codigo: { Args: never; Returns: string }
       bootstrap_tenant: { Args: { p_nome_empresa: string }; Returns: string }
       carta_proposta_assinatura_buscar: {
         Args: { p_token: string }

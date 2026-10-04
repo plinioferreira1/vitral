@@ -733,10 +733,10 @@ export default async function DashboardPage({
               descricao="Calcule ITBI, escritura, registro e taxas para orientar o cliente."
             />
             <CartaoCorretor
-              href="/avaliacao-imovel"
+              href="/avaliacoes"
               icon={Building2}
-              titulo="Avaliação de Imóvel"
-              descricao="Apoio para estudo comercial e definição de preço."
+              titulo="Avaliação de Imóveis"
+              descricao="Estudo comercial de preço e PTAM, com comparáveis, ajustes e PDF."
             />
           </div>
         </Painel>

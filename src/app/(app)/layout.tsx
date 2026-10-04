@@ -91,7 +91,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             { href: "/calculadora", label: "Proporcionalidade" },
             { href: "/calculadora-data", label: "Datas" },
             { href: "/cartorio", label: "Simulação de Custas" },
-            { href: "/avaliacao-imovel", label: "Avaliação de Imóvel" },
+            { href: "/avaliacao-imovel", label: "Calculadora de Avaliação" },
           ],
         },
       ]
@@ -105,6 +105,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             { href: "/autorizacoes", label: "Autorização de Venda" },
             { href: "/propostas", label: "Carta Proposta" },
             { href: "/termos-visita", label: "Termo de Visita" },
+            { href: "/avaliacoes", label: "Avaliação de Imóveis" },
           ],
         },
         {
@@ -113,7 +114,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             { href: "/calculadora", label: "Proporcionalidade" },
             { href: "/calculadora-data", label: "Datas" },
             { href: "/cartorio", label: "Simulação de Custas" },
-            { href: "/avaliacao-imovel", label: "Avaliação de Imóvel" },
+            { href: "/avaliacao-imovel", label: "Calculadora de Avaliação" },
           ],
         },
       ]
@@ -163,6 +164,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             { href: "/autorizacoes", label: "Autorização de Venda" },
             { href: "/propostas", label: "Carta Proposta" },
             { href: "/termos-visita", label: "Termo de Visita" },
+            { href: "/avaliacoes", label: "Avaliação de Imóveis" },
           ],
         },
         {
@@ -171,7 +173,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             { href: "/calculadora", label: "Proporcionalidade" },
             { href: "/calculadora-data", label: "Datas" },
             { href: "/cartorio", label: "Simulação de Custas" },
-            { href: "/avaliacao-imovel", label: "Avaliação de Imóvel" },
+            { href: "/avaliacao-imovel", label: "Calculadora de Avaliação" },
           ],
         },
         { href: "/corretor", label: "Onboarding" },
