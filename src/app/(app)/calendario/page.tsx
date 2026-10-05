@@ -8,6 +8,8 @@ import { hojeISO } from "@/lib/data-br";
 import { addMonths, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { BotaoEnviar } from "@/components/botao-enviar";
+import { CalendarDays, AlertTriangle } from "lucide-react";
+import { CabecalhoSecao } from "@/components/cabecalho-secao";
 
 export default async function CalendarioPage({
   searchParams,
@@ -48,16 +50,20 @@ export default async function CalendarioPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"><CalendarDays size={22} aria-hidden="true" /></div>
+          <div>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Calendário</h1>
           <p className="mt-1 text-sm text-ink-muted">
             {format(referencia, "MMMM yyyy", { locale: ptBR })}
           </p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <form className="flex items-center gap-1.5">
+        <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm xl:flex-row xl:items-center xl:justify-between">
+          <form className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
             <select
+              aria-label="Filtrar por categoria"
               name="categoria"
               defaultValue={categoria ?? ""}
               className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-brand"
@@ -68,6 +74,7 @@ export default async function CalendarioPage({
               <option value="locacao">Locação</option>
             </select>
             <select
+              aria-label="Filtrar por responsável"
               name="responsavel"
               defaultValue={responsavel ?? ""}
               className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-brand"
@@ -80,6 +87,7 @@ export default async function CalendarioPage({
               ))}
             </select>
             <select
+              aria-label="Filtrar por prazo"
               name="urgencia"
               defaultValue={urgencia ?? ""}
               className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm outline-none focus:border-brand"
@@ -96,26 +104,34 @@ export default async function CalendarioPage({
               Filtrar
             </BotaoEnviar>
           </form>
+          <nav aria-label="Navegação entre meses" className="flex flex-wrap items-center gap-2">
           <Link
             href={`/calendario?mes=${mesAnterior}${filtrosNavegacao}`}
             className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface"
           >
             ← Anterior
           </Link>
+          <Link href={`/calendario?mes=${hojeISO().slice(0, 7)}${filtrosNavegacao}`} className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-background">Mês atual</Link>
           <Link
             href={`/calendario?mes=${proximoMes}${filtrosNavegacao}`}
             className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-surface"
           >
             Próximo →
           </Link>
+          </nav>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_280px]">
-        <CalendarioGrid eventos={eventosFiltrados} referencia={referencia} />
+      <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <section className="min-w-0 rounded-xl border border-border/60 bg-surface p-3 shadow-sm sm:p-5">
+          <CabecalhoSecao icon={CalendarDays} titulo="Agenda do mês" descricao={`${eventosDoMes.length} compromissos no período`} />
+          <div className="overflow-x-auto"><div className="min-w-[640px]">
+            <CalendarioGrid eventos={eventosFiltrados} referencia={referencia} />
+          </div></div>
+        </section>
 
-        <aside className="space-y-3">
-          <h2 className="text-sm font-semibold text-ink">Alertas do período</h2>
+        <aside className="space-y-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
+          <CabecalhoSecao icon={AlertTriangle} titulo="Alertas do período" descricao={`${alertasCriticos.length} prazos exigem atenção`} />
           {alertasCriticos.length === 0 ? (
             <p className="text-sm text-ink-muted">Nada crítico neste mês.</p>
           ) : (

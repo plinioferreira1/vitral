@@ -11,6 +11,7 @@ function formatarCentavos(centavos: number): string {
 }
 
 interface Props {
+  id?: string;
   name?: string;
   defaultValue?: number | null;
   placeholder?: string;
@@ -27,6 +28,7 @@ interface Props {
  * decimal (ex: "500000.00"), pronto pra Server Action ler.
  */
 export function CampoMoeda({
+  id,
   name,
   defaultValue,
   placeholder = "0,00",
@@ -56,6 +58,7 @@ export function CampoMoeda({
     <div className="flex items-center gap-1">
       <span className="text-sm text-ink-muted">R$</span>
       <input
+        id={id}
         type="text"
         inputMode="numeric"
         value={formatarCentavos(centavos)}

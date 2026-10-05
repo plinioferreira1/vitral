@@ -104,29 +104,30 @@ export function CalculadoraFinanciamento() {
       <CabecalhoSecao
         icon={Calculator}
         titulo="Custas de Financiamento"
-        descricao="Estimativa completa de custas pra passar pro cliente logo no início do processo — já com a opção de instrumento particular, que costuma pesar na decisão dele."
+        descricao="Informe os valores e compare as custas estimadas por tipo de documento."
       />
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
-        <div className="flex-1 space-y-4 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <div className="grid items-start gap-5 xl:grid-cols-2">
+        <div className="min-w-0 space-y-4 rounded-xl border border-border/60 bg-surface p-4 shadow-sm sm:p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
             Dados do imóvel e financiamento
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">Valor do imóvel</label>
-              <CampoMoeda onValorChange={setValor} />
+              <label htmlFor="custas-imovel" className="mb-1 block text-xs font-medium text-ink-muted">Valor do imóvel</label>
+              <CampoMoeda id="custas-imovel" onValorChange={setValor} />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">Valor financiado</label>
-              <CampoMoeda onValorChange={setValorFinanciado} />
+              <label htmlFor="custas-financiado" className="mb-1 block text-xs font-medium text-ink-muted">Valor financiado</label>
+              <CampoMoeda id="custas-financiado" onValorChange={setValorFinanciado} />
             </div>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">Tipo do imóvel</label>
+              <label htmlFor="custas-tipo" className="mb-1 block text-xs font-medium text-ink-muted">Tipo do imóvel</label>
               <select
+                id="custas-tipo"
                 value={tipoImovel}
                 onChange={(e) => setTipoImovel(e.target.value as "usado" | "novo")}
                 className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
@@ -136,10 +137,10 @@ export function CalculadoraFinanciamento() {
               </select>
             </div>
             <div>
-              <label className="mb-1 flex items-center gap-1 text-xs font-medium text-ink-muted">
+              <label htmlFor="custas-banco" className="mb-1 flex items-center gap-1 text-xs font-medium text-ink-muted">
                 Taxa bancária
               </label>
-              <CampoMoeda onValorChange={setTaxaBancaria} />
+              <CampoMoeda id="custas-banco" onValorChange={setTaxaBancaria} />
               <p className="mt-1 text-[11px] text-ink-muted">
                 Inclui vistoria, tarifas bancárias, relacionamento e análise jurídica. Valor
                 aproximado, pode variar.
@@ -172,10 +173,11 @@ export function CalculadoraFinanciamento() {
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">
+              <label htmlFor="custas-parcelas" className="mb-1 block text-xs font-medium text-ink-muted">
                 Parcelas do ITBI (padrão: 10)
               </label>
               <input
+                id="custas-parcelas"
                 value={parcelasItbi}
                 onChange={(e) => setParcelasItbi(e.target.value)}
                 inputMode="numeric"
@@ -183,10 +185,10 @@ export function CalculadoraFinanciamento() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">
+              <label htmlFor="custas-instrumento" className="mb-1 block text-xs font-medium text-ink-muted">
                 Valor do instrumento particular (despachante)
               </label>
-              <CampoMoeda defaultValue={2500} onValorChange={setValorInstrumentoParticular} />
+              <CampoMoeda id="custas-instrumento" defaultValue={2500} onValorChange={setValorInstrumentoParticular} />
             </div>
           </div>
 
@@ -196,10 +198,11 @@ export function CalculadoraFinanciamento() {
           </p>
         </div>
 
-        <div className="w-full shrink-0 space-y-4 lg:w-[26rem]">
+        <div className="min-w-0 space-y-4 xl:sticky xl:top-5">
           <div className="flex gap-1 rounded-lg bg-background p-1 text-sm">
             <button
               type="button"
+              aria-pressed={formato === "instrumento"}
               onClick={() => setFormato("instrumento")}
               className={`flex-1 rounded-md py-1.5 text-center text-xs font-medium transition ${
                 formato === "instrumento" ? "bg-surface text-brand shadow-sm" : "text-ink-muted"
@@ -209,6 +212,7 @@ export function CalculadoraFinanciamento() {
             </button>
             <button
               type="button"
+              aria-pressed={formato === "escritura"}
               onClick={() => setFormato("escritura")}
               className={`flex-1 rounded-md py-1.5 text-center text-xs font-medium transition ${
                 formato === "escritura" ? "bg-surface text-brand shadow-sm" : "text-ink-muted"
@@ -218,7 +222,7 @@ export function CalculadoraFinanciamento() {
             </button>
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+          <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm sm:p-5">
             <CabecalhoSecao
               icon={FileText}
               titulo="Resumo das custas estimadas"
@@ -226,10 +230,14 @@ export function CalculadoraFinanciamento() {
             />
 
             {!resultado ? (
-              <p className="text-sm text-ink-muted">Preencha os valores ao lado pra calcular.</p>
+              <div className="rounded-xl border border-dashed border-border bg-background p-6 text-center">
+                <Calculator size={28} className="mx-auto mb-3 text-brand" aria-hidden="true" />
+                <p className="text-sm font-semibold text-ink">Sua estimativa aparecerá aqui</p>
+                <p className="mt-1 text-xs text-ink-muted">Preencha o valor do imóvel e o valor financiado para calcular.</p>
+              </div>
             ) : (
               <>
-                <div className="flex flex-col gap-3 rounded-xl bg-rose-50 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex flex-col gap-3 rounded-xl bg-brand-soft p-4">
                   <div>
                     <p className="text-sm font-medium text-rose-700">Custo total estimado</p>
                     <p className="num text-3xl font-bold text-rose-700">{brl(resultado.custoTotal)}</p>
@@ -279,11 +287,10 @@ export function CalculadoraFinanciamento() {
                     <li key={linha.label} className="flex items-center gap-2 py-2.5">
                       <span className={`h-2 w-2 shrink-0 rounded-full ${linha.cor}`} />
                       <span className="flex min-w-0 flex-1 items-center gap-1 text-ink">
-                        <span className="truncate">{linha.label}</span>
-                        <Info size={12} strokeWidth={2} className="shrink-0 text-ink-muted/60" />
+                        <span>{linha.label}</span>
                       </span>
                       <span className="num shrink-0 whitespace-nowrap font-medium text-ink">{brl(linha.valor)}</span>
-                      <span className="num w-14 shrink-0 text-right text-xs text-ink-muted">
+                      <span className="num hidden w-14 shrink-0 text-right text-xs text-ink-muted sm:block">
                         {pct(linha.valor, resultado.custoTotal)}
                       </span>
                     </li>

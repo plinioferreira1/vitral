@@ -60,10 +60,6 @@ export function NovoProcessoForm({
   return (
     <form action={criarProcesso} className="space-y-5">
       <input type="hidden" name="categoria" value={modeloSelecionado?.categoria ?? "venda"} />
-      <label className="block text-xs font-medium text-ink-muted">
-        {ehFinanciamento ? "Proposta/contrato" : "Código SAN"}
-        <input key={ehFinanciamento ? "proposta" : "san"} name={ehFinanciamento ? "numero_proposta_contrato" : "codigo_san"} maxLength={120} placeholder="Informe o número, se já estiver disponível" className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-brand" />
-      </label>
       {!ehFinanciamento &&
         Array.from(etapasSelecionadas).map((id) => (
           <input key={id} type="hidden" name="etapas_selecionadas" value={id} />
@@ -73,10 +69,12 @@ export function NovoProcessoForm({
       <Datalist id="lista-imoveis" options={imoveis.map((i) => i.endereco)} />
       <Datalist id="lista-corretores" options={corretores.map((c) => c.nome)} />
 
+      <section className="space-y-4 rounded-xl border border-border/60 bg-surface p-4 shadow-sm sm:p-5">
+        <h2 className="text-sm font-semibold text-ink">Modelo e identificação</h2>
       <div>
-        <label className="mb-1 block text-xs font-medium text-ink-muted">Modelo</label>
+        <label htmlFor="novo-modelo" className="mb-1 block text-xs font-medium text-ink-muted">Modelo</label>
         <select
-          name="modelo_processo_id"
+          id="novo-modelo" name="modelo_processo_id"
           value={modeloId}
           onChange={(e) => {
             setModeloId(e.target.value);
@@ -96,7 +94,14 @@ export function NovoProcessoForm({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <label className="block text-xs font-medium text-ink-muted">
+        {ehFinanciamento ? "Proposta/contrato" : "Código SAN"}
+        <input key={ehFinanciamento ? "proposta" : "san"} name={ehFinanciamento ? "numero_proposta_contrato" : "codigo_san"} maxLength={120} placeholder="Informe o número, se já estiver disponível" className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-brand" />
+      </label>
+      </section>
+      <section className="space-y-4 rounded-xl border border-border/60 bg-surface p-4 shadow-sm sm:p-5">
+        <h2 className="text-sm font-semibold text-ink">Dados do processo</h2>
+      <div className="grid gap-4 sm:grid-cols-2">
         <CampoTexto
           label={ehFinanciamento ? "Cliente" : "Comprador"}
           name="comprador_nome"
@@ -118,8 +123,9 @@ export function NovoProcessoForm({
           placeholder="Endereço do imóvel"
         />
         <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">Banco</label>
+          <label htmlFor="novo-banco" className="mb-1 block text-xs font-medium text-ink-muted">Banco</label>
           <select
+            id="novo-banco"
             name="banco_nome"
             defaultValue=""
             className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
@@ -140,8 +146,9 @@ export function NovoProcessoForm({
           placeholder={ehFinanciamento ? "Quem indicou o cliente" : "Corretor responsável"}
         />
         <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">Responsável</label>
+          <label htmlFor="novo-responsavel" className="mb-1 block text-xs font-medium text-ink-muted">Responsável</label>
           <select
+            id="novo-responsavel"
             name="responsavel_nome"
             defaultValue=""
             className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
@@ -153,23 +160,24 @@ export function NovoProcessoForm({
           </select>
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">
+          <label htmlFor="novo-valor-total" className="mb-1 block text-xs font-medium text-ink-muted">
             {ehFinanciamento ? "Valor do imóvel (R$)" : "Valor (R$)"}
           </label>
-          <CampoMoeda name="valor_total" placeholder="420.000,00" />
+          <CampoMoeda id="novo-valor-total" name="valor_total" placeholder="420.000,00" />
         </div>
 
         {ehFinanciamento && (
           <>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">
+              <label htmlFor="novo-valor-financiado" className="mb-1 block text-xs font-medium text-ink-muted">
                 Valor financiado (R$)
               </label>
-              <CampoMoeda name="valor_financiado" placeholder="220.000,00" />
+              <CampoMoeda id="novo-valor-financiado" name="valor_financiado" placeholder="220.000,00" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">Origem</label>
+              <label htmlFor="novo-origem" className="mb-1 block text-xs font-medium text-ink-muted">Origem</label>
               <input
+                id="novo-origem"
                 name="origem"
                 placeholder="Indicação, SACRA, Elevare..."
                 className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
@@ -179,12 +187,15 @@ export function NovoProcessoForm({
         )}
       </div>
 
+      </section>
+      <section className="space-y-4 rounded-xl border border-border/60 bg-surface p-4 shadow-sm sm:p-5">
+        <h2 className="text-sm font-semibold text-ink">Prazos e etapas</h2>
       <div>
-        <label className="mb-1 block text-xs font-medium text-ink-muted">
+        <label htmlFor="novo-data-base" className="mb-1 block text-xs font-medium text-ink-muted">
           Data base (ex: data do contrato)
         </label>
         <input
-          name="data_base"
+          id="novo-data-base" name="data_base"
           type="date"
           required
           value={dataBase}
@@ -214,6 +225,7 @@ export function NovoProcessoForm({
                   <button
                     key={ep.id}
                     type="button"
+                    aria-pressed={marcada}
                     onClick={() => alternarEtapa(ep.id)}
                     className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs transition ${
                       marcada
@@ -251,9 +263,12 @@ export function NovoProcessoForm({
         )
       )}
 
-      <BotaoSubmit className="rounded-md bg-brand px-5 py-2 text-sm font-medium text-white hover:opacity-90">
+      </section>
+      <div className="flex justify-end border-t border-border pt-4">
+      <BotaoSubmit className="w-full rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white hover:opacity-90 sm:w-auto">
         Criar processo
       </BotaoSubmit>
+      </div>
     </form>
   );
 }
@@ -271,9 +286,9 @@ function CampoTexto({
 }) {
   return (
     <div>
-      <label className="mb-1 block text-xs font-medium text-ink-muted">{label}</label>
+      <label htmlFor={`novo-${name}`} className="mb-1 block text-xs font-medium text-ink-muted">{label}</label>
       <input
-        name={name}
+        id={`novo-${name}`} name={name}
         list={listId}
         placeholder={placeholder}
         autoComplete="off"

@@ -7,7 +7,7 @@ import { TIPO_CONTA_LABEL } from "@/lib/types";
 import { calcularUrgencia, URGENCIA_COR } from "@/lib/alertas";
 import { CartaoIndicador } from "@/components/cartao-indicador";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
-import { Clock, CheckCircle2, AlertTriangle, FileText, ListChecks } from "lucide-react";
+import { Clock, CheckCircle2, AlertTriangle, FileText, ListChecks, House, Plus } from "lucide-react";
 import { CalculadoraMultaRescisoria } from "@/components/calculadora-multa-rescisoria";
 import { hojeISO } from "@/lib/data-br";
 import { addMonths, format, parseISO, startOfWeek } from "date-fns";
@@ -152,20 +152,23 @@ export default async function LocacaoPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"><House size={22} aria-hidden="true" /></div>
+          <div>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Locação</h1>
           <p className="mt-1 text-sm text-ink-muted">
             {totalContratosAtivos} contratos ativos · {contasPendentes.length} contas
             pendentes
           </p>
+          </div>
         </div>
         {aba === "contratos" && (
           <Link
             href="/locacao/novo"
-            className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white hover:opacity-90"
           >
-            + Novo contrato
+            <Plus size={17} aria-hidden="true" /> Novo contrato
           </Link>
         )}
       </div>
@@ -227,9 +230,9 @@ export default async function LocacaoPage({
         <div className="space-y-6">
           {/* Visão geral do mês */}
           <div>
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-semibold capitalize text-ink">Visão geral · {mesLabel}</p>
-              <div className="flex gap-1.5">
+              <nav aria-label="Navegação entre meses" className="flex flex-wrap gap-1.5">
                 <Link
                   href={`/locacao?aba=resumo&mes=${mesAnterior}`}
                   className="rounded-md border border-border px-2.5 py-1 text-xs text-ink-muted hover:bg-surface"
@@ -242,31 +245,31 @@ export default async function LocacaoPage({
                 >
                   Próximo mês →
                 </Link>
-              </div>
+              </nav>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <CartaoIndicador
+            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <CartaoIndicador compacto
                 icon={Clock}
                 valor={pendentesNoMes.length}
                 label="Contas pendentes no mês"
                 tom="alerta"
                 href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=mes`}
               />
-              <CartaoIndicador
+              <CartaoIndicador compacto
                 icon={CheckCircle2}
                 valor={contasPagasNoMes.length}
                 label="Contas pagas no mês"
                 tom="sucesso"
                 href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=pagas`}
               />
-              <CartaoIndicador
+              <CartaoIndicador compacto
                 icon={AlertTriangle}
                 valor={atrasadasLista.length}
                 label="Atrasadas (todos os meses)"
                 tom="perigo"
                 href={`/locacao?aba=inadimplencias&mes=${format(mesReferencia, "yyyy-MM")}&filtro=atrasadas`}
               />
-              <CartaoIndicador
+              <CartaoIndicador compacto
                 icon={FileText}
                 valor={listaContratos.filter((c) => c.ativo).length}
                 label="Contratos ativos"
