@@ -4,12 +4,11 @@ import { getEventosCalendario } from "@/lib/queries";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { ResumoPrazos } from "@/components/resumo-prazos";
 import { CalendarioGrid } from "@/components/calendario-grid";
-import { TabelaProcessos, type ProcessoRow } from "@/components/tabela-processos";
-import { BuscaTabelaProcessos } from "@/components/busca-tabela-processos";
+import type { ProcessoRow } from "@/components/tabela-processos";
+import { ListaFinanciamentos, type AcompanhamentoFinanciamento } from "@/components/lista-financiamentos";
+import { etapasAtuais, type EtapaAcompanhamento } from "@/lib/acompanhamento-financiamentos";
 import { hojeISO } from "@/lib/data-br";
 import { calcularUrgencia } from "@/lib/alertas";
-import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
-import { apagarProcessosSelecionados } from "../processos/bulk-actions";
 import { CalculadoraFinanciamento } from "@/components/calculadora-financiamento-custas";
 import { KanbanProcessos, type CardKanban } from "@/components/kanban-processos";
 import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
@@ -69,13 +68,18 @@ export default async function FinanciamentosPage({
   const concluidos = rows.filter((p) => p.status === "concluido" || p.status === "cancelado");
 
   const idsEmAndamento = emAndamento.map((p) => p.id);
-  const { data: etapasRaw } =
+  const { data: etapasRaw, error: erroEtapas } =
     idsEmAndamento.length > 0
       ? await supabase
           .from("etapas")
-          .select("processo_id, status, data_prevista")
+          .select("processo_id, nome, status, ordem, especial, data_prevista, usuarios!etapas_responsavel_id_fkey ( nome )")
           .in("processo_id", idsEmAndamento)
-      : { data: [] as { processo_id: string; status: string; data_prevista: string | null }[] };
+      : { data: [] as EtapaAcompanhamento[], error: null };
+
+  const acompanhamento: Record<string, AcompanhamentoFinanciamento> = {};
+  for (const [id, etapa] of Object.entries(etapasAtuais((etapasRaw ?? []) as EtapaAcompanhamento[]))) {
+    acompanhamento[id] = { ...etapa, urgencia: calcularUrgencia({ status: etapa.status as "pendente" | "em_andamento" | "concluida" | "bloqueada", data_prevista: etapa.data_prevista }).urgencia };
+  }
 
   const atrasosPorProcesso = new Map<string, number>();
   (etapasRaw ?? []).forEach((e) => {
@@ -238,47 +242,19 @@ export default async function FinanciamentosPage({
           </section>
         </div>
       ) : aba === "andamento" ? (
-        <form action={apagarProcessosSelecionados} className="space-y-6">
-          {(emAndamento.length > 0 || concluidos.length > 0) && (
-            <div className="flex justify-end">
-              <BotaoComConfirmacao
-                mensagem="Apagar os processos selecionados? Essa ação não pode ser desfeita."
-                className="rounded-md border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
-              >
-                Apagar selecionados
-              </BotaoComConfirmacao>
-            </div>
-          )}
-          <div className="space-y-3">
-            {emAndamento.length === 0 && concluidos.length === 0 ? (
-              <p className="rounded-xl border border-border/60 bg-surface p-8 text-center text-sm text-ink-muted shadow-sm">
-                Nenhum processo nessa categoria ainda.{" "}
-                <Link href="/processos/novo" className="text-brand hover:underline">
-                  Criar o primeiro
-                </Link>
-                .
-              </p>
-            ) : (
-              <BuscaTabelaProcessos
-                rows={emAndamento}
-                ehFinanciamento={true}
-                atrasosPorProcesso={atrasosPorProcesso}
-              />
-            )}
-          </div>
-
+        <div className="space-y-6">
+          <CabecalhoSecao icon={Landmark} titulo="Processos em andamento" descricao="Etapa atual, responsável e prazo de cada financiamento." />
+          {erroEtapas && <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Não foi possível carregar as etapas e os prazos. Atualize a página para tentar novamente.</p>}
+          <ListaFinanciamentos rows={emAndamento} acompanhamento={acompanhamento} atrasos={Object.fromEntries(atrasosPorProcesso)} />
           {concluidos.length > 0 && (
-            <details className="overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
-              <summary className="cursor-pointer select-none px-5 py-3 text-sm font-medium text-ink-muted hover:text-ink">
-                {concluidos.length} processo{concluidos.length > 1 ? "s" : ""} concluído
-                {concluidos.length > 1 ? "s" : ""} ou cancelado{concluidos.length > 1 ? "s" : ""}
-              </summary>
-              <div className="border-t border-border">
-                <TabelaProcessos rows={concluidos} ehFinanciamento={true} />
+            <details className="rounded-xl border border-border/60 bg-surface shadow-sm">
+              <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-ink-muted hover:text-ink">Concluídos e cancelados ({concluidos.length})</summary>
+              <div className="border-t border-border p-3 sm:p-5">
+                <ListaFinanciamentos rows={concluidos} acompanhamento={{}} atrasos={{}} finalizados />
               </div>
             </details>
           )}
-        </form>
+        </div>
       ) : aba === "processos" ? (
         <ExibicaoChecklists checklists={checklists} />
       ) : (
