@@ -10,17 +10,17 @@ const inputClasse =
 const recursos = [
   {
     titulo: "Processos imobiliários",
-    texto: "Vendas, financiamentos e locações em uma rotina visual.",
+    texto: "Vendas, financiamentos e locações em uma única visão.",
     Icone: Building2,
   },
   {
     titulo: "Agenda e prazos",
-    texto: "Compromissos, vencimentos e entregas com mais previsibilidade.",
+    texto: "Compromissos e vencimentos acompanhados de perto.",
     Icone: CalendarCheck2,
   },
   {
     titulo: "Documentos e financeiro",
-    texto: "Contratos, assinaturas, contas e relatórios no mesmo painel.",
+    texto: "Contratos, assinaturas, contas e relatórios integrados.",
     Icone: FileSignature,
   },
 ];
@@ -62,8 +62,10 @@ export default async function LoginPage({
     <main className="min-h-screen bg-[#f6f1ea] text-ink">
       <div className="mx-auto grid min-h-screen w-full max-w-[1440px] lg:grid-cols-[1.06fr_0.94fr]">
         <section className="relative overflow-hidden bg-[#4a0b10] px-6 py-8 text-white sm:px-10 lg:px-14">
-          <div className="absolute inset-0 opacity-30 [background-image:linear-gradient(120deg,rgba(255,255,255,.12)_1px,transparent_1px),linear-gradient(0deg,rgba(185,130,44,.16)_1px,transparent_1px)] [background-size:72px_72px]" />
-          <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-black/25 to-transparent" />
+          <div className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.09)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.09)_1px,transparent_1px)] [background-size:72px_72px]" />
+          <div className="absolute -right-36 top-[16%] h-[30rem] w-[30rem] rounded-full border border-[#d7aa64]/10" />
+          <div className="absolute -right-20 top-[22%] h-[22rem] w-[22rem] rounded-full border border-[#d7aa64]/10" />
+          <div className="absolute inset-x-0 bottom-0 h-52 bg-gradient-to-t from-black/30 to-transparent" />
 
           <div className="relative flex min-h-full flex-col">
             <div className="flex items-center justify-between gap-4">
@@ -80,27 +82,28 @@ export default async function LoginPage({
               </span>
             </div>
 
-            <div className="my-auto max-w-2xl py-14 lg:py-20">
+            <div className="my-auto max-w-2xl py-14 lg:py-16">
               <p className="mb-4 inline-flex items-center gap-2 rounded-full border border-[#d7aa64]/35 bg-[#d7aa64]/15 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-[#f3d59b]">
                 <Sparkles size={14} strokeWidth={2.2} />
-                Gestão interna Sacra
+                Gestão de processos inteligentes
               </p>
-              <h1 className="max-w-xl text-4xl font-bold leading-[1.02] tracking-[-0.01em] text-white sm:text-5xl">
-                O painel de controle da Sacra.
+              <h1 className="max-w-xl text-4xl font-bold leading-[1.02] tracking-[-0.025em] text-white sm:text-5xl">
+                Uma visão completa da operação imobiliária.
               </h1>
-              <p className="mt-5 max-w-xl text-base leading-7 text-white/75">
-                Um acesso único para acompanhar processos, documentos, financeiro e prazos com a
-                organização que a operação imobiliária precisa.
+              <p className="mt-6 max-w-xl text-base leading-7 text-white/75">
+                O VITRAL nasceu para transformar a gestão imobiliária. Ao integrar toda a operação
+                em uma única plataforma, oferece mais controle, organização e uma visão 360° do
+                negócio — permitindo decisões mais rápidas, seguras e estratégicas.
               </p>
 
-              <div className="mt-10 grid gap-3 sm:grid-cols-3">
+              <div className="mt-9 grid gap-x-7 gap-y-5 border-t border-white/10 pt-7 sm:grid-cols-3">
                 {recursos.map(({ titulo, texto, Icone }) => (
-                  <div key={titulo} className="rounded-xl border border-white/12 bg-white/[0.07] p-4 shadow-sm backdrop-blur">
-                    <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-[#d7aa64]/20 text-[#f3d59b]">
+                  <div key={titulo} className="group">
+                    <span className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg border border-[#d7aa64]/20 bg-[#d7aa64]/15 text-[#f3d59b] transition group-hover:bg-[#d7aa64]/25">
                       <Icone size={18} strokeWidth={2.1} />
                     </span>
                     <p className="text-sm font-semibold text-white">{titulo}</p>
-                    <p className="mt-2 text-xs leading-5 text-white/65">{texto}</p>
+                    <p className="mt-1.5 text-xs leading-5 text-white/60">{texto}</p>
                   </div>
                 ))}
               </div>
