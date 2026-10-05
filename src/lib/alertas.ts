@@ -63,7 +63,7 @@ export const URGENCIA_COR: Record<Urgencia, string> = {
   vence_em_breve: "bg-amber-50 text-amber-700 border-amber-100",
   no_prazo: "bg-emerald-50 text-emerald-700 border-emerald-100",
   sem_data: "bg-stone-50 text-stone-500 border-stone-200",
-  aviso_prazo_contrato: "bg-rose-50 text-rose-700 border-rose-200",
+  aviso_prazo_contrato: "bg-stone-50 text-stone-600 border-stone-200",
 };
 
 export function formatarPrazo(dias: number | null): string {

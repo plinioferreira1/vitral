@@ -12,6 +12,7 @@ import { alternarTarefaMensal } from "@/app/(app)/locacao/actions";
 import { format } from "date-fns";
 import { CATEGORIA_LABEL, type CategoriaProcesso } from "@/lib/types";
 import { calcularUrgencia, type Urgencia } from "@/lib/alertas";
+import { corPrazoFinal } from "@/lib/cor-prazo-final";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import {
   DashboardIndicadores,
@@ -41,13 +42,13 @@ import type { ReactNode } from "react";
 const COR_PRAZO_FUNDO: Record<CardPrazo["cor"], string> = {
   vermelho: "border-rose-200 bg-rose-50",
   amarelo: "border-amber-200 bg-amber-50",
-  verde: "border-emerald-200 bg-emerald-50",
+  neutro: "border-border bg-background",
 };
 
 const COR_PRAZO_TEXTO: Record<CardPrazo["cor"], string> = {
   vermelho: "text-rose-700",
   amarelo: "text-amber-700",
-  verde: "text-emerald-700",
+  neutro: "text-ink-muted",
 };
 
 function saudacao(): string {
@@ -432,8 +433,7 @@ export default async function DashboardPage() {
           .map((p) => {
             const dataFinal = new Date(`${p.data_final_contrato}T00:00:00`);
             const diasRestantes = Math.round((dataFinal.getTime() - hoje.getTime()) / 86_400_000);
-            const cor: CardPrazo["cor"] =
-              diasRestantes <= 15 ? "vermelho" : diasRestantes <= 60 ? "amarelo" : "verde";
+            const cor = corPrazoFinal(diasRestantes);
             const subtitulo =
               diasRestantes < 0
                 ? `Venceu há ${Math.abs(diasRestantes)} dia${Math.abs(diasRestantes) === 1 ? "" : "s"}`
@@ -807,6 +807,11 @@ export default async function DashboardPage() {
                         <p className="mt-1 text-sm text-ink-muted">
                           Contratos de venda mais próximos do vencimento.
                         </p>
+                        <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-ink-muted" aria-label="Legenda dos prazos">
+                          <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-rose-500" />Vencido</span>
+                          <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-amber-500" />Hoje ou até 7 dias</span>
+                          <span className="inline-flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-stone-400" />Mais de 7 dias</span>
+                        </div>
                       </div>
                       <span className="rounded-full bg-background px-2.5 py-1 text-xs font-semibold text-ink-muted">
                         {quadroPrazos.cards.length}
@@ -830,7 +835,7 @@ export default async function DashboardPage() {
                                   ? "bg-rose-500"
                                   : card.cor === "amarelo"
                                     ? "bg-amber-500"
-                                    : "bg-emerald-500"
+                                    : "bg-stone-400"
                               }`}
                             />
                             <span className="min-w-0 flex-1">

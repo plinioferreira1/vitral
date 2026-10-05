@@ -21,19 +21,19 @@ export interface CardPrazo {
   id: string;
   titulo: string;
   subtitulo: string;
-  cor: "vermelho" | "amarelo" | "verde";
+  cor: "vermelho" | "amarelo" | "neutro";
 }
 
 const COR_PRAZO: Record<CardPrazo["cor"], string> = {
   vermelho: "border-rose-200 bg-rose-50",
   amarelo: "border-amber-200 bg-amber-50",
-  verde: "border-emerald-200 bg-emerald-50",
+  neutro: "border-border bg-background",
 };
 
 const COR_PRAZO_TEXTO: Record<CardPrazo["cor"], string> = {
   vermelho: "text-rose-700",
   amarelo: "text-amber-700",
-  verde: "text-emerald-700",
+  neutro: "text-ink-muted",
 };
 
 // Paleta de cores das colunas do Kanban — cada coluna (etapa) recebe
