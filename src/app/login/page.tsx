@@ -75,7 +75,7 @@ export default async function LoginPage({
                 width={646}
                 height={193}
                 priority
-                className="h-10 w-auto object-contain sm:h-12"
+                className="h-10 w-auto object-contain brightness-0 invert sm:h-12"
               />
               <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/85">
                 Vitral
