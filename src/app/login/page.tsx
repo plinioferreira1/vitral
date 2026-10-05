@@ -93,7 +93,7 @@ export default async function LoginPage({
               <p className="mt-6 max-w-xl text-base leading-7 text-white/75">
                 O VITRAL nasceu para transformar a gestão imobiliária. Ao integrar toda a operação
                 em uma única plataforma, oferece mais controle, organização e uma visão 360° do
-                negócio — permitindo decisões mais rápidas, seguras e estratégicas.
+                negócio. Isso permite decisões mais rápidas, seguras e estratégicas.
               </p>
 
               <div className="mt-9 grid gap-x-7 gap-y-5 border-t border-white/10 pt-7 sm:grid-cols-3">
