@@ -14,6 +14,10 @@ import { CalculadoraFinanciamento } from "@/components/calculadora-financiamento
 import { KanbanProcessos, type CardKanban } from "@/components/kanban-processos";
 import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
 import { ExibicaoChecklists, type ChecklistExibicao } from "@/components/exibicao-checklists";
+import { CabecalhoSecao } from "@/components/cabecalho-secao";
+import { ArrowUpRight, CalendarDays, Columns3, Landmark, Plus } from "lucide-react";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 type Aba = "resumo" | "andamento" | "processos" | "custas";
 type Vista = "calendario" | "kanban";
@@ -102,7 +106,7 @@ export default async function FinanciamentosPage({
       cardsKanban = emAndamento.map((p) => ({
         id: p.id,
         titulo: p.imoveis?.endereco ?? p.numero_processo,
-        subtitulo: `${p.comprador?.nome ?? "—"} / ${p.vendedor?.nome ?? "—"}`,
+        subtitulo: `${p.comprador?.nome ?? "Comprador não informado"} / ${p.vendedor?.nome ?? "Vendedor não informado"}`,
         etapaAtual: etapaAtualMap.get(p.id) ?? null,
         atrasos: atrasosPorProcesso.get(p.id) ?? 0,
       }));
@@ -152,60 +156,86 @@ export default async function FinanciamentosPage({
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="space-y-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
+            <Landmark size={22} aria-hidden="true" />
+          </div>
+          <div>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Financiamentos</h1>
-          <p className="mt-1 text-sm text-ink-muted">{rows.length} processos nessa categoria</p>
+          <p className="mt-1 text-sm text-ink-muted">{emAndamento.length} em andamento · {rows.length} no total</p>
+          </div>
         </div>
         <Link
           href="/processos/novo"
-          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
         >
-          + Novo processo
+          <Plus size={17} aria-hidden="true" /> Novo processo
         </Link>
       </div>
 
       {aba === "resumo" ? (
         <div className="space-y-6">
-          <ResumoPrazos eventos={eventos} hrefEmAberto="/calendario?categoria=financiamento" />
+          <ResumoPrazos
+            eventos={eventos}
+            hrefEmAberto="/calendario?categoria=financiamento"
+            hrefFiltro={(urgencia) => `/calendario?categoria=financiamento&urgencia=${urgencia}`}
+            compacto
+          />
 
-          <div className="flex items-center justify-between">
-            <div className="flex gap-1 rounded-lg bg-background p-1 text-sm w-fit">
+          <section className="rounded-2xl border border-border/60 bg-surface p-3 shadow-sm sm:p-5">
+            <CabecalhoSecao
+              icon={vista === "calendario" ? CalendarDays : Columns3}
+              titulo={vista === "calendario" ? "Agenda de prazos" : "Processos por etapa"}
+              descricao={vista === "calendario" ? format(referencia, "MMMM yyyy", { locale: ptBR }) : "Acompanhe a etapa atual de cada financiamento."}
+            />
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <nav aria-label="Visualização dos financiamentos" className="flex w-fit gap-1 rounded-lg bg-background p-1 text-sm">
               <Link
                 href="/financiamentos?aba=resumo&vista=calendario"
-                className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
+                aria-current={vista === "calendario" ? "page" : undefined}
+                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-center font-medium transition ${
                   vista === "calendario" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
                 }`}
               >
-                Calendário
+                <CalendarDays size={15} aria-hidden="true" /> Calendário
               </Link>
               <Link
                 href="/financiamentos?aba=resumo&vista=kanban"
-                className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
+                aria-current={vista === "kanban" ? "page" : undefined}
+                className={`inline-flex items-center gap-2 rounded-md px-3 py-2 text-center font-medium transition ${
                   vista === "kanban" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
                 }`}
               >
-                Quadro
+                <Columns3 size={15} aria-hidden="true" /> Quadro
               </Link>
-            </div>
+            </nav>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <Link href="/financiamentos?aba=andamento" className="text-xs font-semibold text-brand hover:underline">
+                Ver processos ({emAndamento.length})
+              </Link>
             {vista === "calendario" && (
               <Link
                 href="/calendario?categoria=financiamento"
-                className="text-xs font-medium text-brand hover:underline"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-ink-muted hover:text-brand"
               >
-                Abrir calendário completo →
+                Calendário completo <ArrowUpRight size={14} aria-hidden="true" />
               </Link>
             )}
+            </div>
           </div>
 
           {vista === "calendario" ? (
-            <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+            <div className="overflow-x-auto">
+              <div className="min-w-[640px]">
               <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={2} />
+              </div>
             </div>
           ) : (
             <KanbanProcessos colunas={colunas} cards={cardsKanban} />
           )}
+          </section>
         </div>
       ) : aba === "andamento" ? (
         <form action={apagarProcessosSelecionados} className="space-y-6">

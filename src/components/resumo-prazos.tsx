@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Icones } from "@/components/icone-badge";
+import { CartaoIndicador } from "@/components/cartao-indicador";
+import { AlertTriangle, CalendarDays, Clock } from "lucide-react";
 
 export function StatCardLink({
   href,
@@ -79,11 +81,13 @@ export function ResumoPrazos({
   hrefEmAberto,
   hrefFiltro,
   filtroAtivo,
+  compacto = false,
 }: {
   eventos: EventoResumo[];
   hrefEmAberto: string;
   hrefFiltro?: (filtro: "atrasada" | "vence_hoje" | "vence_em_breve") => string;
   filtroAtivo?: string;
+  compacto?: boolean;
 }) {
   // Avisos de contagem regressiva do prazo do contrato são só
   // decorativos no calendário — não contam como pendência real.
@@ -93,6 +97,17 @@ export function ResumoPrazos({
   const venceEmBreve = pendentes.filter((e) => e.urgencia === "vence_em_breve");
 
   const hrefPara = hrefFiltro ?? (() => hrefEmAberto);
+
+  if (compacto) {
+    return (
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <CartaoIndicador compacto icon={Clock} valor={pendentes.length} label="Prazos em aberto" href={hrefEmAberto} />
+        <CartaoIndicador compacto icon={AlertTriangle} valor={atrasados.length} label="Prazos atrasados" href={hrefPara("atrasada")} tom={atrasados.length > 0 ? "perigo" : "neutro"} />
+        <CartaoIndicador compacto icon={CalendarDays} valor={venceHoje.length} label="Vencem hoje" href={hrefPara("vence_hoje")} tom="alerta" />
+        <CartaoIndicador compacto icon={CalendarDays} valor={venceEmBreve.length} label="Próximos 7 dias" href={hrefPara("vence_em_breve")} />
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">

@@ -21,25 +21,27 @@ export function CartaoIndicador({
   label,
   href,
   tom = "neutro",
+  compacto = false,
 }: {
   icon: LucideIcon;
   valor: string | number;
   label: string;
   href?: string;
   tom?: keyof typeof TONS;
+  compacto?: boolean;
 }) {
   const cores = TONS[tom];
 
   const conteudo = (
     <div className={`flex items-center gap-3 rounded-xl border border-border/60 p-4 shadow-sm transition ${cores.bg} ${href ? "hover:opacity-80" : ""}`}>
-      <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${cores.iconBg} ${cores.iconText}`}>
+      <div className={`flex shrink-0 items-center justify-center rounded-full ${compacto ? "h-7 w-7 sm:h-10 sm:w-10" : "h-10 w-10"} ${cores.iconBg} ${cores.iconText}`}>
         <Icon size={19} strokeWidth={2} />
       </div>
       <div className="min-w-0 flex-1">
         <p className={`num text-2xl font-bold leading-tight ${cores.valor}`}>{valor}</p>
-        <p className="truncate text-xs text-ink-muted">{label}</p>
+        <p className={`${compacto ? "min-h-8 sm:min-h-0" : "truncate"} text-xs text-ink-muted`}>{label}</p>
       </div>
-      {href && <ChevronRight size={16} className="shrink-0 text-ink-muted" />}
+      {href && <ChevronRight size={16} className={`${compacto ? "hidden sm:block" : ""} shrink-0 text-ink-muted`} />}
     </div>
   );
 
