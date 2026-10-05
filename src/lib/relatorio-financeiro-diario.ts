@@ -140,8 +140,11 @@ export async function enviarRelatorioFinanceiroDiario(tenantId: string) {
     const lista = (pendentes ?? []) as unknown as LancamentoEmail[];
     const vencidos = lista.filter((l) => l.vencimento < hoje);
     const vencemHoje = lista.filter((l) => l.vencimento === hoje);
+    const pagarHoje = vencemHoje.filter((l) => l.tipo === "despesa");
+    const receberHoje = vencemHoje.filter((l) => l.tipo === "receita");
     const totalVencidos = vencidos.reduce((s, l) => s + Number(l.valor), 0);
-    const totalVencemHoje = vencemHoje.reduce((s, l) => s + Number(l.valor), 0);
+    const totalPagarHoje = pagarHoje.reduce((s, l) => s + Number(l.valor), 0);
+    const totalReceberHoje = receberHoje.reduce((s, l) => s + Number(l.valor), 0);
 
     const html = `
       <div style="margin:0;padding:0;background:#f4f0ea;font-family:Arial,Helvetica,sans-serif;color:#1c1917;">
@@ -170,13 +173,15 @@ export async function enviarRelatorioFinanceiroDiario(tenantId: string) {
                       <div style="font-size:13px;color:#78716c;">Pontos de atenção</div>
                       <div style="margin-top:10px;font-size:14px;line-height:22px;color:#1c1917;">
                         <strong style="color:#b91c1c;">${vencidos.length}</strong> vencidos somando <strong>${brl(totalVencidos)}</strong><br/>
-                        <strong style="color:#b45309;">${vencemHoje.length}</strong> vencendo hoje somando <strong>${brl(totalVencemHoje)}</strong><br/>
+                        <strong style="color:#b45309;">${pagarHoje.length}</strong> a pagar hoje somando <strong>${brl(totalPagarHoje)}</strong><br/>
+                        <strong style="color:#047857;">${receberHoje.length}</strong> a receber hoje somando <strong>${brl(totalReceberHoje)}</strong><br/>
                         <strong style="color:#731515;">${(semCategoria ?? []).length}</strong> recebimentos/baixas ainda sem categoria
                       </div>
                     </div>
 
+                    ${tabelaLancamentos("A pagar hoje", pagarHoje, "#b45309", "Nenhum pagamento previsto para hoje.")}
+                    ${tabelaLancamentos("A receber hoje", receberHoje, "#047857", "Nenhum recebimento previsto para hoje.")}
                     ${tabelaLancamentos("Vencidos", vencidos, "#b91c1c", "Nenhum lançamento vencido.")}
-                    ${tabelaLancamentos("Vencem hoje", vencemHoje, "#b45309", "Nenhum lançamento vencendo hoje.")}
 
                     <div style="margin-top:18px;padding:16px;border-radius:16px;background:#f8f6f3;color:#78716c;font-size:12px;line-height:18px;">
                       Este e-mail é enviado automaticamente pelo Vitral. Para ajustar destinatários ou enviar um teste,
@@ -207,6 +212,8 @@ export async function enviarRelatorioFinanceiroDiario(tenantId: string) {
         pagoHoje,
         vencidos: vencidos.length,
         vencemHoje: vencemHoje.length,
+        pagarHoje: pagarHoje.length,
+        receberHoje: receberHoje.length,
         semCategoria: (semCategoria ?? []).length,
       },
     });

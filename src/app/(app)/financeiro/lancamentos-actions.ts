@@ -293,6 +293,118 @@ export async function registrarBaixa(formData: FormData) {
 }
 
 /**
+ * Abre a conferência de baixa em lote com os lançamentos marcados.
+ * Nenhum dado financeiro é alterado nesta etapa.
+ */
+export async function prepararBaixaEmLote(formData: FormData) {
+  if (!(await exigirUsuario(GESTORES))) return;
+  const ids = [...new Set(formData.getAll("ids").map(String).filter(Boolean))].slice(0, 100);
+  if (ids.length === 0) {
+    await avisar("erro", "Selecione pelo menos um lançamento.");
+    return;
+  }
+
+  const retorno = retornoSeguro(formData, "/financeiro/contas-a-pagar#lista");
+  const params = new URLSearchParams({ ids: ids.join(","), retorno });
+  redirect(`/financeiro/lancamentos/baixar-lote?${params.toString()}`);
+}
+
+/**
+ * Registra, em uma única operação de interface, o saldo integral em aberto
+ * de cada lançamento selecionado. Lançamentos quitados ou cancelados são
+ * ignorados para preservar o histórico já existente.
+ */
+export async function registrarBaixaEmLote(formData: FormData) {
+  const supabase = await createClient();
+  const sessao = await exigirUsuario(GESTORES);
+  if (!sessao) return;
+  const { userId, tenantId } = sessao;
+
+  const ids = [...new Set(formData.getAll("ids").map(String).filter(Boolean))].slice(0, 100);
+  const data = String(formData.get("data") ?? "").trim();
+  const contaInformada = String(formData.get("conta_bancaria_id") ?? "").trim() || null;
+  const formaInformada = String(formData.get("forma_pagamento") ?? "").trim() || null;
+  const observacoes = String(formData.get("observacoes") ?? "").trim() || null;
+  const retorno = retornoSeguro(formData, "/financeiro/contas-a-pagar#lista");
+  if (ids.length === 0 || !data) {
+    await avisar("erro", "Selecione lançamentos e informe a data da baixa.");
+    return;
+  }
+
+  const [{ data: lancamentos, error: erroLancamentos }, { data: baixas, error: erroBaixas }] = await Promise.all([
+    supabase
+      .from("financeiro_lancamentos")
+      .select("id, valor, status, conta_bancaria_id, forma_pagamento")
+      .eq("tenant_id", tenantId)
+      .in("id", ids)
+      .in("status", ["pendente", "pago_parcial"]),
+    supabase.from("financeiro_baixas").select("lancamento_id, valor").eq("tenant_id", tenantId).in("lancamento_id", ids),
+  ]);
+
+  if (erroLancamentos || erroBaixas) {
+    console.error("Falha ao preparar baixa em lote:", erroLancamentos ?? erroBaixas);
+    await avisar("erro", "Não foi possível conferir os lançamentos selecionados.");
+    return;
+  }
+
+  const baixadoPorLancamento = new Map<string, number>();
+  for (const baixa of baixas ?? []) {
+    baixadoPorLancamento.set(
+      baixa.lancamento_id,
+      (baixadoPorLancamento.get(baixa.lancamento_id) ?? 0) + Number(baixa.valor)
+    );
+  }
+
+  const novasBaixas: TablesInsert<"financeiro_baixas">[] = (lancamentos ?? [])
+    .map((lancamento) => ({
+      lancamento,
+      saldo: Math.max(0, Number(lancamento.valor) - (baixadoPorLancamento.get(lancamento.id) ?? 0)),
+    }))
+    .filter(({ saldo }) => saldo > 0.005)
+    .map(({ lancamento, saldo }) => ({
+      tenant_id: tenantId,
+      lancamento_id: lancamento.id,
+      valor: Number(saldo.toFixed(2)),
+      data,
+      conta_bancaria_id: contaInformada ?? lancamento.conta_bancaria_id,
+      forma_pagamento: formaInformada ?? lancamento.forma_pagamento,
+      observacoes,
+      criado_por: userId,
+    }));
+
+  if (novasBaixas.length === 0) {
+    await avisar("erro", "Nenhum dos lançamentos selecionados possui saldo em aberto.");
+    redirect(retorno);
+  }
+
+  const { error: erroInsercao } = await supabase.from("financeiro_baixas").insert(novasBaixas);
+  if (erroInsercao) {
+    console.error("Falha ao registrar baixas em lote:", erroInsercao);
+    await avisar("erro", "Não foi possível registrar as baixas. Nenhum lançamento foi alterado.");
+    return;
+  }
+
+  const idsBaixados = novasBaixas.map((baixa) => baixa.lancamento_id);
+  const { error: erroStatus } = await supabase
+    .from("financeiro_lancamentos")
+    .update({ status: "pago" })
+    .eq("tenant_id", tenantId)
+    .in("id", idsBaixados);
+
+  if (erroStatus) {
+    console.error("Baixas salvas, mas houve falha ao atualizar os status:", erroStatus);
+    await avisar("erro", "As baixas foram salvas, mas alguns status precisam ser recalculados.");
+  }
+
+  revalidatePath("/financeiro/contas-a-pagar");
+  revalidatePath("/financeiro/contas-a-receber");
+  revalidatePath("/financeiro/contas-bancarias");
+  revalidatePath("/financeiro");
+  revalidatePath("/financeiro/agenda");
+  redirect(retorno);
+}
+
+/**
  * Edita os dados cadastrais de um lançamento (descrição, vencimento,
  * valor, categoria etc). Bloqueado para lançamentos já pagos ou
  * cancelados — aí a correção deve ser feita por estorno, não por

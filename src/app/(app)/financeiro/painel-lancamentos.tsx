@@ -18,7 +18,7 @@ import {
   Plus,
 } from "lucide-react";
 import { CartaoKpi } from "@/components/cartao-kpi";
-import { apagarLancamentos } from "./lancamentos-actions";
+import { apagarLancamentos, prepararBaixaEmLote } from "./lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
 import { somarDias } from "@/lib/recorrencia";
 import { SelecionarTodos } from "@/components/selecionar-todos";
@@ -26,6 +26,8 @@ import { SelectAutoSubmit } from "@/components/select-auto-submit";
 import { PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
 import { MenuAcoesLancamento } from "@/components/financeiro/menu-acoes-lancamento";
+import { BotaoEnviar } from "@/components/botao-enviar";
+import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 
 const campoClasse =
   "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
@@ -517,17 +519,35 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
 
       {lancamentos.length > 0 && (
         <form
-          id="form-apagar-lote"
-          action={apagarLancamentos}
-          className="flex items-center justify-between rounded-xl border border-border/60 bg-surface px-4 py-2.5 text-xs text-ink-muted shadow-sm"
+          id="form-acoes-lote"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-surface px-4 py-3 text-xs text-ink-muted shadow-sm"
         >
-          <span>Marque um ou mais lançamentos pendentes na tabela abaixo pra apagar de uma vez.</span>
-          <button
-            type="submit"
-            className="rounded-md border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50"
-          >
-            Apagar selecionados
-          </button>
+          <input type="hidden" name="return_to" value={construirUrl(rota, f)} />
+          <div>
+            <p className="font-semibold text-ink">Ações em lote</p>
+            <p className="mt-0.5">Marque lançamentos em aberto para baixar ou apagar vários de uma vez.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <BotaoEnviar
+              formAction={prepararBaixaEmLote}
+              name="acao_lote"
+              value="baixar"
+              textoEnviando="Abrindo conferência..."
+              className="rounded-md bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+            >
+              Dar baixa nos selecionados
+            </BotaoEnviar>
+            <BotaoComConfirmacao
+              formAction={apagarLancamentos}
+              name="acao_lote"
+              value="apagar"
+              textoEnviando="Apagando..."
+              mensagem="Apagar definitivamente os lançamentos pendentes selecionados? Esta ação não pode ser desfeita."
+              className="rounded-md border border-rose-200 px-3 py-1.5 text-xs font-medium text-rose-700 hover:bg-rose-50"
+            >
+              Apagar selecionados
+            </BotaoComConfirmacao>
+          </div>
         </form>
       )}
 
@@ -543,7 +563,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
               <thead>
                 <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
                   <th className="w-10 px-2 py-2.5">
-                    <SelecionarTodos formId="form-apagar-lote" className="accent-brand" />
+                    <SelecionarTodos formId="form-acoes-lote" className="accent-brand" />
                   </th>
                   <th className="min-w-[330px] px-4 py-2.5 font-medium">
                     <Link href={linkOrdenar("descricao")} className="inline-flex items-center gap-1 hover:text-ink">
@@ -589,8 +609,8 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                   return (
                     <tr key={l.id}>
                       <td className="px-2 py-2.5">
-                        {l.status === "pendente" && (
-                          <input type="checkbox" name="ids" value={l.id} form="form-apagar-lote" className="accent-brand" />
+                        {(l.status === "pendente" || l.status === "pago_parcial") && (
+                          <input type="checkbox" name="ids" value={l.id} form="form-acoes-lote" className="accent-brand" />
                         )}
                       </td>
 
