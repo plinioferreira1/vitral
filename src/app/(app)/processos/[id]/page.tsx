@@ -19,7 +19,6 @@ import {
   salvarComissao,
   adicionarComentario,
   salvarNumeroRegistro,
-  salvarCodigoSanProcesso,
   salvarDadosProcesso,
 } from "./actions";
 import { EditorLinhaTempo } from "@/components/editor-linha-tempo";
@@ -161,6 +160,21 @@ export default async function ProcessoDetalhePage({
                 {p.categoria === "financiamento" ? "Financiamento" : "Venda"}
               </span>
               <span className="font-mono text-xs text-ink-muted">{p.numero_processo}</span>
+              <span
+                className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                  p.status === "concluido"
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : p.status === "cancelado"
+                      ? "border-rose-200 bg-rose-50 text-rose-700"
+                      : "border-blue-200 bg-blue-50 text-blue-700"
+                }`}
+              >
+                {p.status === "concluido"
+                  ? "Concluído"
+                  : p.status === "cancelado"
+                    ? "Cancelado"
+                    : "Em andamento"}
+              </span>
             </div>
             <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-ink md:text-[32px]">
               {p.imoveis?.endereco ?? p.comprador?.nome ?? "Processo sem identificação"}
@@ -179,13 +193,13 @@ export default async function ProcessoDetalhePage({
             >
               <input type="hidden" name="processo_id" value={p.id} />
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <CampoTexto label="Comprador" name="comprador_nome" defaultValue={p.comprador?.nome} />
                 <CampoTexto label="Telefone" name="comprador_telefone" defaultValue={p.comprador?.telefone} />
               </div>
 
               {!ehFinanciamento && (
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid gap-3 sm:grid-cols-2">
                   <CampoTexto label="Vendedor" name="vendedor_nome" defaultValue={p.vendedor?.nome} />
                   <CampoTexto label="Telefone" name="vendedor_telefone" defaultValue={p.vendedor?.telefone} />
                 </div>
@@ -193,7 +207,7 @@ export default async function ProcessoDetalhePage({
 
               <CampoTexto label="Imóvel" name="imovel_endereco" defaultValue={p.imoveis?.endereco} />
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <CampoTexto label="Banco" name="banco_nome" defaultValue={p.bancos?.nome} listaId="lista-bancos" />
                 <CampoTexto
                   label="Corretor"
@@ -203,7 +217,7 @@ export default async function ProcessoDetalhePage({
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <CampoTexto
                   label="Responsável"
                   name="responsavel_nome"
@@ -215,7 +229,7 @@ export default async function ProcessoDetalhePage({
 
               {ehFinanciamento && (
                 <>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid gap-3 sm:grid-cols-2">
                     <div>
                       <label className="mb-1 block text-xs font-medium text-ink-muted">
                         Valor financiado
@@ -240,7 +254,7 @@ export default async function ProcessoDetalhePage({
                 <CampoMoeda name="valor_total" defaultValue={p.valor_total} />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-ink-muted">
                     Data de assinatura
@@ -317,76 +331,56 @@ export default async function ProcessoDetalhePage({
           />
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 rounded-xl border border-border/70 p-4 sm:grid-cols-3 lg:grid-cols-4">
-          <Info label="Comprador" value={p.comprador?.nome} />
-          {!ehFinanciamento && <Info label="Vendedor" value={p.vendedor?.nome} />}
-          <Info label="Imóvel" value={p.imoveis?.endereco} />
-          <Info label="Banco" value={p.bancos?.nome} />
-          <Info label="Corretor" value={p.corretores?.nome} />
-          <Info label="Responsável" value={p.usuarios?.nome} />
-          <div>
-            <p className="text-xs text-ink-muted">Código SAN</p>
-            <div className="mt-0.5 flex items-center gap-1.5">
-              <p className="text-sm font-medium text-ink">{p.codigo_san || "—"}</p>
-              <details key={`san-${p.id}-${p.codigo_san}`} className="relative">
-                <summary className="cursor-pointer list-none text-xs font-medium text-brand hover:underline">
-                  editar
-                </summary>
-                <form
-                  action={salvarCodigoSanProcesso}
-                  className="absolute left-0 z-10 mt-1 flex w-56 gap-1.5 rounded-md border border-border bg-surface p-2 shadow-md"
-                >
-                  <input type="hidden" name="processo_id" value={p.id} />
-                  <input
-                    name="codigo_san"
-                    defaultValue={p.codigo_san ?? ""}
-                    placeholder="Código SAN"
-                    className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                  />
-                  <BotaoEnviar
-                    className="shrink-0 rounded-md bg-brand px-2 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                  >
-                    Salvar
-                  </BotaoEnviar>
-                </form>
-              </details>
-            </div>
+        <details className="group mt-5 rounded-xl border border-border/70 bg-surface">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-semibold text-ink hover:bg-background/60">
+            <span>Dados do processo</span>
+            <span className="text-xs font-medium text-brand group-open:hidden">Ver detalhes</span>
+            <span className="hidden text-xs font-medium text-brand group-open:inline">Ocultar detalhes</span>
+          </summary>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-border/70 p-4 sm:grid-cols-3 lg:grid-cols-4">
+            <Info label="Comprador" value={p.comprador?.nome} />
+            {!ehFinanciamento && <Info label="Vendedor" value={p.vendedor?.nome} />}
+            <Info label="Imóvel" value={p.imoveis?.endereco} />
+            <Info label="Banco" value={p.bancos?.nome} />
+            <Info label="Corretor" value={p.corretores?.nome} />
+            <Info label="Responsável" value={p.usuarios?.nome} />
+            <Info label="Código SAN" value={p.codigo_san} />
+            {ehFinanciamento && (
+              <>
+                <Info
+                  label="Valor financiado"
+                  value={
+                    p.valor_financiado
+                      ? `R$ ${Number(p.valor_financiado).toLocaleString("pt-BR")}`
+                      : undefined
+                  }
+                />
+                <Info label="Origem" value={p.origem} />
+                <Info label="Indicação" value={p.indicacao?.nome} />
+              </>
+            )}
+            <Info
+              label={ehFinanciamento ? "Valor do imóvel" : "Valor"}
+              value={p.valor_total ? `R$ ${Number(p.valor_total).toLocaleString("pt-BR")}` : undefined}
+            />
+            <Info
+              label="Data de assinatura"
+              value={p.data_assinatura ? format(parseISO(p.data_assinatura), "dd/MM/yyyy", { locale: ptBR }) : undefined}
+            />
+            <Info
+              label="Prazo final do contrato"
+              value={
+                p.data_final_contrato
+                  ? format(parseISO(p.data_final_contrato), "dd/MM/yyyy", { locale: ptBR })
+                  : undefined
+              }
+            />
+            <Info
+              label="Criado em"
+              value={format(parseISO(p.data_criacao), "dd/MM/yyyy", { locale: ptBR })}
+            />
           </div>
-          {ehFinanciamento && (
-            <>
-              <Info
-                label="Valor financiado"
-                value={
-                  p.valor_financiado
-                    ? `R$ ${Number(p.valor_financiado).toLocaleString("pt-BR")}`
-                    : undefined
-                }
-              />
-              <Info label="Origem" value={p.origem} />
-              <Info label="Indicação" value={p.indicacao?.nome} />
-            </>
-          )}
-          <Info
-            label={ehFinanciamento ? "Valor do imóvel" : "Valor"}
-            value={p.valor_total ? `R$ ${Number(p.valor_total).toLocaleString("pt-BR")}` : undefined}
-          />
-          <Info
-            label="Data de assinatura"
-            value={p.data_assinatura ? format(parseISO(p.data_assinatura), "dd/MM/yyyy", { locale: ptBR }) : undefined}
-          />
-          <Info
-            label="Prazo final do contrato"
-            value={
-              p.data_final_contrato
-                ? format(parseISO(p.data_final_contrato), "dd/MM/yyyy", { locale: ptBR })
-                : undefined
-            }
-          />
-          <Info
-            label="Criado em"
-            value={format(parseISO(p.data_criacao), "dd/MM/yyyy", { locale: ptBR })}
-          />
-        </div>
+        </details>
         </div>
       </div>
 
@@ -411,14 +405,14 @@ export default async function ProcessoDetalhePage({
 
       {/* Timeline */}
       <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm md:p-7">
-        <div className="mb-5 flex items-center justify-between md:mb-8">
+        <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:mb-7">
           <div>
             <h2 className="text-lg font-semibold text-ink">Linha do tempo</h2>
             <p className="mt-0.5 text-xs text-ink-muted">
               {etapaAtual ? `Etapa atual: ${etapaAtual.nome}` : "Todas as etapas foram concluídas"}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <details className="relative">
               <summary className="cursor-pointer list-none rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background">
                 Editar linha do tempo
@@ -436,7 +430,7 @@ export default async function ProcessoDetalhePage({
             </details>
             <BotaoExportarLinhaTempo
               titulo={p.modelos_processo?.nome ?? "Processo"}
-              subtitulo={`${p.imoveis?.endereco ?? "—"} — ${p.comprador?.nome ?? "Sem comprador"}`}
+              subtitulo={`${p.imoveis?.endereco ?? "Imóvel não informado"}: ${p.comprador?.nome ?? "Sem comprador"}`}
               etapas={etapasSequenciais.map((e) => ({ nome: e.nome, status: e.status }))}
             />
           </div>
@@ -445,7 +439,7 @@ export default async function ProcessoDetalhePage({
           <div
             className="grid"
             style={{
-              gridTemplateColumns: `repeat(${etapasSequenciais.length}, minmax(88px, 1fr))`,
+              gridTemplateColumns: `repeat(${etapasSequenciais.length}, minmax(150px, 1fr))`,
             }}
           >
             {etapasSequenciais.map((e, i) => {
@@ -463,7 +457,7 @@ export default async function ProcessoDetalhePage({
                     className={`break-words text-center text-[11px] font-medium leading-tight md:text-[12px] ${
                       concluida || atual ? "text-ink" : "text-ink-muted"
                     }`}
-                    title={e.data_prevista ? `${e.nome} — ${e.data_prevista}` : e.nome}
+                    title={e.data_prevista ? `${e.nome}: ${e.data_prevista}` : e.nome}
                   >
                     {e.nome}
                   </p>
@@ -530,16 +524,17 @@ export default async function ProcessoDetalhePage({
           const nome = (etapa as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
 
           return (
-            <div
+            <details
               id={`etapa-${etapa.id}`}
               key={etapa.id}
-              className={`scroll-mt-24 rounded-xl border bg-surface p-5 shadow-sm transition ${
+              open={indice === indiceEtapaAtual}
+              className={`group scroll-mt-24 rounded-xl border bg-surface shadow-sm transition ${
                 indice === indiceEtapaAtual
                   ? "border-brand/40 ring-2 ring-brand/10"
                   : "border-border/60"
               }`}
             >
-              <div className="flex items-start justify-between gap-3">
+              <summary className="flex cursor-pointer list-none items-start justify-between gap-3 p-4 sm:p-5">
                 <div className="flex min-w-0 gap-3">
                   <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
                     etapa.status === "concluida"
@@ -553,7 +548,7 @@ export default async function ProcessoDetalhePage({
                   <div className="min-w-0">
                   <p className="text-sm font-semibold text-ink">{etapa.nome}</p>
                   <p className="mt-0.5 text-xs text-ink-muted">
-                    Responsável: {nome ?? "—"}
+                    Responsável: {nome ?? "Não informado"}
                     {etapa.data_prevista && (
                       <>
                         {" · "}
@@ -580,7 +575,9 @@ export default async function ProcessoDetalhePage({
                     ? "Concluída"
                     : formatarPrazo(etapa.dias_para_vencer) || "Sem data"}
                 </span>
-              </div>
+              </summary>
+
+              <div className="border-t border-border/70 px-4 pb-4 pt-3 sm:px-5 sm:pb-5">
 
               {itensChecklist.length > 0 && (
                 <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
@@ -686,34 +683,48 @@ export default async function ProcessoDetalhePage({
                   </BotaoEnviar>
                 </form>
               </div>
-            </div>
+              </div>
+            </details>
           );
         })}
       </section>
 
       {/* Comissão */}
-      <section>
-        <h2 className="mb-3 text-sm font-semibold text-ink">Comissão</h2>
-        {(comissoes ?? []).length === 0 ? (
-          <ComissaoForm processoId={p.id} comissao={null} corretores={corretoresLista ?? []} />
-        ) : (
-          <div className="space-y-3">
-            {(comissoes ?? []).map((c) => (
-              <ComissaoForm
-                key={c.id}
-                processoId={p.id}
-                comissao={c}
-                corretores={corretoresLista ?? []}
-              />
-            ))}
+      <details className="group rounded-xl border border-border/70 bg-surface shadow-sm">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5">
+          <div>
+            <h2 className="text-sm font-semibold text-ink">Comissão</h2>
+            <p className="mt-1 text-xs text-ink-muted">
+              {(comissoes ?? []).length > 0
+                ? `${(comissoes ?? []).length} registro${(comissoes ?? []).length === 1 ? "" : "s"}`
+                : "Nenhuma comissão cadastrada"}
+            </p>
           </div>
-        )}
-      </section>
+          <span className="text-xs font-semibold text-brand group-open:hidden">Abrir</span>
+          <span className="hidden text-xs font-semibold text-brand group-open:inline">Fechar</span>
+        </summary>
+        <div className="border-t border-border/70 p-4 sm:p-5">
+          {(comissoes ?? []).length === 0 ? (
+            <ComissaoForm processoId={p.id} comissao={null} corretores={corretoresLista ?? []} />
+          ) : (
+            <div className="space-y-3">
+              {(comissoes ?? []).map((c) => (
+                <ComissaoForm
+                  key={c.id}
+                  processoId={p.id}
+                  comissao={c}
+                  corretores={corretoresLista ?? []}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      </details>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        <div className="rounded-xl border border-border/70 bg-surface p-4 shadow-sm sm:p-5">
           <CabecalhoSecao icon={MessageSquare} titulo="Comentários" descricao="Registre observações sobre o processo." />
-          <form action={adicionarComentario} className="mb-4 flex gap-2">
+          <form action={adicionarComentario} className="mb-4 flex flex-col gap-2 sm:flex-row">
             <input type="hidden" name="processo_id" value={p.id} />
             <input
               name="texto"
@@ -736,7 +747,7 @@ export default async function ProcessoDetalhePage({
                   <li key={c.id} className="rounded-lg border border-border bg-background p-3 text-sm">
                     <p className="text-ink">{c.texto}</p>
                     <p className="mt-1 text-xs text-ink-muted">
-                      {nomeUsuario ?? "—"} · {format(parseISO(c.criado_em), "dd/MM HH:mm")}
+                      {nomeUsuario ?? "Sistema"} · {format(parseISO(c.criado_em), "dd/MM HH:mm")}
                     </p>
                   </li>
                 );
@@ -745,7 +756,7 @@ export default async function ProcessoDetalhePage({
           </ul>
         </div>
 
-        <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <div className="rounded-xl border border-border/70 bg-surface p-4 shadow-sm sm:p-5">
           <CabecalhoSecao icon={History} titulo="Histórico" descricao="Acompanhe todas as movimentações do processo." />
           <ul className="max-h-72 space-y-2 overflow-y-auto text-xs">
             {(historico ?? []).length === 0 ? (
@@ -769,7 +780,7 @@ export default async function ProcessoDetalhePage({
         </div>
       </div>
 
-      {/* Personalização de etapas — fica oculta por padrão pra não
+      {/* Personalização de etapas. Fica oculta por padrão para não
           confundir com o acompanhamento normal do processo. */}
       <details className="group rounded-xl border border-border/60 bg-surface shadow-sm">
         <summary className="cursor-pointer list-none p-4 text-sm font-semibold text-ink">
@@ -948,7 +959,7 @@ function Info({ label, value }: { label: string; value?: string | null }) {
   return (
     <div>
       <p className="text-xs text-ink-muted">{label}</p>
-      <p className="mt-0.5 text-sm font-medium text-ink">{value || "—"}</p>
+      <p className="mt-0.5 text-sm font-medium text-ink">{value || "Não informado"}</p>
     </div>
   );
 }
@@ -1010,7 +1021,7 @@ function ComissaoForm({
           defaultValue={comissao?.beneficiario_id ?? ""}
           className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
         >
-          <option value="">—</option>
+          <option value="">Selecione</option>
           {corretores.map((c) => (
             <option key={c.id} value={c.id}>
               {c.nome}
