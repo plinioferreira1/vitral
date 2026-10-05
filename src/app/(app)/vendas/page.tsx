@@ -17,6 +17,9 @@ import { ptBR } from "date-fns/locale";
 import {
   AlertTriangle,
   CalendarClock,
+  CalendarDays,
+  Columns3,
+  Plus,
   CheckCircle2,
   CircleDollarSign,
   Clock3,
@@ -150,25 +153,20 @@ export default async function VendasPage({
 
   return (
     <div className="space-y-6">
-      <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
-        <div className="h-1.5 bg-gradient-to-r from-brand via-brand/80 to-gold" />
-        <div className="flex flex-wrap items-center justify-between gap-4 p-5 md:p-7">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-brand">Comercial</p>
-            <h1 className="mt-1 text-3xl font-bold leading-tight tracking-tight text-ink">{aba === "andamento" ? "Vendas" : "Visão Geral de Vendas"}</h1>
-            <p className="mt-1 text-sm text-ink-muted">
-              Acompanhe negociações, etapas críticas e prazos em um só lugar.
-            </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand">
+            <CircleDollarSign size={22} aria-hidden="true" />
           </div>
-          <Link
-            href="/processos/novo"
-            className="rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
-          >
-            + Novo processo
-          </Link>
+          <div>
+            <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Vendas</h1>
+            <p className="mt-1 text-sm text-ink-muted">{emAndamento.length} em andamento · {rows.length} no total</p>
+          </div>
         </div>
+        <Link href="/processos/novo" className="inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">
+          <Plus size={17} aria-hidden="true" /> Novo processo
+        </Link>
       </div>
-
       {aba === "resumo" ? (
         <div className="space-y-6">
           <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
@@ -248,10 +246,10 @@ export default async function VendasPage({
                       <span className="min-w-0 flex-1">
                         <span className="block truncate text-sm font-medium text-ink">{prioridade.nome}</span>
                         <span className="block truncate text-xs text-ink-muted">
-                          {prioridade.processo?.imoveis?.endereco ?? prioridade.processo?.numero_processo ?? "Processo"}
+                          {prioridade.processo?.imoveis?.endereco ?? identificacaoProcesso(prioridade.processo ?? {}, "venda")}
                         </span>
                       </span>
-                      <span className="hidden text-right sm:block">
+                      <span className="shrink-0 text-right">
                         <span className={`block text-xs font-semibold ${
                           atrasada ? "text-rose-600" : venceHoje ? "text-amber-700" : "text-sky-700"
                         }`}>{prazo}</span>
@@ -266,10 +264,12 @@ export default async function VendasPage({
             )}
           </section>
 
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex gap-1 rounded-lg bg-background p-1 text-sm w-fit">
+          <section className="rounded-2xl border border-border/60 bg-surface p-3 shadow-sm sm:p-5">
+            <CabecalhoSecao icon={vista === "calendario" ? CalendarDays : Columns3} titulo={vista === "calendario" ? "Agenda de prazos" : "Processos por etapa"} descricao={vista === "calendario" ? format(referencia, "MMMM yyyy", { locale: ptBR }) : "Acompanhe a etapa atual de cada venda."} />
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <nav aria-label="Visualização das vendas" className="flex w-fit gap-1 rounded-lg bg-background p-1 text-sm">
               <Link
-                href="/vendas?aba=resumo&vista=calendario"
+                href="/vendas?aba=resumo&vista=calendario" aria-current={vista === "calendario" ? "page" : undefined}
                 className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
                   vista === "calendario" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
                 }`}
@@ -277,14 +277,14 @@ export default async function VendasPage({
                 Calendário
               </Link>
               <Link
-                href="/vendas?aba=resumo&vista=kanban"
+                href="/vendas?aba=resumo&vista=kanban" aria-current={vista === "kanban" ? "page" : undefined}
                 className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
                   vista === "kanban" ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
                 }`}
               >
                 Quadro
               </Link>
-            </div>
+            </nav>
             {vista === "calendario" && (
               <Link href="/calendario?categoria=venda" className="text-xs font-medium text-brand hover:underline">
                 Abrir calendário completo →
@@ -293,12 +293,13 @@ export default async function VendasPage({
           </div>
 
           {vista === "calendario" ? (
-            <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
-              <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={2} />
+            <div className="overflow-x-auto"><div className="min-w-[640px]">
+              <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={2} /></div>
             </div>
           ) : (
             <KanbanProcessos colunas={colunas} cards={cardsKanban} />
           )}
+          </section>
         </div>
       ) : (
         <div className="space-y-6">
@@ -346,7 +347,7 @@ function IndicadorVendas({
   return (
     <Link
       href={href}
-      className={`group rounded-2xl border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${estilo}`}
+      className={`group min-w-0 rounded-xl border p-4 shadow-sm transition hover:opacity-90 ${estilo}`}
     >
       <div className="flex items-start justify-between gap-3">
         <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${
@@ -354,11 +355,11 @@ function IndicadorVendas({
         }`}>
           <Icone size={18} />
         </span>
-        <span className={`text-[11px] font-semibold uppercase tracking-wide ${
+        <span className={`hidden text-[11px] font-semibold uppercase tracking-wide sm:inline ${
           tom === "destaque" ? "text-white/65" : "text-current opacity-65"
         }`}>Ver detalhes</span>
       </div>
-      <p className="mt-4 text-2xl font-bold tracking-tight">{value}</p>
+      <p className="mt-2 break-words text-xl font-bold tracking-tight sm:text-2xl">{value}</p>
       <p className={`mt-0.5 text-sm font-medium ${tom === "destaque" ? "text-white/90" : "text-ink"}`}>{label}</p>
       <p className={`mt-1 text-xs ${tom === "destaque" ? "text-white/60" : "text-ink-muted"}`}>{detail}</p>
     </Link>
