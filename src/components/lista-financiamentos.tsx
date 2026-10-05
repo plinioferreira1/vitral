@@ -98,7 +98,7 @@ export function ListaFinanciamentos({ rows, acompanhamento, atrasos, finalizados
                   </div>
                   {!finalizados && <dl className="mt-4 grid gap-3 sm:grid-cols-3">
                     <div><dt className="text-[11px] text-ink-muted">Etapa atual</dt><dd className="mt-1 text-sm font-medium text-ink">{atual?.nome ?? "Sem etapa em aberto"}</dd></div>
-                    <div><dt className="text-[11px] text-ink-muted">Responsável da etapa</dt><dd className="mt-1 text-sm text-ink">{atual?.usuarios?.nome ?? "Não definido"}</dd></div>
+                    <div><dt className="text-[11px] text-ink-muted">{categoria === "financiamento" ? "Banco" : "Responsável da etapa"}</dt><dd className="mt-1 text-sm text-ink">{categoria === "financiamento" ? p.bancos?.nome ?? "Não informado" : atual?.usuarios?.nome ?? "Não definido"}</dd></div>
                     <div><dt className="text-[11px] text-ink-muted">Prazo da etapa</dt><dd className="mt-1 flex flex-wrap items-center gap-2 text-sm text-ink">{data(atual?.data_prevista ?? null)}{atual && <span className={`rounded-full border px-2 py-0.5 text-[11px] ${URGENCIA_COR[atual.urgencia]}`}>{URGENCIA_LABEL[atual.urgencia]}</span>}</dd></div>
                   </dl>}
                   <div className="mt-4 flex flex-wrap items-start justify-between gap-3">

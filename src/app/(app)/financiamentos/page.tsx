@@ -244,7 +244,7 @@ export default async function FinanciamentosPage({
         </div>
       ) : aba === "andamento" ? (
         <div className="space-y-6">
-          <CabecalhoSecao icon={Landmark} titulo="Processos em andamento" descricao="Etapa atual, responsável e prazo de cada financiamento." />
+          <CabecalhoSecao icon={Landmark} titulo="Processos em andamento" descricao="Etapa atual, banco e prazo de cada financiamento." />
           {erroEtapas && <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Não foi possível carregar as etapas e os prazos. Atualize a página para tentar novamente.</p>}
           <ListaFinanciamentos rows={emAndamento} acompanhamento={acompanhamento} atrasos={Object.fromEntries(atrasosPorProcesso)} />
           {concluidos.length > 0 && (
