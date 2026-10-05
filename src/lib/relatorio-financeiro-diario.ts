@@ -80,9 +80,6 @@ function tabelaLancamentos(titulo: string, itens: LancamentoEmail[], cor: string
 export async function enviarRelatorioFinanceiroDiario(tenantId: string) {
   const supabase = createAdminClient();
   const hoje = hojeISO();
-  const em7dias = new Date();
-  em7dias.setDate(em7dias.getDate() + 7);
-  const em7diasStr = em7dias.toISOString().slice(0, 10);
 
   const { data: destinatarios } = await supabase
     .from("financeiro_email_destinatarios")
@@ -109,7 +106,7 @@ export async function enviarRelatorioFinanceiroDiario(tenantId: string) {
           .select("id, tipo, descricao, valor, vencimento, financeiro_pessoas ( nome )")
           .eq("tenant_id", tenantId)
           .in("status", ["pendente", "pago_parcial"])
-          .lte("vencimento", em7diasStr)
+          .lte("vencimento", hoje)
           .order("vencimento"),
         supabase
           .from("financeiro_baixas")
@@ -142,9 +139,9 @@ export async function enviarRelatorioFinanceiroDiario(tenantId: string) {
 
     const lista = (pendentes ?? []) as unknown as LancamentoEmail[];
     const vencidos = lista.filter((l) => l.vencimento < hoje);
-    const proximos = lista.filter((l) => l.vencimento >= hoje);
+    const vencemHoje = lista.filter((l) => l.vencimento === hoje);
     const totalVencidos = vencidos.reduce((s, l) => s + Number(l.valor), 0);
-    const totalProximos = proximos.reduce((s, l) => s + Number(l.valor), 0);
+    const totalVencemHoje = vencemHoje.reduce((s, l) => s + Number(l.valor), 0);
 
     const html = `
       <div style="margin:0;padding:0;background:#f4f0ea;font-family:Arial,Helvetica,sans-serif;color:#1c1917;">
@@ -173,13 +170,13 @@ export async function enviarRelatorioFinanceiroDiario(tenantId: string) {
                       <div style="font-size:13px;color:#78716c;">Pontos de atenção</div>
                       <div style="margin-top:10px;font-size:14px;line-height:22px;color:#1c1917;">
                         <strong style="color:#b91c1c;">${vencidos.length}</strong> vencidos somando <strong>${brl(totalVencidos)}</strong><br/>
-                        <strong style="color:#b45309;">${proximos.length}</strong> vencendo em até 7 dias somando <strong>${brl(totalProximos)}</strong><br/>
+                        <strong style="color:#b45309;">${vencemHoje.length}</strong> vencendo hoje somando <strong>${brl(totalVencemHoje)}</strong><br/>
                         <strong style="color:#731515;">${(semCategoria ?? []).length}</strong> recebimentos/baixas ainda sem categoria
                       </div>
                     </div>
 
                     ${tabelaLancamentos("Vencidos", vencidos, "#b91c1c", "Nenhum lançamento vencido.")}
-                    ${tabelaLancamentos("Próximos 7 dias", proximos, "#b45309", "Nada vencendo nos próximos 7 dias.")}
+                    ${tabelaLancamentos("Vencem hoje", vencemHoje, "#b45309", "Nenhum lançamento vencendo hoje.")}
 
                     <div style="margin-top:18px;padding:16px;border-radius:16px;background:#f8f6f3;color:#78716c;font-size:12px;line-height:18px;">
                       Este e-mail é enviado automaticamente pelo Vitral. Para ajustar destinatários ou enviar um teste,
@@ -196,7 +193,7 @@ export async function enviarRelatorioFinanceiroDiario(tenantId: string) {
 
     await enviarEmail({
       destinatarios: listaDestinatarios,
-      assunto: `Resumo financeiro — ${dataBR(hoje)}`,
+      assunto: `Resumo financeiro: ${dataBR(hoje)}`,
       html,
     });
 
@@ -209,7 +206,7 @@ export async function enviarRelatorioFinanceiroDiario(tenantId: string) {
         recebidoHoje,
         pagoHoje,
         vencidos: vencidos.length,
-        proximos: proximos.length,
+        vencemHoje: vencemHoje.length,
         semCategoria: (semCategoria ?? []).length,
       },
     });
