@@ -1,8 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { alternarTarefaMensal } from "./actions";
-import { apagarContratosSelecionados } from "./bulk-actions";
-import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
+import { ListaContratosLocacao } from "@/components/lista-contratos-locacao";
 import { TIPO_CONTA_LABEL } from "@/lib/types";
 import { calcularUrgencia, URGENCIA_COR } from "@/lib/alertas";
 import { CartaoIndicador } from "@/components/cartao-indicador";
@@ -174,58 +173,14 @@ export default async function LocacaoPage({
       </div>
 
       {aba === "contratos" ? (
-        <form action={apagarContratosSelecionados} className="space-y-6">
-          {listaContratos.length > 0 && (
-            <div className="flex justify-end">
-              <BotaoComConfirmacao
-                mensagem="Apagar os contratos selecionados? Essa ação não pode ser desfeita."
-                className="rounded-md border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
-              >
-                Apagar selecionados
-              </BotaoComConfirmacao>
-            </div>
-          )}
-          <div className="overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
-            {listaContratos.length === 0 ? (
-              <p className="p-8 text-center text-sm text-ink-muted">
-                Nenhum contrato ainda.{" "}
-                <Link href="/locacao/novo" className="text-brand hover:underline">
-                  Criar o primeiro
-                </Link>
-                .
-              </p>
-            ) : listaContratos.filter((c) => c.ativo).length === 0 ? (
-              <p className="p-8 text-center text-sm text-ink-muted">
-                Nenhum contrato ativo no momento (veja os encerrados abaixo).
-              </p>
-            ) : (
-              <TabelaContratos
-                contratos={listaContratos.filter((c) => c.ativo)}
-                pendentesPorContrato={vencidasPorContrato}
-              />
-            )}
-          </div>
-
-          {listaContratos.some((c) => !c.ativo) && (
-            <details className="group overflow-hidden rounded-xl border border-border/60 bg-surface shadow-sm">
-              <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-sm font-semibold text-ink">
-                Contratos encerrados
-                <span className="text-xs font-normal text-ink-muted group-open:hidden">
-                  mostrar ({listaContratos.filter((c) => !c.ativo).length})
-                </span>
-                <span className="hidden text-xs font-normal text-ink-muted group-open:inline">
-                  ocultar
-                </span>
-              </summary>
-              <div className="border-t border-border">
-                <TabelaContratos
-                  contratos={listaContratos.filter((c) => !c.ativo)}
-                  pendentesPorContrato={vencidasPorContrato}
-                />
-              </div>
-            </details>
-          )}
-        </form>
+        <div className="space-y-6">
+          <CabecalhoSecao icon={House} titulo="Contratos ativos" descricao="Imóvel, partes do contrato e contas vencidas em um só lugar." />
+          <ListaContratosLocacao contratos={listaContratos.filter(c => c.ativo)} vencidas={Object.fromEntries(vencidasPorContrato)} />
+          {listaContratos.some(c => !c.ativo) && <details className="rounded-xl border border-border/60 bg-surface shadow-sm">
+            <summary className="cursor-pointer px-5 py-4 text-sm font-semibold text-ink-muted hover:text-ink">Contratos encerrados ({listaContratos.filter(c => !c.ativo).length})</summary>
+            <div className="border-t border-border p-3 sm:p-5"><ListaContratosLocacao contratos={listaContratos.filter(c => !c.ativo)} vencidas={Object.fromEntries(vencidasPorContrato)} encerrados /></div>
+          </details>}
+        </div>
       ) : aba === "resumo" ? (
         <div className="space-y-6">
           {/* Visão geral do mês */}
@@ -387,55 +342,5 @@ export default async function LocacaoPage({
         <CalculadoraMultaRescisoria />
       ) : null}
     </div>
-  );
-}
-
-function TabelaContratos({
-  contratos,
-  pendentesPorContrato,
-}: {
-  contratos: {
-    id: string;
-    numero: string;
-    ativo: boolean;
-    imoveis: { endereco: string } | null;
-    locador: { nome: string } | null;
-    locatario: { nome: string } | null;
-  }[];
-  pendentesPorContrato: Map<string, number>;
-}) {
-  return (
-    <ul className="divide-y divide-border">
-      {contratos.map((c) => {
-        const pendentes = pendentesPorContrato.get(c.id) ?? 0;
-        return (
-          <li key={c.id} className="flex items-center gap-3 px-5 py-3.5">
-            <input type="checkbox" name="ids" value={c.id} className="accent-brand" />
-            <Link
-              href={`/locacao/${c.id}`}
-              className="flex flex-1 items-center justify-between gap-4 transition hover:opacity-80"
-            >
-              <div className="min-w-0">
-                <p className="truncate font-medium text-ink">{c.imoveis?.endereco ?? c.numero}</p>
-                <p className="mt-0.5 truncate text-xs text-ink-muted">
-                  {c.locador?.nome ?? "sem locador"}
-                  <span className="mx-1">→</span>
-                  {c.locatario?.nome ?? "sem locatário"}
-                </p>
-              </div>
-              {pendentes > 0 ? (
-                <span className="shrink-0 rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700">
-                  {pendentes} vencida{pendentes > 1 ? "s" : ""}
-                </span>
-              ) : (
-                <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
-                  em dia
-                </span>
-              )}
-            </Link>
-          </li>
-        );
-      })}
-    </ul>
   );
 }
