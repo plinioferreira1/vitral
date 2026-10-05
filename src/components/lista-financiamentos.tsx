@@ -7,7 +7,8 @@ import type { ProcessoRow } from "@/components/tabela-processos";
 import { STATUS_COR, STATUS_LABEL } from "@/components/tabela-processos";
 import type { EtapaAcompanhamento } from "@/lib/acompanhamento-financiamentos";
 import { URGENCIA_COR, URGENCIA_LABEL, type Urgencia } from "@/lib/alertas";
-import { salvarCodigoSanProcesso } from "@/app/(app)/processos/[id]/actions";
+import { salvarCodigoSanProcesso, salvarNumeroPropostaContratoProcesso } from "@/app/(app)/processos/[id]/actions";
+import { identificacaoProcesso } from "@/lib/identificacao-processo";
 import { apagarProcessosSelecionados } from "@/app/(app)/processos/bulk-actions";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
@@ -18,11 +19,12 @@ function data(iso: string | null) {
   return iso ? new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR") : "Não definido";
 }
 
-export function ListaFinanciamentos({ rows, acompanhamento, atrasos, finalizados = false }: {
+export function ListaFinanciamentos({ rows, acompanhamento, atrasos, finalizados = false, categoria = "financiamento" }: {
   rows: ProcessoRow[];
   acompanhamento: Record<string, AcompanhamentoFinanciamento>;
   atrasos: Record<string, number>;
   finalizados?: boolean;
+  categoria?: "venda" | "financiamento";
 }) {
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState("todos");
@@ -32,7 +34,7 @@ export function ListaFinanciamentos({ rows, acompanhamento, atrasos, finalizados
   const responsaveis = [...new Set(rows.flatMap(p => acompanhamento[p.id]?.usuarios?.nome ?? []))].sort((a, b) => a.localeCompare(b, "pt-BR"));
   const filtradas = rows.filter(p => {
     const atual = acompanhamento[p.id];
-    const campos = [p.numero_processo, p.codigo_san, p.imoveis?.endereco, p.comprador?.nome, p.vendedor?.nome, p.bancos?.nome, atual?.nome, atual?.usuarios?.nome];
+    const campos = [p.numero_processo, p.codigo_san, p.numero_proposta_contrato, p.imoveis?.endereco, p.comprador?.nome, p.vendedor?.nome, p.bancos?.nome, atual?.nome, atual?.usuarios?.nome];
     return (!termo || campos.some(c => c?.toLocaleLowerCase("pt-BR").includes(termo)))
       && (filtro !== "atrasados" || (atrasos[p.id] ?? 0) > 0)
       && (filtro !== "hoje" || atual?.urgencia === "vence_hoje")
@@ -48,7 +50,7 @@ export function ListaFinanciamentos({ rows, acompanhamento, atrasos, finalizados
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search size={17} aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
-          <input aria-label="Buscar financiamentos" value={busca} onChange={e => { setBusca(e.target.value); setSelecionados([]); }} placeholder="Buscar imóvel, cliente, código, banco ou etapa" className="w-full rounded-lg border border-border bg-surface py-3 pl-10 pr-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/15" />
+          <input aria-label={categoria === "venda" ? "Buscar vendas" : "Buscar financiamentos"} value={busca} onChange={e => { setBusca(e.target.value); setSelecionados([]); }} placeholder={categoria === "venda" ? "Buscar imóvel, comprador, vendedor, SAN ou etapa" : "Buscar imóvel, cliente, proposta/contrato, banco ou etapa"} className="w-full rounded-lg border border-border bg-surface py-3 pl-10 pr-3 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/15" />
         </div>
         {!finalizados && <select aria-label="Filtrar por responsável da etapa atual" value={responsavel} onChange={e => { setResponsavel(e.target.value); setSelecionados([]); }} className="rounded-lg border border-border bg-surface px-3 py-3 text-sm text-ink outline-none focus:border-brand">
           <option value="">Todos os responsáveis</option>
@@ -73,7 +75,7 @@ export function ListaFinanciamentos({ rows, acompanhamento, atrasos, finalizados
         </div>
         {filtradas.length === 0 ? <div className="p-8 text-center">
           <p className="text-sm font-semibold text-ink">{rows.length === 0 ? "Nenhum processo em andamento" : "Nenhum processo encontrado"}</p>
-          <p className="mt-1 text-sm text-ink-muted">{rows.length === 0 ? "Os novos financiamentos aparecerão aqui." : "Experimente outro termo ou ajuste os filtros."}</p>
+          <p className="mt-1 text-sm text-ink-muted">{rows.length === 0 ? "Os novos processos aparecerão aqui." : "Experimente outro termo ou ajuste os filtros."}</p>
           {rows.length > 0 && <button type="button" onClick={limpar} className="mt-3 text-sm font-semibold text-brand hover:underline">Limpar filtros</button>}
         </div> : <ul className="divide-y divide-border">
           {filtradas.map(p => {
@@ -81,12 +83,13 @@ export function ListaFinanciamentos({ rows, acompanhamento, atrasos, finalizados
             const nAtrasos = atrasos[p.id] ?? 0;
             return <li key={p.id} className="p-4 transition hover:bg-background/40 sm:p-5">
               <div className="flex items-start gap-3">
-                <input type="checkbox" aria-label={`Selecionar processo ${p.numero_processo}`} checked={selecionadosVisiveis.includes(p.id)} onChange={e => setSelecionados(e.target.checked ? [...selecionadosVisiveis, p.id] : selecionadosVisiveis.filter(id => id !== p.id))} className="mt-1 h-4 w-4 shrink-0 accent-brand" />
+                <input type="checkbox" aria-label={`Selecionar ${p.imoveis?.endereco || identificacaoProcesso(p, categoria)}`} checked={selecionadosVisiveis.includes(p.id)} onChange={e => setSelecionados(e.target.checked ? [...selecionadosVisiveis, p.id] : selecionadosVisiveis.filter(id => id !== p.id))} className="mt-1 h-4 w-4 shrink-0 accent-brand" />
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <Link href={`/processos/${p.id}`} className="break-words text-sm font-semibold text-ink hover:text-brand hover:underline">{p.imoveis?.endereco || p.numero_processo}</Link>
-                      <p className="mt-1 text-xs text-ink-muted">{p.comprador?.nome ?? "Cliente não informado"} · {p.numero_processo}{p.codigo_san ? ` · SAN ${p.codigo_san}` : ""}</p>
+                      <Link href={`/processos/${p.id}`} className="break-words text-sm font-semibold text-ink hover:text-brand hover:underline">{p.imoveis?.endereco || identificacaoProcesso(p, categoria)}</Link>
+                      <p className="mt-1 text-xs text-ink-muted">{p.comprador?.nome ?? "Cliente não informado"} · {identificacaoProcesso(p, categoria)}</p>
+                      {categoria === "venda" && <p className="mt-1 text-xs text-ink-muted">Vendedor: {p.vendedor?.nome ?? "Não informado"}</p>}
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
                       {nAtrasos > 0 && <span className="rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-xs font-semibold text-rose-700">{nAtrasos} etapa{nAtrasos > 1 ? "s" : ""} atrasada{nAtrasos > 1 ? "s" : ""}</span>}
@@ -102,11 +105,11 @@ export function ListaFinanciamentos({ rows, acompanhamento, atrasos, finalizados
                     <details className="min-w-0 flex-1">
                       <summary className="w-fit cursor-pointer text-xs font-semibold text-ink-muted hover:text-brand">Dados complementares</summary>
                       <dl className="mt-3 grid gap-3 text-xs sm:grid-cols-3">
-                        {[["Banco", p.bancos?.nome ?? "Não informado"], ["Valor financiado", p.valor_financiado != null ? Number(p.valor_financiado).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "Não informado"], ["Indicação", p.indicacao?.nome ?? "Não informada"], ["Modelo", p.modelos_processo?.nome ?? "Não informado"], ["Assinatura", data(p.data_assinatura)], ["Prazo final do contrato", data(p.data_final_contrato)]].map(([label, valor]) => <div key={label}><dt className="text-ink-muted">{label}</dt><dd className="mt-1 text-ink">{valor}</dd></div>)}
+                        {[[categoria === "venda" ? "Corretor" : "Banco", categoria === "venda" ? p.corretores?.nome ?? "Não informado" : p.bancos?.nome ?? "Não informado"], [categoria === "venda" ? "Valor da venda" : "Valor financiado", (categoria === "venda" ? p.valor_total : p.valor_financiado) != null ? Number(categoria === "venda" ? p.valor_total : p.valor_financiado).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "Não informado"], ["Indicação", p.indicacao?.nome ?? "Não informada"], ["Modelo", p.modelos_processo?.nome ?? "Não informado"], ["Assinatura", data(p.data_assinatura)], ["Prazo final do contrato", data(p.data_final_contrato)]].map(([label, valor]) => <div key={label}><dt className="text-ink-muted">{label}</dt><dd className="mt-1 text-ink">{valor}</dd></div>)}
                       </dl>
-                      <form action={salvarCodigoSanProcesso} className="mt-3 flex max-w-sm items-end gap-2">
+                      <form action={categoria === "venda" ? salvarCodigoSanProcesso : salvarNumeroPropostaContratoProcesso} className="mt-3 flex max-w-sm items-end gap-2">
                         <input type="hidden" name="processo_id" value={p.id} />
-                        <label className="min-w-0 flex-1 text-xs text-ink-muted">Código SAN<input name="codigo_san" defaultValue={p.codigo_san ?? ""} className="mt-1 block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand" /></label>
+                        <label className="min-w-0 flex-1 text-xs text-ink-muted">{categoria === "venda" ? "Código SAN" : "Proposta/contrato"}<input key={`${p.id}-${p.codigo_san}-${p.numero_proposta_contrato}`} name={categoria === "venda" ? "codigo_san" : "numero_proposta_contrato"} maxLength={120} defaultValue={(categoria === "venda" ? p.codigo_san : p.numero_proposta_contrato) ?? ""} className="mt-1 block w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand" /></label>
                         <BotaoEnviar className="rounded-lg bg-brand px-3 py-2 text-sm font-semibold text-white">Salvar</BotaoEnviar>
                       </form>
                     </details>

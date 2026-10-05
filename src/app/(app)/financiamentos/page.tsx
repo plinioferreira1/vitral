@@ -7,6 +7,7 @@ import { CalendarioGrid } from "@/components/calendario-grid";
 import type { ProcessoRow } from "@/components/tabela-processos";
 import { ListaFinanciamentos, type AcompanhamentoFinanciamento } from "@/components/lista-financiamentos";
 import { etapasAtuais, type EtapaAcompanhamento } from "@/lib/acompanhamento-financiamentos";
+import { identificacaoProcesso } from "@/lib/identificacao-processo";
 import { hojeISO } from "@/lib/data-br";
 import { calcularUrgencia } from "@/lib/alertas";
 import { CalculadoraFinanciamento } from "@/components/calculadora-financiamento-custas";
@@ -14,7 +15,7 @@ import { KanbanProcessos, type CardKanban } from "@/components/kanban-processos"
 import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
 import { ExibicaoChecklists, type ChecklistExibicao } from "@/components/exibicao-checklists";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
-import { ArrowUpRight, CalendarDays, Columns3, Landmark, Plus } from "lucide-react";
+import { ArrowUpRight, CalendarDays, ClipboardCheck, Columns3, Landmark, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -45,7 +46,7 @@ export default async function FinanciamentosPage({
     supabase
       .from("processos")
       .select(
-        `id, numero_processo, codigo_san, tipo, status, data_criacao, data_assinatura, data_final_contrato, valor_total, valor_financiado, origem,
+        `id, numero_processo, codigo_san, numero_proposta_contrato, tipo, status, data_criacao, data_assinatura, data_final_contrato, valor_total, valor_financiado, origem,
          imoveis ( endereco ),
          comprador:clientes!processos_comprador_id_fkey ( nome ),
          vendedor:clientes!processos_vendedor_id_fkey ( nome ),
@@ -109,8 +110,8 @@ export default async function FinanciamentosPage({
       colunas = colunasResult;
       cardsKanban = emAndamento.map((p) => ({
         id: p.id,
-        titulo: p.imoveis?.endereco ?? p.numero_processo,
-        subtitulo: `${p.comprador?.nome ?? "Comprador não informado"} / ${p.vendedor?.nome ?? "Vendedor não informado"}`,
+        titulo: p.imoveis?.endereco ?? identificacaoProcesso(p, "financiamento"),
+        subtitulo: `${identificacaoProcesso(p, "financiamento")} · ${p.comprador?.nome ?? "Comprador não informado"}`,
         etapaAtual: etapaAtualMap.get(p.id) ?? null,
         atrasos: atrasosPorProcesso.get(p.id) ?? 0,
       }));
@@ -256,7 +257,10 @@ export default async function FinanciamentosPage({
           )}
         </div>
       ) : aba === "processos" ? (
-        <ExibicaoChecklists checklists={checklists} />
+        <section className="space-y-5">
+          <CabecalhoSecao icon={ClipboardCheck} titulo="Checklists de financiamento" descricao="Consulte os documentos necessários para cada modelo." />
+          <ExibicaoChecklists checklists={checklists} />
+        </section>
       ) : (
         <CalculadoraFinanciamento />
       )}

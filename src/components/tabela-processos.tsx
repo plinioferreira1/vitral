@@ -22,6 +22,7 @@ export type ProcessoRow = {
   id: string;
   numero_processo: string;
   codigo_san: string | null;
+  numero_proposta_contrato?: string | null;
   tipo: string | null;
   status: string;
   data_criacao: string;

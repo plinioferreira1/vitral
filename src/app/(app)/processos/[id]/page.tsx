@@ -1,3 +1,4 @@
+import { identificacaoProcesso } from "@/lib/identificacao-processo";
 import type { Etapa } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
 import { notFound } from "next/navigation";
@@ -58,7 +59,7 @@ export default async function ProcessoDetalhePage({
     supabase
       .from("processos")
       .select(
-        `id, numero_processo, codigo_san, status, valor_total, valor_financiado, origem, categoria, data_criacao,
+        `id, numero_processo, codigo_san, numero_proposta_contrato, status, valor_total, valor_financiado, origem, categoria, data_criacao,
          data_assinatura, data_final_contrato, imovel_id,
          comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
          vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
@@ -127,6 +128,7 @@ export default async function ProcessoDetalhePage({
     data_final_contrato: string | null;
     imovel_id: string | null;
     codigo_san: string | null;
+    numero_proposta_contrato: string | null;
   };
   const p = processo as unknown as P;
   const ehFinanciamento = p.categoria === "financiamento";
@@ -159,7 +161,7 @@ export default async function ProcessoDetalhePage({
               <span className="rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand">
                 {p.categoria === "financiamento" ? "Financiamento" : "Venda"}
               </span>
-              <span className="font-mono text-xs text-ink-muted">{p.numero_processo}</span>
+              <span className="font-mono text-xs text-ink-muted">{identificacaoProcesso(p, ehFinanciamento ? "financiamento" : "venda")}</span>
               <span
                 className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
                   p.status === "concluido"
@@ -185,7 +187,7 @@ export default async function ProcessoDetalhePage({
           </div>
 
           <ModalEdicaoProcesso
-            key={`editar-${p.id}-${p.comprador?.nome}-${p.vendedor?.nome}-${p.imoveis?.endereco}-${p.bancos?.nome}-${p.corretores?.nome}-${p.usuarios?.nome}-${p.codigo_san}-${p.valor_total}-${p.valor_financiado}-${p.origem}-${p.indicacao?.nome}-${p.data_assinatura}-${p.data_final_contrato}`}
+            key={`editar-${p.id}-${p.comprador?.nome}-${p.vendedor?.nome}-${p.imoveis?.endereco}-${p.bancos?.nome}-${p.corretores?.nome}-${p.usuarios?.nome}-${p.codigo_san}-${p.numero_proposta_contrato}-${p.valor_total}-${p.valor_financiado}-${p.origem}-${p.indicacao?.nome}-${p.data_assinatura}-${p.data_final_contrato}`}
           >
             <form
               action={salvarDadosProcesso}
@@ -224,7 +226,7 @@ export default async function ProcessoDetalhePage({
                   defaultValue={p.usuarios?.nome}
                   listaId="lista-usuarios"
                 />
-                <CampoTexto label="Código SAN" name="codigo_san" defaultValue={p.codigo_san} />
+                <CampoTexto label={ehFinanciamento ? "Proposta/contrato" : "Código SAN"} name={ehFinanciamento ? "numero_proposta_contrato" : "codigo_san"} defaultValue={ehFinanciamento ? p.numero_proposta_contrato : p.codigo_san} />
               </div>
 
               {ehFinanciamento && (
@@ -344,7 +346,7 @@ export default async function ProcessoDetalhePage({
             <Info label="Banco" value={p.bancos?.nome} />
             <Info label="Corretor" value={p.corretores?.nome} />
             <Info label="Responsável" value={p.usuarios?.nome} />
-            <Info label="Código SAN" value={p.codigo_san} />
+            <Info label={ehFinanciamento ? "Proposta/contrato" : "Código SAN"} value={ehFinanciamento ? p.numero_proposta_contrato : p.codigo_san} />
             {ehFinanciamento && (
               <>
                 <Info

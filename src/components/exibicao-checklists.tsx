@@ -38,7 +38,7 @@ function iconeDoGrupo(nome: string): { icon: LucideIcon; cor: string } {
 
 function GrupoChecklist({ grupo }: { grupo: Grupo }) {
   const [marcados, setMarcados] = useState<Set<string>>(new Set());
-  const [aberto, setAberto] = useState(true);
+  const [aberto, setAberto] = useState(false);
   const { icon: Icon, cor } = iconeDoGrupo(grupo.nome);
 
   function alternar(itemId: string) {
@@ -58,6 +58,7 @@ function GrupoChecklist({ grupo }: { grupo: Grupo }) {
     <div className="rounded-xl border border-border/60 bg-surface shadow-sm">
       <button
         type="button"
+        aria-expanded={aberto}
         onClick={() => setAberto((v) => !v)}
         className="flex w-full items-center justify-between gap-4 p-5 text-left"
       >
@@ -70,11 +71,11 @@ function GrupoChecklist({ grupo }: { grupo: Grupo }) {
             <p className="text-xs text-ink-muted">{total} itens obrigatórios</p>
           </div>
         </div>
-        <div className="hidden items-center gap-3 sm:flex">
-          <span className="text-xs text-ink-muted">
+        <div className="flex items-center gap-3">
+          <span className="hidden text-xs text-ink-muted sm:inline">
             {concluidos} de {total} itens
           </span>
-          <div className="h-1.5 w-32 overflow-hidden rounded-full bg-background">
+          <div className="hidden h-1.5 w-32 overflow-hidden rounded-full bg-background sm:block">
             <div
               className="h-full rounded-full bg-brand transition-all"
               style={{ width: `${percentual}%` }}
@@ -93,6 +94,7 @@ function GrupoChecklist({ grupo }: { grupo: Grupo }) {
               <button
                 key={item.id}
                 type="button"
+                aria-pressed={marcado}
                 onClick={() => alternar(item.id)}
                 className="flex items-center gap-2.5 rounded-md px-1 py-1.5 text-left text-sm transition hover:bg-background"
               >
@@ -118,6 +120,7 @@ function GrupoChecklist({ grupo }: { grupo: Grupo }) {
 
 export function ExibicaoChecklists({ checklists }: { checklists: ChecklistExibicao[] }) {
   const [selecionadoId, setSelecionadoId] = useState(checklists[0]?.id ?? "");
+  const [busca, setBusca] = useState("");
 
   if (checklists.length === 0) {
     return (
@@ -128,35 +131,37 @@ export function ExibicaoChecklists({ checklists }: { checklists: ChecklistExibic
   }
 
   const selecionado = checklists.find((c) => c.id === selecionadoId) ?? checklists[0];
+  const termo = busca.trim().toLocaleLowerCase("pt-BR");
+  const grupos = selecionado.checklist_grupos.filter((grupo) =>
+    [grupo.nome, grupo.observacao ?? "", ...grupo.checklist_grupo_itens.map((item) => item.texto)]
+      .some((texto) => texto.toLocaleLowerCase("pt-BR").includes(termo)),
+  );
 
   return (
     <div className="space-y-6">
-      {checklists.length > 1 && (
-        <div className="flex flex-wrap gap-1 rounded-lg bg-background p-1 text-sm w-fit">
-          {checklists.map((c) => (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => setSelecionadoId(c.id)}
-              className={`rounded-md px-4 py-1.5 text-center font-medium transition ${
-                selecionado.id === c.id ? "bg-surface shadow-sm text-ink" : "text-ink-muted"
-              }`}
-            >
-              {c.nome}
-            </button>
-          ))}
-        </div>
-      )}
+      <div className="grid gap-4 rounded-xl border border-border/60 bg-surface p-5 sm:grid-cols-2">
+        <label className="space-y-2 text-sm font-medium text-ink">
+          <span className="block">Modelo de checklist</span>
+          <select value={selecionado.id} onChange={(event) => { setSelecionadoId(event.target.value); setBusca(""); }} className="w-full rounded-lg border border-border bg-surface px-3 py-2 font-normal">
+            {checklists.map((checklist) => <option key={checklist.id} value={checklist.id}>{checklist.nome}</option>)}
+          </select>
+        </label>
+        <label className="space-y-2 text-sm font-medium text-ink">
+          <span className="block">Buscar documento ou seção</span>
+          <input type="search" value={busca} onChange={(event) => setBusca(event.target.value)} placeholder="Digite o nome do documento" className="w-full rounded-lg border border-border bg-surface px-3 py-2 font-normal" />
+        </label>
+      </div>
 
       <div className="space-y-4">
         {selecionado.descricao && <p className="text-sm text-ink-muted">{selecionado.descricao}</p>}
+        <p className="text-xs text-ink-muted">Abra uma seção para conferir os documentos. As marcações são temporárias e não ficam salvas.</p>
 
         {selecionado.checklist_grupos.length === 0 ? (
           <p className="rounded-xl border border-border/60 bg-surface p-6 text-center text-sm text-ink-muted shadow-sm">
             Esse checklist ainda não tem seções configuradas.
           </p>
         ) : (
-          selecionado.checklist_grupos.map((grupo) => (
+          grupos.length === 0 ? <p className="rounded-xl border border-border/60 bg-surface p-6 text-sm text-ink-muted">Nenhuma seção encontrada para essa busca.</p> : grupos.map((grupo) => (
             <div key={grupo.id}>
               <GrupoChecklist grupo={grupo} />
               {grupo.observacao && <p className="mt-1.5 px-1 text-xs text-ink-muted">{grupo.observacao}</p>}

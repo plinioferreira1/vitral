@@ -2985,6 +2985,7 @@ export type Database = {
           indicacao_id: string | null
           modelo_processo_id: string | null
           numero_processo: string
+          numero_proposta_contrato: string | null
           origem: string | null
           responsavel_id: string | null
           status: string
@@ -3011,6 +3012,7 @@ export type Database = {
           indicacao_id?: string | null
           modelo_processo_id?: string | null
           numero_processo: string
+          numero_proposta_contrato?: string | null
           origem?: string | null
           responsavel_id?: string | null
           status?: string
@@ -3037,6 +3039,7 @@ export type Database = {
           indicacao_id?: string | null
           modelo_processo_id?: string | null
           numero_processo?: string
+          numero_proposta_contrato?: string | null
           origem?: string | null
           responsavel_id?: string | null
           status?: string

@@ -118,6 +118,8 @@ export async function criarProcesso(formData: FormData) {
       tenant_id: tenantId,
       modelo_processo_id: modeloProcessoId,
       numero_processo: numeroProcesso,
+      numero_proposta_contrato: categoria === "financiamento" ? String(formData.get("numero_proposta_contrato") ?? "").trim() || null : null,
+      codigo_san: categoria === "venda" ? String(formData.get("codigo_san") ?? "").trim() || null : null,
       comprador_id: compradorId,
       vendedor_id: vendedorId,
       imovel_id: imovelId,

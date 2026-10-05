@@ -60,6 +60,10 @@ export function NovoProcessoForm({
   return (
     <form action={criarProcesso} className="space-y-5">
       <input type="hidden" name="categoria" value={modeloSelecionado?.categoria ?? "venda"} />
+      <label className="block text-xs font-medium text-ink-muted">
+        {ehFinanciamento ? "Proposta/contrato" : "Código SAN"}
+        <input key={ehFinanciamento ? "proposta" : "san"} name={ehFinanciamento ? "numero_proposta_contrato" : "codigo_san"} maxLength={120} placeholder="Informe o número, se já estiver disponível" className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-brand" />
+      </label>
       {!ehFinanciamento &&
         Array.from(etapasSelecionadas).map((id) => (
           <input key={id} type="hidden" name="etapas_selecionadas" value={id} />

@@ -2,7 +2,7 @@
 
 import { exigirUsuario } from "@/lib/usuario-atual";
 
-import { checar } from "@/lib/aviso";
+import { checar, avisar } from "@/lib/aviso";
 
 import { after } from "next/server";
 
@@ -273,6 +273,23 @@ export async function salvarCodigoSanProcesso(formData: FormData) {
   revalidatePath("/financiamentos");
 }
 
+export async function salvarNumeroPropostaContratoProcesso(formData: FormData) {
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const processoId = String(formData.get("processo_id") ?? "");
+  const numero = String(formData.get("numero_proposta_contrato") ?? "").trim();
+  if (!processoId) return;
+  if (numero.length > 120) {
+    await avisar("erro", "O número da proposta/contrato deve ter até 120 caracteres.");
+    return;
+  }
+  const supabase = await createClient();
+  const salvo = await checar(supabase.from("processos").update({ numero_proposta_contrato: numero || null }).eq("id", processoId).eq("tenant_id", sessao.tenantId).eq("categoria", "financiamento").select("id").single(), "atualizar o número da proposta/contrato");
+  if (!salvo) return;
+  revalidatePath(`/processos/${processoId}`);
+  revalidatePath("/financiamentos");
+}
+
 export async function salvarDadosProcesso(formData: FormData) {
   if (!(await exigirUsuario())) return;
   const supabase = await createClient();
@@ -346,6 +363,7 @@ export async function salvarDadosProcesso(formData: FormData) {
   if (corretorId) dadosProcesso.corretor_id = corretorId;
   if (responsavelId) dadosProcesso.responsavel_id = responsavelId;
   if (ehFinanciamento) {
+    if (formData.has("numero_proposta_contrato")) dadosProcesso.numero_proposta_contrato = campo("numero_proposta_contrato");
     if (indicacaoId) dadosProcesso.indicacao_id = indicacaoId;
     dadosProcesso.valor_financiado = formData.get("valor_financiado")
       ? Number(formData.get("valor_financiado"))
