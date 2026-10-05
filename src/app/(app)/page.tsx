@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getEventosCalendario } from "@/lib/queries";
-import { CalendarioGrid } from "@/components/calendario-grid";
 import { KanbanComAbas } from "@/components/kanban-com-abas";
 import type { CardKanban, CardPrazo } from "@/components/kanban-processos";
 import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
@@ -11,7 +10,7 @@ import { hojeISO } from "@/lib/data-br";
 import { ocorrenciasDaTarefa, type RegraTarefa } from "@/lib/tarefas-recorrentes";
 import { alternarTarefaMensal } from "@/app/(app)/locacao/actions";
 import { format } from "date-fns";
-import type { CategoriaProcesso } from "@/lib/types";
+import { CATEGORIA_LABEL, type CategoriaProcesso } from "@/lib/types";
 import { calcularUrgencia, type Urgencia } from "@/lib/alertas";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import {
@@ -19,11 +18,6 @@ import {
   type DashboardIndicadorItem,
   type DashboardIndicadoresDados,
 } from "@/components/dashboard-indicadores";
-import {
-  DashboardAreaCards,
-  type DashboardAreaResumo,
-} from "@/components/dashboard-area-cards";
-import { addMonths } from "date-fns";
 import {
   ArrowRight,
   BookOpen,
@@ -177,12 +171,7 @@ function LinhaVazia({ children }: { children: ReactNode }) {
   );
 }
 
-export default async function DashboardPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ mes?: string }>;
-}) {
-  const { mes } = await searchParams;
+export default async function DashboardPage() {
   const supabase = await createClient();
   // Mesma busca já feita pelo layout nesta renderização — reaproveitada.
   const { user, usuario } = await getUsuarioAtual();
@@ -200,9 +189,7 @@ export default async function DashboardPage({
   // Calendário, tarefas do dia e quadros do kanban não dependem um do
   // outro — carregam em paralelo em vez de um após o outro.
   const eventosPromise = getEventosCalendario();
-  const referencia = mes ? new Date(`${mes}-01T00:00:00`) : new Date(`${hojeISO()}T00:00:00`);
-  const mesAnterior = format(addMonths(referencia, -1), "yyyy-MM");
-  const proximoMes = format(addMonths(referencia, 1), "yyyy-MM");
+  const referencia = new Date(`${hojeISO()}T00:00:00`);
 
   type TarefaHoje = {
     tarefaId: string;
@@ -340,13 +327,33 @@ export default async function DashboardPage({
         etapaAtualPorProcesso(supabase, idsProcessos),
       ]);
 
-      const cards = processos.map((p) => ({
-        id: p.id,
-        titulo: p.imoveis?.endereco ?? p.numero_processo,
-        subtitulo: `${p.comprador?.nome ?? "—"} / ${p.vendedor?.nome ?? "—"}`,
-        etapaAtual: etapaAtualMap.get(p.id) ?? null,
-        atrasos: atrasosPorProcesso.get(p.id) ?? 0,
-      }));
+      const cards = processos.map((p) => {
+        const etapaAtual = etapaAtualMap.get(p.id) ?? null;
+        const etapaComPrazo = (etapasPorProcesso.get(p.id) ?? []).find(
+          (etapa) => etapa.nome === etapaAtual
+        );
+        const dataFormatada = etapaComPrazo?.data
+          ? format(new Date(`${etapaComPrazo.data}T00:00:00`), "dd/MM/yyyy")
+          : null;
+        const prazoAtual: CardKanban["prazoAtual"] = !dataFormatada
+          ? { texto: "Prazo não definido", tom: "neutro" }
+          : etapaComPrazo?.urgencia === "atrasada"
+            ? { texto: `Atrasado desde ${dataFormatada}`, tom: "atrasado" }
+            : etapaComPrazo?.urgencia === "vence_hoje"
+              ? { texto: "Vence hoje", tom: "hoje" }
+              : etapaComPrazo?.urgencia === "vence_em_breve"
+                ? { texto: `Limite: ${dataFormatada}`, tom: "proximo" }
+                : { texto: `Limite: ${dataFormatada}`, tom: "normal" };
+
+        return {
+          id: p.id,
+          titulo: p.imoveis?.endereco ?? p.numero_processo,
+          subtitulo: `${p.comprador?.nome ?? "Não informado"} / ${p.vendedor?.nome ?? "Não informado"}`,
+          etapaAtual,
+          atrasos: atrasosPorProcesso.get(p.id) ?? 0,
+          prazoAtual,
+        };
+      });
 
       const cardsPorId = new Map(cards.map((card) => [card.id, card]));
       const itemIndicador = (id: string, detalhe: string): DashboardIndicadorItem | null => {
@@ -532,79 +539,26 @@ export default async function DashboardPage({
         ? "/locacao?aba=contratos"
         : "/";
 
-  const quadrosPorCategoria = new Map(quadrosKanban.map((q) => [q.categoria, q]));
-  const quadroVendas = quadrosPorCategoria.get("venda");
-  const quadroFinanciamento = quadrosPorCategoria.get("financiamento");
-  const itensDeProcessos = (quadro: QuadroKanban, tag: string) =>
-    quadro.indicadores.andamento.map((item) => ({
-      id: item.id,
-      titulo: item.titulo,
-      subtitulo: item.subtitulo,
-      detalhe: item.detalhe,
-      href: item.href,
-      tag,
-    }));
-  const areasDashboard: DashboardAreaResumo[] = [
-    ...(temVenda && quadroVendas
-      ? [
-          {
-            id: "venda",
-            titulo: "Vendas",
-            descricao: "Contratos, etapas comerciais e prazo final do contrato.",
-            href: "/vendas?aba=andamento",
-            total: quadroVendas.stats.total,
-            atrasados: quadroVendas.stats.atrasados,
-            venceHoje: quadroVendas.stats.venceHoje,
-            venceEmBreve: quadroVendas.stats.venceEmBreve,
-            itens: itensDeProcessos(quadroVendas, "Venda"),
-            vazio: "Nenhuma venda em andamento.",
-            acaoLabel: "Ver vendas",
-          },
-        ]
-      : []),
-    ...(temFinanciamento && quadroFinanciamento
-      ? [
-          {
-            id: "financiamento",
-            titulo: "Financiamento",
-            descricao: "Operações bancárias, pendências e checklists em aberto.",
-            href: "/financiamentos?aba=andamento",
-            total: quadroFinanciamento.stats.total,
-            atrasados: quadroFinanciamento.stats.atrasados,
-            venceHoje: quadroFinanciamento.stats.venceHoje,
-            venceEmBreve: quadroFinanciamento.stats.venceEmBreve,
-            itens: itensDeProcessos(quadroFinanciamento, "Financiamento"),
-            vazio: "Nenhum financiamento em andamento.",
-            acaoLabel: "Ver financiamentos",
-          },
-        ]
-      : []),
-    ...(temLocacao
-      ? [
-          {
-            id: "locacao",
-            titulo: "Locação",
-            descricao: "Contratos, inadimplências e rotinas recorrentes.",
-            href: "/locacao?aba=resumo",
-            total: tarefasHoje.length,
-            totalLabel: "tarefas hoje",
-            atrasados: 0,
-            venceHoje: tarefasHoje.length,
-            venceEmBreve: 0,
-            itens: tarefasHoje.map((t) => ({
-              id: `${t.tarefaId}-${t.competencia}`,
-              titulo: t.nome,
-              subtitulo: "Tarefa recorrente",
-              detalhe: t.concluida ? "Concluída hoje" : "Pendente para hoje",
-              href: "/locacao?aba=resumo",
-              tag: "Locação",
-            })),
-            vazio: "Nenhuma tarefa recorrente para hoje.",
-            acaoLabel: "Ver locação",
-          },
-        ]
-      : []),
-  ];
+  const hoje = hojeISO();
+  const limiteAgenda = new Date(`${hoje}T00:00:00`);
+  limiteAgenda.setDate(limiteAgenda.getDate() + 7);
+  const limiteAgendaISO = format(limiteAgenda, "yyyy-MM-dd");
+  const agendaSemana = eventos
+    .filter(
+      (evento) =>
+        !evento.concluida &&
+        !evento.id.startsWith("prazo-contrato-") &&
+        evento.data >= hoje &&
+        evento.data <= limiteAgendaISO
+    )
+    .slice(0, 8);
+
+  const corAgenda: Record<CategoriaProcesso, string> = {
+    venda: "bg-rose-500",
+    financiamento: "bg-indigo-400",
+    locacao: "bg-blue-500",
+    marketing: "bg-emerald-500",
+  };
 
   return (
     <div className="space-y-5">
@@ -778,11 +732,9 @@ export default async function DashboardPage({
 
       {ehAdmin && (
         <>
-          <DashboardAreaCards areas={areasDashboard} />
-
           {quadrosKanban.length > 0 && (
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
-              <Painel className="min-w-0 p-5">
+            <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+              <Painel className="min-w-0 self-start p-5">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <CabecalhoSecao icon={Building2} titulo="Operação em andamento" />
@@ -900,49 +852,47 @@ export default async function DashboardPage({
           <Painel className="p-5">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <CabecalhoSecao icon={Calendar} titulo="Calendário de processos" />
+                <CabecalhoSecao icon={Calendar} titulo="Agenda da semana" />
                 <p className="mt-1 text-sm text-ink-muted">
-                  Agenda consolidada de vendas, financiamento, locação e rotinas.
+                  Próximos compromissos e prazos da operação.
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Link
-                  href={`/?mes=${mesAnterior}`}
-                  className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-background"
-                  aria-label="Mês anterior"
-                >
-                  ←
-                </Link>
-                <Link
-                  href="/"
-                  className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-background"
-                >
-                  Hoje
-                </Link>
-                <Link
-                  href={`/?mes=${proximoMes}`}
-                  className="rounded-md border border-border px-2.5 py-1.5 text-sm text-ink-muted hover:bg-background"
-                  aria-label="Próximo mês"
-                >
-                  →
-                </Link>
+              <Link
+                href="/calendario"
+                className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-semibold text-ink hover:bg-background"
+              >
+                Abrir calendário <ArrowRight size={14} />
+              </Link>
+            </div>
+            {agendaSemana.length === 0 ? (
+              <LinhaVazia>Nenhum compromisso previsto para os próximos 7 dias.</LinhaVazia>
+            ) : (
+              <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                {agendaSemana.map((evento) => (
+                  <Link
+                    key={evento.id}
+                    href={evento.href}
+                    className="group flex min-w-0 items-start gap-3 rounded-lg border border-border/70 bg-background p-3 transition hover:border-border-strong hover:bg-surface"
+                  >
+                    <span className="num flex h-10 w-10 shrink-0 flex-col items-center justify-center rounded-lg bg-surface text-ink shadow-sm ring-1 ring-border/70">
+                      <b className="text-sm leading-none">{evento.data.slice(8, 10)}</b>
+                      <span className="mt-0.5 text-[9px] font-semibold uppercase text-ink-muted">
+                        {format(new Date(`${evento.data}T00:00:00`), "MMM")}
+                      </span>
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="line-clamp-2 text-sm font-semibold leading-5 text-ink">
+                        {evento.titulo.replaceAll("—", ":")}
+                      </span>
+                      <span className="mt-1.5 flex items-center gap-1.5 text-xs text-ink-muted">
+                        <span className={`h-1.5 w-1.5 rounded-full ${corAgenda[evento.categoria]}`} />
+                        {evento.recorrente ? "Tarefa recorrente" : CATEGORIA_LABEL[evento.categoria]}
+                      </span>
+                    </span>
+                  </Link>
+                ))}
               </div>
-            </div>
-            <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-ink-muted">
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-red-600" /> Vendas
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-indigo-300" /> Financiamento
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-blue-600" /> Locação
-              </span>
-              <span className="flex items-center gap-1.5">
-                <span className="h-2 w-2 rounded-full bg-violet-400" /> Tarefas recorrentes
-              </span>
-            </div>
-            <CalendarioGrid eventos={eventos} referencia={referencia} maxPorDia={2} />
+            )}
           </Painel>
         </>
       )}
