@@ -1,9 +1,15 @@
 {
-  "regions": ["gru1"],
+  "regions": [
+    "gru1"
+  ],
   "crons": [
     {
       "path": "/api/cron/relatorio-financeiro",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/cron/controle-debitos",
+      "schedule": "20 11 * * *"
     }
   ]
 }

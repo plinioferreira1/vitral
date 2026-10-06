@@ -7,6 +7,7 @@ import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
 import { getPermissoesUsuario } from "@/lib/permissoes";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { hojeISO } from "@/lib/data-br";
+import { competenciaDe, montarAvisosDebitos, somarMeses, type AvisoDebitos } from "@/lib/debitos/regras";
 import { ocorrenciasDaTarefa, type RegraTarefa } from "@/lib/tarefas-recorrentes";
 import { alternarTarefaMensal } from "@/app/(app)/locacao/actions";
 import { format } from "date-fns";
@@ -475,10 +476,29 @@ export default async function DashboardPage() {
     ]);
   })();
 
-  const [eventos, tarefasHoje, quadrosKanban] = await Promise.all([
+  // Controle de Débitos (Locação): poucos avisos, agrupados, só do que tem pendência.
+  const avisosDebitosPromise = (async (): Promise<AvisoDebitos[]> => {
+    if (!temLocacao) return [];
+    const competenciaAtual = competenciaDe(hojeISO());
+    const desde = somarMeses(competenciaAtual, -6);
+    const [{ data: verificacoes }, { data: solicitacoes }, { data: config }] = await Promise.all([
+      supabase
+        .from("debitos_verificacoes")
+        .select("tipo, status, competencia")
+        .gte("competencia", desde)
+        .lte("competencia", competenciaAtual)
+        .in("status", ["pendente", "aguardando_administradora", "com_debitos"]),
+      supabase.from("debitos_solicitacoes").select("status, enviado_em, competencia, administradora_id").eq("competencia", competenciaAtual),
+      supabase.from("debitos_config").select("dias_alerta_sem_resposta").maybeSingle(),
+    ]);
+    return montarAvisosDebitos(verificacoes ?? [], solicitacoes ?? [], competenciaAtual, new Date().toISOString(), config?.dias_alerta_sem_resposta ?? 7);
+  })();
+
+  const [eventos, tarefasHoje, quadrosKanban, avisosDebitos] = await Promise.all([
     eventosPromise,
     tarefasPromise,
     quadrosPromise,
+    avisosDebitosPromise,
   ]);
 
   const quadroPrazos = quadrosKanban.find((q) => q.colunaPrazos)?.colunaPrazos ?? null;
@@ -629,6 +649,27 @@ export default async function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {avisosDebitos.length > 0 && (
+        <Painel className="px-5 py-4">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <Link href="/locacao/debitos" className="text-sm font-semibold text-ink hover:text-brand">
+              Controle de Débitos
+            </Link>
+            {avisosDebitos.map((a) => (
+              <Link
+                key={a.chave}
+                href={a.href}
+                className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset hover:opacity-80 ${
+                  a.tom === "debito" ? "bg-rose-50 text-rose-800 ring-rose-200" : "bg-amber-50 text-amber-800 ring-amber-200"
+                }`}
+              >
+                {a.texto}
+              </Link>
+            ))}
+          </div>
+        </Painel>
+      )}
 
       {ehAdmin && quadrosKanban.length > 0 && (
         <DashboardIndicadores indicadores={indicadoresDashboard} />

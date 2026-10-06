@@ -31,6 +31,7 @@ import { apagarContrato } from "../bulk-actions";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { FileWarning, FileText, Calendar } from "lucide-react";
 import { BotaoEnviar } from "@/components/botao-enviar";
+import { SecaoCondominio } from "../debitos/_componentes/secao-condominio";
 
 const MESES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez",
@@ -549,6 +550,8 @@ export default async function ContratoLocacaoPage({
           </div>
         </details>
       )}
+
+      <SecaoCondominio contratoId={id} />
 
       {/* Dados do contrato */}
       <section>

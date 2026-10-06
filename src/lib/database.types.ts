@@ -1284,6 +1284,81 @@ export type Database = {
           },
         ]
       }
+      condominio_administradoras: {
+        Row: {
+          ativa: boolean
+          atualizado_em: string
+          cnpj: string | null
+          criado_em: string
+          criado_por: string | null
+          email_solicitacao: string | null
+          id: string
+          metodo_consulta: string
+          nome: string
+          observacoes: string | null
+          portal_identificacao: string | null
+          portal_login_proprio: boolean
+          portal_orientacoes: string | null
+          portal_url: string | null
+          site: string | null
+          telefone: string | null
+          tenant_id: string
+        }
+        Insert: {
+          ativa?: boolean
+          atualizado_em?: string
+          cnpj?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          email_solicitacao?: string | null
+          id?: string
+          metodo_consulta?: string
+          nome: string
+          observacoes?: string | null
+          portal_identificacao?: string | null
+          portal_login_proprio?: boolean
+          portal_orientacoes?: string | null
+          portal_url?: string | null
+          site?: string | null
+          telefone?: string | null
+          tenant_id: string
+        }
+        Update: {
+          ativa?: boolean
+          atualizado_em?: string
+          cnpj?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          email_solicitacao?: string | null
+          id?: string
+          metodo_consulta?: string
+          nome?: string
+          observacoes?: string | null
+          portal_identificacao?: string | null
+          portal_login_proprio?: boolean
+          portal_orientacoes?: string | null
+          portal_url?: string | null
+          site?: string | null
+          telefone?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "condominio_administradoras_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "condominio_administradoras_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contas_locacao: {
         Row: {
           atualizado_em: string
@@ -1327,11 +1402,18 @@ export type Database = {
       }
       contratos_locacao: {
         Row: {
+          administradora_id: string | null
           agua_codigo_cliente: string | null
           agua_inscricao: string | null
           ativo: boolean
           condominio_administradora: string | null
+          condominio_bloco: string | null
+          condominio_codigo_unidade: string | null
           condominio_contato: string | null
+          condominio_email: string | null
+          condominio_nome: string | null
+          condominio_observacoes: string | null
+          condominio_unidade: string | null
           criado_em: string
           data_encerramento: string | null
           emite_nf: boolean
@@ -1347,6 +1429,7 @@ export type Database = {
           portal_administradora_login: string | null
           portal_administradora_senha: string | null
           portal_administradora_url: string | null
+          possui_condominio: boolean | null
           responsavel_agua:
             | Database["public"]["Enums"]["responsavel_pagamento_locacao"]
             | null
@@ -1366,11 +1449,18 @@ export type Database = {
           tenant_id: string
         }
         Insert: {
+          administradora_id?: string | null
           agua_codigo_cliente?: string | null
           agua_inscricao?: string | null
           ativo?: boolean
           condominio_administradora?: string | null
+          condominio_bloco?: string | null
+          condominio_codigo_unidade?: string | null
           condominio_contato?: string | null
+          condominio_email?: string | null
+          condominio_nome?: string | null
+          condominio_observacoes?: string | null
+          condominio_unidade?: string | null
           criado_em?: string
           data_encerramento?: string | null
           emite_nf?: boolean
@@ -1386,6 +1476,7 @@ export type Database = {
           portal_administradora_login?: string | null
           portal_administradora_senha?: string | null
           portal_administradora_url?: string | null
+          possui_condominio?: boolean | null
           responsavel_agua?:
             | Database["public"]["Enums"]["responsavel_pagamento_locacao"]
             | null
@@ -1405,11 +1496,18 @@ export type Database = {
           tenant_id: string
         }
         Update: {
+          administradora_id?: string | null
           agua_codigo_cliente?: string | null
           agua_inscricao?: string | null
           ativo?: boolean
           condominio_administradora?: string | null
+          condominio_bloco?: string | null
+          condominio_codigo_unidade?: string | null
           condominio_contato?: string | null
+          condominio_email?: string | null
+          condominio_nome?: string | null
+          condominio_observacoes?: string | null
+          condominio_unidade?: string | null
           criado_em?: string
           data_encerramento?: string | null
           emite_nf?: boolean
@@ -1425,6 +1523,7 @@ export type Database = {
           portal_administradora_login?: string | null
           portal_administradora_senha?: string | null
           portal_administradora_url?: string | null
+          possui_condominio?: boolean | null
           responsavel_agua?:
             | Database["public"]["Enums"]["responsavel_pagamento_locacao"]
             | null
@@ -1444,6 +1543,13 @@ export type Database = {
           tenant_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "contratos_locacao_administradora_id_fkey"
+            columns: ["administradora_id"]
+            isOneToOne: false
+            referencedRelation: "condominio_administradoras"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "contratos_locacao_imovel_id_fkey"
             columns: ["imovel_id"]
@@ -1571,6 +1677,480 @@ export type Database = {
           {
             foreignKeyName: "corretores_usuario_id_fkey"
             columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debitos_config: {
+        Row: {
+          atualizado_em: string
+          atualizado_por: string | null
+          dia_envio: number
+          dia_geracao: number
+          dias_alerta_sem_resposta: number
+          email_assunto: string | null
+          email_copia: string | null
+          email_modelo: string | null
+          email_responder_para: string | null
+          envio_automatico: boolean
+          geracao_automatica: boolean
+          periodicidade_condominio_meses: number
+          periodicidade_iptu_meses: number
+          tenant_id: string
+          url_consulta_iptu: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          dia_envio?: number
+          dia_geracao?: number
+          dias_alerta_sem_resposta?: number
+          email_assunto?: string | null
+          email_copia?: string | null
+          email_modelo?: string | null
+          email_responder_para?: string | null
+          envio_automatico?: boolean
+          geracao_automatica?: boolean
+          periodicidade_condominio_meses?: number
+          periodicidade_iptu_meses?: number
+          tenant_id: string
+          url_consulta_iptu?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          dia_envio?: number
+          dia_geracao?: number
+          dias_alerta_sem_resposta?: number
+          email_assunto?: string | null
+          email_copia?: string | null
+          email_modelo?: string | null
+          email_responder_para?: string | null
+          envio_automatico?: boolean
+          geracao_automatica?: boolean
+          periodicidade_condominio_meses?: number
+          periodicidade_iptu_meses?: number
+          tenant_id?: string
+          url_consulta_iptu?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debitos_config_atualizado_por_fkey"
+            columns: ["atualizado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debitos_eventos: {
+        Row: {
+          acao: string
+          administradora_id: string | null
+          anterior: Json | null
+          contrato_id: string | null
+          criado_em: string
+          descricao: string
+          id: string
+          novo: Json | null
+          solicitacao_id: string | null
+          tenant_id: string
+          usuario_id: string | null
+          usuario_nome: string | null
+          verificacao_id: string | null
+        }
+        Insert: {
+          acao: string
+          administradora_id?: string | null
+          anterior?: Json | null
+          contrato_id?: string | null
+          criado_em?: string
+          descricao: string
+          id?: string
+          novo?: Json | null
+          solicitacao_id?: string | null
+          tenant_id: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+          verificacao_id?: string | null
+        }
+        Update: {
+          acao?: string
+          administradora_id?: string | null
+          anterior?: Json | null
+          contrato_id?: string | null
+          criado_em?: string
+          descricao?: string
+          id?: string
+          novo?: Json | null
+          solicitacao_id?: string | null
+          tenant_id?: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+          verificacao_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debitos_eventos_administradora_id_fkey"
+            columns: ["administradora_id"]
+            isOneToOne: false
+            referencedRelation: "condominio_administradoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_eventos_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos_locacao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_eventos_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "debitos_solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_eventos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_eventos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_eventos_verificacao_id_fkey"
+            columns: ["verificacao_id"]
+            isOneToOne: false
+            referencedRelation: "debitos_verificacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debitos_itens: {
+        Row: {
+          anexo_caminho: string | null
+          anexo_nome: string | null
+          criado_em: string
+          criado_por: string | null
+          criado_por_nome: string | null
+          descricao: string | null
+          id: string
+          observacao: string | null
+          parcela: string | null
+          referencia: string | null
+          situacao: string | null
+          tenant_id: string
+          valor: number | null
+          vencimento: string | null
+          verificacao_id: string
+        }
+        Insert: {
+          anexo_caminho?: string | null
+          anexo_nome?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          descricao?: string | null
+          id?: string
+          observacao?: string | null
+          parcela?: string | null
+          referencia?: string | null
+          situacao?: string | null
+          tenant_id: string
+          valor?: number | null
+          vencimento?: string | null
+          verificacao_id: string
+        }
+        Update: {
+          anexo_caminho?: string | null
+          anexo_nome?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          descricao?: string | null
+          id?: string
+          observacao?: string | null
+          parcela?: string | null
+          referencia?: string | null
+          situacao?: string | null
+          tenant_id?: string
+          valor?: number | null
+          vencimento?: string | null
+          verificacao_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debitos_itens_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_itens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_itens_verificacao_id_fkey"
+            columns: ["verificacao_id"]
+            isOneToOne: false
+            referencedRelation: "debitos_verificacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debitos_solicitacao_itens: {
+        Row: {
+          contrato_id: string | null
+          descricao_unidade: string
+          id: string
+          resultado: string | null
+          solicitacao_id: string
+          verificacao_id: string | null
+        }
+        Insert: {
+          contrato_id?: string | null
+          descricao_unidade: string
+          id?: string
+          resultado?: string | null
+          solicitacao_id: string
+          verificacao_id?: string | null
+        }
+        Update: {
+          contrato_id?: string | null
+          descricao_unidade?: string
+          id?: string
+          resultado?: string | null
+          solicitacao_id?: string
+          verificacao_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debitos_solicitacao_itens_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos_locacao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_solicitacao_itens_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "debitos_solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_solicitacao_itens_verificacao_id_fkey"
+            columns: ["verificacao_id"]
+            isOneToOne: false
+            referencedRelation: "debitos_verificacoes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debitos_solicitacoes: {
+        Row: {
+          administradora_id: string | null
+          administradora_nome: string
+          assunto: string
+          competencia: string
+          copia: string | null
+          destinatario: string
+          enviado_em: string
+          enviado_por: string | null
+          enviado_por_nome: string | null
+          erro: string | null
+          id: string
+          mensagem: string
+          origem: string
+          respondido_em: string | null
+          respondido_por: string | null
+          resposta_observacao: string | null
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          administradora_id?: string | null
+          administradora_nome: string
+          assunto: string
+          competencia: string
+          copia?: string | null
+          destinatario: string
+          enviado_em?: string
+          enviado_por?: string | null
+          enviado_por_nome?: string | null
+          erro?: string | null
+          id?: string
+          mensagem: string
+          origem?: string
+          respondido_em?: string | null
+          respondido_por?: string | null
+          resposta_observacao?: string | null
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          administradora_id?: string | null
+          administradora_nome?: string
+          assunto?: string
+          competencia?: string
+          copia?: string | null
+          destinatario?: string
+          enviado_em?: string
+          enviado_por?: string | null
+          enviado_por_nome?: string | null
+          erro?: string | null
+          id?: string
+          mensagem?: string
+          origem?: string
+          respondido_em?: string | null
+          respondido_por?: string | null
+          resposta_observacao?: string | null
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debitos_solicitacoes_administradora_id_fkey"
+            columns: ["administradora_id"]
+            isOneToOne: false
+            referencedRelation: "condominio_administradoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_solicitacoes_enviado_por_fkey"
+            columns: ["enviado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_solicitacoes_respondido_por_fkey"
+            columns: ["respondido_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_solicitacoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      debitos_verificacoes: {
+        Row: {
+          administradora_id: string | null
+          competencia: string
+          contrato_id: string
+          criado_em: string
+          id: string
+          imovel_id: string | null
+          observacao: string | null
+          origem: string
+          solicitacao_id: string | null
+          status: string
+          tenant_id: string
+          tipo: string
+          verificado_em: string | null
+          verificado_por: string | null
+          verificado_por_nome: string | null
+        }
+        Insert: {
+          administradora_id?: string | null
+          competencia: string
+          contrato_id: string
+          criado_em?: string
+          id?: string
+          imovel_id?: string | null
+          observacao?: string | null
+          origem?: string
+          solicitacao_id?: string | null
+          status?: string
+          tenant_id: string
+          tipo: string
+          verificado_em?: string | null
+          verificado_por?: string | null
+          verificado_por_nome?: string | null
+        }
+        Update: {
+          administradora_id?: string | null
+          competencia?: string
+          contrato_id?: string
+          criado_em?: string
+          id?: string
+          imovel_id?: string | null
+          observacao?: string | null
+          origem?: string
+          solicitacao_id?: string | null
+          status?: string
+          tenant_id?: string
+          tipo?: string
+          verificado_em?: string | null
+          verificado_por?: string | null
+          verificado_por_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debitos_verificacoes_administradora_id_fkey"
+            columns: ["administradora_id"]
+            isOneToOne: false
+            referencedRelation: "condominio_administradoras"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_verificacoes_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos_locacao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_verificacoes_imovel_id_fkey"
+            columns: ["imovel_id"]
+            isOneToOne: false
+            referencedRelation: "imoveis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_verificacoes_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "debitos_solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_verificacoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "debitos_verificacoes_verificado_por_fkey"
+            columns: ["verificado_por"]
             isOneToOne: false
             referencedRelation: "usuarios"
             referencedColumns: ["id"]
@@ -3746,6 +4326,8 @@ export type Database = {
           valido: boolean
         }[]
       }
+      debitos_pode_operar: { Args: never; Returns: boolean }
+      debitos_pode_ver: { Args: never; Returns: boolean }
       seed_etapas_padrao: { Args: { p_tenant_id: string }; Returns: undefined }
       seed_modelos_padrao: { Args: { p_tenant_id: string }; Returns: undefined }
       termo_visita_buscar: {

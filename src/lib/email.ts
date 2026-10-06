@@ -10,10 +10,21 @@ export async function enviarEmail({
   destinatarios,
   assunto,
   html,
+  texto,
+  responderPara,
+  copia,
+  nomeRemetente,
 }: {
   destinatarios: string[];
   assunto: string;
   html: string;
+  /** versão em texto puro (opcional) */
+  texto?: string;
+  /** para onde vão as respostas (opcional) */
+  responderPara?: string | null;
+  copia?: string[];
+  /** nome exibido no remetente; padrão "Vitral — Sacra Netimóveis" */
+  nomeRemetente?: string;
 }) {
   const usuario = process.env.ZOHO_EMAIL_USER;
   const senha = process.env.ZOHO_EMAIL_APP_PASSWORD;
@@ -40,9 +51,12 @@ export async function enviarEmail({
   });
 
   await transportador.sendMail({
-    from: `Vitral — Sacra Netimóveis <${usuario}>`,
+    from: `${nomeRemetente ?? "Vitral — Sacra Netimóveis"} <${usuario}>`,
     to: destinatarios.join(", "),
+    cc: copia && copia.length > 0 ? copia.join(", ") : undefined,
+    replyTo: responderPara || undefined,
     subject: assunto,
     html,
+    text: texto,
   });
 }

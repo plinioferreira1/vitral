@@ -110,7 +110,7 @@ export async function atualizarContrato(formData: FormData) {
 
   const { data: contratoAtual } = await supabase
     .from("contratos_locacao")
-    .select("tenant_id")
+    .select("tenant_id, imovel_id")
     .eq("id", id)
     .single();
 
@@ -145,7 +145,12 @@ export async function atualizarContrato(formData: FormData) {
   };
 
   await checar(supabase.from("contratos_locacao").update(campos).eq("id", id), "atualizar");
+  // A inscrição do imóvel no DF fica no cadastro do imóvel (usada no Controle de Débitos).
+  if (campos.iptu_inscricao && contratoAtual.imovel_id) {
+    await supabase.from("imoveis").update({ inscricao_iptu: campos.iptu_inscricao }).eq("id", contratoAtual.imovel_id);
+  }
   revalidatePath(`/locacao/${id}`);
+  revalidatePath("/locacao/debitos");
   redirect(`/locacao/${id}?salvo=1`);
 }
 
