@@ -81,7 +81,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   if (operacional && p.podeConfigurar) itens.push({
     label: "Relatórios",
     children: [
-      { href: "/relatorio-semanal", label: "Resumo semanal de vendas e financiamentos" },
+      { href: "/relatorio-semanal", label: "Resumo semanal" },
       { href: "/financeiro/relatorios", label: "Relatórios financeiros" },
     ],
   });
