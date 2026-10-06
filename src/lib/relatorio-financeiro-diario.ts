@@ -164,8 +164,8 @@ export async function enviarRelatorioFinanceiroDiario(tenantId: string) {
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse:collapse;">
                       <tr>
                         ${cardResumo("Saldo consolidado", brl(saldoConsolidado))}
-                        ${cardResumo("Recebido hoje", brl(recebidoHoje), "#047857", "#f0fdf4")}
-                        ${cardResumo("Pago hoje", brl(pagoHoje), "#b91c1c", "#fff1f2")}
+                        ${cardResumo(`Vence hoje (${vencemHoje.length})`, brl(totalPagarHoje + totalReceberHoje), "#b45309", "#fffbeb")}
+                        ${cardResumo(`Vencidos (${vencidos.length})`, brl(totalVencidos), "#b91c1c", "#fff1f2")}
                       </tr>
                     </table>
 
