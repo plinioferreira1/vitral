@@ -28,11 +28,13 @@ import {
   Users,
   LogOut,
   Menu,
+  HelpCircle,
   X,
   ChevronRight,
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import { hrefAtivoMenu } from "@/lib/menu";
 import { BotaoEnviar } from "@/components/botao-enviar";
 
 interface SubNavItem {
@@ -52,16 +54,8 @@ interface NavItem {
 // Algum item, no nível informado ou em qualquer subgrupo abaixo dele, bate
 // com a rota atual — usado pra manter o grupo/subgrupo certo destacado e
 // aberto mesmo quando a rota ativa está dois níveis abaixo.
-function algumDescendenteAtivo(
-  itens: SubNavItem[] | undefined,
-  pathname: string,
-  queryAtual: URLSearchParams
-): boolean {
-  if (!itens) return false;
-  return itens.some((item) => {
-    if (item.href && ehAtivo(pathname, item.href, queryAtual)) return true;
-    return algumDescendenteAtivo(item.children, pathname, queryAtual);
-  });
+function algumDescendenteAtivo(itens: SubNavItem[] | undefined, hrefAtivo: string | undefined): boolean {
+  return !!hrefAtivo && !!itens?.some((item) => item.href === hrefAtivo || algumDescendenteAtivo(item.children, hrefAtivo));
 }
 
 interface Props {
@@ -103,6 +97,8 @@ const ICONES: { prefixo: string; Icone: LucideIcon }[] = [
 
 function iconePara(hrefOuLabel: string): LucideIcon {
   if (hrefOuLabel === "/") return Home;
+  if (hrefOuLabel === "/corretor") return HelpCircle;
+  if (hrefOuLabel === "/calendario") return CalendarDays;
   const porLabel: Record<string, LucideIcon> = {
     Vendas: Tag,
     Financiamentos: Landmark,
@@ -111,28 +107,11 @@ function iconePara(hrefOuLabel: string): LucideIcon {
     Ferramentas: Calculator,
     Financeiro: Wallet,
     Configurações: Settings,
+    Relatórios: BarChart3,
   };
   if (porLabel[hrefOuLabel]) return porLabel[hrefOuLabel];
   const achado = ICONES.find((i) => hrefOuLabel.startsWith(i.prefixo));
   return achado?.Icone ?? FileText;
-}
-
-// Compara caminho E os parâmetros de query presentes no href (ex:
-// "/locacao?aba=inadimplencias") — só comparar o caminho fazia
-// "Contratos" e "Inadimplências" (mesmo /locacao, aba diferente)
-// ficarem os dois marcados como ativos ao mesmo tempo.
-function ehAtivo(pathname: string, href: string, queryAtual: URLSearchParams) {
-  if (href === "/") return pathname === "/";
-  const [caminho, queryString] = href.split("?");
-  const caminhoBate = pathname === caminho || pathname.startsWith(`${caminho}/`);
-  if (!caminhoBate) return false;
-  if (!queryString) return true;
-
-  const queryHref = new URLSearchParams(queryString);
-  for (const [chave, valor] of queryHref.entries()) {
-    if (queryAtual.get(chave) !== valor) return false;
-  }
-  return true;
 }
 
 function prefetchDoLink(href: string) {
@@ -151,11 +130,12 @@ export function AppShell({
   const [menuAberto, setMenuAberto] = useState(false);
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const hrefAtivo = hrefAtivoMenu(navItems as import("@/lib/menu").ItemMenu[], pathname, searchParams);
 
   const [gruposAbertos, setGruposAbertos] = useState<Set<string>>(() => {
     const abertos = new Set<string>();
     navItems.forEach((item) => {
-      if (algumDescendenteAtivo(item.children, pathname, searchParams)) abertos.add(item.label);
+      if (algumDescendenteAtivo(item.children, hrefAtivo)) abertos.add(item.label);
     });
     return abertos;
   });
@@ -167,7 +147,7 @@ export function AppShell({
     const abertos = new Set<string>();
     navItems.forEach((item) => {
       item.children?.forEach((filho) => {
-        if (filho.children && algumDescendenteAtivo(filho.children, pathname, searchParams)) {
+        if (filho.children && algumDescendenteAtivo(filho.children, hrefAtivo)) {
           abertos.add(`${item.label}>${filho.label}`);
         }
       });
@@ -224,11 +204,12 @@ export function AppShell({
     <nav data-nav-root className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
       {navItems.map((item) => {
         if (!item.children) {
-          const ativo = ehAtivo(pathname, item.href!, searchParams);
+          const ativo = item.href === hrefAtivo;
           const Icone = iconePara(item.href!);
           return (
             <Link
               key={item.label}
+              aria-current={ativo ? "page" : undefined}
               href={item.href!}
               prefetch={prefetchDoLink(item.href!)}
               onClick={() => {
@@ -242,19 +223,20 @@ export function AppShell({
               }`}
             >
               <Icone size={17} strokeWidth={2} className="shrink-0" />
-              <span className="truncate">{item.label}</span>
+              <span>{item.label}</span>
             </Link>
           );
         }
 
         const aberto = gruposAbertos.has(item.label);
-        const algumFilhoAtivo = algumDescendenteAtivo(item.children, pathname, searchParams);
+        const algumFilhoAtivo = algumDescendenteAtivo(item.children, hrefAtivo);
         const Icone = iconePara(item.label);
 
         return (
           <div key={item.label}>
             <button
               type="button"
+              aria-expanded={aberto}
               onClick={() => alternarGrupo(item.label)}
               className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition ${
                 algumFilhoAtivo
@@ -263,7 +245,7 @@ export function AppShell({
               }`}
             >
               <Icone size={17} strokeWidth={2} className="shrink-0" />
-              <span className="min-w-0 flex-1 truncate text-left">{item.label}</span>
+              <span className="min-w-0 flex-1 text-left">{item.label}</span>
               <ChevronRight
                 size={14}
                 strokeWidth={2}
@@ -279,11 +261,12 @@ export function AppShell({
                   if (child.children) {
                     const chaveSubgrupo = `${item.label}>${child.label}`;
                     const subAberto = subGruposAbertos.has(chaveSubgrupo);
-                    const algumNetoAtivo = algumDescendenteAtivo(child.children, pathname, searchParams);
+                    const algumNetoAtivo = algumDescendenteAtivo(child.children, hrefAtivo);
                     return (
                       <div key={child.label}>
                         <button
                           type="button"
+                          aria-expanded={subAberto}
                           onClick={() => alternarSubGrupo(chaveSubgrupo)}
                           className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-sm transition ${
                             algumNetoAtivo
@@ -291,7 +274,7 @@ export function AppShell({
                               : "text-ink-muted hover:text-ink"
                           }`}
                         >
-                          <span className="min-w-0 flex-1 truncate text-left">{child.label}</span>
+                          <span className="min-w-0 flex-1 text-left">{child.label}</span>
                           <ChevronRight
                             size={12}
                             strokeWidth={2}
@@ -301,10 +284,11 @@ export function AppShell({
                         {subAberto && (
                           <div className="ml-2 space-y-0.5 border-l border-border pl-3">
                             {child.children.map((neto) => {
-                              const ativo = ehAtivo(pathname, neto.href!, searchParams);
+                              const ativo = neto.href === hrefAtivo;
                               return (
                                 <Link
                                   key={neto.href}
+                                  aria-current={ativo ? "page" : undefined}
                                   href={neto.href!}
                                   prefetch={prefetchDoLink(neto.href!)}
                                   onClick={() => setMenuAberto(false)}
@@ -324,10 +308,11 @@ export function AppShell({
                     );
                   }
 
-                  const ativo = ehAtivo(pathname, child.href!, searchParams);
+                  const ativo = child.href === hrefAtivo;
                   return (
                     <Link
                       key={child.href}
+                      aria-current={ativo ? "page" : undefined}
                       href={child.href!}
                       prefetch={prefetchDoLink(child.href!)}
                       onClick={() => setMenuAberto(false)}

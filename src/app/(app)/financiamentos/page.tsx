@@ -180,6 +180,10 @@ export default async function FinanciamentosPage({
         </Link>
       </div>
 
+      <Link href="/cartorio" className="inline-flex text-sm font-medium text-brand hover:underline">
+        Simulação de custas
+      </Link>
+
       {aba === "resumo" ? (
         <div className="space-y-6">
           <ResumoPrazos
@@ -258,7 +262,7 @@ export default async function FinanciamentosPage({
         </div>
       ) : aba === "processos" ? (
         <section className="space-y-5">
-          <CabecalhoSecao icon={ClipboardCheck} titulo="Checklists de financiamento" descricao="Consulte os documentos necessários para cada modelo." />
+          <CabecalhoSecao icon={ClipboardCheck} titulo="Documentos necessários" descricao="Consulte os documentos necessários para cada modelo." />
           <ExibicaoChecklists checklists={checklists} />
         </section>
       ) : (

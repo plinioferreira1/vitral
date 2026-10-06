@@ -172,6 +172,10 @@ export default async function LocacaoPage({
         )}
       </div>
 
+      <Link href="/locacao?aba=multa" className="inline-flex text-sm font-medium text-brand hover:underline">
+        Cálculo de multa rescisória
+      </Link>
+
       {aba === "contratos" ? (
         <div className="space-y-6">
           <CabecalhoSecao icon={House} titulo="Contratos ativos" descricao="Imóvel, partes do contrato e contas vencidas em um só lugar." />
