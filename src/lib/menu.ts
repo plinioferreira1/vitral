@@ -89,7 +89,19 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       { href: "/financeiro/relatorios", label: "Relatórios financeiros" },
     ],
   });
-  if (operacional && verFerias) itens.push({ href: "/ferias", label: "Férias" });
+  if (operacional && verFerias) itens.push({
+    label: "Departamento pessoal",
+    children: [
+      { href: "/ferias", label: "Minhas férias" },
+      ...(p.podeConfigurar
+        ? [
+            { href: "/ferias/equipe", label: "Solicitações de férias" },
+            { href: "/ferias/equipe?aba=calendario", label: "Calendário da equipe" },
+            { href: "/ferias/configuracao", label: "Cadastro de férias" },
+          ]
+        : []),
+    ],
+  });
   itens.push({ href: "/corretor", label: "Central de ajuda" });
   if (operacional && p.podeConfigurar) itens.push({
     label: "Configurações",
