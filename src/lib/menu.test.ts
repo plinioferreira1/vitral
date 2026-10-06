@@ -38,7 +38,9 @@ describe("navegação por acesso", () => {
     const hrefs = destinos(montarMenu(gestor));
     expect(new Set(hrefs).size).toBe(hrefs.length);
     expect(hrefs).not.toContain("/financeiro/agenda");
-    expect(hrefs).not.toContain("/financiamentos?aba=custas");
+    // a calculadora de custas do financiamento é diferente da simulação de cartório
+    expect(hrefs).toContain("/financiamentos?aba=custas");
+    expect(hrefs).toContain("/cartorio");
   });
 });
 describe("destino ativo", () => {
@@ -47,7 +49,7 @@ describe("destino ativo", () => {
     ["/vendas", "", "/vendas?aba=resumo"],
     ["/financiamentos", "", "/financiamentos?aba=resumo"],
     ["/locacao", "", "/locacao?aba=resumo"],
-    ["/financiamentos", "aba=custas", "/cartorio"],
+    ["/financiamentos", "aba=custas", "/financiamentos?aba=custas"],
     ["/financeiro/relatorios", "", "/financeiro/relatorios"],
     ["/financeiro/configuracoes-email", "", "/financeiro/configuracoes-email"],
     ["/avaliacoes/configuracao", "", "/avaliacoes/configuracao"],

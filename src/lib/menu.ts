@@ -48,6 +48,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
         { href: "/financiamentos?aba=resumo", label: "Visão geral" },
         { href: "/financiamentos?aba=andamento", label: "Processos de financiamento" },
         { href: "/financiamentos?aba=processos", label: "Documentos necessários" },
+        { href: "/financiamentos?aba=custas", label: "Simulação de custas do financiamento" },
       ],
     });
     if (p.temLocacao) itens.push({
@@ -130,11 +131,6 @@ export function hrefAtivoMenu(itens: ItemMenu[], pathname: string, query: URLSea
   const parametros = new URLSearchParams(query);
   if (["/vendas", "/financiamentos", "/locacao"].includes(pathname) && !parametros.has("aba")) {
     parametros.set("aba", "resumo");
-  }
-  // A aba antiga continua acessível por favoritos, com destino principal em Ferramentas.
-  if (pathname === "/financiamentos" && parametros.get("aba") === "custas") {
-    pathname = "/cartorio";
-    parametros.delete("aba");
   }
   const links = itens.flatMap((item) =>
     "href" in item ? [item] : item.children.flatMap((filho) => "href" in filho ? [filho] : filho.children)

@@ -180,9 +180,14 @@ export default async function FinanciamentosPage({
         </Link>
       </div>
 
-      <Link href="/cartorio" className="inline-flex text-sm font-medium text-brand hover:underline">
-        Simulação de custas
-      </Link>
+      <div className="flex flex-wrap gap-x-5 gap-y-1">
+        <Link href="/financiamentos?aba=custas" className={`inline-flex text-sm font-medium hover:underline ${aba === "custas" ? "text-ink" : "text-brand"}`}>
+          Simulação de custas do financiamento
+        </Link>
+        <Link href="/cartorio" className="inline-flex text-sm font-medium text-brand hover:underline">
+          Simulação de custas de cartório (compra e venda)
+        </Link>
+      </div>
 
       {aba === "resumo" ? (
         <div className="space-y-6">
