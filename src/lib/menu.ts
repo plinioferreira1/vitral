@@ -12,7 +12,6 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       { href: "/autorizacoes", label: "Autorizações de venda" },
       { href: "/propostas", label: "Propostas de compra" },
       { href: "/termos-visita", label: "Termos de visita" },
-      { href: "/avaliacoes", label: "Avaliações de imóveis" },
     ],
   };
   const ferramentas: ItemMenu = {
@@ -21,7 +20,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       { href: "/calculadora", label: "Cálculo proporcional" },
       { href: "/calculadora-data", label: "Cálculo de datas" },
       { href: "/cartorio", label: "Simulação de custas" },
-      { href: "/avaliacao-imovel", label: "Estimativa de valor do imóvel" },
+      ...(!p.ehSocialMedia ? [{ href: "/avaliacoes", label: "Avaliações de imóveis" }] : []),
       ...(operacional && p.temLocacao
         ? [{ href: "/locacao?aba=multa", label: "Cálculo de multa rescisória" }]
         : []),

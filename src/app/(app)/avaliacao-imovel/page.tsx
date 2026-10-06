@@ -1,5 +1,5 @@
-import { CalculadoraAvaliacao } from "@/components/calculadora-avaliacao";
+import { redirect } from "next/navigation";
 
-export default function AvaliacaoImovelPage() {
-  return <CalculadoraAvaliacao />;
+export default function EstimativaAntigaPage() {
+  redirect("/avaliacoes/nova");
 }

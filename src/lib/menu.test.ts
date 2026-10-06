@@ -63,3 +63,14 @@ describe("destino ativo", () => {
     expect(hrefAtivoMenu(menu, "/avaliacoes-outra", new URLSearchParams())).toBeUndefined();
   });
 });
+
+describe("avaliações em ferramentas", () => {
+  it("substitui a estimativa avulsa sem duplicar o acesso", () => {
+    const itens = montarMenu(gestor);
+    const ferramentas = itens.find((i) => i.label === "Ferramentas")!;
+    expect(destinos([ferramentas])).toContain("/avaliacoes");
+    expect(destinos(itens)).not.toContain("/avaliacao-imovel");
+    expect(destinos([itens.find((i) => i.label === "Documentos")!])).not.toContain("/avaliacoes");
+    expect(destinos(montarMenu({ ...gestor, ehSocialMedia: true }))).not.toContain("/avaliacoes");
+  });
+});

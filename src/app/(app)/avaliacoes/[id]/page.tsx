@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { VoltarLink } from "@/components/voltar-link";
 import { podeAcessarModulo } from "@/lib/avaliacao/permissoes";
 import { ETAPAS_EDITOR, ROTULO_FINALIDADE, ROTULO_MODALIDADE, ROTULO_TIPOLOGIA, valorDaListaLocal, type EtapaEditor } from "@/lib/avaliacao/tipos";
+import { etapasDaAvaliacao, etapaDoFluxo } from "@/lib/avaliacao/fluxo";
 import { validarParaEmissao } from "@/lib/avaliacao/validacao";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
@@ -35,15 +36,20 @@ export default async function AvaliacaoPage({
   if (!c) notFound();
 
   const a = c.avaliacao;
-  const etapa = valorDaListaLocal<EtapaEditor>(CHAVES, etapaParam, a.status === "em_revisao" || a.status === "aprovado" ? "revisao" : "dados");
+  const etapas = etapasDaAvaliacao(a.modalidade);
+  const comercial = a.modalidade === "estudo_comercial";
+  const etapa = etapaDoFluxo(a.modalidade, valorDaListaLocal<EtapaEditor>(CHAVES, etapaParam, a.status === "em_revisao" || a.status === "aprovado" ? "revisao" : "dados"));
   const papel = papelDe({ userId: user.id, nivel: usuario.nivel_acesso }, c.config);
   const validacao = validarParaEmissao(c.conteudo);
   const pendenciasPorEtapa = new Map<string, number>();
-  for (const b of validacao.bloqueios) pendenciasPorEtapa.set(b.etapa, (pendenciasPorEtapa.get(b.etapa) ?? 0) + 1);
+  for (const b of validacao.bloqueios) {
+    const destino = etapaDoFluxo(a.modalidade, b.etapa as EtapaEditor);
+    pendenciasPorEtapa.set(destino, (pendenciasPorEtapa.get(destino) ?? 0) + 1);
+  }
 
   // Dados extras, só os que a etapa aberta usa.
   const caminhos =
-    etapa === "imovel" || etapa === "vistoria"
+    etapa === "imovel" || etapa === "vistoria" || (comercial && etapa === "dados")
       ? c.arquivos.map((x) => x.caminho_storage)
       : etapa === "comparaveis"
         ? (c.comparaveis.map((x) => x.foto_caminho).filter(Boolean) as string[])
@@ -92,8 +98,8 @@ export default async function AvaliacaoPage({
   }));
 
   const propsEtapa = { c, tenantId, urls };
-  const indice = CHAVES.indexOf(etapa);
-  const proxima = indice < CHAVES.length - 2 ? ETAPAS_EDITOR[indice + 1] : null;
+  const indice = etapas.findIndex((e) => e.chave === etapa);
+  const proxima = indice < etapas.length - 2 ? etapas[indice + 1] : null;
 
   return (
     <div className="space-y-5">
@@ -123,7 +129,7 @@ export default async function AvaliacaoPage({
 
       <nav aria-label="Etapas" className="-mx-1 overflow-x-auto">
         <ol className="flex min-w-max gap-1 px-1 pb-1">
-          {ETAPAS_EDITOR.map((e, i) => {
+          {etapas.map((e, i) => {
             const ativo = e.chave === etapa;
             const pendencias = pendenciasPorEtapa.get(e.chave) ?? 0;
             return (
@@ -149,7 +155,22 @@ export default async function AvaliacaoPage({
         </ol>
       </nav>
 
-      {etapa === "dados" && <EtapaDados {...propsEtapa} />}
+      {etapa === "dados" && (
+        <div className="space-y-5">
+          <EtapaDados {...propsEtapa} />
+          {comercial && <>
+            <EtapaImovel {...propsEtapa} />
+            <details className="rounded-xl border border-border bg-surface p-4">
+              <summary className="cursor-pointer font-semibold text-ink">Vistoria e características observadas</summary>
+              <div className="mt-4"><EtapaVistoria {...propsEtapa} /></div>
+            </details>
+            <details className="rounded-xl border border-border bg-surface p-4">
+              <summary className="cursor-pointer font-semibold text-ink">Localização e entorno</summary>
+              <div className="mt-4"><EtapaLocalizacao {...propsEtapa} /></div>
+            </details>
+          </>}
+        </div>
+      )}
       {etapa === "imovel" && <EtapaImovel {...propsEtapa} />}
       {etapa === "vistoria" && <EtapaVistoria {...propsEtapa} />}
       {etapa === "localizacao" && <EtapaLocalizacao {...propsEtapa} />}

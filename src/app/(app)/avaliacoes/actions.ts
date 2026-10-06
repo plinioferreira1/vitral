@@ -161,9 +161,14 @@ export async function criarAvaliacao(formData: FormData) {
   const imovelId = texto(formData, "imovel_id", 40) || null;
 
   let titulo = texto(formData, "titulo", 200);
-  const dados: DadosAvaliacao = { vistoria_status: "nao_realizada" };
+  const dados: DadosAvaliacao = {
+    vistoria_status: "nao_realizada",
+    ...(modalidade === "estudo_comercial" ? { objetivo: finalidade === "venda"
+      ? "Orientar a definição do preço de divulgação para venda do imóvel."
+      : "Orientar a definição do aluguel mensal para divulgação do imóvel." } : {}),
+  };
   let proprietario = textoOuNull(formData, "proprietario_nome", 200);
-  let area: number | null = null;
+  let area: number | null = numeroOuNull(formData, "area_m2");
   let bairro: string | null = textoOuNull(formData, "bairro", 120);
 
   if (imovelId) {
