@@ -3344,6 +3344,7 @@ export type Database = {
           criado_por: string | null
           dados: Json
           expira_em: string
+          ficha_principal_id: string | null
           id: string
           imovel_referencia: string | null
           ip_conclusao: string | null
@@ -3351,6 +3352,7 @@ export type Database = {
           proponente_nome: string | null
           status: string
           tenant_id: string
+          tipo_locatario: string
           token: string
           user_agent_conclusao: string | null
         }
@@ -3363,6 +3365,7 @@ export type Database = {
           criado_por?: string | null
           dados?: Json
           expira_em?: string
+          ficha_principal_id?: string | null
           id?: string
           imovel_referencia?: string | null
           ip_conclusao?: string | null
@@ -3370,6 +3373,7 @@ export type Database = {
           proponente_nome?: string | null
           status?: string
           tenant_id: string
+          tipo_locatario?: string
           token?: string
           user_agent_conclusao?: string | null
         }
@@ -3382,6 +3386,7 @@ export type Database = {
           criado_por?: string | null
           dados?: Json
           expira_em?: string
+          ficha_principal_id?: string | null
           id?: string
           imovel_referencia?: string | null
           ip_conclusao?: string | null
@@ -3389,6 +3394,7 @@ export type Database = {
           proponente_nome?: string | null
           status?: string
           tenant_id?: string
+          tipo_locatario?: string
           token?: string
           user_agent_conclusao?: string | null
         }
@@ -3398,6 +3404,13 @@ export type Database = {
             columns: ["criado_por"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fichas_cadastrais_locacao_ficha_principal_id_fkey"
+            columns: ["ficha_principal_id"]
+            isOneToOne: false
+            referencedRelation: "fichas_cadastrais_locacao"
             referencedColumns: ["id"]
           },
           {

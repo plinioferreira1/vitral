@@ -3,25 +3,26 @@
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { limparDados, pendencias, textoPendencias, tipoLocatario, LIMITE_ARQUIVOS, type DadosFicha } from "@/lib/ficha-locacao/campos";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-type DadosFicha = Record<string, string | number | boolean | null>;
 type Resultado = { ok: boolean; erro?: string };
 
 const TIPOS = new Set(["application/pdf", "image/jpeg", "image/png", "image/webp"]);
 
 async function obterFicha(token: string) {
   const admin = createAdminClient() as unknown as SupabaseClient;
-  const { data } = await admin.from("fichas_cadastrais_locacao").select("id, tenant_id, status, expira_em").eq("token", token).maybeSingle();
+  const { data } = await admin.from("fichas_cadastrais_locacao").select("id, tenant_id, status, expira_em, tipo_locatario").eq("token", token).maybeSingle();
   if (!data || data.status === "cancelada" || new Date(data.expira_em).getTime() < Date.now()) return null;
-  return { admin, ficha: data };
+  return { admin, ficha: data, tipo: tipoLocatario(data.tipo_locatario) };
 }
 
 export async function salvarRascunho(token: string, dados: DadosFicha): Promise<Resultado> {
   const contexto = await obterFicha(token);
   if (!contexto || contexto.ficha.status === "concluida") return { ok: false, erro: "Este link não está mais disponível." };
-  const serializado = JSON.stringify(dados);
-  if (serializado.length > 50000) return { ok: false, erro: "Os dados informados ultrapassam o limite permitido." };
+  if (JSON.stringify(dados ?? {}).length > 50000) return { ok: false, erro: "Os dados informados ultrapassam o limite permitido." };
+  // Só o que a ficha conhece é gravado (o que vier a mais é descartado).
+  dados = limparDados(dados ?? {}, contexto.tipo);
   const { error } = await contexto.admin.from("fichas_cadastrais_locacao").update({ dados, status: "em_preenchimento", proponente_nome: String(dados.nome_completo ?? "").slice(0, 200) || null, proponente_email: String(dados.email ?? "").slice(0, 254) || null, atualizado_em: new Date().toISOString() }).eq("id", contexto.ficha.id);
   if (error) return { ok: false, erro: "Não foi possível salvar agora. Tente novamente." };
   revalidatePath(`/cadastro/locacao/${token}`);
@@ -32,7 +33,7 @@ export async function prepararUpload(token: string, nome: string, mime: string, 
   const contexto = await obterFicha(token);
   if (!contexto || contexto.ficha.status === "concluida") return { ok: false, erro: "Este link não está mais disponível." };
   const { count } = await contexto.admin.from("ficha_locacao_documentos").select("id", { count: "exact", head: true }).eq("ficha_id", contexto.ficha.id);
-  if ((count ?? 0) >= 10) return { ok: false, erro: "O limite de 10 arquivos já foi atingido." };
+  if ((count ?? 0) >= LIMITE_ARQUIVOS) return { ok: false, erro: "O limite de 10 arquivos já foi atingido." };
   if (!TIPOS.has(mime) || tamanho <= 0 || tamanho > 10 * 1024 * 1024) return { ok: false, erro: "Use PDF, JPG, PNG ou WebP com até 10 MB." };
   const extensao = nome.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "arquivo";
   const caminho = `${contexto.ficha.tenant_id}/${contexto.ficha.id}/${crypto.randomUUID()}.${extensao}`;
@@ -47,7 +48,7 @@ export async function confirmarUpload(token: string, documento: { caminho: strin
   const prefixo = `${contexto.ficha.tenant_id}/${contexto.ficha.id}/`;
   if (!documento.caminho.startsWith(prefixo) || !TIPOS.has(documento.mime) || documento.tamanho > 10 * 1024 * 1024) return { ok: false, erro: "Arquivo inválido." };
   const { count } = await contexto.admin.from("ficha_locacao_documentos").select("id", { count: "exact", head: true }).eq("ficha_id", contexto.ficha.id);
-  if ((count ?? 0) >= 10) return { ok: false, erro: "O limite de 10 arquivos já foi atingido." };
+  if ((count ?? 0) >= LIMITE_ARQUIVOS) return { ok: false, erro: "O limite de 10 arquivos já foi atingido." };
   const { error } = await contexto.admin.from("ficha_locacao_documentos").insert({ ficha_id: contexto.ficha.id, tipo: documento.tipo.slice(0, 80), nome_arquivo: documento.nome.slice(0, 255), caminho_storage: documento.caminho, tamanho_bytes: documento.tamanho, mime_type: documento.mime });
   if (error) return { ok: false, erro: "O arquivo foi enviado, mas não pôde ser registrado." };
   return { ok: true };
@@ -56,12 +57,10 @@ export async function confirmarUpload(token: string, documento: { caminho: strin
 export async function finalizarFicha(token: string, dados: DadosFicha, assinatura: string): Promise<Resultado> {
   const contexto = await obterFicha(token);
   if (!contexto || contexto.ficha.status === "concluida") return { ok: false, erro: "Este link não está mais disponível." };
-  const obrigatorios = ["nome_completo", "cpf", "nascimento", "telefone", "email", "endereco", "profissao", "renda_mensal", "imovel_interesse", "garantia"];
-  if (obrigatorios.some((campo) => !String(dados[campo] ?? "").trim())) return { ok: false, erro: "Preencha todos os campos obrigatórios antes de enviar." };
-  if (dados.garantia === "Fiador") {
-    const camposFiador = ["fiador_nome", "fiador_cpf", "fiador_rg", "fiador_telefone", "fiador_email", "fiador_endereco", "fiador_profissao", "fiador_renda", "fiador_imovel_quitado"];
-    if (camposFiador.some((campo) => !String(dados[campo] ?? "").trim())) return { ok: false, erro: "Preencha todos os dados obrigatórios do fiador." };
-  }
+  if (JSON.stringify(dados ?? {}).length > 50000) return { ok: false, erro: "Os dados informados ultrapassam o limite permitido." };
+  dados = limparDados(dados ?? {}, contexto.tipo);
+  const faltas = pendencias(dados, contexto.tipo);
+  if (faltas.length > 0) return { ok: false, erro: textoPendencias(faltas) };
   if (dados.consentimento_lgpd !== true) return { ok: false, erro: "É necessário aceitar o consentimento de tratamento de dados." };
   if (!assinatura.startsWith("data:image/png;base64,") || assinatura.length > 500000) return { ok: false, erro: "Faça sua assinatura antes de enviar." };
   const listaHeaders = await headers();
