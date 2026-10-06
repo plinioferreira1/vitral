@@ -22,7 +22,7 @@ export type AcessoFerias = {
 
 export async function acessoFerias(supabase: Supabase, userId: string, nivel: string): Promise<AcessoFerias> {
   const administrador = nivel === "diretor" || nivel === "gerente";
-  if (!liberadoParaNivel("ferias", nivel)) return { liberado: false, administrador, cadastro: null, participa: false, analisa: false };
+  if (!liberadoParaNivel("ferias", nivel) || !liberadoParaNivel("departamentoPessoal", nivel)) return { liberado: false, administrador, cadastro: null, participa: false, analisa: false };
   const [{ data: cadastro }, { count }] = await Promise.all([
     supabase.from("ferias_colaboradores").select("*").eq("usuario_id", userId).maybeSingle(),
     supabase.from("ferias_colaboradores").select("usuario_id", { count: "exact", head: true }).eq("gestor_id", userId),
@@ -51,7 +51,8 @@ export type PainelEquipe = {
   cadastros: Cadastro[];
   solicitacoes: Solicitacao[];
   ajustes: Tables<"ferias_ajustes">[];
-  afastamentos: Tables<"ferias_afastamentos">[];
+  /** ausências abonadas aprovadas no Departamento Pessoal (de quem tem usuário no Vitral) */
+  afastamentos: { usuario_id: string; data_inicio: string; data_fim: string; descricao: string }[];
   nomes: Map<string, string>;
 };
 
@@ -62,7 +63,7 @@ export async function carregarEquipe(supabase: Supabase): Promise<PainelEquipe> 
     supabase.from("ferias_colaboradores").select("*"),
     supabase.from("ferias_solicitacoes").select("*").order("criado_em", { ascending: false }).limit(1000),
     supabase.from("ferias_ajustes").select("*").order("criado_em", { ascending: false }),
-    supabase.from("ferias_afastamentos").select("*").order("data_inicio", { ascending: false }).limit(500),
+    supabase.from("dp_ausencias").select("tipo, data_inicio, data_fim, dp_colaboradores!inner ( usuario_id )").eq("status", "aprovada").eq("abona", true).order("data_inicio", { ascending: false }).limit(500),
   ]);
   const nomes = new Map((usuarios ?? []).map((u) => [u.id, u.nome]));
   return {
@@ -70,7 +71,9 @@ export async function carregarEquipe(supabase: Supabase): Promise<PainelEquipe> 
     cadastros: cadastros ?? [],
     solicitacoes: solicitacoes ?? [],
     ajustes: ajustes ?? [],
-    afastamentos: afastamentos ?? [],
+    afastamentos: ((afastamentos ?? []) as unknown as { tipo: string; data_inicio: string; data_fim: string; dp_colaboradores: { usuario_id: string | null } | null }[])
+      .filter((a) => a.dp_colaboradores?.usuario_id)
+      .map((a) => ({ usuario_id: a.dp_colaboradores!.usuario_id!, data_inicio: a.data_inicio, data_fim: a.data_fim, descricao: a.tipo })),
     nomes,
   };
 }

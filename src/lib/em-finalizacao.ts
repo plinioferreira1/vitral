@@ -9,6 +9,7 @@ export const EM_FINALIZACAO = {
   debitos: true,
   termosEntrega: true,
   ferias: true,
+  departamentoPessoal: true,
 } as const;
 
 export type ModuloEmFinalizacao = keyof typeof EM_FINALIZACAO;

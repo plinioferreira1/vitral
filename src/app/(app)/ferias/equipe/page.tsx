@@ -1,16 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
-import { BotaoEnviar } from "@/components/botao-enviar";
-import { CARD_CLASS, INPUT_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
+import { CARD_CLASS } from "@/components/ui/styles";
 import { hojeISO } from "@/lib/data-br";
-import { GRUPOS_GESTOR, ROTULO_GRUPO, dataBR, fraseSituacao, grupoDoGestor, periodoBR, situacao, somarDias, type GrupoGestor } from "@/lib/ferias/regras";
+import { GRUPOS_GESTOR, ROTULO_GRUPO, dataBR, fraseSituacao, grupoDoGestor, periodoBR, situacao, type GrupoGestor } from "@/lib/ferias/regras";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
-import { adicionarAfastamento, removerAfastamento } from "../actions";
 import { acessoFerias, ausenciasDe, carregarEquipe, saldoTotal, saldosDe } from "../dados";
-import { NavFerias, ROTULO, ROTULO_TIPO, SeloSituacao } from "../ui";
+import { NavFerias, ROTULO_TIPO, SeloSituacao } from "../ui";
 
 const MESES = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
@@ -37,7 +34,6 @@ export default async function EquipeFeriasPage({ searchParams }: { searchParams:
     const ausencias = ausenciasDe(e).filter((a) => a.inicio <= dias[ultimo - 1] && a.fim >= dias[0]);
     const pessoas = e.cadastros.filter((c) => c.participa).map((c) => ({ id: c.usuario_id, nome: e.nomes.get(c.usuario_id) ?? "—", departamento: c.departamento }));
     pessoas.sort((a, b) => (a.departamento ?? "").localeCompare(b.departamento ?? "") || a.nome.localeCompare(b.nome));
-    const afastamentosFuturos = e.afastamentos.filter((a) => a.data_fim >= somarDias(hoje, -30));
 
     return (
       <div className="mx-auto max-w-6xl space-y-5">
@@ -110,62 +106,13 @@ export default async function EquipeFeriasPage({ searchParams }: { searchParams:
           </section>
         )}
 
-        <section className={`${CARD_CLASS} space-y-4 p-4 sm:p-5`}>
-          <div>
-            <h2 className="text-sm font-semibold text-ink">Afastamentos</h2>
-            <p className="text-xs text-ink-muted">Registre licenças e outras ausências para elas aparecerem no impacto da equipe. Não é preciso informar o motivo.</p>
-          </div>
-          <form action={adicionarAfastamento} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.4fr_auto] lg:items-end">
-            <label className="block">
-              <span className={ROTULO}>Pessoa</span>
-              <select name="usuario_id" required className={INPUT_CLASS}>
-                <option value="">Selecione…</option>
-                {pessoas
-                  .filter((p) => acesso.administrador || p.id !== user.id)
-                  .map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.nome}
-                    </option>
-                  ))}
-              </select>
-            </label>
-            <label className="block">
-              <span className={ROTULO}>Início</span>
-              <input type="date" name="data_inicio" required className={INPUT_CLASS} />
-            </label>
-            <label className="block">
-              <span className={ROTULO}>Fim</span>
-              <input type="date" name="data_fim" required className={INPUT_CLASS} />
-            </label>
-            <label className="block">
-              <span className={ROTULO}>Descrição (opcional)</span>
-              <input name="descricao" placeholder="Ex.: licença" className={INPUT_CLASS} />
-            </label>
-            <BotaoEnviar className={SECONDARY_BUTTON_CLASS} textoEnviando="Salvando…">
-              Registrar
-            </BotaoEnviar>
-          </form>
-          {afastamentosFuturos.length > 0 && (
-            <ul className="divide-y divide-border text-sm">
-              {afastamentosFuturos.map((a) => (
-                <li key={a.id} className="flex flex-wrap items-center justify-between gap-3 py-2">
-                  <span className="text-ink">
-                    {e.nomes.get(a.usuario_id) ?? "—"} · <span className="num">{periodoBR(a.data_inicio, a.data_fim)}</span>
-                    {a.descricao ? <span className="text-ink-muted"> · {a.descricao}</span> : null}
-                  </span>
-                  {acesso.administrador && (
-                    <form action={removerAfastamento}>
-                      <input type="hidden" name="id" value={a.id} />
-                      <BotaoComConfirmacao className="text-xs text-rose-700 hover:underline" mensagem="Remover este afastamento?" textoEnviando="Removendo…">
-                        Remover
-                      </BotaoComConfirmacao>
-                    </form>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
+        <p className="text-xs text-ink-muted">
+          Licenças, atestados e outras ausências são registrados em{" "}
+          <Link href="/dp/ausencias" className="font-medium text-brand hover:underline">
+            Departamento Pessoal › Ausências e afastamentos
+          </Link>{" "}
+          e aparecem aqui automaticamente.
+        </p>
       </div>
     );
   }

@@ -68,8 +68,8 @@ export default async function MinhasFeriasPage() {
         <div className={`${CARD_CLASS} px-6 py-10 text-center text-sm text-ink-muted`}>
           Seu cadastro de férias ainda não foi feito.{" "}
           {acesso.administrador ? (
-            <Link href="/ferias/configuracao" className="font-medium text-brand hover:underline">
-              Fazer o cadastro da equipe
+            <Link href="/dp/colaboradores" className="font-medium text-brand hover:underline">
+              Abrir o cadastro de colaboradores
             </Link>
           ) : (
             "Fale com a gestão para informar sua data de admissão."

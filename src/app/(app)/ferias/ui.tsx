@@ -25,7 +25,7 @@ export const ROTULO_TIPO: Record<string, string> = { ferias: "Férias", alteraca
 export function NavFerias({ acesso, atual, pendentes = 0 }: { acesso: AcessoFerias; atual: "minhas" | "equipe" | "calendario" | "cadastro"; pendentes?: number }) {
   const abas: [typeof atual, string, string][] = [["minhas", "Minhas férias", "/ferias"]];
   if (acesso.analisa) abas.push(["equipe", "Solicitações de férias", "/ferias/equipe"], ["calendario", "Calendário da equipe", "/ferias/equipe?aba=calendario"]);
-  if (acesso.administrador) abas.push(["cadastro", "Cadastro", "/ferias/configuracao"]);
+  if (acesso.administrador) abas.push(["cadastro", "Colaboradores", "/dp/colaboradores"]);
   if (abas.length === 1) return null;
   return (
     <nav className="-mx-1 flex gap-1 overflow-x-auto border-b border-border px-1">

@@ -19,6 +19,7 @@ describe("telas em finalização", () => {
     expect(hrefs(false)).not.toContain("/ferias");
     expect(hrefs(true)).toContain('"/ferias"');
     expect(hrefs(true)).toContain("Departamento pessoal");
+    for (const rota of ["/dp", "/dp/colaboradores", "/ferias", "/dp/ponto", "/dp/ausencias", "/dp/documentos", "/dp/configuracoes"]) expect(hrefs(true)).toContain(`"${rota}"`);
     expect(hrefs(false)).not.toContain("Departamento pessoal");
     expect(hrefs(true)).toContain('"/vendas/termos-entrega"');
     expect(hrefs(true)).toContain("/vendas/termos-entrega/configuracao");

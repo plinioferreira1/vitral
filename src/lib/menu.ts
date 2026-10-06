@@ -11,7 +11,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   const verAvaliacoes = !EM_FINALIZACAO.avaliacoes || p.podeConfigurar;
   const verDebitos = !EM_FINALIZACAO.debitos || p.podeConfigurar;
   const verTermosEntrega = !EM_FINALIZACAO.termosEntrega || p.podeConfigurar;
-  const verFerias = !EM_FINALIZACAO.ferias || p.podeConfigurar;
+  const verFerias = !EM_FINALIZACAO.departamentoPessoal || p.podeConfigurar;
   const documentos: ItemMenu = {
     label: "Documentos",
     children: [
@@ -92,14 +92,13 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   if (operacional && verFerias) itens.push({
     label: "Departamento pessoal",
     children: [
-      { href: "/ferias", label: "Minhas férias" },
-      ...(p.podeConfigurar
-        ? [
-            { href: "/ferias/equipe", label: "Solicitações de férias" },
-            { href: "/ferias/equipe?aba=calendario", label: "Calendário da equipe" },
-            { href: "/ferias/configuracao", label: "Cadastro de férias" },
-          ]
-        : []),
+      { href: "/dp", label: "Resumo" },
+      { href: "/dp/colaboradores", label: "Colaboradores" },
+      { href: "/ferias", label: "Férias" },
+      { href: "/dp/ponto", label: "Controle de ponto" },
+      { href: "/dp/ausencias", label: "Ausências e afastamentos" },
+      { href: "/dp/documentos", label: "Documentos" },
+      ...(p.podeConfigurar ? [{ href: "/dp/configuracoes", label: "Configurações" }] : []),
     ],
   });
   itens.push({ href: "/corretor", label: "Central de ajuda" });

@@ -6,7 +6,6 @@ import { avisar } from "@/lib/aviso";
 import { hojeISO } from "@/lib/data-br";
 import {
   ACOES,
-  REGIMES,
   calcularDatas,
   dataValida,
   notificacoesDaAcao,
@@ -51,6 +50,7 @@ const inteiro = (f: FormData, nome: string) => {
 
 function atualizar(id?: string) {
   revalidatePath("/ferias", "layout");
+  revalidatePath("/dp", "layout");
   if (id) revalidatePath(`/ferias/${id}`);
 }
 
@@ -302,7 +302,7 @@ export async function marcarNotificacoesFeriasLidas(solicitacaoId?: string) {
 }
 
 // ---------------------------------------------------------------
-// cadastro (administrador): quem tem férias, ajustes e afastamentos
+// ajuste de saldo (administrador) — o cadastro de quem tem férias fica em Departamento Pessoal › Colaboradores
 // ---------------------------------------------------------------
 
 async function contextoAdmin() {
@@ -318,47 +318,6 @@ async function contextoAdmin() {
 async function usuarioDaEmpresa(ctx: Contexto, usuarioId: string): Promise<boolean> {
   const { data } = await ctx.admin.from("usuarios").select("id").eq("id", usuarioId).eq("tenant_id", ctx.tenantId).maybeSingle();
   return !!data;
-}
-
-export async function salvarColaboradorFerias(formData: FormData) {
-  const ctx = await contextoAdmin();
-  if (!ctx) return;
-  const usuarioId = txt(formData, "usuario_id", 40);
-  if (!(await usuarioDaEmpresa(ctx, usuarioId))) return;
-  const admissao = txt(formData, "data_admissao", 10);
-  const participa = formData.get("participa") === "on";
-  if (participa && !dataValida(admissao)) {
-    await avisar("erro", "Informe a data de admissão — é dela que saem os períodos de férias.");
-    return;
-  }
-  const regime = (REGIMES as readonly string[]).includes(txt(formData, "regime", 10)) ? txt(formData, "regime", 10) : "clt";
-  const gestorId = txt(formData, "gestor_id", 40) || null;
-  if (gestorId === usuarioId) {
-    await avisar("erro", "A pessoa não pode ser gestora das próprias férias.");
-    return;
-  }
-  const dias = inteiro(formData, "dias_por_periodo");
-  const { error } = await ctx.admin.from("ferias_colaboradores").upsert({
-    usuario_id: usuarioId,
-    tenant_id: ctx.tenantId,
-    participa,
-    data_admissao: dataValida(admissao) ? admissao : null,
-    regime,
-    departamento: txt(formData, "departamento", 80) || null,
-    gestor_id: gestorId,
-    dias_por_periodo: Number.isInteger(dias) && dias >= 1 && dias <= 60 ? dias : 30,
-    observacoes: txt(formData, "observacoes", 500) || null,
-    atualizado_por: ctx.autor.id,
-    atualizado_em: new Date().toISOString(),
-  });
-  if (error) {
-    await avisar("erro", `Não foi possível salvar: ${error.message}`);
-    return;
-  }
-  // pedidos em andamento acompanham o novo gestor
-  await ctx.admin.from("ferias_solicitacoes").update({ gestor_id: gestorId }).eq("usuario_id", usuarioId).in("status", ["aguardando_analise", "aguardando_colaborador", "aguardando_gestor"]);
-  atualizar();
-  await avisar("sucesso", "Cadastro de férias salvo.");
 }
 
 export async function adicionarAjusteFerias(formData: FormData) {
@@ -379,37 +338,4 @@ export async function adicionarAjusteFerias(formData: FormData) {
   }
   atualizar();
   await avisar("sucesso", "Ajuste de saldo registrado.");
-}
-
-export async function adicionarAfastamento(formData: FormData) {
-  const ctx = await contexto();
-  if (!ctx) return;
-  const usuarioId = txt(formData, "usuario_id", 40);
-  const inicio = txt(formData, "data_inicio", 10);
-  const fim = txt(formData, "data_fim", 10);
-  // administrador registra de qualquer pessoa; gestor, só do próprio time (o que a leitura dele alcança)
-  const { data: visivel } = await ctx.supabase.from("ferias_colaboradores").select("usuario_id").eq("usuario_id", usuarioId).maybeSingle();
-  if (!ctx.acesso.analisa || !visivel || (!ctx.acesso.administrador && usuarioId === ctx.autor.id)) {
-    await avisar("erro", "Você não pode registrar afastamento para esta pessoa.");
-    return;
-  }
-  if (!dataValida(inicio) || !dataValida(fim) || fim < inicio) {
-    await avisar("erro", "Informe o início e o fim do afastamento.");
-    return;
-  }
-  const { error } = await ctx.admin.from("ferias_afastamentos").insert({ tenant_id: ctx.tenantId, usuario_id: usuarioId, data_inicio: inicio, data_fim: fim, descricao: txt(formData, "descricao", 200) || null, criado_por: ctx.autor.id });
-  if (error) {
-    await avisar("erro", `Não foi possível salvar: ${error.message}`);
-    return;
-  }
-  atualizar();
-  await avisar("sucesso", "Afastamento registrado.");
-}
-
-export async function removerAfastamento(formData: FormData) {
-  const ctx = await contextoAdmin();
-  if (!ctx) return;
-  await ctx.admin.from("ferias_afastamentos").delete().eq("id", txt(formData, "id", 40)).eq("tenant_id", ctx.tenantId);
-  atualizar();
-  await avisar("sucesso", "Afastamento removido.");
 }

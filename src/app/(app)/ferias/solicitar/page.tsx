@@ -17,9 +17,10 @@ export default async function SolicitarFeriasPage({ searchParams }: { searchPara
   if (!acesso.liberado) redirect("/");
   if (!acesso.participa) redirect("/ferias");
   const hoje = hojeISO();
-  const [{ data: solicitacoes }, { data: ajustes }] = await Promise.all([
+  const [{ data: solicitacoes }, { data: ajustes }, { data: configDP }] = await Promise.all([
     supabase.from("ferias_solicitacoes").select("*").eq("usuario_id", user.id),
     supabase.from("ferias_ajustes").select("*").eq("usuario_id", user.id),
+    supabase.from("dp_config").select("ferias_antecedencia_dias").maybeSingle(),
   ]);
   const origem = alterar ? (solicitacoes ?? []).find((s) => s.id === alterar && podePedirAlteracao(s, hoje)) : null;
   if (alterar && !origem) redirect("/ferias");
@@ -39,6 +40,7 @@ export default async function SolicitarFeriasPage({ searchParams }: { searchPara
           regime={regimeDe(acesso.cadastro)}
           diasPorPeriodo={acesso.cadastro?.dias_por_periodo ?? 30}
           hoje={hoje}
+          antecedenciaDias={configDP?.ferias_antecedencia_dias ?? 30}
           origem={origem ? { id: origem.id, periodoInicio: origem.periodo_aquisitivo_inicio, dataInicio: origem.data_inicio, dias: origem.dias, abonoDias: origem.abono_dias, resumo: periodoBR(origem.data_inicio, origem.data_fim) } : null}
         />
       ) : (

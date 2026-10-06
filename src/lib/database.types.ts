@@ -2157,6 +2157,656 @@ export type Database = {
           },
         ]
       }
+      dp_ausencias: {
+        Row: {
+          abona: boolean
+          anexo_caminho: string | null
+          anexo_nome: string | null
+          colaborador_id: string
+          criado_em: string
+          criado_por: string | null
+          criado_por_nome: string | null
+          data_fim: string
+          data_inicio: string
+          decidido_em: string | null
+          decidido_por: string | null
+          decidido_por_nome: string | null
+          id: string
+          observacao: string | null
+          status: string
+          tenant_id: string
+          tipo: string
+        }
+        Insert: {
+          abona?: boolean
+          anexo_caminho?: string | null
+          anexo_nome?: string | null
+          colaborador_id: string
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          data_fim: string
+          data_inicio: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          decidido_por_nome?: string | null
+          id?: string
+          observacao?: string | null
+          status?: string
+          tenant_id: string
+          tipo: string
+        }
+        Update: {
+          abona?: boolean
+          anexo_caminho?: string | null
+          anexo_nome?: string | null
+          colaborador_id?: string
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          data_fim?: string
+          data_inicio?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          decidido_por_nome?: string | null
+          id?: string
+          observacao?: string | null
+          status?: string
+          tenant_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dp_ausencias_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "dp_colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_ausencias_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_ausencias_decidido_por_fkey"
+            columns: ["decidido_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_ausencias_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dp_banco_ajustes: {
+        Row: {
+          colaborador_id: string
+          criado_em: string
+          criado_por: string | null
+          criado_por_nome: string | null
+          data: string
+          id: string
+          minutos: number
+          motivo: string
+          tenant_id: string
+        }
+        Insert: {
+          colaborador_id: string
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          data: string
+          id?: string
+          minutos: number
+          motivo: string
+          tenant_id: string
+        }
+        Update: {
+          colaborador_id?: string
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          data?: string
+          id?: string
+          minutos?: number
+          motivo?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dp_banco_ajustes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "dp_colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_banco_ajustes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_banco_ajustes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dp_colaboradores: {
+        Row: {
+          atualizado_em: string
+          carga_semanal_horas: number | null
+          cargo: string | null
+          criado_em: string
+          criado_por: string | null
+          data_admissao: string | null
+          data_desligamento: string | null
+          data_nascimento: string | null
+          departamento: string | null
+          dias_ferias_periodo: number
+          email: string | null
+          empresa: string | null
+          foto_caminho: string | null
+          gestor_id: string | null
+          id: string
+          jornada: Json | null
+          nome: string
+          observacoes: string | null
+          ponto_inicio: string | null
+          regime: string
+          registra_ponto: boolean
+          status: string
+          telefone: string | null
+          tem_ferias: boolean
+          tenant_id: string
+          usuario_id: string | null
+          vinculo: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          carga_semanal_horas?: number | null
+          cargo?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          data_admissao?: string | null
+          data_desligamento?: string | null
+          data_nascimento?: string | null
+          departamento?: string | null
+          dias_ferias_periodo?: number
+          email?: string | null
+          empresa?: string | null
+          foto_caminho?: string | null
+          gestor_id?: string | null
+          id?: string
+          jornada?: Json | null
+          nome: string
+          observacoes?: string | null
+          ponto_inicio?: string | null
+          regime?: string
+          registra_ponto?: boolean
+          status?: string
+          telefone?: string | null
+          tem_ferias?: boolean
+          tenant_id: string
+          usuario_id?: string | null
+          vinculo?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          carga_semanal_horas?: number | null
+          cargo?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          data_admissao?: string | null
+          data_desligamento?: string | null
+          data_nascimento?: string | null
+          departamento?: string | null
+          dias_ferias_periodo?: number
+          email?: string | null
+          empresa?: string | null
+          foto_caminho?: string | null
+          gestor_id?: string | null
+          id?: string
+          jornada?: Json | null
+          nome?: string
+          observacoes?: string | null
+          ponto_inicio?: string | null
+          regime?: string
+          registra_ponto?: boolean
+          status?: string
+          telefone?: string | null
+          tem_ferias?: boolean
+          tenant_id?: string
+          usuario_id?: string | null
+          vinculo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dp_colaboradores_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_colaboradores_gestor_id_fkey"
+            columns: ["gestor_id"]
+            isOneToOne: false
+            referencedRelation: "dp_colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_colaboradores_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_colaboradores_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: true
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dp_config: {
+        Row: {
+          atualizado_em: string
+          atualizado_por: string | null
+          banco_horas_ativo: boolean
+          cargos: Json
+          departamentos: Json
+          documentos_alerta_dias: number
+          empresas: Json
+          ferias_alerta_vencimento_dias: number
+          ferias_antecedencia_dias: number
+          ferias_aviso_proximas_dias: number
+          hora_extra_limite_diario_min: number
+          jornada: Json
+          tenant_id: string
+          tipos_ausencia: Json
+          tipos_documento: Json
+          tolerancia_min: number
+          vinculos: Json
+        }
+        Insert: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          banco_horas_ativo?: boolean
+          cargos?: Json
+          departamentos?: Json
+          documentos_alerta_dias?: number
+          empresas?: Json
+          ferias_alerta_vencimento_dias?: number
+          ferias_antecedencia_dias?: number
+          ferias_aviso_proximas_dias?: number
+          hora_extra_limite_diario_min?: number
+          jornada?: Json
+          tenant_id: string
+          tipos_ausencia?: Json
+          tipos_documento?: Json
+          tolerancia_min?: number
+          vinculos?: Json
+        }
+        Update: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          banco_horas_ativo?: boolean
+          cargos?: Json
+          departamentos?: Json
+          documentos_alerta_dias?: number
+          empresas?: Json
+          ferias_alerta_vencimento_dias?: number
+          ferias_antecedencia_dias?: number
+          ferias_aviso_proximas_dias?: number
+          hora_extra_limite_diario_min?: number
+          jornada?: Json
+          tenant_id?: string
+          tipos_ausencia?: Json
+          tipos_documento?: Json
+          tolerancia_min?: number
+          vinculos?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dp_config_atualizado_por_fkey"
+            columns: ["atualizado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dp_documentos: {
+        Row: {
+          caminho: string
+          categoria: string
+          colaborador_id: string
+          criado_em: string
+          data_documento: string | null
+          enviado_por: string | null
+          enviado_por_nome: string | null
+          id: string
+          nome_arquivo: string
+          observacao: string | null
+          tenant_id: string
+          titulo: string
+          vencimento: string | null
+        }
+        Insert: {
+          caminho: string
+          categoria: string
+          colaborador_id: string
+          criado_em?: string
+          data_documento?: string | null
+          enviado_por?: string | null
+          enviado_por_nome?: string | null
+          id?: string
+          nome_arquivo: string
+          observacao?: string | null
+          tenant_id: string
+          titulo: string
+          vencimento?: string | null
+        }
+        Update: {
+          caminho?: string
+          categoria?: string
+          colaborador_id?: string
+          criado_em?: string
+          data_documento?: string | null
+          enviado_por?: string | null
+          enviado_por_nome?: string | null
+          id?: string
+          nome_arquivo?: string
+          observacao?: string | null
+          tenant_id?: string
+          titulo?: string
+          vencimento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dp_documentos_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "dp_colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_documentos_enviado_por_fkey"
+            columns: ["enviado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_documentos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dp_eventos: {
+        Row: {
+          acao: string
+          anterior: Json | null
+          colaborador_id: string | null
+          criado_em: string
+          descricao: string
+          entidade: string
+          id: string
+          justificativa: string | null
+          novo: Json | null
+          registro_id: string | null
+          tenant_id: string
+          usuario_id: string | null
+          usuario_nome: string | null
+        }
+        Insert: {
+          acao: string
+          anterior?: Json | null
+          colaborador_id?: string | null
+          criado_em?: string
+          descricao: string
+          entidade: string
+          id?: string
+          justificativa?: string | null
+          novo?: Json | null
+          registro_id?: string | null
+          tenant_id: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Update: {
+          acao?: string
+          anterior?: Json | null
+          colaborador_id?: string | null
+          criado_em?: string
+          descricao?: string
+          entidade?: string
+          id?: string
+          justificativa?: string | null
+          novo?: Json | null
+          registro_id?: string | null
+          tenant_id?: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dp_eventos_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "dp_colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_eventos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_eventos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dp_ponto_correcoes: {
+        Row: {
+          anexo_caminho: string | null
+          anexo_nome: string | null
+          colaborador_id: string
+          criado_em: string
+          data: string
+          decidido_em: string | null
+          decidido_por: string | null
+          decidido_por_nome: string | null
+          horario_original: string | null
+          horario_solicitado: string
+          id: string
+          justificativa: string
+          motivo_recusa: string | null
+          solicitado_por: string | null
+          solicitado_por_nome: string | null
+          status: string
+          tenant_id: string
+          tipo: string
+        }
+        Insert: {
+          anexo_caminho?: string | null
+          anexo_nome?: string | null
+          colaborador_id: string
+          criado_em?: string
+          data: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          decidido_por_nome?: string | null
+          horario_original?: string | null
+          horario_solicitado: string
+          id?: string
+          justificativa: string
+          motivo_recusa?: string | null
+          solicitado_por?: string | null
+          solicitado_por_nome?: string | null
+          status?: string
+          tenant_id: string
+          tipo: string
+        }
+        Update: {
+          anexo_caminho?: string | null
+          anexo_nome?: string | null
+          colaborador_id?: string
+          criado_em?: string
+          data?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          decidido_por_nome?: string | null
+          horario_original?: string | null
+          horario_solicitado?: string
+          id?: string
+          justificativa?: string
+          motivo_recusa?: string | null
+          solicitado_por?: string | null
+          solicitado_por_nome?: string | null
+          status?: string
+          tenant_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dp_ponto_correcoes_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "dp_colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_ponto_correcoes_decidido_por_fkey"
+            columns: ["decidido_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_ponto_correcoes_solicitado_por_fkey"
+            columns: ["solicitado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_ponto_correcoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dp_ponto_registros: {
+        Row: {
+          ativo: boolean
+          colaborador_id: string
+          correcao_id: string | null
+          criado_em: string
+          data: string
+          horario: string
+          id: string
+          ip: string | null
+          origem: string
+          registrado_por: string | null
+          substitui_id: string | null
+          tenant_id: string
+          tipo: string
+        }
+        Insert: {
+          ativo?: boolean
+          colaborador_id: string
+          correcao_id?: string | null
+          criado_em?: string
+          data: string
+          horario: string
+          id?: string
+          ip?: string | null
+          origem?: string
+          registrado_por?: string | null
+          substitui_id?: string | null
+          tenant_id: string
+          tipo: string
+        }
+        Update: {
+          ativo?: boolean
+          colaborador_id?: string
+          correcao_id?: string | null
+          criado_em?: string
+          data?: string
+          horario?: string
+          id?: string
+          ip?: string | null
+          origem?: string
+          registrado_por?: string | null
+          substitui_id?: string | null
+          tenant_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dp_ponto_registros_colaborador_id_fkey"
+            columns: ["colaborador_id"]
+            isOneToOne: false
+            referencedRelation: "dp_colaboradores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_ponto_registros_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_ponto_registros_substitui_id_fkey"
+            columns: ["substitui_id"]
+            isOneToOne: false
+            referencedRelation: "dp_ponto_registros"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dp_ponto_registros_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       etapas: {
         Row: {
           data_prevista: string | null
@@ -2268,61 +2918,6 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      ferias_afastamentos: {
-        Row: {
-          criado_em: string
-          criado_por: string | null
-          data_fim: string
-          data_inicio: string
-          descricao: string | null
-          id: string
-          tenant_id: string
-          usuario_id: string
-        }
-        Insert: {
-          criado_em?: string
-          criado_por?: string | null
-          data_fim: string
-          data_inicio: string
-          descricao?: string | null
-          id?: string
-          tenant_id: string
-          usuario_id: string
-        }
-        Update: {
-          criado_em?: string
-          criado_por?: string | null
-          data_fim?: string
-          data_inicio?: string
-          descricao?: string | null
-          id?: string
-          tenant_id?: string
-          usuario_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "ferias_afastamentos_criado_por_fkey"
-            columns: ["criado_por"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ferias_afastamentos_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "ferias_afastamentos_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
         ]
@@ -5430,6 +6025,11 @@ export type Database = {
       }
       debitos_pode_operar: { Args: never; Returns: boolean }
       debitos_pode_ver: { Args: never; Returns: boolean }
+      dp_meu_colaborador_id: { Args: never; Returns: string }
+      dp_pode_ver_colaborador: {
+        Args: { p_colaborador: string }
+        Returns: boolean
+      }
       seed_etapas_padrao: { Args: { p_tenant_id: string }; Returns: undefined }
       seed_modelos_padrao: { Args: { p_tenant_id: string }; Returns: undefined }
       termo_entrega_assinatura_buscar: {

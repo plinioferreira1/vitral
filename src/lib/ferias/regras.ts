@@ -123,7 +123,7 @@ export function adiantamento13Aplicavel(regime: Regime, dataInicio: string | nul
   return mes >= 2 && mes <= 11;
 }
 
-export function validarPedido(p: Pedido, ctx: { hoje: string; regime: Regime; saldos: SaldoPeriodo[]; diasPorPeriodo: number }): { erros: string[]; avisos: string[]; saldoApos: number | null } {
+export function validarPedido(p: Pedido, ctx: { hoje: string; regime: Regime; saldos: SaldoPeriodo[]; diasPorPeriodo: number; antecedenciaDias?: number }): { erros: string[]; avisos: string[]; saldoApos: number | null } {
   const erros: string[] = [];
   const avisos: string[] = [];
   const saldo = ctx.saldos.find((s) => s.inicio === p.periodoInicio);
@@ -149,8 +149,9 @@ export function validarPedido(p: Pedido, ctx: { hoje: string; regime: Regime; sa
     if (p.dias < 5) avisos.push("Pela CLT, nenhum período de férias pode ter menos de 5 dias corridos.");
     if (saldo && p.dias < 14 && saldo.disponivel === ctx.diasPorPeriodo) avisos.push("Pela CLT, um dos períodos de férias precisa ter pelo menos 14 dias corridos.");
     if ([5, 6, 0].includes(diaDaSemana(p.dataInicio))) avisos.push("Pela CLT, as férias não devem começar nos dois dias antes do descanso semanal (sexta, sábado ou domingo).");
-    if (diasEntre(ctx.hoje, p.dataInicio) <= 30) avisos.push("Faltam menos de 30 dias para o início — o aviso de férias costuma exigir 30 dias de antecedência.");
   }
+  const antecedencia = ctx.antecedenciaDias ?? 30;
+  if (erros.length === 0 && antecedencia > 0 && diasEntre(ctx.hoje, p.dataInicio) <= antecedencia) avisos.push(`Faltam menos de ${antecedencia} dias para o início — o combinado é pedir com ${antecedencia} dias de antecedência.`);
   return { erros, avisos, saldoApos };
 }
 

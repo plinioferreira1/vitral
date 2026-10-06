@@ -14,7 +14,9 @@ export function FormSolicitar({
   diasPorPeriodo,
   hoje,
   origem,
+  antecedenciaDias,
 }: {
+  antecedenciaDias: number;
   saldos: SaldoPeriodo[];
   regime: Regime;
   diasPorPeriodo: number;
@@ -35,8 +37,8 @@ export function FormSolicitar({
   const datas = dataValida(inicio) && Number.isInteger(nDias) && nDias > 0 ? calcularDatas(inicio, nDias) : null;
   const preenchido = !!periodo && dataValida(inicio) && Number.isInteger(nDias) && nDias > 0;
   const v = useMemo(
-    () => validarPedido({ periodoInicio: periodo, dataInicio: inicio, dias: Number.isInteger(nDias) ? nDias : 0, abonoDias: nAbono, adiantamento13: decimo }, { hoje, regime, saldos, diasPorPeriodo }),
-    [periodo, inicio, nDias, nAbono, decimo, hoje, regime, saldos, diasPorPeriodo]
+    () => validarPedido({ periodoInicio: periodo, dataInicio: inicio, dias: Number.isInteger(nDias) ? nDias : 0, abonoDias: nAbono, adiantamento13: decimo }, { hoje, regime, saldos, diasPorPeriodo, antecedenciaDias }),
+    [periodo, inicio, nDias, nAbono, decimo, hoje, regime, saldos, diasPorPeriodo, antecedenciaDias]
   );
   const podeDecimo = adiantamento13Aplicavel(regime, inicio);
 
