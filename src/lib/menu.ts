@@ -10,6 +10,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   // telas em finalização só aparecem para a gestão (diretor/gerente)
   const verAvaliacoes = !EM_FINALIZACAO.avaliacoes || p.podeConfigurar;
   const verDebitos = !EM_FINALIZACAO.debitos || p.podeConfigurar;
+  const verTermosEntrega = !EM_FINALIZACAO.termosEntrega || p.podeConfigurar;
   const documentos: ItemMenu = {
     label: "Documentos",
     children: [
@@ -38,6 +39,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       children: [
         { href: "/vendas?aba=resumo", label: "Visão geral" },
         { href: "/vendas?aba=andamento", label: "Processos de venda" },
+        ...(verTermosEntrega ? [{ href: "/vendas/termos-entrega", label: "Termos de entrega de chaves" }] : []),
       ],
     });
     if (p.temFinanciamento) itens.push({
@@ -110,6 +112,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
         children: [{ href: "/financeiro/categorias", label: "Categorias financeiras" }],
       },
       { href: "/avaliacoes/configuracao", label: "Avaliações de imóveis" },
+      { href: "/vendas/termos-entrega/configuracao", label: "Termo de entrega de chaves" },
       {
         label: "Conteúdo e treinamento",
         children: [

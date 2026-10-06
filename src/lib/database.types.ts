@@ -3978,6 +3978,682 @@ export type Database = {
         }
         Relationships: []
       }
+      termo_entrega_anexos: {
+        Row: {
+          caminho: string
+          criado_em: string
+          encargo_id: string | null
+          enviado_por: string | null
+          enviado_por_nome: string | null
+          id: string
+          nome: string
+          tamanho: number | null
+          tenant_id: string
+          termo_id: string
+        }
+        Insert: {
+          caminho: string
+          criado_em?: string
+          encargo_id?: string | null
+          enviado_por?: string | null
+          enviado_por_nome?: string | null
+          id?: string
+          nome: string
+          tamanho?: number | null
+          tenant_id: string
+          termo_id: string
+        }
+        Update: {
+          caminho?: string
+          criado_em?: string
+          encargo_id?: string | null
+          enviado_por?: string | null
+          enviado_por_nome?: string | null
+          id?: string
+          nome?: string
+          tamanho?: number | null
+          tenant_id?: string
+          termo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "termo_entrega_anexos_enviado_por_fkey"
+            columns: ["enviado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termo_entrega_anexos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termo_entrega_anexos_termo_id_fkey"
+            columns: ["termo_id"]
+            isOneToOne: false
+            referencedRelation: "termos_entrega"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      termo_entrega_config: {
+        Row: {
+          atualizado_em: string
+          atualizado_por: string | null
+          cidade: string
+          clausula_padrao: string | null
+          margem_inferior: number
+          margem_superior: number
+          multa_diaria_centavos: number
+          observacoes_padrao: string | null
+          prazo_transferencia_dias: number
+          tenant_id: string
+          texto_complementar: string | null
+          timbrado_caminho: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          cidade?: string
+          clausula_padrao?: string | null
+          margem_inferior?: number
+          margem_superior?: number
+          multa_diaria_centavos?: number
+          observacoes_padrao?: string | null
+          prazo_transferencia_dias?: number
+          tenant_id: string
+          texto_complementar?: string | null
+          timbrado_caminho?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          cidade?: string
+          clausula_padrao?: string | null
+          margem_inferior?: number
+          margem_superior?: number
+          multa_diaria_centavos?: number
+          observacoes_padrao?: string | null
+          prazo_transferencia_dias?: number
+          tenant_id?: string
+          texto_complementar?: string | null
+          timbrado_caminho?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "termo_entrega_config_atualizado_por_fkey"
+            columns: ["atualizado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termo_entrega_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      termo_entrega_encargos: {
+        Row: {
+          atualizado_em: string
+          categoria: string
+          competencia: string | null
+          criado_em: string
+          criado_por: string | null
+          criado_por_nome: string | null
+          descricao: string
+          dias_comprador: number | null
+          dias_total: number | null
+          dias_vendedor: number | null
+          id: string
+          manual_comprador_centavos: number
+          manual_vendedor_centavos: number
+          memoria_calculo: string | null
+          observacao: string | null
+          ordem: number
+          pago_por: string
+          parte_comprador_centavos: number
+          parte_vendedor_centavos: number
+          periodo_fim: string | null
+          periodo_inicio: string | null
+          regra_calculo: string | null
+          responsavel: string
+          ressarcimento_centavos: number
+          ressarcimento_de: string | null
+          tenant_id: string
+          termo_id: string
+          tipo_calculo: string
+          valor_total_centavos: number
+          vencimento: string | null
+        }
+        Insert: {
+          atualizado_em?: string
+          categoria: string
+          competencia?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          descricao: string
+          dias_comprador?: number | null
+          dias_total?: number | null
+          dias_vendedor?: number | null
+          id?: string
+          manual_comprador_centavos?: number
+          manual_vendedor_centavos?: number
+          memoria_calculo?: string | null
+          observacao?: string | null
+          ordem?: number
+          pago_por: string
+          parte_comprador_centavos?: number
+          parte_vendedor_centavos?: number
+          periodo_fim?: string | null
+          periodo_inicio?: string | null
+          regra_calculo?: string | null
+          responsavel: string
+          ressarcimento_centavos?: number
+          ressarcimento_de?: string | null
+          tenant_id: string
+          termo_id: string
+          tipo_calculo: string
+          valor_total_centavos?: number
+          vencimento?: string | null
+        }
+        Update: {
+          atualizado_em?: string
+          categoria?: string
+          competencia?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          descricao?: string
+          dias_comprador?: number | null
+          dias_total?: number | null
+          dias_vendedor?: number | null
+          id?: string
+          manual_comprador_centavos?: number
+          manual_vendedor_centavos?: number
+          memoria_calculo?: string | null
+          observacao?: string | null
+          ordem?: number
+          pago_por?: string
+          parte_comprador_centavos?: number
+          parte_vendedor_centavos?: number
+          periodo_fim?: string | null
+          periodo_inicio?: string | null
+          regra_calculo?: string | null
+          responsavel?: string
+          ressarcimento_centavos?: number
+          ressarcimento_de?: string | null
+          tenant_id?: string
+          termo_id?: string
+          tipo_calculo?: string
+          valor_total_centavos?: number
+          vencimento?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "termo_entrega_encargos_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termo_entrega_encargos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termo_entrega_encargos_termo_id_fkey"
+            columns: ["termo_id"]
+            isOneToOne: false
+            referencedRelation: "termos_entrega"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      termo_entrega_eventos: {
+        Row: {
+          acao: string
+          anterior: Json | null
+          criado_em: string
+          descricao: string
+          id: string
+          novo: Json | null
+          tenant_id: string
+          termo_id: string | null
+          usuario_id: string | null
+          usuario_nome: string | null
+          versao: number | null
+        }
+        Insert: {
+          acao: string
+          anterior?: Json | null
+          criado_em?: string
+          descricao: string
+          id?: string
+          novo?: Json | null
+          tenant_id: string
+          termo_id?: string | null
+          usuario_id?: string | null
+          usuario_nome?: string | null
+          versao?: number | null
+        }
+        Update: {
+          acao?: string
+          anterior?: Json | null
+          criado_em?: string
+          descricao?: string
+          id?: string
+          novo?: Json | null
+          tenant_id?: string
+          termo_id?: string | null
+          usuario_id?: string | null
+          usuario_nome?: string | null
+          versao?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "termo_entrega_eventos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termo_entrega_eventos_termo_id_fkey"
+            columns: ["termo_id"]
+            isOneToOne: false
+            referencedRelation: "termos_entrega"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termo_entrega_eventos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      termo_entrega_partes: {
+        Row: {
+          cliente_id: string | null
+          cpf_cnpj: string | null
+          email: string | null
+          id: string
+          nome: string
+          ordem: number
+          papel: string
+          rg: string | null
+          tenant_id: string
+          termo_id: string
+        }
+        Insert: {
+          cliente_id?: string | null
+          cpf_cnpj?: string | null
+          email?: string | null
+          id?: string
+          nome: string
+          ordem?: number
+          papel: string
+          rg?: string | null
+          tenant_id: string
+          termo_id: string
+        }
+        Update: {
+          cliente_id?: string | null
+          cpf_cnpj?: string | null
+          email?: string | null
+          id?: string
+          nome?: string
+          ordem?: number
+          papel?: string
+          rg?: string | null
+          tenant_id?: string
+          termo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "termo_entrega_partes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termo_entrega_partes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termo_entrega_partes_termo_id_fkey"
+            columns: ["termo_id"]
+            isOneToOne: false
+            referencedRelation: "termos_entrega"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      termo_entrega_signatarios: {
+        Row: {
+          assinado_em: string | null
+          assinatura_imagem: string | null
+          email: string | null
+          email_enviado_em: string | null
+          id: string
+          ip_assinatura: string | null
+          nome_digitado: string | null
+          nome_esperado: string
+          ordem: number
+          papel: string
+          parte_id: string | null
+          tenant_id: string
+          termo_id: string
+          token: string
+          versao: number
+        }
+        Insert: {
+          assinado_em?: string | null
+          assinatura_imagem?: string | null
+          email?: string | null
+          email_enviado_em?: string | null
+          id?: string
+          ip_assinatura?: string | null
+          nome_digitado?: string | null
+          nome_esperado: string
+          ordem?: number
+          papel: string
+          parte_id?: string | null
+          tenant_id: string
+          termo_id: string
+          token?: string
+          versao: number
+        }
+        Update: {
+          assinado_em?: string | null
+          assinatura_imagem?: string | null
+          email?: string | null
+          email_enviado_em?: string | null
+          id?: string
+          ip_assinatura?: string | null
+          nome_digitado?: string | null
+          nome_esperado?: string
+          ordem?: number
+          papel?: string
+          parte_id?: string | null
+          tenant_id?: string
+          termo_id?: string
+          token?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "termo_entrega_signatarios_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termo_entrega_signatarios_termo_id_fkey"
+            columns: ["termo_id"]
+            isOneToOne: false
+            referencedRelation: "termos_entrega"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      termo_entrega_versoes: {
+        Row: {
+          gerado_em: string
+          gerado_por: string | null
+          gerado_por_nome: string | null
+          hash: string
+          id: string
+          retrato: Json
+          tenant_id: string
+          termo_id: string
+          versao: number
+        }
+        Insert: {
+          gerado_em?: string
+          gerado_por?: string | null
+          gerado_por_nome?: string | null
+          hash: string
+          id?: string
+          retrato: Json
+          tenant_id: string
+          termo_id: string
+          versao: number
+        }
+        Update: {
+          gerado_em?: string
+          gerado_por?: string | null
+          gerado_por_nome?: string | null
+          hash?: string
+          id?: string
+          retrato?: Json
+          tenant_id?: string
+          termo_id?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "termo_entrega_versoes_gerado_por_fkey"
+            columns: ["gerado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termo_entrega_versoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termo_entrega_versoes_termo_id_fkey"
+            columns: ["termo_id"]
+            isOneToOne: false
+            referencedRelation: "termos_entrega"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      termos_entrega: {
+        Row: {
+          assinado_em: string | null
+          atualizado_em: string
+          atualizado_por: string | null
+          cancelado_em: string | null
+          cancelado_motivo: string | null
+          cancelado_por: string | null
+          clausula: Json
+          codigo: string
+          comprador_deve_centavos: number
+          compradores_nomes: string | null
+          criado_em: string
+          criado_por: string | null
+          criado_por_nome: string | null
+          data_documento: string | null
+          data_entrega: string | null
+          demais_encargos: Json
+          duplicado_de: string | null
+          enviado_em: string | null
+          gerado_em: string | null
+          hora_entrega: string | null
+          id: string
+          imovel_area_privativa: string | null
+          imovel_cartorio: string | null
+          imovel_endereco: string | null
+          imovel_inscricao_iptu: string | null
+          imovel_matricula: string | null
+          imovel_outros: string | null
+          local_assinatura: string | null
+          marco: string
+          marco_data: string | null
+          processo_id: string | null
+          regra_calculo: string | null
+          responsavel_id: string | null
+          ressarcimento: Json
+          saldo_a_favor: string | null
+          saldo_centavos: number
+          status: string
+          tenant_id: string
+          vendedor_deve_centavos: number
+          vendedores_nomes: string | null
+          versao: number
+        }
+        Insert: {
+          assinado_em?: string | null
+          atualizado_em?: string
+          atualizado_por?: string | null
+          cancelado_em?: string | null
+          cancelado_motivo?: string | null
+          cancelado_por?: string | null
+          clausula?: Json
+          codigo: string
+          comprador_deve_centavos?: number
+          compradores_nomes?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          data_documento?: string | null
+          data_entrega?: string | null
+          demais_encargos?: Json
+          duplicado_de?: string | null
+          enviado_em?: string | null
+          gerado_em?: string | null
+          hora_entrega?: string | null
+          id?: string
+          imovel_area_privativa?: string | null
+          imovel_cartorio?: string | null
+          imovel_endereco?: string | null
+          imovel_inscricao_iptu?: string | null
+          imovel_matricula?: string | null
+          imovel_outros?: string | null
+          local_assinatura?: string | null
+          marco?: string
+          marco_data?: string | null
+          processo_id?: string | null
+          regra_calculo?: string | null
+          responsavel_id?: string | null
+          ressarcimento?: Json
+          saldo_a_favor?: string | null
+          saldo_centavos?: number
+          status?: string
+          tenant_id: string
+          vendedor_deve_centavos?: number
+          vendedores_nomes?: string | null
+          versao?: number
+        }
+        Update: {
+          assinado_em?: string | null
+          atualizado_em?: string
+          atualizado_por?: string | null
+          cancelado_em?: string | null
+          cancelado_motivo?: string | null
+          cancelado_por?: string | null
+          clausula?: Json
+          codigo?: string
+          comprador_deve_centavos?: number
+          compradores_nomes?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          data_documento?: string | null
+          data_entrega?: string | null
+          demais_encargos?: Json
+          duplicado_de?: string | null
+          enviado_em?: string | null
+          gerado_em?: string | null
+          hora_entrega?: string | null
+          id?: string
+          imovel_area_privativa?: string | null
+          imovel_cartorio?: string | null
+          imovel_endereco?: string | null
+          imovel_inscricao_iptu?: string | null
+          imovel_matricula?: string | null
+          imovel_outros?: string | null
+          local_assinatura?: string | null
+          marco?: string
+          marco_data?: string | null
+          processo_id?: string | null
+          regra_calculo?: string | null
+          responsavel_id?: string | null
+          ressarcimento?: Json
+          saldo_a_favor?: string | null
+          saldo_centavos?: number
+          status?: string
+          tenant_id?: string
+          vendedor_deve_centavos?: number
+          vendedores_nomes?: string | null
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "termos_entrega_atualizado_por_fkey"
+            columns: ["atualizado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termos_entrega_cancelado_por_fkey"
+            columns: ["cancelado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termos_entrega_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termos_entrega_duplicado_de_fkey"
+            columns: ["duplicado_de"]
+            isOneToOne: false
+            referencedRelation: "termos_entrega"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termos_entrega_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termos_entrega_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "termos_entrega_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       termos_visita: {
         Row: {
           assinado_em: string | null
@@ -4330,6 +5006,22 @@ export type Database = {
       debitos_pode_ver: { Args: never; Returns: boolean }
       seed_etapas_padrao: { Args: { p_tenant_id: string }; Returns: undefined }
       seed_modelos_padrao: { Args: { p_tenant_id: string }; Returns: undefined }
+      termo_entrega_assinatura_buscar: {
+        Args: { p_token: string }
+        Returns: Json
+      }
+      termo_entrega_assinatura_registrar: {
+        Args: {
+          p_assinatura_imagem: string
+          p_ip: string
+          p_nome_digitado: string
+          p_token: string
+        }
+        Returns: boolean
+      }
+      termo_entrega_pode_operar: { Args: never; Returns: boolean }
+      termo_entrega_pode_ver: { Args: never; Returns: boolean }
+      termo_entrega_proximo_codigo: { Args: never; Returns: string }
       termo_visita_buscar: {
         Args: { p_token: string }
         Returns: {

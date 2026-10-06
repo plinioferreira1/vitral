@@ -7,6 +7,7 @@
 export const EM_FINALIZACAO = {
   avaliacoes: true,
   debitos: true,
+  termosEntrega: true,
 } as const;
 
 export type ModuloEmFinalizacao = keyof typeof EM_FINALIZACAO;

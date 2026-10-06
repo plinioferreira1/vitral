@@ -6,6 +6,7 @@ import { anexarUrgencia, URGENCIA_COR, formatarPrazo } from "@/lib/alertas";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { VoltarLink } from "@/components/voltar-link";
+import { AtalhoTermoEntrega } from "../../vendas/termos-entrega/atalho";
 import { CampoMoeda } from "@/components/campo-moeda";
 import { BotaoExportarLinhaTempo } from "@/components/botao-exportar-linha-tempo";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
@@ -185,6 +186,8 @@ export default async function ProcessoDetalhePage({
               {p.modelos_processo?.nome ?? "Processo"} · {p.comprador?.nome ?? "Sem comprador"}
             </p>
           </div>
+
+          {!ehFinanciamento && p.categoria === "venda" && <AtalhoTermoEntrega processoId={p.id} />}
 
           <ModalEdicaoProcesso
             key={`editar-${p.id}-${p.comprador?.nome}-${p.vendedor?.nome}-${p.imoveis?.endereco}-${p.bancos?.nome}-${p.corretores?.nome}-${p.usuarios?.nome}-${p.codigo_san}-${p.numero_proposta_contrato}-${p.valor_total}-${p.valor_financiado}-${p.origem}-${p.indicacao?.nome}-${p.data_assinatura}-${p.data_final_contrato}`}
