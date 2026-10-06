@@ -64,8 +64,8 @@ export default async function AvaliacoesPage({
         <div>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Avaliações de imóveis</h1>
           <p className="mt-1 max-w-3xl text-sm text-ink-muted">
-            Estudo comercial de preço, para orientar captação e divulgação, e Parecer Técnico de Avaliação Mercadológica (PTAM),
-            com revisão e assinatura da avaliadora responsável. Venda e locação são tratadas separadamente.
+            Estimativas comerciais para venda e locação, com pesquisa de mercado, memória de cálculo e relatório para o cliente.
+            Consulte também as avaliações e documentos técnicos já cadastrados.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -80,7 +80,7 @@ export default async function AvaliacoesPage({
         </div>
       </div>
 
-      {!config.responsavel.usuario_id && (
+      {filtros.modalidade === "ptam" && !config.responsavel.usuario_id && (
         <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           A avaliadora responsável ainda não está configurada. Sem ela, nenhum PTAM pode ser aprovado.{" "}
           {podeConfigurar(papel) ? (

@@ -18,14 +18,16 @@ export interface ComparavelMemoria {
   area: number;
   fonte: string;
   valorPesquisado: number;
-  fatorCalibragem: number;
+  ajustePercentual: number;
   valorM2: number;
 }
 
 export interface DadosMemoriaAvaliacao {
   areaImovel: number;
   comparaveis: ComparavelMemoria[];
-  mediaM2: number;
+  medianaM2: number;
+  finalidade: "venda" | "locacao";
+  titulo: string;
   valorSugerido: number;
 }
 
@@ -41,7 +43,7 @@ export async function gerarMemoriaAvaliacaoPNG(dados: DadosMemoriaAvaliacao) {
   if (!ctx) return;
 
   const alturaLinha = 20;
-  const alturaPorComparavel = 60;
+  const alturaPorComparavel = 80;
   const topoComparaveis = 220;
   const alturaComparaveis = dados.comparaveis.length * alturaPorComparavel;
   const gapAteResultado = 40;
@@ -91,7 +93,8 @@ export async function gerarMemoriaAvaliacaoPNG(dados: DadosMemoriaAvaliacao) {
   ctx.fillText("Memória de Cálculo — Avaliação de Imóvel", xEsq, margem + 110);
   ctx.fillStyle = "#78716c";
   ctx.font = "400 12px Arial, sans-serif";
-  ctx.fillText(`Área do imóvel avaliando: ${dados.areaImovel} m²`, xEsq, margem + 130);
+  ctx.fillText(`${dados.finalidade === "locacao" ? "Locação mensal" : "Venda"} · ${dados.areaImovel} m² · Rascunho`, xEsq, margem + 130);
+  ctx.fillText(dados.titulo, xEsq, margem + 146, xDir - xEsq);
 
   // separador
   ctx.beginPath();
@@ -109,20 +112,20 @@ export async function gerarMemoriaAvaliacaoPNG(dados: DadosMemoriaAvaliacao) {
   dados.comparaveis.forEach((c, i) => {
     ctx.fillStyle = "#1c1917";
     ctx.font = "600 13px Arial, sans-serif";
-    ctx.fillText(`${i + 1}. ${c.endereco}`, xEsq, y);
+    ctx.fillText(`${i + 1}. ${c.endereco}`, xEsq, y, xDir - xEsq - 145);
 
     ctx.fillStyle = "#78716c";
     ctx.font = "400 12px Arial, sans-serif";
     ctx.fillText(`${c.fonte} · ${c.area} m² · ${brl(c.valorPesquisado)}`, xEsq, y + alturaLinha);
 
-    if (c.fatorCalibragem > 0) {
-      ctx.fillText(`Calibragem: +${brl(c.fatorCalibragem)}`, xEsq, y + alturaLinha * 2);
+    if (c.ajustePercentual !== 0) {
+      ctx.fillText(`Ajuste total informado: ${c.ajustePercentual > 0 ? "+" : ""}${c.ajustePercentual.toLocaleString("pt-BR", { maximumFractionDigits: 2 })}%`, xEsq, y + alturaLinha * 2);
     }
 
     ctx.fillStyle = "#1c1917";
     ctx.font = "600 12px Arial, sans-serif";
     ctx.textAlign = "right";
-    ctx.fillText(`${brl(c.valorM2)}/m²`, xDir, y);
+    ctx.fillText(`${brl(c.valorM2)}/m²${dados.finalidade === "locacao" ? "/mês" : ""}`, xDir, y);
     ctx.textAlign = "left";
 
     y += alturaPorComparavel;
@@ -142,14 +145,14 @@ export async function gerarMemoriaAvaliacaoPNG(dados: DadosMemoriaAvaliacao) {
 
   ctx.fillStyle = "#92400e";
   ctx.font = "600 12px Arial, sans-serif";
-  ctx.fillText("VALOR DE ANÚNCIO SUGERIDO", xEsq + 20, yResultado + 26);
+  ctx.fillText("ESTIMATIVA CALCULADA (ARREDONDADA)", xEsq + 20, yResultado + 26);
   ctx.fillStyle = "#731515";
   ctx.font = "700 28px Arial, sans-serif";
-  ctx.fillText(brl(dados.valorSugerido), xEsq + 20, yResultado + 55);
+  ctx.fillText(`${brl(dados.valorSugerido)}${dados.finalidade === "locacao" ? "/mês" : ""}`, xEsq + 20, yResultado + 55);
   ctx.fillStyle = "#a16207";
   ctx.font = "400 11px Arial, sans-serif";
   ctx.fillText(
-    `Média de mercado: ${brl(dados.mediaM2)}/m² × ${dados.areaImovel} m²`,
+    `Mediana ajustada: ${brl(dados.medianaM2)}/m²${dados.finalidade === "locacao" ? "/mês" : ""} × ${dados.areaImovel} m²`,
     xEsq + 20,
     yResultado + 74
   );
@@ -157,7 +160,7 @@ export async function gerarMemoriaAvaliacaoPNG(dados: DadosMemoriaAvaliacao) {
   // rodapé
   ctx.fillStyle = "#a8a29e";
   ctx.font = "400 11px Arial, sans-serif";
-  ctx.fillText("Gerado pelo Vitral — Sacra Netimóveis.", xEsq, alturaTotal - margem - 20);
+  ctx.fillText("Rascunho de cálculo. O relatório revisado está disponível em Revisar e emitir.", xEsq, alturaTotal - margem - 20);
 
   const url = canvas.toDataURL("image/png");
   const link = document.createElement("a");

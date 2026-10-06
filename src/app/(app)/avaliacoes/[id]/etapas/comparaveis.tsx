@@ -85,6 +85,25 @@ function CamposComparavel({ c, x, fontes }: { c: AvaliacaoCompleta; x?: Comparav
   );
 }
 
+function CamposRapidos({ c }: { c: AvaliacaoCompleta }) {
+  const locacao = c.avaliacao.finalidade === "locacao";
+  return <div className="grid gap-3 sm:grid-cols-2">
+    <input type="hidden" name="fonte_tipo" value="manual" />
+    <Campo label="Endereço ou identificação" name="identificacao" required />
+    <Campo label="Bairro / região" name="regiao" defaultValue={c.avaliacao.bairro} />
+    <Campo label="Área (m²)" name="area_m2" inputMode="decimal" required />
+    <Campo label={locacao ? "Aluguel mensal (R$)" : "Preço de venda (R$)"} name="preco" inputMode="decimal" required />
+    <Selecao label="Tipo de preço" name="tipo_preco" defaultValue="oferta" opcoes={[
+      { valor: "oferta", rotulo: "Anúncio / oferta" }, { valor: "transacao", rotulo: "Negócio realizado" },
+    ]} />
+    <Campo label="Fonte da pesquisa" name="fonte_nome" placeholder="Portal, imobiliária ou pessoa consultada" required />
+    <Campo label="Link do anúncio (opcional)" name="fonte_url" type="url" placeholder="https://…" />
+    <Campo label="Data de consulta" name="data_coleta" type="date" defaultValue={hojeISO()} required />
+    <AreaTexto label="Diferenças em relação ao imóvel avaliado" name="diferencas" rows={2} className="sm:col-span-2" />
+    <p className="text-xs text-ink-muted sm:col-span-2">O valor por m² é calculado ao salvar. Ajustes de preço são opcionais, informados na próxima etapa e sempre justificados.</p>
+  </div>;
+}
+
 export function EtapaComparaveis({
   c,
   tenantId,
@@ -259,7 +278,7 @@ export function EtapaComparaveis({
             <summary className="cursor-pointer text-sm font-semibold text-ink">1. Lançar manualmente (anúncio ou negócio pesquisado)</summary>
             <form action={salvarComparavel} className="mt-4 space-y-3">
               <input type="hidden" name="avaliacao_id" value={a.id} />
-              <CamposComparavel c={c} fontes={fontes} />
+              {a.modalidade === "estudo_comercial" ? <CamposRapidos c={c} /> : <CamposComparavel c={c} fontes={fontes} />}
               <BotaoEnviar className={PRIMARY_BUTTON_CLASS} textoEnviando="Adicionando…">
                 Adicionar comparável
               </BotaoEnviar>

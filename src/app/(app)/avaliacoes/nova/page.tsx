@@ -32,27 +32,11 @@ export default async function NovaAvaliacaoPage() {
       <div>
         <VoltarLink href="/avaliacoes" label="Avaliação de Imóveis" />
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Nova avaliação</h1>
-        <p className="mt-1 text-sm text-ink-muted">Escolha o documento e a finalidade. O restante é preenchido nas etapas seguintes e pode ser salvo como rascunho.</p>
+        <p className="mt-1 text-sm text-ink-muted">Estime o preço de venda ou o aluguel mensal a partir de imóveis semelhantes e prepare um relatório para o cliente. Você pode salvar e continuar depois.</p>
       </div>
 
       <form action={criarAvaliacao} className="space-y-5">
-        <Cartao titulo="Qual documento?">
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Opcao
-              name="modalidade"
-              value="estudo_comercial"
-              padrao
-              titulo="Estudo comercial de preço"
-              texto="Orienta a captação e o preço de divulgação. Elaborado pela equipe e aprovado por diretor ou gerente. Não é PTAM nem leva a assinatura da avaliadora, salvo se ela mesma aprovar e emitir."
-            />
-            <Opcao
-              name="modalidade"
-              value="ptam"
-              titulo="Parecer Técnico de Avaliação Mercadológica (PTAM)"
-              texto="Fluxo técnico com vistoria, matrícula e caracterização completa. Só a avaliadora responsável aprova, assina e emite (Resolução COFECI nº 1.066/2007)."
-            />
-          </div>
-        </Cartao>
+        <input type="hidden" name="modalidade" value="estudo_comercial" />
 
         <Cartao titulo="Finalidade e tipo de imóvel" descricao="Venda e locação nunca se misturam: cada avaliação usa só comparáveis e unidades da sua finalidade.">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -89,6 +73,7 @@ export default async function NovaAvaliacaoPage() {
               <Campo label="Bairro / região" name="bairro" />
               <Campo label="Cidade" name="cidade" defaultValue="Brasília" />
               <Campo label="Proprietário" name="proprietario_nome" />
+              <Campo label="Área utilizada no cálculo (m²)" name="area_m2" placeholder="Ex.: 80" />
             </div>
           </div>
         </Cartao>

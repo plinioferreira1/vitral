@@ -49,13 +49,13 @@ export function EtapaDados({ c }: Props) {
     <FormEtapa id={a.id} etapa="dados">
       <Cartao titulo="Documento e finalidade" descricao="A finalidade define as unidades (venda: R$ e R$/m²; locação: R$/mês e R$/m²/mês) e quais comparáveis podem entrar.">
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Selecao
+          {ptam ? <Selecao
             label="Documento"
             name="modalidade"
             defaultValue={a.modalidade}
             opcoes={MODALIDADES.map((m) => ({ valor: m, rotulo: ROTULO_MODALIDADE[m] }))}
             ajuda={a.versao_atual > 0 ? "Não muda depois da primeira emissão." : undefined}
-          />
+          /> : <input type="hidden" name="modalidade" value="estudo_comercial" />}
           <Selecao label="Finalidade" name="finalidade" defaultValue={a.finalidade} opcoes={FINALIDADES.map((f) => ({ valor: f, rotulo: ROTULO_FINALIDADE[f] }))} />
           <Selecao label="Tipo de imóvel" name="tipologia" defaultValue={a.tipologia} opcoes={TIPOLOGIAS.map((t) => ({ valor: t, rotulo: ROTULO_TIPOLOGIA[t] }))} />
           <Campo label="Data-base" name="data_base" type="date" defaultValue={a.data_base} required ajuda="Data de referência dos valores." />

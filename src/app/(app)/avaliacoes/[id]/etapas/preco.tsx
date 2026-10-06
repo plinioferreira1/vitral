@@ -1,3 +1,4 @@
+import { MemoriaCalculo } from "../../memoria-calculo";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { INPUT_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { passoArredondamento } from "@/lib/avaliacao/calculo";
@@ -34,7 +35,7 @@ export function EtapaPreco({ c }: { c: AvaliacaoCompleta }) {
   return (
     <div className="space-y-5">
       <Cartao
-        titulo="Saneamento e homogeneização"
+        titulo={ptam ? "Saneamento e homogeneização" : "Ajustes das referências"}
         descricao="Para cada comparável da amostra, lance os fatores de ajuste que aproximam a referência do imóvel avaliando. Todo fator é informado por uma pessoa e precisa de justificativa; o sistema não sugere percentuais."
       >
         {calc.amostra.length === 0 ? (
@@ -124,7 +125,7 @@ export function EtapaPreco({ c }: { c: AvaliacaoCompleta }) {
         )}
       </Cartao>
 
-      <Cartao titulo="Tratamento dos dados" descricao="Medidas descritivas da amostra final. Não há intervalo de confiança, regressão nem tendência: só o que a amostra mostra.">
+      <Cartao titulo={ptam ? "Tratamento dos dados" : "Resultado da pesquisa"} descricao="Medidas descritivas da amostra final. Não há intervalo de confiança, regressão nem tendência: só o que a amostra mostra.">
         {e ? (
           <>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -137,6 +138,10 @@ export function EtapaPreco({ c }: { c: AvaliacaoCompleta }) {
                 nota={e.coeficienteVariacaoPct !== null ? `dispersão (desvio padrão ÷ média): ${e.coeficienteVariacaoPct.toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%` : "dispersão: precisa de 2 ou mais comparáveis"}
               />
             </div>
+            {a.area_m2 && calc.valorCalculado !== null && <MemoriaCalculo dados={{
+              titulo: a.titulo, finalidade: fin, areaImovel: a.area_m2, medianaM2: e.mediana, valorSugerido: calc.valorCalculado,
+              comparaveis: calc.amostra.map((linha) => ({ endereco: linha.identificacao, area: linha.areaM2, fonte: c.comparaveis.find((x) => x.id === linha.id)?.fonte_nome ?? "Fonte registrada na pesquisa", valorPesquisado: linha.preco, ajustePercentual: (linha.fator - 1) * 100, valorM2: linha.m2Ajustado })),
+            }} />}
             <div className="mt-4 rounded-lg bg-background px-4 py-3 text-xs leading-6 text-ink-muted">
               <p className="font-semibold text-ink">Fórmulas e arredondamento</p>
               <p>R$/m² bruto = preço ÷ área do comparável{fin === "locacao" ? " (aluguel mensal)" : ""}.</p>
