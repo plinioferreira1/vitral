@@ -1,3 +1,4 @@
+import { liberadoParaNivel } from "@/lib/em-finalizacao";
 import { permissoesDebitos, type PermissoesDebitos } from "@/lib/debitos/permissoes";
 import type { LinhaPainel, MetodoConsulta, StatusVerificacao, TipoVerificacao } from "@/lib/debitos/regras";
 import { obterConfigDebitos, type ConfigDebitos } from "@/lib/debitos/rotina";
@@ -10,6 +11,8 @@ type Supabase = Awaited<ReturnType<typeof createClient>>;
 export const BUCKET_DEBITOS = "debitos-locacao";
 
 export async function carregarPermissoes(supabase: Supabase, userId: string, nivel: string): Promise<PermissoesDebitos> {
+  // tela em finalização: por enquanto só a gestão entra
+  if (!liberadoParaNivel("debitos", nivel)) return { ver: false, operar: false, configurar: false };
   const { temLocacao } = await getPermissoesUsuario(supabase, userId, nivel);
   return permissoesDebitos(nivel, temLocacao);
 }

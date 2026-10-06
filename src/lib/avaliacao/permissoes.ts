@@ -4,6 +4,7 @@
  * tela mostrar só o que a pessoa pode fazer e dar mensagens claras.
  */
 
+import { liberadoParaNivel } from "../em-finalizacao";
 import type { Modalidade } from "./tipos";
 
 export type PapelAvaliacao = {
@@ -16,7 +17,7 @@ export type PapelAvaliacao = {
 const EQUIPE_INTERNA = ["diretor", "gerente", "supervisor", "auxiliar", "gerente_locacao"];
 
 export function podeAcessarModulo(nivel: string): boolean {
-  return nivel !== "social_media";
+  return nivel !== "social_media" && liberadoParaNivel("avaliacoes", nivel);
 }
 
 /** Equipe interna vê tudo; corretor só o que criou. */

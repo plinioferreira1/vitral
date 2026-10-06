@@ -1,3 +1,4 @@
+import { EM_FINALIZACAO } from "./em-finalizacao";
 import type { PermissoesUsuario } from "./permissoes";
 
 export type LinkMenu = { href: string; label: string };
@@ -6,13 +7,16 @@ export type ItemMenu = LinkMenu | { label: string; children: SubItemMenu[] };
 
 export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   const operacional = !p.ehCorretor && !p.ehSocialMedia;
+  // telas em finalização só aparecem para a gestão (diretor/gerente)
+  const verAvaliacoes = !EM_FINALIZACAO.avaliacoes || p.podeConfigurar;
+  const verDebitos = !EM_FINALIZACAO.debitos || p.podeConfigurar;
   const documentos: ItemMenu = {
     label: "Documentos",
     children: [
       { href: "/autorizacoes", label: "Autorizações de venda" },
       { href: "/propostas", label: "Propostas de compra" },
       { href: "/termos-visita", label: "Termos de visita" },
-      { href: "/avaliacoes", label: "Avaliações de imóveis" },
+      ...(verAvaliacoes ? [{ href: "/avaliacoes", label: "Avaliações de imóveis" }] : []),
     ],
   };
   const ferramentas: ItemMenu = {
@@ -51,7 +55,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
         { href: "/locacao?aba=resumo", label: "Visão geral" },
         { href: "/locacao?aba=contratos", label: "Contratos" },
         { href: "/locacao?aba=inadimplencias", label: "Contas da locação" },
-        { href: "/locacao/debitos", label: "Controle de débitos" },
+        ...(verDebitos ? [{ href: "/locacao/debitos", label: "Controle de débitos" }] : []),
         { href: "/locacao/ficha-cadastral", label: "Fichas cadastrais" },
       ],
     });
