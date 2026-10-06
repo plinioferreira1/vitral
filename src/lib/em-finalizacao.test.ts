@@ -16,6 +16,8 @@ describe("telas em finalização", () => {
     expect(hrefs(false)).not.toContain("/avaliacoes");
     expect(hrefs(false)).not.toContain("/locacao/debitos");
     expect(hrefs(false)).not.toContain("/vendas/termos-entrega");
+    expect(hrefs(false)).not.toContain("/ferias");
+    expect(hrefs(true)).toContain('"/ferias"');
     expect(hrefs(true)).toContain('"/vendas/termos-entrega"');
     expect(hrefs(true)).toContain("/vendas/termos-entrega/configuracao");
     expect(hrefs(true)).toContain('"/avaliacoes"');

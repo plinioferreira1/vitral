@@ -2272,6 +2272,432 @@ export type Database = {
           },
         ]
       }
+      ferias_afastamentos: {
+        Row: {
+          criado_em: string
+          criado_por: string | null
+          data_fim: string
+          data_inicio: string
+          descricao: string | null
+          id: string
+          tenant_id: string
+          usuario_id: string
+        }
+        Insert: {
+          criado_em?: string
+          criado_por?: string | null
+          data_fim: string
+          data_inicio: string
+          descricao?: string | null
+          id?: string
+          tenant_id: string
+          usuario_id: string
+        }
+        Update: {
+          criado_em?: string
+          criado_por?: string | null
+          data_fim?: string
+          data_inicio?: string
+          descricao?: string | null
+          id?: string
+          tenant_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ferias_afastamentos_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_afastamentos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_afastamentos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ferias_ajustes: {
+        Row: {
+          criado_em: string
+          criado_por: string | null
+          criado_por_nome: string | null
+          dias: number
+          id: string
+          motivo: string
+          periodo_inicio: string
+          tenant_id: string
+          usuario_id: string
+        }
+        Insert: {
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          dias: number
+          id?: string
+          motivo: string
+          periodo_inicio: string
+          tenant_id: string
+          usuario_id: string
+        }
+        Update: {
+          criado_em?: string
+          criado_por?: string | null
+          criado_por_nome?: string | null
+          dias?: number
+          id?: string
+          motivo?: string
+          periodo_inicio?: string
+          tenant_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ferias_ajustes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_ajustes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_ajustes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ferias_colaboradores: {
+        Row: {
+          atualizado_em: string
+          atualizado_por: string | null
+          data_admissao: string | null
+          departamento: string | null
+          dias_por_periodo: number
+          gestor_id: string | null
+          observacoes: string | null
+          participa: boolean
+          regime: string
+          tenant_id: string
+          usuario_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          data_admissao?: string | null
+          departamento?: string | null
+          dias_por_periodo?: number
+          gestor_id?: string | null
+          observacoes?: string | null
+          participa?: boolean
+          regime?: string
+          tenant_id: string
+          usuario_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          atualizado_por?: string | null
+          data_admissao?: string | null
+          departamento?: string | null
+          dias_por_periodo?: number
+          gestor_id?: string | null
+          observacoes?: string | null
+          participa?: boolean
+          regime?: string
+          tenant_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ferias_colaboradores_atualizado_por_fkey"
+            columns: ["atualizado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_colaboradores_gestor_id_fkey"
+            columns: ["gestor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_colaboradores_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_colaboradores_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: true
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ferias_eventos: {
+        Row: {
+          acao: string
+          comentario: string | null
+          criado_em: string
+          data_fim: string | null
+          data_inicio: string | null
+          dias: number | null
+          id: string
+          intervencao: boolean
+          papel: string
+          solicitacao_id: string
+          tenant_id: string
+          usuario_id: string | null
+          usuario_nome: string | null
+        }
+        Insert: {
+          acao: string
+          comentario?: string | null
+          criado_em?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          dias?: number | null
+          id?: string
+          intervencao?: boolean
+          papel: string
+          solicitacao_id: string
+          tenant_id: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Update: {
+          acao?: string
+          comentario?: string | null
+          criado_em?: string
+          data_fim?: string | null
+          data_inicio?: string | null
+          dias?: number | null
+          id?: string
+          intervencao?: boolean
+          papel?: string
+          solicitacao_id?: string
+          tenant_id?: string
+          usuario_id?: string | null
+          usuario_nome?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ferias_eventos_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "ferias_solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_eventos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_eventos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ferias_notificacoes: {
+        Row: {
+          criado_em: string
+          email_enviado_em: string | null
+          id: string
+          lida_em: string | null
+          mensagem: string
+          solicitacao_id: string | null
+          tenant_id: string
+          tipo: string
+          titulo: string
+          usuario_id: string
+        }
+        Insert: {
+          criado_em?: string
+          email_enviado_em?: string | null
+          id?: string
+          lida_em?: string | null
+          mensagem: string
+          solicitacao_id?: string | null
+          tenant_id: string
+          tipo: string
+          titulo: string
+          usuario_id: string
+        }
+        Update: {
+          criado_em?: string
+          email_enviado_em?: string | null
+          id?: string
+          lida_em?: string | null
+          mensagem?: string
+          solicitacao_id?: string | null
+          tenant_id?: string
+          tipo?: string
+          titulo?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ferias_notificacoes_solicitacao_id_fkey"
+            columns: ["solicitacao_id"]
+            isOneToOne: false
+            referencedRelation: "ferias_solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_notificacoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_notificacoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ferias_solicitacoes: {
+        Row: {
+          abono_dias: number
+          adiantamento_13: boolean
+          atualizado_em: string
+          aviso_proximas_em: string | null
+          criado_em: string
+          data_fim: string
+          data_inicio: string
+          data_retorno: string
+          decidido_em: string | null
+          decidido_por: string | null
+          decidido_por_nome: string | null
+          dias: number
+          gestor_id: string | null
+          id: string
+          motivo_recusa: string | null
+          observacao: string | null
+          origem_id: string | null
+          periodo_aquisitivo_inicio: string
+          status: string
+          tenant_id: string
+          tipo: string
+          usuario_id: string
+        }
+        Insert: {
+          abono_dias?: number
+          adiantamento_13?: boolean
+          atualizado_em?: string
+          aviso_proximas_em?: string | null
+          criado_em?: string
+          data_fim: string
+          data_inicio: string
+          data_retorno: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          decidido_por_nome?: string | null
+          dias: number
+          gestor_id?: string | null
+          id?: string
+          motivo_recusa?: string | null
+          observacao?: string | null
+          origem_id?: string | null
+          periodo_aquisitivo_inicio: string
+          status?: string
+          tenant_id: string
+          tipo?: string
+          usuario_id: string
+        }
+        Update: {
+          abono_dias?: number
+          adiantamento_13?: boolean
+          atualizado_em?: string
+          aviso_proximas_em?: string | null
+          criado_em?: string
+          data_fim?: string
+          data_inicio?: string
+          data_retorno?: string
+          decidido_em?: string | null
+          decidido_por?: string | null
+          decidido_por_nome?: string | null
+          dias?: number
+          gestor_id?: string | null
+          id?: string
+          motivo_recusa?: string | null
+          observacao?: string | null
+          origem_id?: string | null
+          periodo_aquisitivo_inicio?: string
+          status?: string
+          tenant_id?: string
+          tipo?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ferias_solicitacoes_decidido_por_fkey"
+            columns: ["decidido_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_solicitacoes_gestor_id_fkey"
+            columns: ["gestor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_solicitacoes_origem_id_fkey"
+            columns: ["origem_id"]
+            isOneToOne: false
+            referencedRelation: "ferias_solicitacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_solicitacoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ferias_solicitacoes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ficha_locacao_documentos: {
         Row: {
           caminho_storage: string

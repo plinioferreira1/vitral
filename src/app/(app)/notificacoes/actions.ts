@@ -5,11 +5,13 @@ import { addDays, format, parseISO } from "date-fns";
 import { hojeISO } from "@/lib/data-br";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
+import { marcarNotificacoesFeriasLidas } from "../ferias/actions";
 
 export async function limparTodasNotificacoes(): Promise<void> {
   const supabase = await createClient();
   const { user } = await getUsuarioAtual();
   if (!user) return;
+  await marcarNotificacoesFeriasLidas();
 
   const hoje = hojeISO();
   const limite = format(addDays(parseISO(hoje), 7), "yyyy-MM-dd");
@@ -20,7 +22,10 @@ export async function limparTodasNotificacoes(): Promise<void> {
     .lte("data_prevista", limite)
     .not("processos.status", "in", "(concluido,cancelado,arquivado)");
 
-  if (!etapas?.length) return;
+  if (!etapas?.length) {
+    revalidatePath("/");
+    return;
+  }
 
   const dispensadas = etapas
     .filter((etapa) => etapa.data_prevista)

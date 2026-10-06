@@ -13,6 +13,7 @@ import { hojeISO } from "@/lib/data-br";
 import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { limparTodasNotificacoes } from "./notificacoes/actions";
+import { liberadoParaNivel } from "@/lib/em-finalizacao";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -25,7 +26,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const limiteNotificacoes = format(addDays(parseISO(hoje), 7), "yyyy-MM-dd");
 
   // Empresa, permissões e notificações não dependem um do outro.
-  const [{ data: tenant }, permissoes, { data: etapasNotificacao }] = await Promise.all([
+  const [{ data: tenant }, permissoes, { data: etapasNotificacao }, { data: avisosFerias }] = await Promise.all([
     supabase.from("tenants").select("nome").eq("id", usuario.tenant_id).single(),
     getPermissoesUsuario(supabase, user.id, usuario.nivel_acesso),
     supabase
@@ -38,6 +39,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .not("processos.status", "in", "(concluido,cancelado,arquivado)")
       .order("data_prevista", { ascending: true })
       .limit(100),
+    // notificações de férias ainda não lidas (a RLS só entrega as da própria pessoa)
+    liberadoParaNivel("ferias", usuario.nivel_acesso)
+      ? supabase.from("ferias_notificacoes").select("id, solicitacao_id, titulo, mensagem, criado_em").is("lida_em", null).order("criado_em", { ascending: false }).limit(20)
+      : Promise.resolve({ data: [] as { id: string; solicitacao_id: string | null; titulo: string; mensagem: string; criado_em: string }[] }),
   ]);
 
   const { data: notificacoesDispensadas } = await supabase
@@ -76,6 +81,18 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       tipo: dias < 0 ? "atrasada" : dias === 0 ? "hoje" : "proxima",
     };
   });
+
+  for (const aviso of [...(avisosFerias ?? [])].reverse()) {
+    notificacoes.unshift({
+      id: aviso.id,
+      processoId: "",
+      etapa: aviso.titulo,
+      contexto: aviso.mensagem,
+      prazo: `Férias · ${format(new Date(aviso.criado_em), "dd/MM/yyyy")}`,
+      tipo: "proxima",
+      href: aviso.solicitacao_id ? `/ferias/${aviso.solicitacao_id}` : "/ferias",
+    });
+  }
 
   const navItems = montarMenu(permissoes);
 

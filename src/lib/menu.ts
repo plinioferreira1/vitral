@@ -11,6 +11,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   const verAvaliacoes = !EM_FINALIZACAO.avaliacoes || p.podeConfigurar;
   const verDebitos = !EM_FINALIZACAO.debitos || p.podeConfigurar;
   const verTermosEntrega = !EM_FINALIZACAO.termosEntrega || p.podeConfigurar;
+  const verFerias = !EM_FINALIZACAO.ferias || p.podeConfigurar;
   const documentos: ItemMenu = {
     label: "Documentos",
     children: [
@@ -88,6 +89,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       { href: "/financeiro/relatorios", label: "Relatórios financeiros" },
     ],
   });
+  if (operacional && verFerias) itens.push({ href: "/ferias", label: "Férias" });
   itens.push({ href: "/corretor", label: "Central de ajuda" });
   if (operacional && p.podeConfigurar) itens.push({
     label: "Configurações",

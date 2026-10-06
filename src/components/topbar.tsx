@@ -12,6 +12,8 @@ export interface NotificacaoTopBar {
   contexto: string;
   prazo: string;
   tipo: "atrasada" | "hoje" | "proxima";
+  /** destino próprio (ex.: férias); sem ele, abre a etapa do processo */
+  href?: string;
 }
 
 export function TopBar({
@@ -125,7 +127,7 @@ export function TopBar({
                   return (
                     <Link
                       key={notificacao.id}
-                      href={`/processos/${notificacao.processoId}#etapa-${notificacao.id}`}
+                      href={notificacao.href ?? `/processos/${notificacao.processoId}#etapa-${notificacao.id}`}
                       onClick={() => setNotificacoesAbertas(false)}
                       className="flex gap-3 rounded-xl p-3 transition hover:bg-background"
                     >

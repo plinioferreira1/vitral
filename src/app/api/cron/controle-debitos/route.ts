@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { hojeISO } from "@/lib/data-br";
 import { rotinaDiariaDebitos } from "@/lib/debitos/rotina";
+import { rotinaDiariaFerias } from "@/lib/ferias/rotina";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -18,6 +19,14 @@ export async function GET(request: Request) {
   if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ erro: "Não autorizado" }, { status: 401 });
   }
-  const resultados = await rotinaDiariaDebitos(createAdminClient(), hojeISO());
-  return NextResponse.json({ ok: true, resultados });
+  const admin = createAdminClient();
+  const resultados = await rotinaDiariaDebitos(admin, hojeISO());
+  // aproveita a mesma execução diária: aviso de "férias próximas"
+  let ferias: { avisos: number } | { erro: string };
+  try {
+    ferias = await rotinaDiariaFerias(admin, hojeISO());
+  } catch (erro) {
+    ferias = { erro: erro instanceof Error ? erro.message : String(erro) };
+  }
+  return NextResponse.json({ ok: true, resultados, ferias });
 }
