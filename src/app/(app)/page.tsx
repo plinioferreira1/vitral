@@ -7,6 +7,7 @@ import { colunasKanban, etapaAtualPorProcesso } from "@/lib/kanban";
 import { getPermissoesUsuario } from "@/lib/permissoes";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { hojeISO } from "@/lib/data-br";
+import { liberadoParaNivel } from "@/lib/em-finalizacao";
 import { competenciaDe, montarAvisosDebitos, somarMeses, type AvisoDebitos } from "@/lib/debitos/regras";
 import { ocorrenciasDaTarefa, type RegraTarefa } from "@/lib/tarefas-recorrentes";
 import { alternarTarefaMensal } from "@/app/(app)/locacao/actions";
@@ -478,7 +479,7 @@ export default async function DashboardPage() {
 
   // Controle de Débitos (Locação): poucos avisos, agrupados, só do que tem pendência.
   const avisosDebitosPromise = (async (): Promise<AvisoDebitos[]> => {
-    if (!temLocacao) return [];
+    if (!temLocacao || !liberadoParaNivel("debitos", usuario.nivel_acesso)) return [];
     const competenciaAtual = competenciaDe(hojeISO());
     const desde = somarMeses(competenciaAtual, -6);
     const [{ data: verificacoes }, { data: solicitacoes }, { data: config }] = await Promise.all([
@@ -727,12 +728,14 @@ export default async function DashboardPage() {
               titulo="Simulação de Custas"
               descricao="Calcule ITBI, escritura, registro e taxas para orientar o cliente."
             />
-            <CartaoCorretor
-              href="/avaliacoes"
-              icon={Building2}
-              titulo="Avaliações de imóveis"
-              descricao="Estudo comercial de preço e PTAM, com comparáveis, ajustes e PDF."
-            />
+            {liberadoParaNivel("avaliacoes", usuario.nivel_acesso) && (
+              <CartaoCorretor
+                href="/avaliacoes"
+                icon={Building2}
+                titulo="Avaliações de imóveis"
+                descricao="Estudo comercial de preço e PTAM, com comparáveis, ajustes e PDF."
+              />
+            )}
           </div>
         </Painel>
       )}

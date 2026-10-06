@@ -1,3 +1,4 @@
+import { EM_FINALIZACAO } from "./em-finalizacao";
 import type { PermissoesUsuario } from "./permissoes";
 
 export type LinkMenu = { href: string; label: string };
@@ -6,6 +7,9 @@ export type ItemMenu = LinkMenu | { label: string; children: SubItemMenu[] };
 
 export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   const operacional = !p.ehCorretor && !p.ehSocialMedia;
+  // telas em finalização só aparecem para a gestão (diretor/gerente)
+  const verAvaliacoes = !EM_FINALIZACAO.avaliacoes || p.podeConfigurar;
+  const verDebitos = !EM_FINALIZACAO.debitos || p.podeConfigurar;
   const documentos: ItemMenu = {
     label: "Documentos",
     children: [
@@ -20,7 +24,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       { href: "/calculadora", label: "Cálculo proporcional" },
       { href: "/calculadora-data", label: "Cálculo de datas" },
       { href: "/cartorio", label: "Simulação de custas" },
-      ...(!p.ehSocialMedia ? [{ href: "/avaliacoes", label: "Avaliações de imóveis" }] : []),
+      ...(!p.ehSocialMedia && verAvaliacoes ? [{ href: "/avaliacoes", label: "Avaliações de imóveis" }] : []),
       ...(operacional && p.temLocacao
         ? [{ href: "/locacao?aba=multa", label: "Cálculo de multa rescisória" }]
         : []),
@@ -50,7 +54,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
         { href: "/locacao?aba=resumo", label: "Visão geral" },
         { href: "/locacao?aba=contratos", label: "Contratos" },
         { href: "/locacao?aba=inadimplencias", label: "Contas da locação" },
-        { href: "/locacao/debitos", label: "Controle de débitos" },
+        ...(verDebitos ? [{ href: "/locacao/debitos", label: "Controle de débitos" }] : []),
         { href: "/locacao/ficha-cadastral", label: "Fichas cadastrais" },
       ],
     });
