@@ -62,7 +62,7 @@ export default async function AvaliacoesPage({
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Avaliação de Imóveis</h1>
+          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Avaliações de imóveis</h1>
           <p className="mt-1 max-w-3xl text-sm text-ink-muted">
             Estudo comercial de preço, para orientar captação e divulgação, e Parecer Técnico de Avaliação Mercadológica (PTAM),
             com revisão e assinatura da avaliadora responsável. Venda e locação são tratadas separadamente.

@@ -628,7 +628,7 @@ export default async function DashboardPage() {
                 href="/corretor"
                 prefetch={false}
                 icon={BookOpen}
-                titulo="Onboarding"
+                titulo="Central de ajuda"
                 descricao="Guias e materiais"
               />
             )}
@@ -642,7 +642,7 @@ export default async function DashboardPage() {
               <AtalhoPrincipal
                 href="/membros"
                 icon={UserPlus}
-                titulo="Membros"
+                titulo="Equipe e permissões"
                 descricao="Acessos e permissões"
               />
             )}
@@ -699,26 +699,26 @@ export default async function DashboardPage() {
               href="/corretor"
               prefetch={false}
               icon={BookOpen}
-              titulo="Onboarding"
+              titulo="Central de ajuda"
               descricao="Primeiros passos, tutoriais e materiais de referência."
               destaque
             />
             <CartaoCorretor
               href="/autorizacoes"
               icon={FileSignature}
-              titulo="Autorização de Venda"
+              titulo="Autorizações de venda"
               descricao="Crie e acompanhe links de assinatura para captação."
             />
             <CartaoCorretor
               href="/propostas"
               icon={FileText}
-              titulo="Carta Proposta"
+              titulo="Propostas de compra"
               descricao="Monte propostas de compra para enviar ao cliente."
             />
             <CartaoCorretor
               href="/termos-visita"
               icon={ClipboardCheck}
-              titulo="Termo de Visita"
+              titulo="Termos de visita"
               descricao="Registre visitas com assinatura digital."
             />
             <CartaoCorretor
@@ -730,7 +730,7 @@ export default async function DashboardPage() {
             <CartaoCorretor
               href="/avaliacoes"
               icon={Building2}
-              titulo="Avaliação de Imóveis"
+              titulo="Avaliações de imóveis"
               descricao="Estudo comercial de preço e PTAM, com comparáveis, ajustes e PDF."
             />
           </div>

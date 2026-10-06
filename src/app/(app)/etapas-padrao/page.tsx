@@ -41,7 +41,7 @@ export default async function EtapasPadraoPage({
     <div className="max-w-xl space-y-6">
       <div>
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-          Etapas padrão
+          Etapas dos processos
         </h1>
         <p className="mt-1 text-sm text-ink-muted">
           A <b>sequência normal</b> é a linha do tempo do processo, em ordem. As{" "}

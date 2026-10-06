@@ -91,7 +91,7 @@ export default async function FinanceiroPessoasPage({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-            Clientes e fornecedores
+            Pessoas e empresas
           </h1>
           <p className="mt-1 text-sm text-ink-muted">
             Cadastro central de pessoas e empresas usado em contas a pagar e a receber.

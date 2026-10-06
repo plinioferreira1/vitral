@@ -50,16 +50,16 @@ function nivelLabel(nivel: string): string {
 }
 
 function acessosEfetivos(nivel: string, categorias: Set<CategoriaProcesso>): string[] {
-  if (nivel === "social_media") return ["Ferramentas", "Onboarding"];
-  if (nivel === "corretor") return ["Documentos", "Ferramentas"];
+  if (nivel === "social_media") return ["Ferramentas", "Central de ajuda"];
+  if (nivel === "corretor") return ["Documentos", "Ferramentas", "Central de ajuda"];
 
-  const acessos = ["Documentos", "Ferramentas", "Onboarding"];
+  const acessos = ["Documentos", "Ferramentas", "Central de ajuda"];
   const acessoTotalProcessos = nivel === "diretor" || nivel === "gerente" || nivel === "auxiliar";
 
   if (acessoTotalProcessos || categorias.has("venda")) acessos.unshift("Vendas");
   if (acessoTotalProcessos || categorias.has("financiamento")) acessos.unshift("Financiamentos");
   if (acessoTotalProcessos || categorias.has("locacao")) acessos.unshift("Locação");
-  if (temAcessoFinanceiro(nivel)) acessos.push("Financeiro", "Configurações", "Relatório Semanal");
+  if (temAcessoFinanceiro(nivel)) acessos.push("Financeiro", "Relatórios", "Configurações");
 
   return Array.from(new Set(acessos));
 }
@@ -70,7 +70,7 @@ function descricaoNivel(nivel: string): string {
   if (nivel === "auxiliar") return "Vê as áreas operacionais, sem Financeiro e Configurações.";
   if (nivel === "supervisor") return "Acessa somente as categorias marcadas.";
   if (nivel === "corretor") return "Acessa documentos e ferramentas comerciais.";
-  if (nivel === "social_media") return "Acessa ferramentas e onboarding.";
+  if (nivel === "social_media") return "Acessa ferramentas e a Central de ajuda.";
   return "Permissão personalizada.";
 }
 
@@ -127,7 +127,7 @@ export default async function MembrosPage({
   return (
     <div className="max-w-5xl space-y-6">
       <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Membros</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Equipe e permissões</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Convide a diretora e os outros gerentes pro mesmo espaço de trabalho. Só é possível
           criar conta no Vitral com um link de convite — ninguém de fora consegue se cadastrar

@@ -56,7 +56,7 @@ export default async function ChecklistsFinanciamentoPage() {
   return (
     <div className="max-w-3xl space-y-6">
       <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Checklists de Financiamento</h1>
+        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Modelos de checklist de financiamento</h1>
         <p className="mt-1 text-sm text-ink-muted">
           Crie quantos checklists quiser (ex: Conformidade, Assinatura E-notariado). Cada um pode
           ter várias seções, e cada seção seus próprios itens. Aparece na aba Checklists de

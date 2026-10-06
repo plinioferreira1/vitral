@@ -177,6 +177,12 @@ export default async function FinanceiroDashboardPage({
         </div>
       </div>
 
+      <nav aria-label="Atalhos financeiros" className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-brand">
+        <Link href="/financeiro/relatorios" className="hover:underline">Relatórios financeiros</Link>
+        <Link href="/financeiro/categorias" className="hover:underline">Categorias financeiras</Link>
+        <Link href="/financeiro/configuracoes-email" className="hover:underline">Resumos por e-mail</Link>
+      </nav>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 financeiro-indicadores">
         <CartaoIndicador
           icon={Wallet}
