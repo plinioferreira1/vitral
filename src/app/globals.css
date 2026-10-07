@@ -161,10 +161,37 @@ body {
 }
 
 @media (max-width: 767px) {
-  .financeiro-ui { overflow-x: clip; }
-  .financeiro-ui > :first-child h1 { font-size: 1.75rem; }
+  /* Campos de 16px evitam o zoom automático do teclado no iPhone. */
+  .app-content { min-width: 0; overflow-wrap: anywhere; }
+  .app-content :is(input, select, textarea) { min-width: 0; max-width: 100%; }
+  .app-content :is(input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]), select, textarea) {
+    min-height: 44px;
+    font-size: 16px;
+  }
+  .app-content :is(input[type="checkbox"], input[type="radio"]) { width: 20px; height: 20px; flex-shrink: 0; }
+  .app-content form button:not(.sr-only) { min-height: 44px; }
+  .financeiro-ui > :first-child h1 { font-size: 1.5rem; }
   .financeiro-ui table { min-width: 640px; }
   .financeiro-ui .financeiro-lista table { min-width: 0; }
+  .financeiro-lancamentos { overflow: visible; }
+  .financeiro-ui .financeiro-lancamentos table { display: block; min-width: 0; }
+  .financeiro-lancamentos tbody { display: block; }
+  .financeiro-lancamentos tbody tr {
+    display: grid;
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 8px 12px;
+    padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .financeiro-lancamentos tbody td { padding: 0; border: 0; min-width: 0; }
+  .financeiro-lancamentos .lancamento-selecao { grid-column: 1; grid-row: 1; padding-top: 2px; }
+  .financeiro-lancamentos .lancamento-descricao { grid-column: 2; grid-row: 1; }
+  .financeiro-lancamentos .lancamento-valor { grid-column: 2; grid-row: 2; width: auto; text-align: left; font-size: 18px; }
+  .financeiro-lancamentos .lancamento-acoes { position: static; grid-column: 2; grid-row: 3; text-align: left; }
+  .financeiro-lancamentos .lancamento-acoes button { min-height: 44px; padding-inline: 16px; }
+  .financeiro-lancamentos .lancamento-descricao a { display: inline-flex; min-width: 44px; min-height: 44px; align-items: center; justify-content: center; }
+  .financeiro-acoes :is(button, a) { min-height: 44px; }
+  .financeiro-acoes select { min-height: 44px; font-size: 16px; }
 }
 
 @media print {

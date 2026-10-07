@@ -246,16 +246,16 @@ export default async function ContratoLocacaoPage({
         />
 
         <p className="mb-3 text-xs text-ink-muted">
-          Clique em uma conta para marcar como paga. Clique novamente para desfazer a marcação.
+          Toque em uma conta para marcar como paga ou desfazer a marcação. No celular, deslize a tabela para ver os demais meses.
         </p>
 
         <div className="overflow-x-auto rounded-xl border border-border/60 bg-surface shadow-sm p-2">
-          <table className="w-full border-separate" style={{ borderSpacing: "3px" }}>
+          <table className="w-full min-w-[760px] border-separate" style={{ borderSpacing: "3px" }}>
             <thead>
               <tr className="text-ink-muted">
-                <th className="px-2 py-1 text-left text-xs font-medium">Conta</th>
+                <th className="sticky left-0 z-10 bg-surface px-2 py-1 text-left text-xs font-medium">Conta</th>
                 {MESES.map((m) => (
-                  <th key={m} className="w-10 py-1 text-center text-xs font-medium">
+                  <th key={m} className="min-w-11 py-1 text-center text-xs font-medium">
                     {m}
                   </th>
                 ))}
@@ -266,7 +266,7 @@ export default async function ContratoLocacaoPage({
                 const responsavel = RESPONSAVEL_POR_TIPO[tipo];
                 return (
                   <tr key={tipo}>
-                    <td className="px-2 py-1 text-sm font-medium text-ink">
+                    <td className="sticky left-0 z-10 min-w-28 bg-surface px-2 py-1 text-sm font-medium text-ink">
                       {TIPO_CONTA_LABEL[tipo]}
                       {responsavel && (
                         <span className="ml-1.5 rounded border border-border bg-background px-1 py-0.5 text-[9px] font-normal uppercase tracking-wide text-ink-muted">
@@ -321,8 +321,8 @@ export default async function ContratoLocacaoPage({
             </span>
             <span className="hidden text-xs font-normal text-ink-muted group-open:inline">ocultar</span>
           </summary>
-          <div className="overflow-hidden border-t border-border">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto border-t border-border">
+            <table className="w-full min-w-[680px] text-sm">
               <thead>
                 <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
                   <th className="px-4 py-2.5 font-medium">Conta</th>
@@ -644,7 +644,7 @@ export default async function ContratoLocacaoPage({
                                 name="concluido_atual"
                                 value={String(item.concluido)}
                               />
-                              <BotaoEnviar className="flex items-center gap-2 text-left">
+                              <BotaoEnviar className="flex min-h-11 items-center gap-3 text-left">
                                 <span
                                   className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
                                     item.concluido

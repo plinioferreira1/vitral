@@ -15,4 +15,4 @@ export const PRIMARY_BUTTON_CLASS =
 export const SECONDARY_BUTTON_CLASS =
   "inline-flex items-center justify-center gap-1.5 rounded-lg border border-border/80 bg-surface px-3.5 py-2.5 text-sm font-medium text-ink-muted transition hover:bg-background hover:text-ink";
 
-export const PAGE_TITLE_CLASS = "text-[28px] font-bold leading-tight tracking-tight text-ink";
+export const PAGE_TITLE_CLASS = "break-words text-2xl font-bold leading-tight tracking-tight text-ink sm:text-[28px]";

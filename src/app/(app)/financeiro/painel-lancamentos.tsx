@@ -3,8 +3,6 @@ import { INPUT_CLASS } from "@/components/ui/styles";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
-  Repeat,
-  Paperclip,
   Wallet,
   AlertTriangle,
   RefreshCcw,
@@ -24,66 +22,15 @@ import { CartaoKpi } from "@/components/cartao-kpi";
 import { apagarLancamentos, prepararBaixaEmLote } from "./lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
 import { somarDias } from "@/lib/recorrencia";
-import { SelecionarTodos } from "@/components/selecionar-todos";
 import { SelectAutoSubmit } from "@/components/select-auto-submit";
 import { PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
-import { MenuAcoesLancamento } from "@/components/financeiro/menu-acoes-lancamento";
+import { TabelaLancamentos, type LancamentoLinha, type EstadoExibicao, type CampoOrdenacao } from "@/components/financeiro/tabela-lancamentos";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 
 const campoClasse =
   INPUT_CLASS;
-
-type EstadoExibicao = "vencido" | "pago" | "cancelado" | "recorrente" | "pago_parcial" | "pendente";
-
-const ESTADO_ROTULO: Record<EstadoExibicao, string> = {
-  vencido: "Vencido",
-  pago: "Pago",
-  cancelado: "Cancelado",
-  recorrente: "Recorrente",
-  pago_parcial: "Pago parcial",
-  pendente: "Pendente",
-};
-const ESTADO_COR: Record<EstadoExibicao, string> = {
-  vencido: "bg-rose-500",
-  pago: "bg-emerald-500",
-  cancelado: "bg-stone-400",
-  recorrente: "bg-blue-500",
-  pago_parcial: "bg-indigo-500",
-  pendente: "bg-amber-500",
-};
-const ESTADO_TEXTO: Record<EstadoExibicao, string> = {
-  vencido: "text-rose-700",
-  pago: "text-emerald-700",
-  cancelado: "text-stone-500",
-  recorrente: "text-blue-700",
-  pago_parcial: "text-indigo-700",
-  pendente: "text-amber-700",
-};
-
-type LancamentoLinha = {
-  id: string;
-  descricao: string;
-  valor: number;
-  vencimento: string;
-  competencia: string | null;
-  status: string;
-  recorrencia_id: string | null;
-  pessoa_id: string | null;
-  categoria_id: string | null;
-  centro_custo_id: string | null;
-  unidade_id: string | null;
-  conta_bancaria_id: string | null;
-  forma_pagamento: string | null;
-  numero_documento: string | null;
-  observacoes: string | null;
-  financeiro_anexos: { nome: string } | null;
-  financeiro_pessoas: { nome: string } | null;
-  financeiro_categorias: { nome: string } | null;
-  financeiro_unidades: { nome: string } | null;
-  financeiro_contas_bancarias: { nome: string } | null;
-};
 
 function estadoExibicao(l: LancamentoLinha, hoje: string): EstadoExibicao {
   if (l.status === "cancelado") return "cancelado";
@@ -97,9 +44,6 @@ function estadoExibicao(l: LancamentoLinha, hoje: string): EstadoExibicao {
 
 function brl(v: number): string {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-}
-function dataBR(iso: string): string {
-  return new Date(`${iso}T00:00:00`).toLocaleDateString("pt-BR");
 }
 
 type Filtros = {
@@ -117,7 +61,6 @@ type Filtros = {
   por_pagina?: string;
 };
 
-type CampoOrdenacao = "descricao" | "pessoa" | "categoria" | "vencimento" | "valor" | "status";
 type CampoOculto = [keyof Filtros, string | undefined];
 type ReferenciaFiltro = "hoje" | "7dias" | "mes" | "todos";
 
@@ -372,12 +315,12 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         acao={<Link href={`/financeiro/lancamentos/novo?tipo=${tipo}`} className={PRIMARY_BUTTON_CLASS}><Plus size={16} /> {tipo === "receita" ? "Nova receita" : "Nova despesa"}</Link>}
       />
 
-      <div className="flex flex-wrap gap-2 border-b border-border">
+      <div className="flex gap-2 overflow-x-auto overscroll-x-contain border-b border-border sm:flex-wrap">
           {abasSituacao.map(([valor, label, contagem]) => (
             <Link
               key={valor || "todos"}
               href={construirUrl(rota, { ...f, status: valor || undefined, pagina: undefined })}
-              className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
+              className={`-mb-px inline-flex min-h-11 shrink-0 items-center gap-1 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium ${
                 (f.status ?? "") === valor
                   ? "border-brand text-brand"
                   : "border-transparent text-ink-muted hover:text-ink"
@@ -455,7 +398,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
 
       </div>
 
-      <details open className="group rounded-2xl border border-border/70 bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
+      <details open={temFiltro} className="group rounded-2xl border border-border/70 bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5">
           <div className="flex min-w-0 items-center gap-2.5">
             <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-background text-ink-muted">
@@ -474,7 +417,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         <form
           method="get"
           action={`${rota}#lista`}
-          className="grid grid-cols-2 gap-3 border-t border-border/70 px-4 py-4 md:grid-cols-3 xl:grid-cols-6"
+          className="grid grid-cols-1 gap-3 border-t border-border/70 px-4 py-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6"
         >
         <input type="hidden" name="q" value={f.q ?? ""} />
         <input type="hidden" name="referencia" value={referencia} />
@@ -513,6 +456,23 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         )}
         </form>
       </details>
+
+      <form method="get" action={`${rota}#lista`} className="grid grid-cols-2 gap-3 md:hidden">
+        {renderCamposOcultos(camposOcultos, ["ordenar", "direcao"])}
+        <label className="text-xs font-medium text-ink-muted">Ordenar por
+          <select name="ordenar" defaultValue={ordenar} className={`${campoClasse} mt-1`}>
+            <option value="vencimento">Vencimento</option><option value="descricao">Descrição</option>
+            <option value="valor">Valor</option><option value="status">Status</option>
+            <option value="pessoa">{rotuloPessoa}</option><option value="categoria">Categoria</option>
+          </select>
+        </label>
+        <label className="text-xs font-medium text-ink-muted">Ordem
+          <select name="direcao" defaultValue={direcao} className={`${campoClasse} mt-1`}>
+            <option value="asc">Crescente</option><option value="desc">Decrescente</option>
+          </select>
+        </label>
+        <BotaoEnviar className="col-span-2 rounded-lg border border-border bg-surface px-3 py-2 text-sm font-semibold text-ink">Aplicar ordenação</BotaoEnviar>
+      </form>
 
       {lancamentos.length > 0 && (
         <form
@@ -555,113 +515,22 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           </p>
         ) : (
           <>
-            <div className="overflow-x-auto">
-            <table className="w-full min-w-[1320px] text-sm">
-              <thead>
-                <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
-                  <th className="w-10 px-2 py-2.5">
-                    <SelecionarTodos formId="form-acoes-lote" className="accent-brand" />
-                  </th>
-                  <th className="min-w-[330px] px-4 py-2.5 font-medium">
-                    <Link href={linkOrdenar("descricao")} className="inline-flex items-center gap-1 hover:text-ink">
-                      Descrição {iconeOrdenacao("descricao")}
-                    </Link>
-                  </th>
-                  <th className="hidden min-w-[210px] px-4 py-2.5 font-medium lg:table-cell">
-                    <Link href={linkOrdenar("pessoa")} className="inline-flex items-center gap-1 hover:text-ink">
-                      {rotuloPessoa} {iconeOrdenacao("pessoa")}
-                    </Link>
-                  </th>
-                  <th className="hidden min-w-[230px] px-4 py-2.5 font-medium lg:table-cell">
-                    <Link href={linkOrdenar("categoria")} className="inline-flex items-center gap-1 hover:text-ink">
-                      Categoria {iconeOrdenacao("categoria")}
-                    </Link>
-                  </th>
-                  <th className="hidden px-4 py-2.5 font-medium md:table-cell">
-                    <Link href={linkOrdenar("vencimento")} className="inline-flex items-center gap-1 hover:text-ink">
-                      Vencimento {iconeOrdenacao("vencimento")}
-                    </Link>
-                  </th>
-                  <th className="px-4 py-2.5 font-medium">
-                    <Link href={linkOrdenar("valor")} className="inline-flex items-center gap-1 hover:text-ink">
-                      Valor {iconeOrdenacao("valor")}
-                    </Link>
-                  </th>
-                  <th className="hidden px-4 py-2.5 font-medium md:table-cell">
-                    <Link href={linkOrdenar("status")} className="inline-flex items-center gap-1 hover:text-ink">
-                      Status {iconeOrdenacao("status")}
-                    </Link>
-                  </th>
-                  <th className="hidden min-w-[170px] px-4 py-2.5 font-medium xl:table-cell">Conta</th>
-                  <th className="w-28 px-4 py-2.5 font-medium text-right">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {lancamentosPagina.map((l) => {
-                  const pessoa = l.financeiro_pessoas;
-                  const categoria = l.financeiro_categorias;
-                  const conta = l.financeiro_contas_bancarias;
-                  const editavel = l.status === "pendente" || l.status === "pago_parcial";
-                  const estado = estadoExibicao(l, hoje);
-                  return (
-                    <tr key={l.id}>
-                      <td className="px-2 py-2.5">
-                        {(l.status === "pendente" || l.status === "pago_parcial") && (
-                          <input type="checkbox" name="ids" value={l.id} form="form-acoes-lote" className="accent-brand" />
-                        )}
-                      </td>
-
-                      <td className="px-4 py-3 text-ink">
-                        <div className="max-w-[380px] break-words font-medium" title={l.descricao}>{l.descricao} {tipo === "despesa" && l.financeiro_anexos && <Link href={`/financeiro/lancamentos/${l.id}/anexos`} aria-label={`Ver anexo de ${l.descricao}`} title={l.financeiro_anexos.nome} className="ml-1 inline-flex align-middle text-brand"><Paperclip size={14} /></Link>} {l.recorrencia_id && <Repeat size={12} className="inline text-ink-muted" />}</div>
-                        <div className="mt-1 text-xs text-ink-muted lg:hidden">
-                          {[pessoa?.nome, categoria?.nome ?? "Sem categoria", conta?.nome].filter(Boolean).join(" · ")}
-                        </div>
-                        <div className="mt-1 text-xs text-ink-muted md:hidden">{dataBR(l.vencimento)} · {ESTADO_ROTULO[estado]}</div>
-                      </td>
-                      <td className="hidden max-w-[240px] break-words px-4 py-2.5 text-ink-muted lg:table-cell" title={pessoa?.nome ?? ""}>{pessoa?.nome ?? "—"}</td>
-                      <td className="hidden max-w-[260px] break-words px-4 py-2.5 text-ink-muted lg:table-cell" title={categoria?.nome ?? "Sem categoria"}>
-                        {categoria?.nome ?? <span className="font-medium text-amber-700">Sem categoria</span>}
-                      </td>
-                      <td className="hidden px-4 py-2.5 text-ink-muted md:table-cell">{dataBR(l.vencimento)}</td>
-                      <td className="num w-28 px-2 py-2.5 text-right text-xs font-medium text-ink sm:text-sm">{brl(l.valor)}</td>
-                      <td className="hidden px-4 py-2.5 md:table-cell">
-                        <span className={`inline-flex items-center gap-1.5 whitespace-nowrap text-xs font-medium ${ESTADO_TEXTO[estado]}`}>
-                          <span className={`h-1.5 w-1.5 rounded-full ${ESTADO_COR[estado]}`} />
-                          {ESTADO_ROTULO[estado]}
-                        </span>
-                      </td>
-                      <td className="hidden max-w-[220px] break-words px-4 py-2.5 text-ink-muted xl:table-cell" title={conta?.nome ?? ""}>{conta?.nome ?? "—"}</td>
-                      <td className="px-4 py-2.5 text-right">
-                        <MenuAcoesLancamento
-                          id={l.id}
-                          descricao={l.descricao}
-                          tipo={tipo}
-                          status={l.status}
-                          editavel={editavel}
-                          recorrente={!!l.recorrencia_id}
-                          podeCategorizar={tipo === "receita" && !l.categoria_id && (l.status === "pago" || l.status === "pago_parcial")}
-                          categorias={categorias ?? []}
-                          centros={centros ?? []}
-                        />
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-            </div>
+            <TabelaLancamentos linhas={lancamentosPagina.map((l) => ({ ...l, estado: estadoExibicao(l, hoje) }))}
+              tipo={tipo} rotuloPessoa={rotuloPessoa} categorias={categorias ?? []} centros={centros ?? []}
+              linkOrdenar={linkOrdenar} iconeOrdenacao={iconeOrdenacao} />
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-xs text-ink-muted">
               <span>
                 Mostrando {totalItens === 0 ? 0 : inicioPagina + 1} a {Math.min(inicioPagina + porPagina, totalItens)} de{" "}
                 {totalItens} lançamentos
               </span>
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1">
+              <div className="flex w-full flex-wrap items-center justify-between gap-3 sm:w-auto">
+                <div className="flex flex-wrap items-center gap-1">
                   <Link
                     href={construirUrl(rota, { ...f, pagina: String(Math.max(1, paginaAtual - 1)) })}
+                    aria-label="Página anterior"
                     aria-disabled={paginaAtual === 1}
-                    className={`rounded-md border border-border p-1.5 ${
+                    className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border p-1.5 ${
                       paginaAtual === 1 ? "pointer-events-none opacity-40" : "hover:bg-background"
                     }`}
                   >
@@ -684,7 +553,9 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                         <Link
                           key={n}
                           href={construirUrl(rota, { ...f, pagina: String(n) })}
-                          className={`rounded-md border px-2.5 py-1 ${
+                          aria-label={`Página ${n}`}
+                          aria-current={n === paginaAtual ? "page" : undefined}
+                          className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border px-2.5 py-1 ${
                             n === paginaAtual
                               ? "border-brand bg-brand text-white"
                               : "border-border text-ink-muted hover:bg-background"
@@ -696,8 +567,9 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                     )}
                   <Link
                     href={construirUrl(rota, { ...f, pagina: String(Math.min(totalPaginas, paginaAtual + 1)) })}
+                    aria-label="Próxima página"
                     aria-disabled={paginaAtual === totalPaginas}
-                    className={`rounded-md border border-border p-1.5 ${
+                    className={`inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-border p-1.5 ${
                       paginaAtual === totalPaginas ? "pointer-events-none opacity-40" : "hover:bg-background"
                     }`}
                   >

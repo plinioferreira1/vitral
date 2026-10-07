@@ -100,7 +100,7 @@ export function DashboardIndicadores({ indicadores }: { indicadores: DashboardIn
 
   return (
     <section className="space-y-3">
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
         {ORDEM.map((id) => {
           const indicador = indicadores[id];
           const config = CONFIG[id];
@@ -113,21 +113,21 @@ export function DashboardIndicadores({ indicadores }: { indicadores: DashboardIn
               key={id}
               type="button"
               onClick={() => setAtivo((atual) => (atual === id ? null : id))}
-              className={`flex items-center gap-3 rounded-xl border p-4 text-left shadow-sm transition hover:border-border-strong hover:shadow-md ${
+              className={`flex flex-wrap items-center gap-2 rounded-xl border p-3 sm:flex-nowrap sm:gap-3 sm:p-4 text-left shadow-sm transition hover:border-border-strong hover:shadow-md ${
                 tom.card
               } ${selecionado ? tom.ativo : ""}`}
               aria-expanded={selecionado}
             >
-              <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${tom.icon}`}>
+              <div className={`flex h-8 w-8 shrink-0 sm:h-10 sm:w-10 items-center justify-center rounded-full ${tom.icon}`}>
                 <Icon size={19} strokeWidth={2} />
               </div>
-              <div className="min-w-0 flex-1">
+              <div className="order-3 w-full min-w-0 sm:order-none sm:w-auto sm:flex-1">
                 <p className={`num text-2xl font-bold leading-tight ${tom.valor}`}>{indicador.valor}</p>
-                <p className="truncate text-xs text-ink-muted">{indicador.label}</p>
+                <p className="text-xs leading-5 text-ink-muted">{indicador.label}</p>
               </div>
               <ChevronDown
                 size={16}
-                className={`shrink-0 text-ink-muted transition ${selecionado ? "rotate-180" : ""}`}
+                className={`ml-auto shrink-0 text-ink-muted transition ${selecionado ? "rotate-180" : ""}`}
               />
             </button>
           );

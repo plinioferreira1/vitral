@@ -189,7 +189,7 @@ export default async function ProcessoDetalhePage({
                     : "Em andamento"}
               </span>
             </div>
-            <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight text-ink md:text-[32px]">
+            <h1 className="mt-2 break-words text-2xl font-bold leading-tight tracking-tight text-ink md:text-[32px]">
               {p.imoveis?.endereco ?? p.comprador?.nome ?? "Processo sem identificação"}
             </h1>
             <p className="mt-1 text-sm text-ink-muted">
@@ -352,7 +352,7 @@ export default async function ProcessoDetalhePage({
             <span className="text-xs font-medium text-brand group-open:hidden">Ver detalhes</span>
             <span className="hidden text-xs font-medium text-brand group-open:inline">Ocultar detalhes</span>
           </summary>
-          <div className="grid grid-cols-2 gap-x-6 gap-y-5 border-t border-border/70 p-4 sm:grid-cols-3 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-x-6 gap-y-5 min-[400px]:grid-cols-2 border-t border-border/70 p-4 sm:grid-cols-3 lg:grid-cols-4">
             <Info label="Comprador" value={p.comprador?.nome} />
             {!ehFinanciamento && <Info label="Vendedor" value={p.vendedor?.nome} />}
             <Info label="Imóvel" value={p.imoveis?.endereco} />
@@ -549,7 +549,7 @@ export default async function ProcessoDetalhePage({
                   : "border-border/60"
               }`}
             >
-              <summary className="flex cursor-pointer list-none items-start justify-between gap-3 p-4 sm:p-5">
+              <summary className="flex cursor-pointer list-none flex-wrap items-start justify-between gap-3 p-4 sm:flex-nowrap sm:p-5">
                 <div className="flex min-w-0 gap-3">
                   <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
                     etapa.status === "concluida"
@@ -606,7 +606,7 @@ export default async function ProcessoDetalhePage({
                           name="concluido_atual"
                           value={String(item.concluido)}
                         />
-                        <BotaoEnviar className="flex items-center gap-2 text-left">
+                        <BotaoEnviar className="flex min-h-11 items-center gap-3 text-left">
                           <span
                             className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
                               item.concluido
@@ -638,7 +638,7 @@ export default async function ProcessoDetalhePage({
 
               {(etapa.nome === "Registro" || etapa.nome === "Conclusão do Registro") && (
                 <div className="mt-3 border-t border-border pt-3">
-                  <form action={salvarNumeroRegistro} className="flex items-center gap-1.5">
+                  <form action={salvarNumeroRegistro} className="flex flex-wrap items-center gap-2">
                     <input type="hidden" name="etapa_id" value={etapa.id} />
                     <input type="hidden" name="processo_id" value={p.id} />
                     <input
@@ -682,12 +682,13 @@ export default async function ProcessoDetalhePage({
                   </form>
                 )}
 
-                <form action={alterarDataPrevista} className="flex items-center gap-1.5">
+                <form action={alterarDataPrevista} className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                   <input type="hidden" name="etapa_id" value={etapa.id} />
                   <input type="hidden" name="processo_id" value={p.id} />
                   <input
                     type="date"
                     name="data_prevista"
+                    aria-label={`Prazo de ${etapa.nome}`}
                     defaultValue={etapa.data_prevista ?? ""}
                     className="rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
                   />

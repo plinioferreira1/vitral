@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
@@ -128,6 +128,23 @@ export function AppShell({
   sairAction,
 }: Props) {
   const [menuAberto, setMenuAberto] = useState(false);
+  const menuRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const menu = menuRef.current;
+    if (!menuAberto || !menu) return;
+    menu.showModal();
+    const overflowAnterior = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const desktop = window.matchMedia("(min-width: 768px)");
+    const fecharNoDesktop = () => { if (desktop.matches) setMenuAberto(false); };
+    desktop.addEventListener("change", fecharNoDesktop);
+    return () => {
+      menu.close();
+      document.body.style.overflow = overflowAnterior;
+      desktop.removeEventListener("change", fecharNoDesktop);
+    };
+  }, [menuAberto]);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const hrefAtivo = hrefAtivoMenu(navItems as import("@/lib/menu").ItemMenu[], pathname, searchParams);
@@ -201,7 +218,7 @@ export function AppShell({
   );
 
   const nav = (
-    <nav data-nav-root className="min-h-0 flex-1 space-y-0.5 overflow-y-auto pr-1">
+    <nav data-nav-root aria-label="Menu principal" className="min-h-0 flex-1 space-y-0.5 overflow-y-auto overscroll-contain pr-1 [&_a]:min-h-11 [&_a]:content-center [&_button]:min-h-11 md:[&_a]:min-h-0 md:[&_button]:min-h-0">
       {navItems.map((item) => {
         if (!item.children) {
           const ativo = item.href === hrefAtivo;
@@ -374,43 +391,41 @@ export function AppShell({
       </aside>
 
       {/* Mobile: barra superior + menu deslizante */}
-      <div className="flex flex-1 flex-col md:hidden">
+      <div className="shrink-0 md:hidden">
         <header className="flex items-center justify-between border-b border-border bg-surface px-4 py-3">
           {logo}
           <button
             type="button"
             aria-label="Abrir menu"
+            aria-haspopup="dialog"
+            aria-expanded={menuAberto}
             onClick={() => setMenuAberto(true)}
-            className="flex h-9 w-9 items-center justify-center rounded-md text-ink hover:bg-background"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink hover:bg-background"
           >
             <Menu size={20} strokeWidth={1.75} />
           </button>
         </header>
 
-        {menuAberto && (
-          <div className="fixed inset-0 z-50 flex">
-            <div
-              className="absolute inset-0 bg-black/30"
-              onClick={() => setMenuAberto(false)}
-              aria-hidden="true"
-            />
-            <div className="relative flex h-full w-64 max-w-[80%] flex-col overflow-hidden bg-surface px-3 py-4 shadow-xl">
-              <div className="mb-4 flex shrink-0 items-center justify-between">
-                {logo}
-                <button
-                  type="button"
-                  aria-label="Fechar menu"
-                  onClick={() => setMenuAberto(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-ink-muted hover:bg-background"
-                >
-                  <X size={16} strokeWidth={1.75} />
-                </button>
-              </div>
-              {nav}
-              {rodape}
+        <dialog
+          ref={menuRef}
+          aria-label="Menu principal"
+          onCancel={() => setMenuAberto(false)}
+          onClose={() => setMenuAberto(false)}
+          onClick={(event) => { if (event.target === menuRef.current) setMenuAberto(false); }}
+          className="fixed inset-0 m-0 h-dvh max-h-none w-full max-w-none bg-transparent p-0 text-ink backdrop:bg-black/35"
+        >
+          {menuAberto && <div className="flex h-full w-[min(320px,88vw)] flex-col overflow-hidden bg-surface px-3 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] shadow-xl">
+            <div className="mb-4 flex shrink-0 items-center justify-between gap-2">
+              {logo}
+              <button type="button" autoFocus aria-label="Fechar menu" onClick={() => setMenuAberto(false)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md text-ink-muted hover:bg-background">
+                <X size={20} strokeWidth={1.75} />
+              </button>
             </div>
-          </div>
-        )}
+            {nav}
+            {rodape}
+          </div>}
+        </dialog>
       </div>
     </>
   );

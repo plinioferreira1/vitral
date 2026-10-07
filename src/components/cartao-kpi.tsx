@@ -43,7 +43,7 @@ export function CartaoKpi({
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs text-ink-muted">{label}</p>
-          <p className="num text-xl font-bold leading-tight text-ink">{valor}</p>
+          <p className="num break-words text-xl font-bold leading-tight text-ink">{valor}</p>
         </div>
         {href && <ChevronRight size={16} className="shrink-0 text-ink-muted" />}
       </div>

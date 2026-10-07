@@ -142,7 +142,7 @@ export function MenuAcoesLancamento({
               ref={menuRef}
               role="dialog"
               aria-label={`Ações para ${descricao}`}
-              className="pointer-events-auto w-[min(360px,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-border bg-surface p-3 text-left shadow-2xl"
+              className="financeiro-acoes pointer-events-auto w-[min(360px,calc(100vw-2rem))] overflow-y-auto rounded-xl border border-border bg-surface p-3 text-left shadow-2xl"
               style={{
                 top: posicao.top,
                 bottom: posicao.bottom,
@@ -159,7 +159,7 @@ export function MenuAcoesLancamento({
                 <button
                   type="button"
                   onClick={() => setAberto(false)}
-                  className="rounded-md p-1 text-ink-muted hover:bg-background hover:text-ink"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md p-1 text-ink-muted hover:bg-background hover:text-ink"
                   aria-label="Fechar ações"
                 >
                   <X size={16} />
@@ -283,7 +283,7 @@ export function MenuAcoesLancamento({
               role="dialog"
               aria-modal="true"
               aria-label={`Excluir ${descricao}`}
-              className="w-full max-w-xl rounded-xl border border-border bg-surface p-5 text-left shadow-2xl"
+              className="financeiro-acoes max-h-[calc(100dvh-2rem)] w-full max-w-xl overflow-y-auto overscroll-contain rounded-xl border border-border bg-surface p-5 text-left shadow-2xl"
             >
               <input type="hidden" name="id" value={id} />
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">

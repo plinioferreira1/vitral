@@ -68,7 +68,7 @@ export function BuscaOpcaoFinanceira({
             if (value) { setValue(""); setQuery(""); setOpen(true); }
             else setOpen(!open);
           }}
-          className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-ink-muted hover:text-brand"
+          className="absolute right-0 top-1/2 flex h-11 w-9 -translate-y-1/2 items-center justify-center rounded text-ink-muted hover:text-brand"
         >
           {value ? <X size={15} /> : <ChevronDown size={15} />}
         </button>
@@ -76,9 +76,9 @@ export function BuscaOpcaoFinanceira({
       <input type="hidden" name={name} value={value} />
       {open && (
         <div id={`${listId}-options`} role="listbox" className="absolute z-50 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-border bg-surface p-1 shadow-xl">
-          <button type="button" role="option" aria-selected={!value} onMouseDown={(event) => event.preventDefault()} onClick={() => { setValue(""); setQuery(""); setOpen(false); }} className="block w-full rounded-md px-3 py-2 text-left text-sm text-ink-muted hover:bg-background">{emptyLabel}</button>
+          <button type="button" role="option" aria-selected={!value} onMouseDown={(event) => event.preventDefault()} onClick={() => { setValue(""); setQuery(""); setOpen(false); }} className="block min-h-11 w-full rounded-md px-3 py-2 text-left text-sm text-ink-muted hover:bg-background">{emptyLabel}</button>
           {filtered.map((option) => (
-            <button key={option.id} type="button" role="option" aria-selected={value === option.id} onMouseDown={(event) => event.preventDefault()} onClick={() => { setValue(option.id); setQuery(option.nome); setOpen(false); }} className="block w-full rounded-md px-3 py-2 text-left text-sm text-ink hover:bg-brand-soft hover:text-brand">
+            <button key={option.id} type="button" role="option" aria-selected={value === option.id} onMouseDown={(event) => event.preventDefault()} onClick={() => { setValue(option.id); setQuery(option.nome); setOpen(false); }} className="block min-h-11 w-full rounded-md px-3 py-2 text-left text-sm text-ink hover:bg-brand-soft hover:text-brand">
               {option.nome}
             </button>
           ))}

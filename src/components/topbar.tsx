@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { Search, Bell, Calendar, AlertTriangle, Clock3, CheckCircle2 } from "lucide-react";
+import { Search, Bell, Calendar, X, AlertTriangle, Clock3, CheckCircle2 } from "lucide-react";
 
 export interface NotificacaoTopBar {
   id: string;
@@ -57,12 +57,13 @@ export function TopBar({
 
   return (
     <div className="flex items-center gap-3">
-      <form onSubmit={buscar} className="relative flex-1">
+      <form onSubmit={buscar} role="search" className="relative min-w-0 flex-1">
         <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-muted" />
         <input
           value={termo}
           onChange={(e) => setTermo(e.target.value)}
-          type="text"
+          type="search"
+          aria-label="Buscar processo, imóvel ou cliente"
           placeholder="Buscar processo, imóvel, cliente..."
           className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-4 text-sm text-ink outline-none focus:border-brand focus:bg-surface focus:ring-1 focus:ring-brand"
         />
@@ -74,7 +75,7 @@ export function TopBar({
           aria-label="Abrir notificações"
           aria-expanded={notificacoesAbertas}
           onClick={() => setNotificacoesAbertas((abertas) => !abertas)}
-          className={`relative rounded-lg border p-2.5 transition ${
+          className={`relative flex h-11 w-11 items-center justify-center rounded-lg border transition ${
             notificacoesAbertas
               ? "border-brand bg-brand-soft text-brand"
               : "border-border bg-surface text-ink-muted hover:border-brand/40 hover:text-ink"
@@ -89,12 +90,13 @@ export function TopBar({
         </button>
 
         {notificacoesAbertas && (
-          <div className="fixed inset-x-4 top-20 z-50 max-h-[min(70vh,560px)] overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-[390px]">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3.5">
-              <div>
+          <div className="fixed inset-x-4 top-20 z-50 flex max-h-[min(75dvh,560px)] flex-col overflow-hidden rounded-2xl border border-border bg-surface shadow-2xl sm:absolute sm:inset-x-auto sm:right-0 sm:top-12 sm:w-[390px]">
+            <div className="flex items-start justify-between gap-2 border-b border-border px-4 py-3.5">
+              <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-ink">Notificações</p>
                 <p className="text-xs text-ink-muted">Prazos vencidos e dos próximos 7 dias</p>
               </div>
+              <div className="flex shrink-0 items-center gap-1">
               {totalNotificacoes > 0 && (
                 <form
                   action={limparTodasAction}
@@ -108,9 +110,11 @@ export function TopBar({
                   </button>
                 </form>
               )}
+              <button type="button" aria-label="Fechar notificações" onClick={() => setNotificacoesAbertas(false)} className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-muted hover:bg-background"><X size={18} /></button>
+              </div>
             </div>
 
-            <div className="max-h-[min(60vh,480px)] overflow-y-auto p-2">
+            <div className="min-h-0 overflow-y-auto overscroll-contain p-2">
               {notificacoes.length === 0 ? (
                 <div className="flex flex-col items-center px-6 py-10 text-center">
                   <span className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
@@ -160,7 +164,7 @@ export function TopBar({
 
       <div className="hidden shrink-0 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink-muted sm:flex">
         <Calendar size={15} strokeWidth={2} />
-        <span>{dataFormatada}</span>
+        <span className="max-w-52 truncate xl:max-w-none">{dataFormatada}</span>
       </div>
     </div>
   );
