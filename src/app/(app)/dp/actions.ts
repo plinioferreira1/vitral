@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { avisar } from "@/lib/aviso";
+import { avisar, checar } from "@/lib/aviso";
 import type { Json } from "@/lib/database.types";
 import {
   ROTULO_REGISTRO,
@@ -87,6 +87,41 @@ async function colaboradorDaEmpresa(ctx: Contexto, id: string): Promise<Colabora
 // ---------------------------------------------------------------
 // colaboradores
 // ---------------------------------------------------------------
+
+/** Liga uma ficha existente, preservando todos os dados de RH e sua auditoria. */
+export async function vincularUsuarioColaborador(formData: FormData) {
+  const ctx = await contextoAdmin();
+  if (!ctx) return;
+  const usuarioId = txt(formData, "usuario_id", 40);
+  const colaboradorId = txt(formData, "colaborador_id", 40);
+  if (!UUID.test(usuarioId) || !UUID.test(colaboradorId)) {
+    await avisar("erro", "Selecione um usuário e um colaborador válidos.");
+    return;
+  }
+  const anterior = await colaboradorDaEmpresa(ctx, colaboradorId);
+  const { data: usuario } = await ctx.admin.from("usuarios").select("id").eq("id", usuarioId).eq("tenant_id", ctx.tenantId).single();
+  if (!anterior || !usuario || anterior.usuario_id) {
+    await avisar("erro", "Ficha indisponível para vínculo. Atualize a página e tente novamente.");
+    return;
+  }
+  const { data: existente, error: erroExistente } = await ctx.admin.from("dp_colaboradores").select("id").eq("usuario_id", usuarioId).maybeSingle();
+  if (erroExistente || existente) {
+    await avisar("erro", "Esse usuário já está vinculado a uma ficha de colaborador.");
+    return;
+  }
+  // A condição e a constraint única impedem que dois vínculos concorrentes se sobrescrevam.
+  const resultado = await ctx.admin.from("dp_colaboradores").update({ usuario_id: usuarioId, atualizado_em: new Date().toISOString() }).eq("id", colaboradorId).eq("tenant_id", ctx.tenantId).is("usuario_id", null).select("*").single();
+  if (!await checar(Promise.resolve(resultado), "vincular o colaborador") || !resultado.data) return;
+  await sincronizarFerias(ctx, resultado.data);
+  // Se a ficha vinculada for uma gestora, atualiza também o destino das solicitações da equipe.
+  const { data: equipe } = await ctx.admin.from("dp_colaboradores").select("*").eq("gestor_id", colaboradorId).eq("tenant_id", ctx.tenantId);
+  for (const c of equipe ?? []) await sincronizarFerias(ctx, c);
+  await auditar(ctx, { colaboradorId, entidade: "colaborador", registroId: colaboradorId, acao: "vincular_usuario", descricao: "Usuário do Vitral vinculado à ficha de colaborador", anterior: { usuario_id: null }, novo: { usuario_id: usuarioId } });
+  atualizar();
+  revalidatePath("/membros");
+  await avisar("sucesso", "Colaborador vinculado ao usuário do Vitral.");
+  return true;
+}
 
 /** Férias usa uma cópia enxuta do cadastro (por usuário do Vitral); mantém as duas em dia. */
 async function sincronizarFerias(ctx: Contexto, c: Colaborador) {
