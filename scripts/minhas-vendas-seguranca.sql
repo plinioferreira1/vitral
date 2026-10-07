@@ -17,6 +17,7 @@ begin
  insert into public.processos(id,tenant_id,numero_processo,corretor_id,categoria) values(pa,t,'TESTE-A',corretor_a,'venda'),(pb,t,'TESTE-B',corretor_b,'venda'),(pc,outro_t,'TESTE-C',corretor_c,'venda');
  insert into public.etapas(processo_id,nome,ordem) values(pa,'Etapa pública',0);
  insert into public.processo_atualizacoes_corretor(processo_id,autor_id,mensagem) values(pa,gestor,'Atualização destinada ao corretor');
+ insert into public.comissoes(processo_id,beneficiario_id,valor_previsto,status,observacoes) values(pa,corretor_a,1234.56,'0% pago','INTERNO'),(pa,corretor_b,9999,'100% pago','OUTRO'),(pa,corretor_c,8888,'0% pago','OUTRA EMPRESA'),(pa,null,7777,'0% pago','SEM VINCULO'),(pb,corretor_a,6666,'0% pago','OUTRA VENDA');
  perform set_config('request.jwt.claims',json_build_object('sub',a,'role','authenticated')::text,true);
  execute 'set local role authenticated';
  payload:=public.minhas_vendas();
@@ -24,6 +25,12 @@ begin
  assert payload->'vendas'->0->>'id'=pa::text,'A recebeu uma venda indevida';
  assert not ((payload->'vendas'->0) ? 'valor_total'),'Não deve enviar valores internos';
  assert not ((payload->'vendas'->0) ? 'comentarios'),'Não deve enviar comentários internos';
+ assert jsonb_array_length(payload->'vendas'->0->'comissoes')=1,'Somente a comissão própria deve aparecer';
+ assert payload->'vendas'->0->'comissoes'->0->>'valor_previsto'='1234.56','Valor deve ser exato';
+ assert not (payload->'vendas'->0->'comissoes'->0 ? 'observacoes'),'Observações internas não podem aparecer';
+ assert (select count(*)=0 from public.comissoes where processo_id=pa),'Tabela de comissões deve continuar restrita';
+ update public.comissoes set status='100% pago' where processo_id=pa; get diagnostics afetadas=row_count;
+ assert afetadas=0,'Corretor não pode alterar pagamento';
  assert jsonb_array_length(payload->'vendas'->0->'atualizacoes')=1,'Atualização publicada deve aparecer';
  assert jsonb_array_length(public.minhas_vendas(pb)->'vendas')=0,'ID de outro corretor não deve ser acessível';
  assert jsonb_array_length(public.minhas_vendas(pc)->'vendas')=0,'Outra empresa não deve ser acessível';

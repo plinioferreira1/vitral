@@ -469,6 +469,8 @@ export async function salvarComissao(formData: FormData) {
   }
 
   revalidatePath(`/processos/${processoId}`);
+  revalidatePath("/minhas-vendas");
+  revalidatePath(`/minhas-vendas/${processoId}`);
 }
 
 export async function adicionarComentario(formData: FormData) {
