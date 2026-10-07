@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { INPUT_CLASS } from "@/components/ui/styles";
 import { ArrowRight, ArrowRightLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
@@ -8,7 +10,7 @@ import { hojeISO } from "@/lib/data-br";
 import { apagarTransferencia, criarTransferencia } from "./actions";
 
 const campoClasse =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10";
+  INPUT_CLASS;
 
 function brl(v: number): string {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -35,15 +37,11 @@ export default async function TransferenciasPage() {
 
   return (
     <div className="financeiro-ui mx-auto max-w-[1180px] space-y-5">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Transferências entre contas</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Pagar a fatura do cartão com a conta corrente, aplicar ou resgatar investimento, mover dinheiro entre bancos.
+      <CabecalhoPagina titulo="Transferências entre contas" descricao={<> Pagar a fatura do cartão com a conta corrente, aplicar ou resgatar investimento, mover dinheiro entre bancos.
           Não conta como receita nem despesa — só tira de uma conta e põe na outra.
-        </p>
-      </div>
+         </>} />
 
-      <form action={criarTransferencia} className="space-y-4 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <form action={criarTransferencia} className="space-y-4 rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <CabecalhoSecao icon={ArrowRightLeft} titulo="Nova transferência" descricao="O saldo das duas contas é atualizado na hora." />
         <div className="grid gap-3 lg:grid-cols-[1fr_auto_1fr] lg:items-end">
           <div>
@@ -93,7 +91,7 @@ export default async function TransferenciasPage() {
         </BotaoEnviar>
       </form>
 
-      <div className="rounded-xl border border-border/60 bg-surface shadow-sm">
+      <div className="rounded-2xl border border-border/70 bg-surface shadow-sm">
         <div className="border-b border-border p-4">
           <CabecalhoSecao icon={ArrowRightLeft} titulo="Transferências registradas" descricao="As mais recentes primeiro." />
         </div>

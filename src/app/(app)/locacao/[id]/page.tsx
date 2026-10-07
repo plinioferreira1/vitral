@@ -1,3 +1,4 @@
+import { NavegacaoSecoes } from "@/components/navegacao-secoes";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -162,8 +163,13 @@ export default async function ContratoLocacaoPage({
   const contasComDados = (contasRaw ?? []).filter((cc) => cc.status !== "nao_aplicavel");
 
   return (
-    <div className="max-w-4xl space-y-8">
-      <div>
+    <div className="mx-auto max-w-7xl space-y-6">
+      <NavegacaoSecoes secoes={[
+        { id: "resumo-contrato", label: "Resumo" }, { id: "contas-contrato", label: "Contas" },
+        { id: "condominio-contrato", label: "Condomínio" }, { id: "dados-contrato", label: "Dados e responsáveis" },
+        { id: "rescisao-contrato", label: "Rescisão" }, { id: "gestao-contrato", label: "Gestão do contrato" },
+      ]} />
+      <div id="resumo-contrato" className="scroll-mt-20 rounded-2xl border border-border/70 bg-surface p-6 shadow-sm">
         <VoltarLink href="/locacao" label="Locação" />
         <SucessoBanner mostrar={salvo === "1"} texto="Contrato salvo com sucesso." />
         <div className="mt-2 flex items-start justify-between gap-3">
@@ -216,173 +222,8 @@ export default async function ContratoLocacaoPage({
         </div>
       </div>
 
-      {/* Rescisão */}
-      <section>
-        {rescisaoAtiva ? (
-          <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
-            <div className="mb-1">
-              <CabecalhoSecao
-                icon={FileWarning}
-                titulo="Rescisão do contrato"
-                acao={
-                  <span className="text-xs text-ink-muted">
-                    {rescisaoEtapas.filter((e) => e.status === "concluida").length} de{" "}
-                    {rescisaoEtapas.length} etapas concluídas
-                  </span>
-                }
-              />
-            </div>
-            <p className="mb-4 text-xs text-ink-muted">
-              Aviso recebido em{" "}
-              {new Date(rescisaoAtiva.data_aviso + "T00:00:00").toLocaleDateString("pt-BR")}
-            </p>
-
-            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-              Mantenha contato pelo menos uma vez por semana com o inquilino e com o
-              proprietário durante todo o processo, atualizando os dois sobre o andamento.
-            </div>
-
-            <div className="space-y-3">
-              {rescisaoEtapas.map((etapa) => {
-                const itensEtapa = rescisaoChecklist.filter((it) => it.etapa_id === etapa.id);
-                return (
-                  <div
-                    key={etapa.id}
-                    className="rounded-lg border border-border/60 bg-background p-4"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-sm font-medium text-ink">
-                        {etapa.ordem}. {etapa.nome}
-                      </p>
-                      <span
-                        className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${
-                          etapa.status === "concluida"
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : "border-border-strong bg-surface text-ink-muted"
-                        }`}
-                      >
-                        {etapa.status === "concluida"
-                          ? `Concluída${etapa.data_realizada ? " em " + new Date(etapa.data_realizada + "T00:00:00").toLocaleDateString("pt-BR") : ""}`
-                          : "Pendente"}
-                      </span>
-                    </div>
-
-                    {etapa.nome === "Vistoria de saída" && (
-                      <p className="mt-1.5 text-[11px] text-ink-muted">
-                        Se a vistoria apontar reparos necessários, conclua marcando os itens
-                        abaixo e depois reabra esta etapa quando precisar de uma nova rodada de
-                        vistoria — o ciclo se repete até o imóvel ser aceito.
-                      </p>
-                    )}
-
-                    {itensEtapa.length > 0 && (
-                      <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
-                        {itensEtapa.map((item) => (
-                          <li key={item.id} className="flex items-center gap-2 text-sm">
-                            <form action={alternarChecklistItemRescisao}>
-                              <input type="hidden" name="item_id" value={item.id} />
-                              <input type="hidden" name="contrato_id" value={id} />
-                              <input
-                                type="hidden"
-                                name="concluido_atual"
-                                value={String(item.concluido)}
-                              />
-                              <BotaoEnviar className="flex items-center gap-2 text-left">
-                                <span
-                                  className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
-                                    item.concluido
-                                      ? "border-brand bg-brand text-white"
-                                      : "border-border-strong bg-surface"
-                                  }`}
-                                >
-                                  {item.concluido && (
-                                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
-                                      <path
-                                        d="M2 6.5L4.5 9L10 3"
-                                        stroke="currentColor"
-                                        strokeWidth="2"
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                      />
-                                    </svg>
-                                  )}
-                                </span>
-                                <span
-                                  className={
-                                    item.concluido ? "text-ink-muted line-through" : "text-ink"
-                                  }
-                                >
-                                  {item.descricao}
-                                </span>
-                              </BotaoEnviar>
-                            </form>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-
-                    <div className="mt-3 border-t border-border pt-3">
-                      {etapa.status !== "concluida" ? (
-                        <form action={concluirEtapaRescisao}>
-                          <input type="hidden" name="etapa_id" value={etapa.id} />
-                          <input type="hidden" name="rescisao_id" value={rescisaoAtiva.id} />
-                          <input type="hidden" name="contrato_id" value={id} />
-                          <BotaoEnviar
-                            className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
-                          >
-                            Concluir etapa
-                          </BotaoEnviar>
-                        </form>
-                      ) : (
-                        <form action={reabrirEtapaRescisao}>
-                          <input type="hidden" name="etapa_id" value={etapa.id} />
-                          <input type="hidden" name="rescisao_id" value={rescisaoAtiva.id} />
-                          <input type="hidden" name="contrato_id" value={id} />
-                          <BotaoEnviar
-                            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background"
-                          >
-                            Reabrir
-                          </BotaoEnviar>
-                        </form>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
-            <CabecalhoSecao
-              icon={FileWarning}
-              titulo="Rescisão do contrato"
-              descricao="Use quando o inquilino avisar (por e-mail, de preferência) que vai encerrar o contrato. Isso cria o passo a passo completo pra acompanhar, do aviso até a entrega do imóvel."
-            />
-            <form action={iniciarRescisao} className="flex flex-wrap items-end gap-3">
-              <input type="hidden" name="contrato_id" value={id} />
-              <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">
-                  Data do aviso
-                </label>
-                <input
-                  type="date"
-                  name="data_aviso"
-                  defaultValue={hojeISO()}
-                  className="rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                />
-              </div>
-              <BotaoEnviar
-                className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
-              >
-                Iniciar rescisão
-              </BotaoEnviar>
-            </form>
-          </div>
-        )}
-      </section>
-
       {/* Grid de contas */}
-      <section>
+      <section id="contas-contrato" className="scroll-mt-20">
         <CabecalhoSecao
           icon={Calendar}
           titulo={`Contas — ${ano}`}
@@ -405,7 +246,7 @@ export default async function ContratoLocacaoPage({
         />
 
         <p className="mb-3 text-xs text-ink-muted">
-          Toque numa célula pra marcar como paga; toque de novo pra desmarcar.
+          Clique em uma conta para marcar como paga. Clique novamente para desfazer a marcação.
         </p>
 
         <div className="overflow-x-auto rounded-xl border border-border/60 bg-surface shadow-sm p-2">
@@ -553,10 +394,10 @@ export default async function ContratoLocacaoPage({
         </details>
       )}
 
-      <SecaoCondominio contratoId={id} />
+      <section id="condominio-contrato" className="scroll-mt-20"><SecaoCondominio contratoId={id} /></section>
 
       {/* Dados do contrato */}
-      <section>
+      <section id="dados-contrato" className="scroll-mt-20">
         <CabecalhoSecao icon={FileText} titulo="Dados do contrato" />
         <form action={atualizarContrato} className="space-y-4 rounded-xl border border-border/60 bg-surface shadow-sm p-5">
           <input type="hidden" name="id" value={id} />
@@ -730,7 +571,175 @@ export default async function ContratoLocacaoPage({
           ))}
         </datalist>
 
-        <div className="mt-4 rounded-xl border border-border/60 bg-surface shadow-sm p-5">
+      </section>
+
+      {/* Rescisão */}
+      <section id="rescisao-contrato" className="scroll-mt-20">
+        {rescisaoAtiva ? (
+          <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
+            <div className="mb-1">
+              <CabecalhoSecao
+                icon={FileWarning}
+                titulo="Rescisão do contrato"
+                acao={
+                  <span className="text-xs text-ink-muted">
+                    {rescisaoEtapas.filter((e) => e.status === "concluida").length} de{" "}
+                    {rescisaoEtapas.length} etapas concluídas
+                  </span>
+                }
+              />
+            </div>
+            <p className="mb-4 text-xs text-ink-muted">
+              Aviso recebido em{" "}
+              {new Date(rescisaoAtiva.data_aviso + "T00:00:00").toLocaleDateString("pt-BR")}
+            </p>
+
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              Mantenha contato pelo menos uma vez por semana com o inquilino e com o
+              proprietário durante todo o processo, atualizando os dois sobre o andamento.
+            </div>
+
+            <div className="space-y-3">
+              {rescisaoEtapas.map((etapa) => {
+                const itensEtapa = rescisaoChecklist.filter((it) => it.etapa_id === etapa.id);
+                return (
+                  <div
+                    key={etapa.id}
+                    className="rounded-lg border border-border/60 bg-background p-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-sm font-medium text-ink">
+                        {etapa.ordem}. {etapa.nome}
+                      </p>
+                      <span
+                        className={`shrink-0 rounded-full border px-2 py-0.5 text-xs font-medium ${
+                          etapa.status === "concluida"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-border-strong bg-surface text-ink-muted"
+                        }`}
+                      >
+                        {etapa.status === "concluida"
+                          ? `Concluída${etapa.data_realizada ? " em " + new Date(etapa.data_realizada + "T00:00:00").toLocaleDateString("pt-BR") : ""}`
+                          : "Pendente"}
+                      </span>
+                    </div>
+
+                    {etapa.nome === "Vistoria de saída" && (
+                      <p className="mt-1.5 text-[11px] text-ink-muted">
+                        Se a vistoria apontar reparos necessários, conclua marcando os itens
+                        abaixo e depois reabra esta etapa quando precisar de uma nova rodada de
+                        vistoria — o ciclo se repete até o imóvel ser aceito.
+                      </p>
+                    )}
+
+                    {itensEtapa.length > 0 && (
+                      <ul className="mt-3 space-y-1.5 border-t border-border pt-3">
+                        {itensEtapa.map((item) => (
+                          <li key={item.id} className="flex items-center gap-2 text-sm">
+                            <form action={alternarChecklistItemRescisao}>
+                              <input type="hidden" name="item_id" value={item.id} />
+                              <input type="hidden" name="contrato_id" value={id} />
+                              <input
+                                type="hidden"
+                                name="concluido_atual"
+                                value={String(item.concluido)}
+                              />
+                              <BotaoEnviar className="flex items-center gap-2 text-left">
+                                <span
+                                  className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded border ${
+                                    item.concluido
+                                      ? "border-brand bg-brand text-white"
+                                      : "border-border-strong bg-surface"
+                                  }`}
+                                >
+                                  {item.concluido && (
+                                    <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
+                                      <path
+                                        d="M2 6.5L4.5 9L10 3"
+                                        stroke="currentColor"
+                                        strokeWidth="2"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                    </svg>
+                                  )}
+                                </span>
+                                <span
+                                  className={
+                                    item.concluido ? "text-ink-muted line-through" : "text-ink"
+                                  }
+                                >
+                                  {item.descricao}
+                                </span>
+                              </BotaoEnviar>
+                            </form>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+
+                    <div className="mt-3 border-t border-border pt-3">
+                      {etapa.status !== "concluida" ? (
+                        <form action={concluirEtapaRescisao}>
+                          <input type="hidden" name="etapa_id" value={etapa.id} />
+                          <input type="hidden" name="rescisao_id" value={rescisaoAtiva.id} />
+                          <input type="hidden" name="contrato_id" value={id} />
+                          <BotaoEnviar
+                            className="rounded-md bg-brand px-3 py-1.5 text-xs font-medium text-white hover:opacity-90"
+                          >
+                            Concluir etapa
+                          </BotaoEnviar>
+                        </form>
+                      ) : (
+                        <form action={reabrirEtapaRescisao}>
+                          <input type="hidden" name="etapa_id" value={etapa.id} />
+                          <input type="hidden" name="rescisao_id" value={rescisaoAtiva.id} />
+                          <input type="hidden" name="contrato_id" value={id} />
+                          <BotaoEnviar
+                            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background"
+                          >
+                            Reabrir
+                          </BotaoEnviar>
+                        </form>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-border/60 bg-surface shadow-sm p-5">
+            <CabecalhoSecao
+              icon={FileWarning}
+              titulo="Rescisão do contrato"
+              descricao="Use quando o inquilino avisar (por e-mail, de preferência) que vai encerrar o contrato. Isso cria o passo a passo completo pra acompanhar, do aviso até a entrega do imóvel."
+            />
+            <form action={iniciarRescisao} className="flex flex-wrap items-end gap-3">
+              <input type="hidden" name="contrato_id" value={id} />
+              <div>
+                <label className="mb-1 block text-xs font-medium text-ink-muted">
+                  Data do aviso
+                </label>
+                <input
+                  type="date"
+                  name="data_aviso"
+                  defaultValue={hojeISO()}
+                  className="rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+                />
+              </div>
+              <BotaoEnviar
+                className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+              >
+                Iniciar rescisão
+              </BotaoEnviar>
+            </form>
+          </div>
+        )}
+      </section>
+
+      <section id="gestao-contrato" className="scroll-mt-20 rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
+          <CabecalhoSecao icon={FileText} titulo="Gestão do contrato" />
           {c.ativo ? (
             <>
               <p className="mb-2 text-xs text-ink-muted">
@@ -756,7 +765,6 @@ export default async function ContratoLocacaoPage({
               </BotaoEnviar>
             </form>
           )}
-        </div>
       </section>
 
       <form action={apagarContrato}>

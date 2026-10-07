@@ -1,3 +1,4 @@
+import { ContextoConfiguracao } from "@/components/contexto-configuracao";
 import { VinculosCorretores } from "./vinculos-corretores";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -56,6 +57,7 @@ export default async function MembrosPage({
     );
   return (
     <>
+      <ContextoConfiguracao />
       {sp.erro && (
         <p
           role="alert"

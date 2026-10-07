@@ -1,3 +1,4 @@
+import { obterPrioridadesFinanceiras } from "@/lib/prioridades-inicio";
 import { ResumoMinhasVendas } from "./minhas-vendas/resumo";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -182,13 +183,13 @@ export default async function DashboardPage() {
 
   if (!user || !usuario) return null;
 
-  const ehAdmin = usuario.perfil === "admin";
-
-  const { ehCorretor, temVenda, temFinanciamento, temLocacao, podeConfigurar } = await getPermissoesUsuario(
+  const { ehCorretor, ehSocialMedia, temVenda, temFinanciamento, temLocacao, podeConfigurar } = await getPermissoesUsuario(
     supabase,
     user!.id,
     usuario.nivel_acesso
   );
+
+  const ehOperacional = !ehCorretor && !ehSocialMedia;
 
   // Calendário, tarefas do dia e quadros do kanban não dependem um do
   // outro — carregam em paralelo em vez de um após o outro.
@@ -256,7 +257,7 @@ export default async function DashboardPage() {
   };
 
   const quadrosPromise = (async (): Promise<QuadroKanban[]> => {
-    if (!ehAdmin || !usuario.tenant_id) return [];
+    if (!ehOperacional || !usuario.tenant_id) return [];
     const tenantId = usuario.tenant_id;
     async function montarQuadro(categoria: "venda" | "financiamento", titulo: string) {
       const { data: processosRaw } = await supabase
@@ -265,7 +266,7 @@ export default async function DashboardPage() {
           "id, numero_processo, status, data_final_contrato, imoveis ( endereco ), comprador:clientes!processos_comprador_id_fkey ( nome ), vendedor:clientes!processos_vendedor_id_fkey ( nome )"
         )
         .eq("categoria", categoria)
-        .not("status", "in", "(concluido,cancelado)");
+        .not("status", "in", "(concluido,cancelado,arquivado)");
 
       const processos = (processosRaw ?? []) as unknown as {
         id: string;
@@ -496,11 +497,15 @@ export default async function DashboardPage() {
     return montarAvisosDebitos(verificacoes ?? [], solicitacoes ?? [], competenciaAtual, new Date().toISOString(), config?.dias_alerta_sem_resposta ?? 7);
   })();
 
-  const [eventos, tarefasHoje, quadrosKanban, avisosDebitos] = await Promise.all([
+  const financeiroPromise = podeConfigurar
+    ? obterPrioridadesFinanceiras(supabase, usuario.tenant_id!, hojeISO())
+    : Promise.resolve({ data: [], error: false });
+  const [eventos, tarefasHoje, quadrosKanban, avisosDebitos, financeiro] = await Promise.all([
     eventosPromise,
     tarefasPromise,
     quadrosPromise,
     avisosDebitosPromise,
+    financeiroPromise,
   ]);
 
   const quadroPrazos = quadrosKanban.find((q) => q.colunaPrazos)?.colunaPrazos ?? null;
@@ -573,6 +578,7 @@ export default async function DashboardPage() {
         evento.data >= hoje &&
         evento.data <= limiteAgendaISO
     )
+    .sort((a, b) => a.data.localeCompare(b.data))
     .slice(0, 8);
 
   const corAgenda: Record<CategoriaProcesso, string> = {
@@ -584,19 +590,17 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-5">
-      {ehCorretor && <ResumoMinhasVendas />}
       <section className="rounded-2xl border border-brand/10 bg-surface p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
             <span className="inline-flex rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand">
-              Painel de comando
+              Início
             </span>
             <h1 className="mt-3 text-[30px] font-bold leading-tight tracking-tight text-ink sm:text-[34px]">
               {saudacao()}, {usuario.nome.split(" ")[0]}.
             </h1>
             <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-muted">
-              Um resumo direto do que precisa de atenção hoje: processos em aberto, prazos,
-              tarefas e os atalhos mais usados pela operação.
+              {ehCorretor ? "Acompanhe suas vendas e acesse os documentos, ferramentas e materiais de atendimento." : ehSocialMedia ? "Acesse as ferramentas e os materiais disponíveis para o seu trabalho." : "Veja o que precisa de atenção hoje: prazos, compromissos e tarefas da operação."}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -635,18 +639,18 @@ export default async function DashboardPage() {
                 descricao="Guias e materiais"
               />
             )}
-            <AtalhoPrincipal
+            {ehOperacional && <AtalhoPrincipal
               href="/calendario"
               icon={Calendar}
               titulo="Calendário"
               descricao="Prazos e agenda"
-            />
+            />}
             {podeConfigurar && (
               <AtalhoPrincipal
-                href="/membros"
+                href="/configuracoes"
                 icon={UserPlus}
-                titulo="Equipe e permissões"
-                descricao="Acessos e permissões"
+                titulo="Configurações"
+                descricao="Equipe, rotinas e integrações"
               />
             )}
           </div>
@@ -674,8 +678,30 @@ export default async function DashboardPage() {
         </Painel>
       )}
 
-      {ehAdmin && quadrosKanban.length > 0 && (
-        <DashboardIndicadores indicadores={indicadoresDashboard} />
+      {ehCorretor && <ResumoMinhasVendas />}
+      {ehOperacional && (
+        <section className="space-y-4" aria-labelledby="prioridades-hoje">
+          <div>
+            <h2 id="prioridades-hoje" className="text-lg font-semibold text-ink">Prioridades de hoje</h2>
+            <p className="mt-1 text-sm text-ink-muted">Abra um indicador para conferir os processos que precisam de acompanhamento.</p>
+          </div>
+          {quadrosKanban.length > 0 && <DashboardIndicadores indicadores={indicadoresDashboard} />}
+          {podeConfigurar && (
+            <Painel className="p-5">
+              <CabecalhoSecao icon={WalletCards} titulo="Compromissos financeiros" descricao="Primeiro o que vence hoje, depois os vencidos." />
+              {financeiro.error ? <p role="alert" className="text-sm text-rose-700">Não foi possível carregar os compromissos. <Link href="/financeiro" className="underline">Abrir Financeiro</Link></p> : (
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  {financeiro.data.map((item) => (
+                    <Link key={item.label} href={item.href} className={`flex items-center justify-between gap-3 rounded-xl border p-4 transition hover:border-brand/30 ${item.vencido && item.quantidade ? "border-rose-200 bg-rose-50 text-rose-800" : "border-border/70 bg-background text-ink"}`}>
+                      <span className="text-sm font-medium">{item.label}</span><strong className="num text-xl">{item.quantidade}</strong>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </Painel>
+          )}
+          {temLocacao && (tarefasHoje.length > 0 || quadrosKanban.length > 0) && <p className="text-sm text-ink-muted">{tarefasHoje.filter((t) => !t.concluida).length} tarefa(s) de locação pendente(s) hoje. <Link href="#tarefas-do-dia" className="font-medium text-brand hover:underline">Ver tarefas ↓</Link></p>}
+        </section>
       )}
 
       {ehCorretor && (
@@ -693,7 +719,7 @@ export default async function DashboardPage() {
               prefetch={false}
               className="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-semibold text-ink hover:bg-background"
             >
-              Abrir onboarding <ArrowRight size={14} />
+              Abrir central de ajuda <ArrowRight size={14} />
             </Link>
           </div>
 
@@ -742,9 +768,9 @@ export default async function DashboardPage() {
         </Painel>
       )}
 
-      {(!ehAdmin || quadrosKanban.length === 0) && tarefasHoje.length > 0 && (
-        <Painel className="p-5">
-          <div className="mb-4 flex items-start justify-between gap-3">
+      {(!ehOperacional || quadrosKanban.length === 0) && tarefasHoje.length > 0 && (
+        <Painel className="scroll-mt-20 p-5">
+          <div id="tarefas-do-dia" className="mb-4 flex items-start justify-between gap-3">
             <div>
               <CabecalhoSecao icon={ListChecks} titulo="Tarefas do dia" />
               <p className="mt-1 text-sm text-ink-muted">Rotinas que vencem hoje.</p>
@@ -776,7 +802,7 @@ export default async function DashboardPage() {
         </Painel>
       )}
 
-      {ehAdmin && (
+      {ehOperacional && (
         <>
           {quadrosKanban.length > 0 && (
             <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
@@ -808,7 +834,7 @@ export default async function DashboardPage() {
 
               <div className="space-y-4">
                 <Painel className="p-5">
-                  <div className="mb-4 flex items-start justify-between gap-3">
+                  <div id="tarefas-do-dia" className="scroll-mt-20 mb-4 flex items-start justify-between gap-3">
                     <div>
                       <CabecalhoSecao icon={ListChecks} titulo="Tarefas do dia" />
                       <p className="mt-1 text-sm text-ink-muted">

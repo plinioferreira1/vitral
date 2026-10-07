@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { ContextoConfiguracao } from "@/components/contexto-configuracao";
 import { redirect } from "next/navigation";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
@@ -34,10 +36,8 @@ export default async function ConfiguracoesDPPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <div>
-        <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Configurações do Departamento Pessoal</h1>
-        <p className="mt-1 text-sm text-ink-muted">Listas do cadastro e regras de ponto e férias. Nada disso fica fixo no sistema.</p>
-      </div>
+      <ContextoConfiguracao />
+      <CabecalhoPagina titulo="Configurações do Departamento Pessoal" descricao={<> Listas do cadastro e regras de ponto e férias. Nada disso fica fixo no sistema. </>} />
 
       <form action={salvarConfigDP} className={`${CARD_CLASS} space-y-6 p-4 sm:p-6`}>
         <section className="space-y-3">

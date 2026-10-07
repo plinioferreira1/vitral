@@ -1,3 +1,4 @@
+import { INPUT_CLASS } from "@/components/ui/styles";
 import { CampoAnexoDespesa } from "@/components/financeiro/campo-anexo-despesa";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import Link from "next/link";
@@ -11,7 +12,7 @@ import { criarLancamento } from "../../lancamentos-actions";
 import { hojeISO } from "@/lib/data-br";
 
 const campoClasse =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10";
+  INPUT_CLASS;
 
 type LancamentoClone = {
   tipo: "receita" | "despesa";
@@ -88,7 +89,7 @@ export default async function NovoLancamentoFinanceiroPage({
         </BotaoEnviar>
       </div>
 
-      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <FileText size={18} className="text-brand" />
           <h2 className="text-base font-bold text-ink">Informações do lançamento</h2>
@@ -175,7 +176,7 @@ export default async function NovoLancamentoFinanceiroPage({
         </div>
       </section>
 
-      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <Wallet size={18} className="text-brand" />
           <h2 className="text-base font-bold text-ink">Condição de pagamento</h2>
@@ -210,7 +211,7 @@ export default async function NovoLancamentoFinanceiroPage({
         </div>
       </section>
 
-      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <Repeat size={18} className="text-brand" />
           <h2 className="text-base font-bold text-ink">Recorrência</h2>
@@ -261,7 +262,7 @@ export default async function NovoLancamentoFinanceiroPage({
         </div>
       </section>
 
-      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <CalendarDays size={18} className="text-brand" />
           <h2 className="text-base font-bold text-ink">Observações</h2>
@@ -279,7 +280,7 @@ export default async function NovoLancamentoFinanceiroPage({
       </section>
 
       {tipo === "despesa" && (
-        <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
           <h2 className="mb-4 text-base font-bold text-ink">Anexo da despesa</h2>
           <CampoAnexoDespesa />
           <p className="mt-3 text-xs text-ink-muted">Se houver recorrência, o arquivo será anexado apenas à primeira ocorrência. Os próximos boletos podem ser anexados pelo menu de cada despesa.</p>

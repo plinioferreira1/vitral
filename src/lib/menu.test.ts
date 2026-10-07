@@ -44,6 +44,14 @@ describe("navegação por acesso", () => {
     expect(hrefs).toContain("/financiamentos?aba=custas");
     expect(hrefs).toContain("/cartorio");
   });
+  it("centraliza as configurações e não duplica regras de pessoal no menu operacional", () => {
+    const menu = montarMenu(gestor);
+    const configuracoes = menu.find((i) => i.label === "Configurações")!;
+    expect(destinos([configuracoes])).toContain("/configuracoes");
+    expect(destinos([configuracoes])).toContain("/dp/configuracoes");
+    expect(destinos([menu.find((i) => i.label === "Departamento pessoal")!])).not.toContain("/dp/configuracoes");
+    expect(destinos(montarMenu({ ...gestor, podeConfigurar: false }))).not.toContain("/configuracoes");
+  });
 });
 describe("destino ativo", () => {
   const menu = montarMenu(gestor);

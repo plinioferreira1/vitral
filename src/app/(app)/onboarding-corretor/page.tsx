@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { ContextoConfiguracao } from "@/components/contexto-configuracao";
 import { createClient } from "@/lib/supabase/server";
 import {
   adicionarEtapaOnboarding,
@@ -24,18 +26,15 @@ export default async function OnboardingCorretorPage() {
   const rows = (etapas ?? []) as EtapaRow[];
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Checklist de primeiros passos</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Checklist de primeiros passos que aparece na Central de ajuda. Cada item pode ter um link
+    <div className="mx-auto max-w-4xl space-y-6">
+      <ContextoConfiguracao />
+      <CabecalhoPagina titulo="Checklist de primeiros passos" descricao={<> Checklist de primeiros passos que aparece na Central de ajuda. Cada item pode ter um link
           que leva direto pra tela certa.
-        </p>
-      </div>
+         </>} />
 
       <form
         action={adicionarEtapaOnboarding}
-        className="space-y-3 rounded-xl border border-border/60 bg-surface shadow-sm p-4"
+        className="space-y-3 rounded-2xl border border-border/70 bg-surface shadow-sm p-4"
       >
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Novo passo</p>
         <input
@@ -62,7 +61,7 @@ export default async function OnboardingCorretorPage() {
         </BotaoEnviar>
       </form>
 
-      <div className="rounded-xl border border-border/60 bg-surface shadow-sm">
+      <div className="rounded-2xl border border-border/70 bg-surface shadow-sm">
         {rows.length === 0 ? (
           <p className="p-6 text-center text-sm text-ink-muted">Nenhum passo cadastrado.</p>
         ) : (

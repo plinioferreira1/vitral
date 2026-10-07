@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { ContextoConfiguracao } from "@/components/contexto-configuracao";
 import { createClient } from "@/lib/supabase/server";
 import {
   criarChecklist,
@@ -55,18 +57,15 @@ export default async function ChecklistsFinanciamentoPage() {
 
   return (
     <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Modelos de checklist de financiamento</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Crie quantos checklists quiser (ex: Conformidade, Assinatura E-notariado). Cada um pode
+      <ContextoConfiguracao />
+      <CabecalhoPagina titulo="Modelos de checklist de financiamento" descricao={<> Crie quantos checklists quiser (ex: Conformidade, Assinatura E-notariado). Cada um pode
           ter várias seções, e cada seção seus próprios itens. Aparece na aba Checklists de
           Financiamentos.
-        </p>
-      </div>
+         </>} />
 
       <form
         action={criarChecklist}
-        className="flex flex-wrap items-end gap-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm"
+        className="flex flex-wrap items-end gap-3 rounded-2xl border border-border/70 bg-surface p-4 shadow-sm"
       >
         <div className="flex-1 min-w-[200px]">
           <label className="mb-1 block text-xs font-medium text-ink-muted">Nome do checklist</label>
@@ -94,12 +93,12 @@ export default async function ChecklistsFinanciamentoPage() {
 
       <div className="space-y-4">
         {checklists.length === 0 ? (
-          <p className="rounded-xl border border-border/60 bg-surface p-6 text-center text-sm text-ink-muted shadow-sm">
+          <p className="rounded-2xl border border-border/70 bg-surface p-6 text-center text-sm text-ink-muted shadow-sm">
             Nenhum checklist criado ainda.
           </p>
         ) : (
           checklists.map((checklist) => (
-            <div key={checklist.id} className="rounded-xl border border-border/60 bg-surface shadow-sm">
+            <div key={checklist.id} className="rounded-2xl border border-border/70 bg-surface shadow-sm">
               <div className="flex items-start justify-between gap-3 border-b border-border p-4">
                 <div className="min-w-0 flex-1">
                   <p className="font-semibold text-ink">{checklist.nome}</p>

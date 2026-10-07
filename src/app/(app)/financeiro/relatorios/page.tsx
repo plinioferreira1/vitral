@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { INPUT_CLASS } from "@/components/ui/styles";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { ImprimirRelatorio } from "@/components/financeiro/imprimir-relatorio";
@@ -10,7 +12,7 @@ import { hojeISO } from "@/lib/data-br";
 import { BotaoEnviar } from "@/components/botao-enviar";
 
 const campoClasse =
-  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
+  INPUT_CLASS;
 
 function brl(v: number): string {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -192,16 +194,12 @@ export default async function RelatoriosFinanceirosPage({
   return (
     <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Relatórios financeiros</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Visualize e exporte os dados de recebimentos e despesas da sua imobiliária.
-          </p>
-        </div>
+        <CabecalhoPagina titulo="Relatórios financeiros" descricao={<> Visualize e exporte os dados de recebimentos e despesas da sua imobiliária.
+           </>} />
         <ImprimirRelatorio />
       </div>
 
-      <form method="get" className="flex flex-wrap items-end gap-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
+      <form method="get" className="flex flex-wrap items-end gap-3 rounded-2xl border border-border/70 bg-surface p-4 shadow-sm">
         <input type="hidden" name="aba" value={aba} />
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">De</label>
@@ -278,7 +276,7 @@ export default async function RelatoriosFinanceirosPage({
         <CartaoKpi icon={Tag} tom="info" label={`Sem categoria (${semCategoria.length})`} valor={brl(valorSemCategoria)} />
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <div className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         {aba === "recebimentos" && (
           <div className="space-y-6">
             <div>

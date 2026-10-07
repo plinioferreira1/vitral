@@ -1,3 +1,4 @@
+import { NavegacaoSecoes } from "@/components/navegacao-secoes";
 import { AtualizacoesCorretor } from "../../minhas-vendas/atualizacoes-equipe";
 import { identificacaoProcesso } from "@/lib/identificacao-processo";
 import type { Etapa } from "@/lib/types";
@@ -150,8 +151,15 @@ export default async function ProcessoDetalhePage({
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
-      {!ehFinanciamento && p.categoria === "venda" && <AtualizacoesCorretor processoId={p.id} />}
-      <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
+      <NavegacaoSecoes secoes={[
+        { id: "resumo-processo", label: "Resumo" }, { id: "dados-processo", label: "Dados e responsáveis" },
+        { id: "prazos-processo", label: "Prazos" }, { id: "etapas-processo", label: "Etapas e checklist" },
+        { id: "comissao-processo", label: "Comissão" },
+        ...(!ehFinanciamento && p.categoria === "venda" ? [{ id: "atualizacoes-corretor", label: "Atualizações ao corretor" }] : []),
+        { id: "comunicacao-processo", label: "Comentários internos" },
+        { id: "historico-processo", label: "Histórico" },
+      ]} />
+      <div id="resumo-processo" className="scroll-mt-20 overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
         <div className="h-1.5 bg-gradient-to-r from-brand via-brand/80 to-gold" />
         <div className="p-5 md:p-7">
         <VoltarLink
@@ -320,7 +328,7 @@ export default async function ProcessoDetalhePage({
           <ResumoProcesso
             icon={Clock3}
             label="Etapa atual"
-            value={etapaAtual?.nome ?? "Concluído"}
+            value={etapaAtual?.nome ?? (etapasSequenciais.length ? "Concluído" : "Sem etapas")}
             detail={etapaAtual?.data_prevista ? `Prazo ${format(parseISO(etapaAtual.data_prevista), "dd/MM/yyyy")}` : "Sem prazo definido"}
           />
           <ResumoProcesso
@@ -338,7 +346,7 @@ export default async function ProcessoDetalhePage({
           />
         </div>
 
-        <details className="group mt-5 rounded-xl border border-border/70 bg-surface">
+        <details id="dados-processo" className="scroll-mt-20 group mt-5 rounded-xl border border-border/70 bg-surface">
           <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-4 py-3.5 text-sm font-semibold text-ink hover:bg-background/60">
             <span>Dados do processo</span>
             <span className="text-xs font-medium text-brand group-open:hidden">Ver detalhes</span>
@@ -411,7 +419,7 @@ export default async function ProcessoDetalhePage({
       )}
 
       {/* Timeline */}
-      <section className="rounded-2xl border border-border bg-surface p-5 shadow-sm md:p-7">
+      <section id="prazos-processo" className="scroll-mt-20 rounded-2xl border border-border bg-surface p-5 shadow-sm md:p-7">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between md:mb-7">
           <div>
             <h2 className="text-lg font-semibold text-ink">Linha do tempo</h2>
@@ -517,7 +525,7 @@ export default async function ProcessoDetalhePage({
       </section>
 
       {/* Etapas do processo */}
-      <section className="space-y-3">
+      <section id="etapas-processo" className="scroll-mt-20 space-y-3">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
             <h2 className="text-lg font-semibold text-ink">Etapas do processo</h2>
@@ -697,7 +705,7 @@ export default async function ProcessoDetalhePage({
       </section>
 
       {/* Comissão */}
-      <details className="group rounded-xl border border-border/70 bg-surface shadow-sm">
+      <details id="comissao-processo" className="scroll-mt-20 group rounded-xl border border-border/70 bg-surface shadow-sm">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5">
           <div>
             <h2 className="text-sm font-semibold text-ink">Comissão</h2>
@@ -728,9 +736,12 @@ export default async function ProcessoDetalhePage({
         </div>
       </details>
 
+      {!ehFinanciamento && p.categoria === "venda" && (
+        <section id="atualizacoes-corretor" className="scroll-mt-20"><AtualizacoesCorretor processoId={p.id} /></section>
+      )}
       <div className="grid items-start gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-border/70 bg-surface p-4 shadow-sm sm:p-5">
-          <CabecalhoSecao icon={MessageSquare} titulo="Comentários" descricao="Registre observações sobre o processo." />
+        <div id="comunicacao-processo" className="scroll-mt-20 rounded-xl border border-border/70 bg-surface p-4 shadow-sm sm:p-5">
+          <CabecalhoSecao icon={MessageSquare} titulo="Comentários internos" descricao={ehFinanciamento ? "Observações da equipe sobre o financiamento." : "Observações da equipe. Para comunicar o corretor, use Atualizações ao corretor."} />
           <form action={adicionarComentario} className="mb-4 flex flex-col gap-2 sm:flex-row">
             <input type="hidden" name="processo_id" value={p.id} />
             <input
@@ -746,7 +757,7 @@ export default async function ProcessoDetalhePage({
           </form>
           <ul className="max-h-72 space-y-2 overflow-y-auto">
             {(comentarios ?? []).length === 0 ? (
-              <p className="text-sm text-ink-muted">Nenhum comentário ainda.</p>
+              <li className="text-sm text-ink-muted">Nenhum comentário ainda.</li>
             ) : (
               (comentarios ?? []).map((c) => {
                 const nomeUsuario = (c as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;
@@ -763,11 +774,11 @@ export default async function ProcessoDetalhePage({
           </ul>
         </div>
 
-        <div className="rounded-xl border border-border/70 bg-surface p-4 shadow-sm sm:p-5">
+        <div id="historico-processo" className="scroll-mt-20 rounded-xl border border-border/70 bg-surface p-4 shadow-sm sm:p-5">
           <CabecalhoSecao icon={History} titulo="Histórico" descricao="Acompanhe todas as movimentações do processo." />
           <ul className="max-h-72 space-y-2 overflow-y-auto text-xs">
             {(historico ?? []).length === 0 ? (
-              <p className="text-sm text-ink-muted">Sem movimentações registradas.</p>
+              <li className="text-sm text-ink-muted">Sem movimentações registradas.</li>
             ) : (
               (historico ?? []).map((h) => {
                 const nomeUsuario = (h as unknown as { usuarios: { nome: string } | null }).usuarios?.nome;

@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
@@ -157,11 +158,7 @@ export default async function FinanceiroDashboardPage({
 
   return (
     <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Financeiro</h1>
-          <p className="mt-1 text-sm text-ink-muted">Acompanhe saldos, recebimentos e compromissos em um só lugar.</p>
-        </div>
+      <CabecalhoPagina titulo="Visão geral do Financeiro" descricao="Saldos, compromissos e recebimentos. Comece pelos vencidos e pelo que vence hoje." acao={
         <div className="flex gap-1 rounded-lg border border-border/60 bg-surface p-1 text-sm">
           {Object.entries(PERIODOS).map(([valor, label]) => (
             <Link
@@ -175,13 +172,9 @@ export default async function FinanceiroDashboardPage({
             </Link>
           ))}
         </div>
-      </div>
+      } />
 
-      <nav aria-label="Atalhos financeiros" className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-brand">
-        <Link href="/financeiro/relatorios" className="hover:underline">Relatórios financeiros</Link>
-        <Link href="/financeiro/categorias" className="hover:underline">Categorias financeiras</Link>
-        <Link href="/financeiro/configuracoes-email" className="hover:underline">Resumos por e-mail</Link>
-      </nav>
+
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 financeiro-indicadores">
         <CartaoIndicador
@@ -213,7 +206,7 @@ export default async function FinanceiroDashboardPage({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <div className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
           <CabecalhoSecao
             icon={AlertTriangle}
             titulo="Vencidos"
@@ -256,7 +249,7 @@ export default async function FinanceiroDashboardPage({
           )}
         </div>
 
-        <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <div className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
           <CabecalhoSecao
             icon={CalendarClock}
             titulo="Próximos vencimentos"
@@ -301,27 +294,27 @@ export default async function FinanceiroDashboardPage({
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[2fr_1fr]">
-        <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <div className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
           <CabecalhoSecao icon={LineChart} titulo="Fluxo de caixa (próximos 30 dias)" descricao="Com base nos lançamentos pendentes." />
           <GraficoFluxoCaixa dias={diasChart} />
         </div>
         <div className="grid grid-rows-3 gap-3 financeiro-projecao">
-          <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
+          <div className="rounded-2xl border border-border/70 bg-surface p-4 shadow-sm">
             <p className="text-xs text-ink-muted">Saldo previsto (30 dias)</p>
             <p className={`num text-xl font-bold ${saldoPrevisto < 0 ? "text-rose-600" : "text-ink"}`}>{brl(saldoPrevisto)}</p>
           </div>
-          <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
+          <div className="rounded-2xl border border-border/70 bg-surface p-4 shadow-sm">
             <p className="text-xs text-ink-muted">Total de entradas previstas</p>
             <p className="num text-xl font-bold text-emerald-700">{brl(totalEntradas30)}</p>
           </div>
-          <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
+          <div className="rounded-2xl border border-border/70 bg-surface p-4 shadow-sm">
             <p className="text-xs text-ink-muted">Total de saídas previstas</p>
             <p className="num text-xl font-bold text-rose-700">{brl(totalSaidas30)}</p>
           </div>
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <div className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <CabecalhoSecao
           icon={Landmark}
           titulo="Saldos por conta bancária"

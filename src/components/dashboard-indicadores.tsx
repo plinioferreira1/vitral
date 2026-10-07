@@ -62,7 +62,7 @@ const CONFIG: Record<
   },
 };
 
-const ORDEM: IndicadorId[] = ["andamento", "atrasados", "venceHoje", "venceEmBreve"];
+const ORDEM: IndicadorId[] = ["atrasados", "venceHoje", "venceEmBreve", "andamento"];
 
 const TONS: Record<
   TomIndicador,

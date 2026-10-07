@@ -1,3 +1,4 @@
+import { ContextoConfiguracao } from "@/components/contexto-configuracao";
 import { redirect } from "next/navigation";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
@@ -25,6 +26,7 @@ export default async function ModeloTermoPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
+      <ContextoConfiguracao />
       <div>
         <VoltarLink href="/vendas/termos-entrega" label="Termos de entrega de chaves" />
         <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Modelo do Termo de Entrega de Chaves</h1>

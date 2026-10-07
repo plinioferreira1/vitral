@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { INPUT_CLASS } from "@/components/ui/styles";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { TrendingUp, TrendingDown, Landmark, Pencil } from "lucide-react";
@@ -5,7 +7,7 @@ import { criarCategoria, editarCategoria, apagarCategoria, criarCentroCusto, apa
 import { BotaoEnviar } from "@/components/botao-enviar";
 
 const campoClasse =
-  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
+  INPUT_CLASS;
 
 type Categoria = {
   id: string;
@@ -57,15 +59,9 @@ export default async function FinanceiroCategoriasPage({
 
   return (
     <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-          Categorias e centros de resultado
-        </h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Organize as contas a pagar e a receber para que cada lançamento pertença a uma categoria e,
+      <CabecalhoPagina titulo="Categorias e centros de resultado" descricao={<> Organize as contas a pagar e a receber para que cada lançamento pertença a uma categoria e,
           opcionalmente, a um centro de resultado.
-        </p>
-      </div>
+         </>} />
 
       <div className="flex flex-wrap items-center gap-3">
         <Link
@@ -105,7 +101,7 @@ export default async function FinanceiroCategoriasPage({
       <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
         <div className="space-y-3">
           {aba === "centros" ? (
-            <div className="rounded-xl border border-border/60 bg-surface shadow-sm">
+            <div className="rounded-2xl border border-border/70 bg-surface shadow-sm">
               {centrosVisiveis.length === 0 ? (
                 <p className="p-8 text-center text-sm text-ink-muted">{busca ? "Nenhum centro encontrado." : "Nenhum centro de resultado ainda."}</p>
               ) : (
@@ -125,12 +121,12 @@ export default async function FinanceiroCategoriasPage({
               )}
             </div>
           ) : gruposAtivos.length === 0 ? (
-            <p className="rounded-xl border border-border/60 bg-surface p-8 text-center text-sm text-ink-muted shadow-sm">
+            <p className="rounded-2xl border border-border/70 bg-surface p-8 text-center text-sm text-ink-muted shadow-sm">
               {busca ? "Nenhuma categoria encontrada." : `Nenhuma categoria de ${aba === "receitas" ? "receita" : "despesa"} ainda.`}
             </p>
           ) : (
             gruposAtivos.map(([grupo, itens], index) => (
-              <details key={grupo} open={Boolean(busca) || index === 0} className="rounded-xl border border-border/60 bg-surface shadow-sm">
+              <details key={grupo} open={Boolean(busca) || index === 0} className="rounded-2xl border border-border/70 bg-surface shadow-sm">
                 <summary className="flex cursor-pointer list-none items-center justify-between p-4">
                   <span className="text-sm font-semibold text-ink">
                     {grupo} <span className="text-ink-muted">({itens.length})</span>
@@ -212,7 +208,7 @@ export default async function FinanceiroCategoriasPage({
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
+          <div className="rounded-2xl border border-border/70 bg-surface p-4 shadow-sm">
             <p className="mb-3 text-sm font-semibold text-ink">Resumo de cadastros</p>
             <div className="grid grid-cols-3 gap-2 text-center">
               <div>
@@ -233,7 +229,7 @@ export default async function FinanceiroCategoriasPage({
           {aba === "centros" ? (
             <form
               action={criarCentroCusto}
-              className="space-y-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm"
+              className="space-y-3 rounded-2xl border border-border/70 bg-surface p-4 shadow-sm"
             >
               <p className="text-sm font-semibold text-ink">Novo centro de resultado</p>
               <input name="nome" required placeholder="Ex: Comercial, Administrativo..." className={campoClasse} />
@@ -246,7 +242,7 @@ export default async function FinanceiroCategoriasPage({
           ) : (
             <form
               action={criarCategoria}
-              className="space-y-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm"
+              className="space-y-3 rounded-2xl border border-border/70 bg-surface p-4 shadow-sm"
             >
               <p className="text-sm font-semibold text-ink">Nova categoria</p>
               <input type="hidden" name="tipo" value={aba === "receitas" ? "receita" : "despesa"} />

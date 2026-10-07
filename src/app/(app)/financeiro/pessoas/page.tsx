@@ -1,3 +1,6 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { BotaoEnviar } from "@/components/botao-enviar";
+import { INPUT_CLASS } from "@/components/ui/styles";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Users, User, Landmark, Briefcase, UserCog, Wrench } from "lucide-react";
@@ -17,7 +20,7 @@ const CATEGORIA_FORNECEDOR_LABEL: Record<string, string> = {
 };
 
 const campoClasse =
-  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
+  INPUT_CLASS;
 
 function brl(v: number): string {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -89,21 +92,15 @@ export default async function FinanceiroPessoasPage({
   return (
     <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-            Pessoas e empresas
-          </h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Cadastro central de pessoas e empresas usado em contas a pagar e a receber.
-          </p>
-        </div>
+        <CabecalhoPagina titulo="Pessoas e empresas" descricao={<> Cadastro central de pessoas e empresas usado em contas a pagar e a receber.
+           </>} />
         <details className="shrink-0">
           <summary className="flex cursor-pointer list-none items-center justify-center gap-1.5 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
             + Nova pessoa
           </summary>
           <form
             action={criarPessoaFinanceiro}
-            className="mt-3 space-y-3 rounded-xl border border-border/60 bg-surface p-5 text-left shadow-sm"
+            className="mt-3 space-y-3 rounded-2xl border border-border/70 bg-surface p-5 text-left shadow-sm"
           >
             <div className="grid gap-3 sm:grid-cols-2">
               <input name="nome" required placeholder="Nome" className={campoClasse} />
@@ -127,12 +124,12 @@ export default async function FinanceiroPessoasPage({
               <input name="email" placeholder="E-mail (opcional)" className={campoClasse} />
             </div>
             <input name="observacoes" placeholder="Observações (opcional)" className={campoClasse} />
-            <button
-              type="submit"
+            <BotaoEnviar
+
               className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
             >
               Adicionar
-            </button>
+            </BotaoEnviar>
           </form>
         </details>
       </div>
@@ -177,7 +174,7 @@ export default async function FinanceiroPessoasPage({
         </button>
       </form>
 
-      <div className="overflow-x-auto rounded-xl border border-border/60 bg-surface shadow-sm">
+      <div className="overflow-x-auto rounded-2xl border border-border/70 bg-surface shadow-sm">
         {listaBase.length === 0 ? (
           <p className="p-8 text-center text-sm text-ink-muted">Nenhuma pessoa encontrada.</p>
         ) : (
@@ -226,12 +223,12 @@ export default async function FinanceiroPessoasPage({
                         </Link>
                         <form action={apagarPessoaFinanceiro}>
                           <input type="hidden" name="id" value={p.id} />
-                          <button
-                            type="submit"
+                          <BotaoEnviar
+
                             className="text-xs font-medium text-ink-muted hover:text-rose-600"
                           >
                             apagar
-                          </button>
+                          </BotaoEnviar>
                         </form>
                       </div>
                     </td>

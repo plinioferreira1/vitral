@@ -1,3 +1,6 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { BotaoEnviar } from "@/components/botao-enviar";
+import { INPUT_CLASS } from "@/components/ui/styles";
 import Link from "next/link";
 import { ArrowDown, ArrowUp, Landmark, Layers, Pencil } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -8,7 +11,7 @@ import { LogoBanco } from "@/components/financeiro/logo-banco";
 import { arquivarContaBancaria, criarContaBancaria, criarContasPadrao } from "./actions";
 
 const campoClasse =
-  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
+  INPUT_CLASS;
 
 const TIPO_LABEL: Record<string, string> = {
   corrente: "Conta corrente",
@@ -108,12 +111,8 @@ export default async function ContasBancariasPage({
   return (
     <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Contas bancárias</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Saldo calculado a partir do saldo inicial + pagamentos, recebimentos e transferências entre contas.
-          </p>
-        </div>
+        <CabecalhoPagina titulo="Contas bancárias" descricao={<> Saldo calculado a partir do saldo inicial + pagamentos, recebimentos e transferências entre contas.
+           </>} />
         <div className="flex flex-wrap items-center gap-2">
         <Link
           href="/financeiro/transferencias"
@@ -123,15 +122,15 @@ export default async function ContasBancariasPage({
         </Link>
         {(!temCaixa || !temBancoDoBrasil) && (
           <form action={criarContasPadrao}>
-            <button type="submit" className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-background">
+            <BotaoEnviar className="rounded-md border border-border bg-surface px-4 py-2 text-sm font-medium text-ink hover:bg-background">
               Criar Caixa e Banco do Brasil
-            </button>
+            </BotaoEnviar>
           </form>
         )}
         </div>
       </div>
 
-      <form action={criarContaBancaria} className="space-y-3 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <form action={criarContaBancaria} className="space-y-3 rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <CabecalhoSecao
           icon={Landmark}
           titulo="Nova conta bancária"
@@ -156,12 +155,12 @@ export default async function ContasBancariasPage({
           <CampoMoeda name="saldo_inicial" className={campoClasse} placeholder="0,00" />
           <input name="data_abertura" type="date" className={campoClasse} />
         </div>
-        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+        <BotaoEnviar className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
           Adicionar
-        </button>
+        </BotaoEnviar>
       </form>
 
-      <div className="rounded-xl border border-border/60 bg-surface shadow-sm">
+      <div className="rounded-2xl border border-border/70 bg-surface shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-4">
           <CabecalhoSecao icon={Landmark} titulo="Contas cadastradas" descricao="Visualize e gerencie suas contas bancárias." />
           <div className="flex flex-wrap items-center gap-2">
@@ -302,9 +301,9 @@ export default async function ContasBancariasPage({
                           {c.ativa && (
                             <form action={arquivarContaBancaria}>
                               <input type="hidden" name="id" value={c.id} />
-                              <button type="submit" className="text-xs text-ink-muted hover:text-rose-600">
+                              <BotaoEnviar className="text-xs text-ink-muted hover:text-rose-600">
                                 arquivar
-                              </button>
+                              </BotaoEnviar>
                             </form>
                           )}
                         </div>

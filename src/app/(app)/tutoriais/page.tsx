@@ -1,3 +1,6 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { INPUT_CLASS } from "@/components/ui/styles";
+import { ContextoConfiguracao } from "@/components/contexto-configuracao";
 import { createClient } from "@/lib/supabase/server";
 import { adicionarTutorial, editarTutorial, removerTutorial } from "./actions";
 import { BotaoEnviar } from "@/components/botao-enviar";
@@ -13,8 +16,7 @@ interface TutorialRow {
   ordem: number;
 }
 
-const campoClasse =
-  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
+const campoClasse = INPUT_CLASS;
 
 export default async function TutoriaisPage() {
   const supabase = await createClient();
@@ -28,19 +30,16 @@ export default async function TutoriaisPage() {
   const categorias = Array.from(new Set(tutoriais.map((t) => t.categoria)));
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Gerenciar tutoriais</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Tutoriais de como usar o Vitral, organizados por categoria (ex: Vendas, Financiamento,
+    <div className="mx-auto max-w-4xl space-y-6">
+      <ContextoConfiguracao />
+      <CabecalhoPagina titulo="Gerenciar tutoriais" descricao={<> Tutoriais de como usar o Vitral, organizados por categoria (ex: Vendas, Financiamento,
           Locação, Google Agenda). Aparecem pra todo mundo na Central de ajuda. Pode ser um vídeo
           (cola o link do YouTube, Loom, Drive etc.) ou um texto escrito direto aqui.
-        </p>
-      </div>
+         </>} />
 
       <form
         action={adicionarTutorial}
-        className="space-y-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm"
+        className="space-y-3 rounded-2xl border border-border/70 bg-surface p-4 shadow-sm"
       >
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
           Novo tutorial
@@ -95,12 +94,12 @@ export default async function TutoriaisPage() {
       </form>
 
       {categorias.length === 0 ? (
-        <p className="rounded-xl border border-border/60 bg-surface p-6 text-center text-sm text-ink-muted shadow-sm">
+        <p className="rounded-2xl border border-border/70 bg-surface p-6 text-center text-sm text-ink-muted shadow-sm">
           Nenhum tutorial cadastrado ainda.
         </p>
       ) : (
         categorias.map((categoria) => (
-          <div key={categoria} className="rounded-xl border border-border/60 bg-surface shadow-sm">
+          <div key={categoria} className="rounded-2xl border border-border/70 bg-surface shadow-sm">
             <p className="border-b border-border px-4 py-3 text-sm font-semibold text-ink">
               {categoria}
             </p>

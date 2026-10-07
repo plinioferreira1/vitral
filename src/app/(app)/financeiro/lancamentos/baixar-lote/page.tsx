@@ -1,3 +1,5 @@
+import { BotaoEnviar } from "@/components/botao-enviar";
+import { INPUT_CLASS } from "@/components/ui/styles";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckCircle2, ListChecks, Wallet } from "lucide-react";
@@ -7,7 +9,7 @@ import { createClient } from "@/lib/supabase/server";
 import { registrarBaixaEmLote } from "../../lancamentos-actions";
 
 const campoClasse =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10";
+  INPUT_CLASS;
 
 function brl(valor: number): string {
   return Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -98,12 +100,12 @@ export default async function BaixarLancamentosEmLotePage({
             Confira os lançamentos e confirme a baixa integral do saldo em aberto de cada item.
           </p>
         </div>
-        <button type="submit" className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700">
+        <BotaoEnviar className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700">
           Confirmar {itens.length} {itens.length === 1 ? "baixa" : "baixas"}
-        </button>
+        </BotaoEnviar>
       </div>
 
-      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <ListChecks size={18} className="text-brand" />
           <h2 className="text-base font-bold text-ink">Lançamentos selecionados</h2>
@@ -140,7 +142,7 @@ export default async function BaixarLancamentosEmLotePage({
         </div>
       </section>
 
-      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <Wallet size={18} className="text-brand" />
           <h2 className="text-base font-bold text-ink">Dados da baixa</h2>
@@ -187,9 +189,9 @@ export default async function BaixarLancamentosEmLotePage({
           <Link href={retorno} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-ink-muted hover:bg-background">
             Cancelar
           </Link>
-          <button type="submit" className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">
+          <BotaoEnviar className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-emerald-700">
             Confirmar {itens.length} {itens.length === 1 ? "baixa" : "baixas"}
-          </button>
+          </BotaoEnviar>
         </div>
       </div>
     </form>

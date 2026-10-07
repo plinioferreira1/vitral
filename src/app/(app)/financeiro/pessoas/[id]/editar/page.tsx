@@ -1,3 +1,5 @@
+import { BotaoEnviar } from "@/components/botao-enviar";
+import { INPUT_CLASS } from "@/components/ui/styles";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Save, UserRound, FileText } from "lucide-react";
@@ -7,7 +9,7 @@ import { CampoMascarado } from "@/components/financeiro/campo-mascarado";
 import { editarPessoaFinanceiro } from "../../actions";
 
 const campoClasse =
-  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
+  INPUT_CLASS;
 
 const PAPEL_LABEL: Record<string, string> = {
   cliente: "Cliente",
@@ -76,7 +78,7 @@ export default async function EditarPessoaFinanceiroPage({
       <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
         <form
           action={editarPessoaFinanceiro}
-          className="space-y-5 rounded-xl border border-border/60 bg-surface p-5 shadow-sm"
+          className="space-y-5 rounded-2xl border border-border/70 bg-surface p-5 shadow-sm"
         >
           <input type="hidden" name="id" value={pessoa.id} />
           <input type="hidden" name="return_to" value="/financeiro/pessoas" />
@@ -145,17 +147,17 @@ export default async function EditarPessoaFinanceiroPage({
             >
               Cancelar
             </Link>
-            <button
-              type="submit"
+            <BotaoEnviar
+
               className="inline-flex items-center gap-2 rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
             >
               <Save size={15} /> Salvar alterações
-            </button>
+            </BotaoEnviar>
           </div>
         </form>
 
         <aside className="space-y-4">
-          <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+          <div className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
             <CabecalhoSecao icon={FileText} titulo="Resumo financeiro" />
             <div className="mt-4 grid gap-3">
               <div className="rounded-lg bg-background p-3">
@@ -169,7 +171,7 @@ export default async function EditarPessoaFinanceiroPage({
             </div>
           </div>
 
-          <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+          <div className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
             <CabecalhoSecao icon={FileText} titulo="Últimos lançamentos" />
             {(lancamentos ?? []).length === 0 ? (
               <p className="mt-4 text-sm text-ink-muted">Nenhum lançamento vinculado ainda.</p>

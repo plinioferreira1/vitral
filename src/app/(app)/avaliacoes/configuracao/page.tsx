@@ -1,3 +1,4 @@
+import { ContextoConfiguracao } from "@/components/contexto-configuracao";
 import { redirect } from "next/navigation";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
@@ -31,6 +32,7 @@ export default async function ConfiguracaoAvaliacaoPage() {
 
   return (
     <div className="max-w-4xl space-y-5">
+      <ContextoConfiguracao />
       <div>
         <VoltarLink href="/avaliacoes" label="Avaliação de Imóveis" />
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Configuração da avaliação</h1>

@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { INPUT_CLASS } from "@/components/ui/styles";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { createClient } from "@/lib/supabase/server";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
@@ -6,7 +8,7 @@ import { adicionarDestinatario, alternarDestinatario, apagarDestinatario, testar
 import { BotaoEnviar } from "@/components/botao-enviar";
 
 const campoClasse =
-  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
+  INPUT_CLASS;
 
 export default async function ConfiguracoesEmailPage() {
   const supabase = await createClient();
@@ -26,17 +28,11 @@ export default async function ConfiguracoesEmailPage() {
 
   return (
     <div className="financeiro-ui mx-auto max-w-[1100px] space-y-5">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-          Resumos diários por e-mail
-        </h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Todo dia às 9h (horário de Brasília) quem estiver ativo na lista abaixo recebe dois e-mails: o resumo
+      <CabecalhoPagina titulo="Resumos diários por e-mail" descricao={<> Todo dia às 9h (horário de Brasília) quem estiver ativo na lista abaixo recebe dois e-mails: o resumo
           financeiro e o resumo dos processos (etapas atrasadas, do dia, dos próximos 7 dias e prazos de contrato).
-        </p>
-      </div>
+         </>} />
 
-      <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <div className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <CabecalhoSecao icon={Mail} titulo="Destinatários" />
         <form action={adicionarDestinatario} className="mb-4 flex flex-wrap gap-2">
           <input name="email" type="email" required placeholder="E-mail" className={`${campoClasse} flex-1`} />
@@ -91,7 +87,7 @@ export default async function ConfiguracoesEmailPage() {
       </div>
 
       {usuario?.tenant_id && (
-        <form action={testarEnvioAgora} className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <form action={testarEnvioAgora} className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
           <input type="hidden" name="tenant_id" value={usuario.tenant_id} />
           <CabecalhoSecao
             icon={Send}
@@ -118,7 +114,7 @@ export default async function ConfiguracoesEmailPage() {
       )}
 
       {(ultimosEnvios ?? []).length > 0 && (
-        <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <div className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
           <CabecalhoSecao icon={Mail} titulo="Últimos envios" />
           <ul className="space-y-2 text-sm">
             {(ultimosEnvios ?? []).map((e) => (

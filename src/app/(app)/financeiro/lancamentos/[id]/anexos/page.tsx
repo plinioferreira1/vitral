@@ -1,3 +1,4 @@
+import { NavegacaoLancamento } from "@/components/financeiro/navegacao-lancamento";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Download, ExternalLink, Paperclip } from "lucide-react";
@@ -15,7 +16,7 @@ export default async function AnexoDespesaPage({ params }: { params: Promise<{ i
   const { id } = await params;
   const supabase = await createClient();
   const [{ data: despesa }, { data: anexo }] = await Promise.all([
-    supabase.from("financeiro_lancamentos").select("descricao, valor, vencimento, recorrencia_id")
+    supabase.from("financeiro_lancamentos").select("descricao, valor, vencimento, recorrencia_id, status")
       .eq("id", id).eq("tenant_id", usuario.tenant_id).eq("tipo", "despesa").single(),
     supabase.from("financeiro_anexos").select("nome, tamanho, caminho")
       .eq("lancamento_id", id).eq("tenant_id", usuario.tenant_id).maybeSingle(),
@@ -24,6 +25,7 @@ export default async function AnexoDespesaPage({ params }: { params: Promise<{ i
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <Link href="/financeiro/contas-a-pagar#lista" className="inline-flex items-center gap-2 text-sm text-ink-muted hover:text-brand"><ArrowLeft size={16} /> Voltar às despesas</Link>
+      <NavegacaoLancamento id={id} tipo="despesa" status={despesa.status} />
       <div>
         <h1 className="flex items-center gap-2 text-2xl font-bold text-ink"><Paperclip size={24} className="text-brand" /> Anexo da despesa</h1>
         <p className="mt-2 break-words font-semibold text-ink">{despesa.descricao}</p>

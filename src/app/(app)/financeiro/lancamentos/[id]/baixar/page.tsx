@@ -1,3 +1,7 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { NavegacaoLancamento } from "@/components/financeiro/navegacao-lancamento";
+import { BotaoEnviar } from "@/components/botao-enviar";
+import { INPUT_CLASS } from "@/components/ui/styles";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CheckCircle2, FileText, Undo2, Wallet } from "lucide-react";
@@ -10,7 +14,7 @@ import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { hojeISO } from "@/lib/data-br";
 
 const campoClasse =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10";
+  INPUT_CLASS;
 
 function brl(v: number): string {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -81,8 +85,11 @@ export default async function BaixarLancamentoFinanceiroPage({
 
   return (
     <div className="financeiro-ui mx-auto max-w-[1180px] space-y-5 pb-24">
+      <NavegacaoLancamento id={id} tipo={lancamento.tipo} status={lancamento.status} />
+      <Link href={retorno} className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"><ArrowLeft size={16} /> Voltar à lista</Link>
+      <CabecalhoPagina titulo={quitado ? `Histórico de ${acao}` : titulo} descricao={lancamento.descricao} />
       {listaBaixas.length > 0 && (
-        <section id="pagamentos" className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <section id="pagamentos" className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
           <div className="mb-3 flex items-center gap-2 border-b border-border pb-3">
             <Undo2 size={18} className="text-brand" />
             <h2 className="text-base font-bold text-ink">
@@ -133,23 +140,11 @@ export default async function BaixarLancamentoFinanceiroPage({
       <input type="hidden" name="lancamento_id" value={lancamento.id} />
       <input type="hidden" name="return_to" value={retorno} />
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Link href={retorno} className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline">
-            <ArrowLeft size={16} />
-            Voltar
-          </Link>
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">{titulo}</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Baixe total ou parcialmente o lançamento e mantenha o saldo atualizado.
-          </p>
-        </div>
-        <button type="submit" className={botaoConfirmarClasse}>
-          Confirmar {acao}
-        </button>
+      <div className="flex justify-end">
+        <BotaoEnviar className={botaoConfirmarClasse} textoEnviando="Registrando…">Confirmar {acao}</BotaoEnviar>
       </div>
 
-      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <FileText size={18} className="text-brand" />
           <h2 className="text-base font-bold text-ink">Resumo do lançamento</h2>
@@ -177,7 +172,7 @@ export default async function BaixarLancamentoFinanceiroPage({
         </div>
       </section>
 
-      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <Wallet size={18} className="text-brand" />
           <h2 className="text-base font-bold text-ink">Condição do {acao}</h2>
@@ -251,7 +246,7 @@ export default async function BaixarLancamentoFinanceiroPage({
         )}
       </section>
 
-      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <CheckCircle2 size={18} className="text-brand" />
           <h2 className="text-base font-bold text-ink">Observações</h2>
@@ -273,9 +268,9 @@ export default async function BaixarLancamentoFinanceiroPage({
           <Link href={retorno} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-ink-muted hover:bg-background">
             Voltar
           </Link>
-          <button type="submit" className={botaoConfirmarClasse}>
-            Confirmar
-          </button>
+          <BotaoEnviar className={botaoConfirmarClasse}>
+            Confirmar {acao}
+          </BotaoEnviar>
         </div>
       </div>
     </form>

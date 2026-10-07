@@ -1,3 +1,4 @@
+import { GRUPOS_CONFIGURACOES } from "./configuracoes-menu";
 import { EM_FINALIZACAO } from "./em-finalizacao";
 import type { PermissoesUsuario } from "./permissoes";
 
@@ -99,42 +100,16 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       { href: "/dp/ponto", label: "Controle de ponto" },
       { href: "/dp/ausencias", label: "Ausências e afastamentos" },
       { href: "/dp/documentos", label: "Documentos" },
-      ...(p.podeConfigurar ? [{ href: "/dp/configuracoes", label: "Configurações" }] : []),
     ],
   });
   itens.push({ href: "/corretor", label: "Central de ajuda" });
   if (operacional && p.podeConfigurar) itens.push({
     label: "Configurações",
     children: [
-      { href: "/membros", label: "Usuários e Acessos" },
-      {
-        label: "Processos e rotinas",
-        children: [
-          { href: "/etapas-padrao", label: "Etapas dos processos" },
-          { href: "/tarefas-recorrentes", label: "Rotinas de locação" },
-          { href: "/checklists-financiamento", label: "Modelos de checklist de financiamento" },
-        ],
-      },
-      {
-        label: "Comunicação e integrações",
-        children: [
-          { href: "/financeiro/configuracoes-email", label: "Resumos por e-mail" },
-          { href: "/google-agenda", label: "Integração com Google Agenda" },
-        ],
-      },
-      {
-        label: "Financeiro",
-        children: [{ href: "/financeiro/categorias", label: "Categorias financeiras" }],
-      },
-      { href: "/avaliacoes/configuracao", label: "Avaliações de imóveis" },
-      { href: "/vendas/termos-entrega/configuracao", label: "Termo de entrega de chaves" },
-      {
-        label: "Conteúdo e treinamento",
-        children: [
-          { href: "/onboarding-corretor", label: "Checklist de primeiros passos" },
-          { href: "/tutoriais", label: "Gerenciar tutoriais" },
-        ],
-      },
+      { href: "/configuracoes", label: "Visão geral" },
+      ...GRUPOS_CONFIGURACOES.flatMap((grupo): SubItemMenu[] => grupo.links.length === 1
+        ? grupo.links.map(({ href, label }) => ({ href, label }))
+        : [{ label: grupo.titulo, children: grupo.links.map(({ href, label }) => ({ href, label })) }]),
     ],
   });
   return itens;

@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { INPUT_CLASS } from "@/components/ui/styles";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { CreditCard, Upload, Sparkles, Eraser, Pencil } from "lucide-react";
@@ -14,7 +16,7 @@ import {
 import { BotaoEnviar } from "@/components/botao-enviar";
 
 const campoClasse =
-  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
+  INPUT_CLASS;
 
 function brl(v: number): string {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -43,14 +45,10 @@ export default async function CartaoCorporativoPage({
   if (!cartoes || cartoes.length === 0) {
     return (
       <div className="financeiro-ui mx-auto max-w-[1100px] space-y-5">
-        <div>
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Cartões e faturas</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Importe a fatura do cartão da empresa e categorize os lançamentos pra controlar os gastos por
+        <CabecalhoPagina titulo="Cartões e faturas" descricao={<> Importe a fatura do cartão da empresa e categorize os lançamentos pra controlar os gastos por
             categoria e centro de resultado.
-          </p>
-        </div>
-        <form action={criarCartao} className="space-y-3 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+           </>} />
+        <form action={criarCartao} className="space-y-3 rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
           <CabecalhoSecao icon={CreditCard} titulo="Cadastre o cartão corporativo" descricao="Comece cadastrando o cartão pra depois importar as faturas dele." />
           <div className="grid gap-3 sm:grid-cols-2">
             <input name="nome" required placeholder="Nome (ex: Itaú Empresas)" className={campoClasse} />
@@ -114,13 +112,9 @@ export default async function CartaoCorporativoPage({
 
   return (
     <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Cartões e faturas</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Importe a fatura do cartão da empresa e categorize os lançamentos pra controlar os gastos por
+      <CabecalhoPagina titulo="Cartões e faturas" descricao={<> Importe a fatura do cartão da empresa e categorize os lançamentos pra controlar os gastos por
           categoria e centro de resultado.
-        </p>
-      </div>
+         </>} />
 
       <div className="flex flex-wrap items-center gap-2">
         {cartoes.map((c) => (
@@ -199,14 +193,14 @@ export default async function CartaoCorporativoPage({
       </div>
 
       {!faturaAtiva ? (
-        <p className="rounded-xl border border-border/60 bg-surface p-8 text-center text-sm text-ink-muted shadow-sm">
+        <p className="rounded-2xl border border-border/70 bg-surface p-8 text-center text-sm text-ink-muted shadow-sm">
           Nenhuma fatura importada ainda pra esse cartão. Use &quot;Importar fatura&quot; acima.
         </p>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
           <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-3">
-              <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
+              <div className="rounded-2xl border border-border/70 bg-surface p-4 shadow-sm">
                 <p className="text-xs text-ink-muted">Valor total da fatura</p>
                 <p className="num text-xl font-bold text-ink">{brl(valorTotal)}</p>
               </div>
@@ -224,7 +218,7 @@ export default async function CartaoCorporativoPage({
               </div>
             </div>
 
-            <div className="overflow-x-auto rounded-xl border border-border/60 bg-surface shadow-sm">
+            <div className="overflow-x-auto rounded-2xl border border-border/70 bg-surface shadow-sm">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
@@ -319,11 +313,11 @@ export default async function CartaoCorporativoPage({
           </div>
 
           <div className="space-y-4">
-            <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
+            <div className="rounded-2xl border border-border/70 bg-surface p-4 shadow-sm">
               <GraficoDonut titulo="Distribuição por categoria" fatias={distribuicao} />
             </div>
 
-            <div className="space-y-2 rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
+            <div className="space-y-2 rounded-2xl border border-border/70 bg-surface p-4 shadow-sm">
               <p className="text-sm font-semibold text-ink">Ações em lote</p>
               <form action={aplicarSugestaoCategoria}>
                 <input type="hidden" name="fatura_id" value={faturaAtiva.id} />

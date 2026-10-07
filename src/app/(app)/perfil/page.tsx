@@ -1,3 +1,5 @@
+import { rotuloNivel } from "@/lib/acessos";
+import { INPUT_CLASS } from "@/components/ui/styles";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
@@ -6,15 +8,6 @@ import { SeletorFoto } from "./photo-picker";
 import { SucessoBanner } from "@/components/banners";
 import { VoltarLink } from "@/components/voltar-link";
 import { BotaoEnviar } from "@/components/botao-enviar";
-
-const PERFIL_LABEL: Record<string, string> = {
-  admin: "Administrador",
-  diretora: "Diretora",
-  gerente: "Gerente",
-  corretor: "Corretor",
-  correspondente: "Correspondente",
-  financeiro: "Financeiro",
-};
 
 const CARGOS_SUGERIDOS = [
   "Gerente Administrativo",
@@ -37,7 +30,7 @@ export default async function PerfilPage({
 
   const { data: usuario } = await supabase
     .from("usuarios")
-    .select("nome, email, perfil, cargo, foto_url")
+    .select("nome, email, nivel_acesso, cargo, foto_url")
     .eq("id", user.id)
     .single();
 
@@ -79,7 +72,7 @@ export default async function PerfilPage({
             name="nome"
             defaultValue={usuario.nome}
             required
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+            className={INPUT_CLASS}
           />
         </div>
 
@@ -101,7 +94,7 @@ export default async function PerfilPage({
             defaultValue={usuario.cargo ?? ""}
             list="cargos-sugeridos"
             placeholder="Ex: Gerente Administrativo"
-            className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+            className={INPUT_CLASS}
           />
           <datalist id="cargos-sugeridos">
             {CARGOS_SUGERIDOS.map((c) => (
@@ -112,10 +105,10 @@ export default async function PerfilPage({
 
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">
-            Perfil de acesso <span className="text-ink-muted/70">(definido por um admin)</span>
+            Nível de acesso <span className="text-ink-muted/70">(definido pela gestão)</span>
           </label>
           <input
-            value={PERFIL_LABEL[usuario.perfil] ?? usuario.perfil}
+            value={rotuloNivel(usuario.nivel_acesso)}
             disabled
             className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-ink-muted"
           />

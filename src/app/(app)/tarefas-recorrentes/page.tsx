@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { ContextoConfiguracao } from "@/components/contexto-configuracao";
 import { createClient } from "@/lib/supabase/server";
 import {
   adicionarTarefaRecorrente,
@@ -33,18 +35,15 @@ export default async function TarefasRecorrentesPage() {
   const rows = (tarefas ?? []) as TarefaRow[];
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Rotinas de locação</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Aparecem na aba Resumo de Locação e no Calendário, recalculadas automaticamente todo
+    <div className="mx-auto max-w-4xl space-y-6">
+      <ContextoConfiguracao />
+      <CabecalhoPagina titulo="Rotinas de locação" descricao={<> Aparecem na aba Resumo de Locação e no Calendário, recalculadas automaticamente todo
           mês — não precisa recadastrar.
-        </p>
-      </div>
+         </>} />
 
       <form
         action={adicionarTarefaRecorrente}
-        className="space-y-3 rounded-xl border border-border/60 bg-surface shadow-sm p-4"
+        className="space-y-3 rounded-2xl border border-border/70 bg-surface shadow-sm p-4"
       >
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">
           Nova tarefa
@@ -65,7 +64,7 @@ export default async function TarefasRecorrentesPage() {
         </div>
       </form>
 
-      <div className="rounded-xl border border-border/60 bg-surface shadow-sm">
+      <div className="rounded-2xl border border-border/70 bg-surface shadow-sm">
         {rows.length === 0 ? (
           <p className="p-6 text-center text-sm text-ink-muted">Nenhuma tarefa cadastrada.</p>
         ) : (

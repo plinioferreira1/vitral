@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { INPUT_CLASS } from "@/components/ui/styles";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -31,7 +33,7 @@ import { BotaoEnviar } from "@/components/botao-enviar";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 
 const campoClasse =
-  "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
+  INPUT_CLASS;
 
 type EstadoExibicao = "vencido" | "pago" | "cancelado" | "recorrente" | "pago_parcial" | "pendente";
 
@@ -365,14 +367,10 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   ];
   return (
     <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">{titulo}</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Lançamentos manuais e recorrentes para gerenciar os seus{" "}
-          {tipo === "receita" ? "recebimentos" : "compromissos financeiros"}, com controle de vencimentos e{" "}
-          {tipo === "receita" ? "recebimentos" : "pagamentos"}.
-        </p>
-      </div>
+      <CabecalhoPagina titulo={titulo}
+        descricao={tipo === "receita" ? "Acompanhe os valores a receber e registre recebimentos completos ou parciais." : "Acompanhe vencimentos, consulte os boletos e registre pagamentos completos ou parciais."}
+        acao={<Link href={`/financeiro/lancamentos/novo?tipo=${tipo}`} className={PRIMARY_BUTTON_CLASS}><Plus size={16} /> {tipo === "receita" ? "Nova receita" : "Nova despesa"}</Link>}
+      />
 
       <div className="flex flex-wrap gap-2 border-b border-border">
           {abasSituacao.map(([valor, label, contagem]) => (
@@ -424,7 +422,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         />
       </div>
 
-      <div className="flex flex-col gap-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm sm:flex-row sm:items-center">
+      <div className="flex flex-col gap-3 rounded-2xl border border-border/70 bg-surface p-4 shadow-sm sm:flex-row sm:items-center">
         <form method="get" action={`${rota}#lista`} className="relative flex-1">
           <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted" />
           <input
@@ -433,9 +431,9 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
             placeholder={`Buscar por descrição, ${rotuloPessoa.toLowerCase()}, categoria...`}
             className={`${campoClasse} pl-9`}
           />
-          <button type="submit" className="sr-only">
+          <BotaoEnviar className="sr-only">
             Buscar
-          </button>
+          </BotaoEnviar>
           {renderCamposOcultos(camposOcultos, ["q"])}
         </form>
         <form
@@ -454,10 +452,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
             />
           </div>
         </form>
-        <Link href={`/financeiro/lancamentos/novo?tipo=${tipo}`} className={`${PRIMARY_BUTTON_CLASS} shrink-0`}>
-            <Plus size={16} strokeWidth={2.2} />
-            Novo lançamento
-        </Link>
+
       </div>
 
       <details open className="group rounded-2xl border border-border/70 bg-surface shadow-[0_1px_2px_rgba(28,25,23,0.04)]">
@@ -508,9 +503,9 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         <input type="hidden" name="ordenar" value={f.ordenar ?? ""} />
         <input type="hidden" name="direcao" value={f.direcao ?? ""} />
         <input type="hidden" name="por_pagina" value={f.por_pagina ?? ""} />
-        <button type="submit" className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
+        <BotaoEnviar className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90">
           Filtrar
-        </button>
+        </BotaoEnviar>
         {temFiltro && (
           <a href={`${rota}#lista`} className="text-xs text-ink-muted hover:text-brand hover:underline">
             Limpar filtros
@@ -522,7 +517,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
       {lancamentos.length > 0 && (
         <form
           id="form-acoes-lote"
-          className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/60 bg-surface px-4 py-3 text-xs text-ink-muted shadow-sm"
+          className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/70 bg-surface px-4 py-3 text-xs text-ink-muted shadow-sm"
         >
           <input type="hidden" name="return_to" value={construirUrl(rota, f)} />
           <div>
@@ -553,7 +548,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         </form>
       )}
 
-      <div id="lista" className="financeiro-lista scroll-mt-4 rounded-xl border border-border/60 bg-surface shadow-sm">
+      <div id="lista" className="financeiro-lista scroll-mt-4 rounded-2xl border border-border/70 bg-surface shadow-sm">
         {lancamentos.length === 0 ? (
           <p className="p-8 text-center text-sm text-ink-muted">
             {temFiltro ? "Nenhum lançamento encontrado com esses filtros." : "Nenhum lançamento ainda."}

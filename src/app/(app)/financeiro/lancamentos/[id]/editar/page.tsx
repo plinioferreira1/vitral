@@ -1,3 +1,5 @@
+import { NavegacaoLancamento } from "@/components/financeiro/navegacao-lancamento";
+import { INPUT_CLASS } from "@/components/ui/styles";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -9,7 +11,7 @@ import { CampoMoeda } from "@/components/financeiro/campo-moeda";
 import { editarLancamento } from "../../../lancamentos-actions";
 
 const campoClasse =
-  "w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm outline-none focus:border-brand focus:ring-2 focus:ring-brand/10";
+  INPUT_CLASS;
 
 function brl(v: number): string {
   return Number(v).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -93,6 +95,7 @@ export default async function EditarLancamentoFinanceiroPage({
     <form action={editarLancamento} className="financeiro-ui mx-auto max-w-[1180px] space-y-5 pb-24">
       <input type="hidden" name="id" value={lancamento.id} />
       <input type="hidden" name="return_to" value={retorno} />
+      <NavegacaoLancamento id={id} tipo={lancamento.tipo} status={lancamento.status} />
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -140,7 +143,7 @@ export default async function EditarLancamentoFinanceiroPage({
         </div>
       )}
 
-      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <FileText size={18} className="text-brand" />
           <h2 className="text-base font-bold text-ink">Informações do lançamento</h2>
@@ -186,7 +189,7 @@ export default async function EditarLancamentoFinanceiroPage({
         </div>
       </section>
 
-      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <Wallet size={18} className="text-brand" />
           <h2 className="text-base font-bold text-ink">Condição de pagamento</h2>
@@ -235,7 +238,7 @@ export default async function EditarLancamentoFinanceiroPage({
         )}
       </section>
 
-      <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
         <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
           <CalendarDays size={18} className="text-brand" />
           <h2 className="text-base font-bold text-ink">Observações</h2>
@@ -247,7 +250,7 @@ export default async function EditarLancamentoFinanceiroPage({
       </section>
 
       {lancamento.tipo === "despesa" && (
-        <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+        <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
           <h2 className="mb-2 text-base font-bold text-ink">Anexo da despesa</h2>
           <p className="mb-3 text-sm text-ink-muted">Guarde o boleto ou documento desta ocorrência.</p>
           <Link href={`/financeiro/lancamentos/${id}/anexos`} className="text-sm font-semibold text-brand underline">Ver ou anexar arquivo</Link>

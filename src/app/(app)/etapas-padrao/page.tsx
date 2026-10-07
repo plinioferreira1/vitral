@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { ContextoConfiguracao } from "@/components/contexto-configuracao";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -38,17 +40,11 @@ export default async function EtapasPadraoPage({
   const especiais = (etapas ?? []).filter((e) => e.tipo === "especial");
 
   return (
-    <div className="max-w-xl space-y-6">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-          Etapas dos processos
-        </h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          A <b>sequência normal</b> é a linha do tempo do processo, em ordem. As{" "}
-          <b>situações especiais</b> são exceções que podem acontecer a qualquer momento, fora
+    <div className="mx-auto max-w-4xl space-y-6">
+      <ContextoConfiguracao />
+      <CabecalhoPagina titulo="Etapas dos processos" descricao={<> A <b>sequência normal</b>é a linha do tempo do processo, em ordem. As{" "}<b>situações especiais</b>são exceções que podem acontecer a qualquer momento, fora
           da ordem (judicial, inadimplência, acordo) — não entram na linha do tempo.
-        </p>
-      </div>
+         </>} />
 
       <div className="flex gap-1 rounded-lg bg-background p-1 text-sm w-fit">
         {abas.map((c) => (
@@ -66,7 +62,7 @@ export default async function EtapasPadraoPage({
 
       <form
         action={adicionarEtapaPadrao}
-        className="flex flex-wrap items-center gap-2 rounded-xl border border-border/60 bg-surface shadow-sm p-3"
+        className="flex flex-wrap items-center gap-2 rounded-2xl border border-border/70 bg-surface shadow-sm p-3"
       >
         <input type="hidden" name="categoria" value={categoria} />
         <input
@@ -117,7 +113,7 @@ function ListaEtapas({
   tipo: TipoEtapaPadrao;
 }) {
   return (
-    <div className="rounded-xl border border-border/60 bg-surface shadow-sm">
+    <div className="rounded-2xl border border-border/70 bg-surface shadow-sm">
       {etapas.length === 0 ? (
         <p className="p-6 text-center text-sm text-ink-muted">Nenhuma etapa aqui ainda.</p>
       ) : (
