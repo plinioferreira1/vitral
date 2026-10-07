@@ -21,7 +21,7 @@ export default async function FichaPublicaLocacaoPage({ params }: { params: Prom
     ficha?.ficha_principal_id ? admin.from("fichas_cadastrais_locacao").select("proponente_nome, imovel_referencia, dados").eq("id", ficha.ficha_principal_id).maybeSingle() : Promise.resolve({ data: null }),
   ]);
   const dadosPrincipal = (principal?.dados ?? {}) as DadosFicha;
-  const proposta: PropostaDoTitular | null = principal ? { titular: String(dadosPrincipal.nome_completo ?? principal.proponente_nome ?? ""), imovel: String(dadosPrincipal.imovel_interesse ?? principal.imovel_referencia ?? ""), garantia: String(dadosPrincipal.garantia ?? "") } : null;
+  const proposta: PropostaDoTitular | null = principal ? { titular: String(dadosPrincipal.nome_completo ?? principal.proponente_nome ?? ""), imovel: String(dadosPrincipal.imovel_interesse ?? principal.imovel_referencia ?? ""), garantia: String(dadosPrincipal.garantia ?? ""), valor: String(dadosPrincipal.valor_proposta ?? "") } : null;
   return <main className="min-h-screen bg-[#f7f5f2] px-4 py-6 sm:py-10">
     <div className="mx-auto max-w-3xl">
       <header className="mb-6 text-center"><Image src="/brand/sacra-logo-vertical-bordo.png" alt="Sacra Netimóveis" width={240} height={120} priority className="mx-auto h-20 w-auto object-contain sm:h-24" /><p className="mt-3 text-xs font-bold uppercase tracking-[0.2em] text-[#b9822c]">Ficha cadastral de locação{ficha && tipo !== "titular" ? ` · ${ROTULO_TIPO[tipo]}` : ""}</p></header>

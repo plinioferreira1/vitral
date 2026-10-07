@@ -83,7 +83,7 @@ describe("ficha cadastral de locação", () => {
   it("monta a lista de anexos conforme a pessoa, a garantia e a renda", () => {
     expect(anexosDe("titular", "Seguro Fiança", completa)).toContain("Última fatura do cartão de crédito");
     expect(anexosDe("titular", "Título de Capitalização", completa)).toContain("6 últimos contracheques");
-    const fiador = anexosDe("fiador", "Fiador", { ...completa, estado_civil: "Casado(a)", tipo_renda: "Empresário(a)" });
+    const fiador = anexosDe("fiador", "Fiador", { ...completa, estado_civil: "Casado(a)", tipo_renda: "Empresário(a)", imovel_proprio: "Sim — quitado" });
     expect(fiador).toContain("Escritura e certidão de ônus do imóvel");
     expect(fiador).toContain("CPF e RG do cônjuge");
     expect(fiador).toContain("Contrato social, extratos PJ, pró-labore e DECORE");
@@ -95,5 +95,19 @@ describe("ficha cadastral de locação", () => {
     expect(tipoLocatario("fiador")).toBe("fiador");
     expect(tipoLocatario("dono")).toBe("titular");
     expect(tipoLocatario(null, "corresponsavel")).toBe("corresponsavel");
+  });
+});
+
+describe("complementos da revisão", () => {
+  it("valida datas reais e valores positivos", () => {
+    const d = { ...completa, nascimento: "1990-02-31", valor_proposta: "R$ 0,00", renda_mensal: "negativo" };
+    expect(pendencias(d, "titular").map((p) => p.chave)).toEqual(["valor_proposta", "nascimento", "renda_mensal"]);
+  });
+  it("não exige abertura da conta e endereço de referência para todos", () => {
+    expect(pendencias({ ...completa, conta_abertura: "", referencia_endereco: "" }, "titular")).toEqual([]);
+  });
+  it("exige a origem da renda complementar e preserva a justificativa documental", () => {
+    expect(pendencias({ ...completa, outros_rendimentos: "R$ 1.000,00" }, "titular").map((p) => p.chave)).toEqual(["outros_rendimentos_origem"]);
+    expect(limparDados({ ...completa, ir_nao_aplicavel: "Não declaro imposto de renda." }, "titular").ir_nao_aplicavel).toBe("Não declaro imposto de renda.");
   });
 });
