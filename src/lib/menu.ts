@@ -105,7 +105,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   if (operacional && p.podeConfigurar) itens.push({
     label: "Configurações",
     children: [
-      { href: "/membros", label: "Equipe e permissões" },
+      { href: "/membros", label: "Usuários e Acessos" },
       {
         label: "Processos e rotinas",
         children: [
