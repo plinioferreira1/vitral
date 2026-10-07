@@ -1,3 +1,4 @@
+import { AtualizacoesCorretor } from "../../minhas-vendas/atualizacoes-equipe";
 import { identificacaoProcesso } from "@/lib/identificacao-processo";
 import type { Etapa } from "@/lib/types";
 import { createClient } from "@/lib/supabase/server";
@@ -149,6 +150,7 @@ export default async function ProcessoDetalhePage({
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      {!ehFinanciamento && p.categoria === "venda" && <AtualizacoesCorretor processoId={p.id} />}
       <div className="overflow-hidden rounded-2xl border border-border bg-surface shadow-sm">
         <div className="h-1.5 bg-gradient-to-r from-brand via-brand/80 to-gold" />
         <div className="p-5 md:p-7">

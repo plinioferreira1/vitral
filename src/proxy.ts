@@ -14,6 +14,7 @@ const PUBLIC_PATHS = [
   "/cadastro",
 ];
 const ROTAS_CORRETOR = [
+  "/minhas-vendas",
   "/",
   "/corretor",
   "/cartorio",

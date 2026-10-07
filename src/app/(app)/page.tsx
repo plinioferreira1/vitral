@@ -1,3 +1,4 @@
+import { ResumoMinhasVendas } from "./minhas-vendas/resumo";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getEventosCalendario } from "@/lib/queries";
@@ -583,6 +584,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-5">
+      {ehCorretor && <ResumoMinhasVendas />}
       <section className="rounded-2xl border border-brand/10 bg-surface p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
@@ -624,7 +626,7 @@ export default async function DashboardPage() {
                 descricao="Despesa ou receita"
               />
             )}
-            {ehCorretor && (
+      {ehCorretor && (
               <AtalhoPrincipal
                 href="/corretor"
                 prefetch={false}

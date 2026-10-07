@@ -1,3 +1,4 @@
+import { VinculosCorretores } from "./vinculos-corretores";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual, GESTORES } from "@/lib/usuario-atual";
@@ -86,6 +87,7 @@ export default async function MembrosPage({
         }))}
         agora={new Date().toISOString()}
       />
+      <VinculosCorretores tenantId={usuario.tenant_id} />
     </>
   );
 }
