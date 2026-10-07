@@ -18,7 +18,7 @@ export const getUsuarioAtual = cache(async () => {
 
   const { data: usuario } = await supabase
     .from("usuarios")
-    .select("nome, perfil, tenant_id, cargo, foto_url, nivel_acesso")
+    .select("nome, perfil, tenant_id, cargo, foto_url, nivel_acesso, ativo")
     .eq("id", user.id)
     .single();
 
@@ -45,9 +45,19 @@ export async function exigirUsuario(niveis?: readonly NivelAcesso[]) {
     await avisar("erro", "Sua sessão expirou. Entre novamente.");
     return null;
   }
+  if (!usuario.ativo) {
+    await avisar("erro", "Seu acesso ao Vitral está desativado.");
+    return null;
+  }
   if (niveis && !niveis.includes(usuario.nivel_acesso)) {
     await avisar("erro", "Você não tem permissão para esta ação.");
     return null;
   }
-  return { user, usuario, userId: user.id, tenantId: usuario.tenant_id, nivel: usuario.nivel_acesso };
+  return {
+    user,
+    usuario,
+    userId: user.id,
+    tenantId: usuario.tenant_id,
+    nivel: usuario.nivel_acesso,
+  };
 }

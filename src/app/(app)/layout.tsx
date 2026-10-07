@@ -15,24 +15,38 @@ import { ptBR } from "date-fns/locale";
 import { limparTodasNotificacoes } from "./notificacoes/actions";
 import { liberadoParaNivel } from "@/lib/em-finalizacao";
 
-export default async function AppLayout({ children }: { children: React.ReactNode }) {
+export default async function AppLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const supabase = await createClient();
   const { user, usuario } = await getUsuarioAtual();
 
   if (!user) redirect("/login");
+  if (usuario?.ativo === false) redirect("/acesso-desativado");
   if (!usuario?.tenant_id) redirect("/onboarding");
 
   const hoje = hojeISO();
   const limiteNotificacoes = format(addDays(parseISO(hoje), 7), "yyyy-MM-dd");
 
   // Empresa, permissões e notificações não dependem um do outro.
-  const [{ data: tenant }, permissoes, { data: etapasNotificacao }, { data: avisosFerias }] = await Promise.all([
-    supabase.from("tenants").select("nome").eq("id", usuario.tenant_id).single(),
+  const [
+    { data: tenant },
+    permissoes,
+    { data: etapasNotificacao },
+    { data: avisosFerias },
+  ] = await Promise.all([
+    supabase
+      .from("tenants")
+      .select("nome")
+      .eq("id", usuario.tenant_id)
+      .single(),
     getPermissoesUsuario(supabase, user.id, usuario.nivel_acesso),
     supabase
       .from("etapas")
       .select(
-        "id, nome, data_prevista, processo_id, processos!inner(id, status, numero_processo, imoveis(endereco))"
+        "id, nome, data_prevista, processo_id, processos!inner(id, status, numero_processo, imoveis(endereco))",
       )
       .in("status", ["pendente", "em_andamento"])
       .lte("data_prevista", limiteNotificacoes)
@@ -41,8 +55,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .limit(100),
     // notificações de férias ainda não lidas (a RLS só entrega as da própria pessoa)
     liberadoParaNivel("ferias", usuario.nivel_acesso)
-      ? supabase.from("ferias_notificacoes").select("id, solicitacao_id, titulo, mensagem, criado_em").is("lida_em", null).order("criado_em", { ascending: false }).limit(20)
-      : Promise.resolve({ data: [] as { id: string; solicitacao_id: string | null; titulo: string; mensagem: string; criado_em: string }[] }),
+      ? supabase
+          .from("ferias_notificacoes")
+          .select("id, solicitacao_id, titulo, mensagem, criado_em")
+          .is("lida_em", null)
+          .order("criado_em", { ascending: false })
+          .limit(20)
+      : Promise.resolve({
+          data: [] as {
+            id: string;
+            solicitacao_id: string | null;
+            titulo: string;
+            mensagem: string;
+            criado_em: string;
+          }[],
+        }),
   ]);
 
   const { data: notificacoesDispensadas } = await supabase
@@ -51,36 +78,38 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const chavesDispensadas = new Set(
     (notificacoesDispensadas ?? []).map(
-      (notificacao) => `${notificacao.etapa_id}:${notificacao.data_prevista}`
-    )
+      (notificacao) => `${notificacao.etapa_id}:${notificacao.data_prevista}`,
+    ),
   );
 
   const notificacoes: NotificacaoTopBar[] = (etapasNotificacao ?? [])
     .filter(
-      (etapa) =>
-        !chavesDispensadas.has(`${etapa.id}:${etapa.data_prevista}`)
+      (etapa) => !chavesDispensadas.has(`${etapa.id}:${etapa.data_prevista}`),
     )
     .map((etapa) => {
-    const processo = etapa.processos as unknown as {
-      id: string;
-      numero_processo: string;
-      imoveis: { endereco: string } | null;
-    };
-    const dias = differenceInCalendarDays(parseISO(etapa.data_prevista!), parseISO(hoje));
-    return {
-      id: etapa.id,
-      processoId: processo.id,
-      etapa: etapa.nome,
-      contexto: processo.imoveis?.endereco ?? processo.numero_processo,
-      prazo:
-        dias < 0
-          ? `Venceu há ${Math.abs(dias)} dia${Math.abs(dias) === 1 ? "" : "s"} · ${format(parseISO(etapa.data_prevista!), "dd/MM/yyyy")}`
-          : dias === 0
-            ? `Vence hoje · ${format(parseISO(etapa.data_prevista!), "dd/MM/yyyy")}`
-            : `Vence em ${dias} dia${dias === 1 ? "" : "s"} · ${format(parseISO(etapa.data_prevista!), "dd/MM/yyyy")}`,
-      tipo: dias < 0 ? "atrasada" : dias === 0 ? "hoje" : "proxima",
-    };
-  });
+      const processo = etapa.processos as unknown as {
+        id: string;
+        numero_processo: string;
+        imoveis: { endereco: string } | null;
+      };
+      const dias = differenceInCalendarDays(
+        parseISO(etapa.data_prevista!),
+        parseISO(hoje),
+      );
+      return {
+        id: etapa.id,
+        processoId: processo.id,
+        etapa: etapa.nome,
+        contexto: processo.imoveis?.endereco ?? processo.numero_processo,
+        prazo:
+          dias < 0
+            ? `Venceu há ${Math.abs(dias)} dia${Math.abs(dias) === 1 ? "" : "s"} · ${format(parseISO(etapa.data_prevista!), "dd/MM/yyyy")}`
+            : dias === 0
+              ? `Vence hoje · ${format(parseISO(etapa.data_prevista!), "dd/MM/yyyy")}`
+              : `Vence em ${dias} dia${dias === 1 ? "" : "s"} · ${format(parseISO(etapa.data_prevista!), "dd/MM/yyyy")}`,
+        tipo: dias < 0 ? "atrasada" : dias === 0 ? "hoje" : "proxima",
+      };
+    });
 
   for (const aviso of [...(avisosFerias ?? [])].reverse()) {
     notificacoes.unshift({
@@ -90,7 +119,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       contexto: aviso.mensagem,
       prazo: `Férias · ${format(new Date(aviso.criado_em), "dd/MM/yyyy")}`,
       tipo: "proxima",
-      href: aviso.solicitacao_id ? `/ferias/${aviso.solicitacao_id}` : "/ferias",
+      href: aviso.solicitacao_id
+        ? `/ferias/${aviso.solicitacao_id}`
+        : "/ferias",
     });
   }
 
@@ -99,10 +130,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   // Aviso deixado pela última ação (sucesso/erro), se houver.
   const aviso = lerAviso((await cookies()).get(COOKIE_AVISO)?.value);
 
-  const dataHojeBruta = format(new Date(`${hoje}T00:00:00`), "EEEE, d 'de' MMMM 'de' yyyy", {
-    locale: ptBR,
-  });
-  const dataHojeFormatada = dataHojeBruta.charAt(0).toUpperCase() + dataHojeBruta.slice(1);
+  const dataHojeBruta = format(
+    new Date(`${hoje}T00:00:00`),
+    "EEEE, d 'de' MMMM 'de' yyyy",
+    {
+      locale: ptBR,
+    },
+  );
+  const dataHojeFormatada =
+    dataHojeBruta.charAt(0).toUpperCase() + dataHojeBruta.slice(1);
 
   return (
     <div className="flex min-h-screen flex-1 flex-col md:flex-row">

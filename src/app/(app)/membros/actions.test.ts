@@ -35,13 +35,17 @@ vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("@/lib/site-url", () => ({
   obterSiteUrl: vi.fn(async () => "https://vitral.test"),
 }));
-import { atualizarCategoriasMembro, criarConvite } from "./actions";
+import {
+  alterarStatusMembro,
+  atualizarCategoriasMembro,
+  criarConvite,
+} from "./actions";
 
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.getUsuarioAtual.mockResolvedValue({
     user: { id: "eu" },
-    usuario: { tenant_id: "empresa", nivel_acesso: "diretor" },
+    usuario: { tenant_id: "empresa", nivel_acesso: "diretor", ativo: true },
   });
   mocks.redirect.mockImplementation(() => {
     throw new Error("redirect");
@@ -49,7 +53,7 @@ beforeEach(() => {
   mocks.consulta.select.mockReturnValue(mocks.consulta);
   mocks.consulta.eq.mockReturnValue(mocks.consulta);
   mocks.consulta.single.mockResolvedValue({
-    data: { nivel_acesso: "supervisor" },
+    data: { tenant_id: "empresa", nivel_acesso: "supervisor", ativo: true },
     error: null,
   });
   mocks.consulta.insert.mockResolvedValue({ error: null });
@@ -67,7 +71,7 @@ describe("proteções das ações de usuários", () => {
   it("bloqueia mutação para usuário comum antes de consultar o banco", async () => {
     mocks.getUsuarioAtual.mockResolvedValue({
       user: { id: "eu" },
-      usuario: { tenant_id: "empresa", nivel_acesso: "auxiliar" },
+      usuario: { tenant_id: "empresa", nivel_acesso: "auxiliar", ativo: true },
     });
     await expect(
       atualizarCategoriasMembro(dados("outro", "diretor", true)),
@@ -87,6 +91,16 @@ describe("proteções das ações de usuários", () => {
   it("bloqueia a remoção do próprio acesso administrativo", async () => {
     await atualizarCategoriasMembro(dados("eu", "corretor"));
     expect(mocks.cliente.rpc).not.toHaveBeenCalled();
+    expect(mocks.avisar).toHaveBeenCalledWith(
+      "erro",
+      expect.stringContaining("próprio"),
+    );
+  });
+  it("bloqueia a desativação do próprio usuário", async () => {
+    const f = new FormData();
+    f.set("usuario_id", "eu");
+    f.set("ativo", "false");
+    await alterarStatusMembro(f);
     expect(mocks.avisar).toHaveBeenCalledWith(
       "erro",
       expect.stringContaining("próprio"),

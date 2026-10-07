@@ -15,8 +15,15 @@ import type { CategoriaProcesso } from "@/lib/types";
 /** Só diretor/gerente mexe em membros; senão volta para a tela com o erro. */
 async function exigirGestor() {
   const { user, usuario: eu } = await getUsuarioAtual();
-  if (!user || !eu?.tenant_id || !GESTORES.includes(eu.nivel_acesso)) {
-    redirect(`/membros?erro=${encodeURIComponent("Só diretor ou gerente pode fazer isso.")}`);
+  if (
+    !user ||
+    !eu?.tenant_id ||
+    !eu.ativo ||
+    !GESTORES.includes(eu.nivel_acesso)
+  ) {
+    redirect(
+      `/membros?erro=${encodeURIComponent("Só diretor ou gerente pode fazer isso.")}`,
+    );
   }
   return { user, eu, tenantId: eu.tenant_id };
 }
@@ -33,7 +40,7 @@ async function exigirPermissaoSobreMembro(usuarioAlvoId: string) {
 
   const { data: alvo } = await supabase
     .from("usuarios")
-    .select("tenant_id")
+    .select("tenant_id, ativo")
     .eq("id", usuarioAlvoId)
     .single();
 
@@ -41,15 +48,66 @@ async function exigirPermissaoSobreMembro(usuarioAlvoId: string) {
     redirect(`/membros?erro=${encodeURIComponent("Membro não encontrado.")}`);
   }
 
-  return { supabase, meuId: user.id };
+  return { supabase, meuId: user.id, alvo };
+}
+
+export async function alterarStatusMembro(formData: FormData) {
+  const usuarioId = String(formData.get("usuario_id") ?? "");
+  const ativar = formData.get("ativo") === "true";
+  if (!usuarioId) return;
+
+  const { meuId, alvo } = await exigirPermissaoSobreMembro(usuarioId);
+
+  if (usuarioId === meuId && !ativar) {
+    await avisar("erro", "Você não pode desativar seu próprio acesso.");
+    return;
+  }
+  if (alvo.ativo === ativar) {
+    await avisar(
+      "sucesso",
+      ativar ? "O acesso já estava ativo." : "O acesso já estava desativado.",
+    );
+    return;
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    await avisar("erro", "Não foi possível alterar o acesso agora.");
+    return;
+  }
+
+  const ok = await checar(
+    admin.from("usuarios").update({ ativo: ativar }).eq("id", usuarioId),
+    ativar ? "reativar o acesso" : "desativar o acesso",
+  );
+  if (!ok) return;
+
+  revalidatePath("/membros");
+  revalidatePath("/", "layout");
+  await avisar(
+    "sucesso",
+    ativar
+      ? "Acesso reativado."
+      : "Acesso desativado. O histórico foi preservado.",
+  );
 }
 
 export async function adicionarMembro(formData: FormData) {
   await exigirGestor();
   const supabase = await createClient();
   const email = String(formData.get("email") ?? "").trim();
-  const perfil = valorDaLista("perfil_usuario", formData.get("perfil"), "corretor");
-  const nivelAcesso = valorDaLista("nivel_acesso_usuario", formData.get("nivel_acesso"), "supervisor");
+  const perfil = valorDaLista(
+    "perfil_usuario",
+    formData.get("perfil"),
+    "corretor",
+  );
+  const nivelAcesso = valorDaLista(
+    "nivel_acesso_usuario",
+    formData.get("nivel_acesso"),
+    "supervisor",
+  );
   const categorias = formData.getAll("categorias") as CategoriaProcesso[];
 
   const { error } = await supabase.rpc("add_member", {
@@ -70,20 +128,38 @@ export async function atualizarCategoriasMembro(formData: FormData) {
   const { user, tenantId } = await exigirGestor();
   const supabase = await createClient();
   const usuarioId = String(formData.get("usuario_id") ?? "");
-  const categorias = formData.getAll("categorias").map((v) => valorDaLista("categoria_processo", v)).filter((v): v is CategoriaProcesso => v !== null);
+  const categorias = formData
+    .getAll("categorias")
+    .map((v) => valorDaLista("categoria_processo", v))
+    .filter((v): v is CategoriaProcesso => v !== null);
   // Nível inválido ou vazio = não mexe no nível (só nas categorias).
-  const nivelAcesso = valorDaLista("nivel_acesso_usuario", formData.get("nivel_acesso")) ?? undefined;
+  const nivelAcesso =
+    valorDaLista("nivel_acesso_usuario", formData.get("nivel_acesso")) ??
+    undefined;
 
-  const { data: alvo, error: erroAlvo } = await supabase.from("usuarios").select("nivel_acesso").eq("id", usuarioId).eq("tenant_id", tenantId).single();
+  const { data: alvo, error: erroAlvo } = await supabase
+    .from("usuarios")
+    .select("nivel_acesso")
+    .eq("id", usuarioId)
+    .eq("tenant_id", tenantId)
+    .single();
   if (erroAlvo || !alvo) {
     await avisar("erro", "Usuário não encontrado nesta empresa.");
     return;
   }
   if (usuarioId === user.id && nivelAcesso && !GESTORES.includes(nivelAcesso)) {
-    await avisar("erro", "Você não pode remover seu próprio acesso administrativo.");
+    await avisar(
+      "erro",
+      "Você não pode remover seu próprio acesso administrativo.",
+    );
     return;
   }
-  if (nivelAcesso && GESTORES.includes(nivelAcesso) && !GESTORES.includes(alvo.nivel_acesso) && formData.get("confirmar_administrativo") !== "sim") {
+  if (
+    nivelAcesso &&
+    GESTORES.includes(nivelAcesso) &&
+    !GESTORES.includes(alvo.nivel_acesso) &&
+    formData.get("confirmar_administrativo") !== "sim"
+  ) {
     await avisar("erro", "Confirme a concessão de acesso administrativo.");
     return;
   }
@@ -111,7 +187,13 @@ export async function editarNomeMembro(formData: FormData) {
 
   const { supabase } = await exigirPermissaoSobreMembro(usuarioId);
 
-  if (!await checar(supabase.from("usuarios").update({ nome: novoNome }).eq("id", usuarioId), "atualizar")) return;
+  if (
+    !(await checar(
+      supabase.from("usuarios").update({ nome: novoNome }).eq("id", usuarioId),
+      "atualizar",
+    ))
+  )
+    return;
 
   revalidatePath("/membros");
   await avisar("sucesso", "Nome atualizado.");
@@ -131,8 +213,8 @@ export async function editarEmailMembro(formData: FormData) {
   } catch {
     redirect(
       `/membros?erro=${encodeURIComponent(
-        "A chave de administrador ainda não está configurada no servidor. Confirme se o redeploy no Vercel já pegou a SUPABASE_SERVICE_ROLE_KEY."
-      )}`
+        "A chave de administrador ainda não está configurada no servidor. Confirme se o redeploy no Vercel já pegou a SUPABASE_SERVICE_ROLE_KEY.",
+      )}`,
     );
   }
 
@@ -145,7 +227,16 @@ export async function editarEmailMembro(formData: FormData) {
     redirect(`/membros?erro=${encodeURIComponent(errAuth.message)}`);
   }
 
-  if (!await checar(supabase.from("usuarios").update({ email: novoEmail }).eq("id", usuarioId), "atualizar")) return;
+  if (
+    !(await checar(
+      supabase
+        .from("usuarios")
+        .update({ email: novoEmail })
+        .eq("id", usuarioId),
+      "atualizar",
+    ))
+  )
+    return;
 
   revalidatePath("/membros");
   await avisar("sucesso", "E-mail de login atualizado.");
@@ -158,7 +249,9 @@ export async function alterarSenhaMembro(formData: FormData) {
   if (!usuarioId || !novaSenha) return;
 
   if (novaSenha.length < 6) {
-    redirect(`/membros?erro=${encodeURIComponent("A senha precisa ter pelo menos 6 caracteres.")}`);
+    redirect(
+      `/membros?erro=${encodeURIComponent("A senha precisa ter pelo menos 6 caracteres.")}`,
+    );
   }
 
   await exigirPermissaoSobreMembro(usuarioId);
@@ -169,12 +262,14 @@ export async function alterarSenhaMembro(formData: FormData) {
   } catch {
     redirect(
       `/membros?erro=${encodeURIComponent(
-        "A chave de administrador ainda não está configurada no servidor. Confirme se o redeploy no Vercel já pegou a SUPABASE_SERVICE_ROLE_KEY."
-      )}`
+        "A chave de administrador ainda não está configurada no servidor. Confirme se o redeploy no Vercel já pegou a SUPABASE_SERVICE_ROLE_KEY.",
+      )}`,
     );
   }
 
-  const { error } = await admin.auth.admin.updateUserById(usuarioId, { password: novaSenha });
+  const { error } = await admin.auth.admin.updateUserById(usuarioId, {
+    password: novaSenha,
+  });
 
   if (error) {
     redirect(`/membros?erro=${encodeURIComponent(error.message)}`);
@@ -192,7 +287,9 @@ export async function excluirMembro(formData: FormData) {
   const { meuId } = await exigirPermissaoSobreMembro(usuarioId);
 
   if (usuarioId === meuId) {
-    redirect(`/membros?erro=${encodeURIComponent("Você não pode excluir seu próprio acesso.")}`);
+    redirect(
+      `/membros?erro=${encodeURIComponent("Você não pode excluir seu próprio acesso.")}`,
+    );
   }
 
   const admin = (() => {
@@ -201,8 +298,8 @@ export async function excluirMembro(formData: FormData) {
     } catch {
       redirect(
         `/membros?erro=${encodeURIComponent(
-          "A chave de administrador ainda não está configurada no servidor. Confirme se o redeploy no Vercel já pegou a SUPABASE_SERVICE_ROLE_KEY."
-        )}`
+          "A chave de administrador ainda não está configurada no servidor. Confirme se o redeploy no Vercel já pegou a SUPABASE_SERVICE_ROLE_KEY.",
+        )}`,
       );
     }
   })();
@@ -222,13 +319,29 @@ export async function criarConvite(formData: FormData) {
   const { user, tenantId } = await exigirGestor();
   const supabase = await createClient();
 
-  const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  const perfil = valorDaLista("perfil_usuario", formData.get("perfil"), "corretor");
-  const nivelAcesso = valorDaLista("nivel_acesso_usuario", formData.get("nivel_acesso"), "supervisor");
-  const categorias = formData.getAll("categorias").map((v) => valorDaLista("categoria_processo", v)).filter((v): v is CategoriaProcesso => v !== null);
+  const email = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
+  const perfil = valorDaLista(
+    "perfil_usuario",
+    formData.get("perfil"),
+    "corretor",
+  );
+  const nivelAcesso = valorDaLista(
+    "nivel_acesso_usuario",
+    formData.get("nivel_acesso"),
+    "supervisor",
+  );
+  const categorias = formData
+    .getAll("categorias")
+    .map((v) => valorDaLista("categoria_processo", v))
+    .filter((v): v is CategoriaProcesso => v !== null);
 
   if (!email) return;
-  if (GESTORES.includes(nivelAcesso) && formData.get("confirmar_administrativo") !== "sim") {
+  if (
+    GESTORES.includes(nivelAcesso) &&
+    formData.get("confirmar_administrativo") !== "sim"
+  ) {
     await avisar("erro", "Confirme a concessão de acesso administrativo.");
     return;
   }
@@ -247,7 +360,10 @@ export async function criarConvite(formData: FormData) {
   }
 
   revalidatePath("/membros");
-  await avisar("sucesso", "Convite criado. Copie o link na lista de convites para compartilhá-lo.");
+  await avisar(
+    "sucesso",
+    "Convite criado. Copie o link na lista de convites para compartilhá-lo.",
+  );
   return true;
 }
 
@@ -257,7 +373,13 @@ export async function renovarConvite(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
   const supabase = await createClient();
-  const { data: convite } = await supabase.from("convites").select("id, token").eq("id", id).eq("tenant_id", tenantId).is("usado_em", null).single();
+  const { data: convite } = await supabase
+    .from("convites")
+    .select("id, token")
+    .eq("id", id)
+    .eq("tenant_id", tenantId)
+    .is("usado_em", null)
+    .single();
   if (!convite) {
     await avisar("erro", "Convite não encontrado ou já utilizado.");
     return;
@@ -265,21 +387,47 @@ export async function renovarConvite(formData: FormData) {
   // Convites têm RLS de leitura/inserção/remoção; a renovação é uma escrita
   // restrita no servidor, após conferir gestor, empresa e convite pendente.
   const admin = createAdminClient();
-  const ok = await checar(admin.from("convites").update({ token: crypto.randomUUID(), expira_em: new Date(Date.now() + 7 * 86400000).toISOString() }).eq("id", id).eq("tenant_id", tenantId).eq("token", convite.token).is("usado_em", null).select("id").single(), "renovar o convite");
+  const ok = await checar(
+    admin
+      .from("convites")
+      .update({
+        token: crypto.randomUUID(),
+        expira_em: new Date(Date.now() + 7 * 86400000).toISOString(),
+      })
+      .eq("id", id)
+      .eq("tenant_id", tenantId)
+      .eq("token", convite.token)
+      .is("usado_em", null)
+      .select("id")
+      .single(),
+    "renovar o convite",
+  );
   if (!ok) return;
-  await avisar("sucesso", "Link renovado por 7 dias. Copie e compartilhe o novo link.");
+  await avisar(
+    "sucesso",
+    "Link renovado por 7 dias. Copie e compartilhe o novo link.",
+  );
   revalidatePath("/membros");
 }
 
 export async function redefinirSenhaMembro(formData: FormData) {
   const usuarioId = String(formData.get("usuario_id") ?? "");
   const { supabase } = await exigirPermissaoSobreMembro(usuarioId);
-  const { data: alvo } = await supabase.from("usuarios").select("email").eq("id", usuarioId).single();
+  const { data: alvo } = await supabase
+    .from("usuarios")
+    .select("email")
+    .eq("id", usuarioId)
+    .single();
   if (!alvo) return;
   const siteUrl = await obterSiteUrl();
-  const { error } = await supabase.auth.resetPasswordForEmail(alvo.email, { redirectTo: `${siteUrl}/auth/callback?next=/redefinir-senha` });
+  const { error } = await supabase.auth.resetPasswordForEmail(alvo.email, {
+    redirectTo: `${siteUrl}/auth/callback?next=/redefinir-senha`,
+  });
   if (error) {
-    await avisar("erro", "Não foi possível enviar o link de redefinição. Tente novamente.");
+    await avisar(
+      "erro",
+      "Não foi possível enviar o link de redefinição. Tente novamente.",
+    );
     return;
   }
   await avisar("sucesso", "Link de redefinição de senha enviado.");
@@ -331,7 +479,7 @@ export async function reenviarRedefinicaoParaTodos() {
     falhas.length === 0
       ? `sucesso=${enviados}`
       : `erro=${encodeURIComponent(
-          `Enviado pra ${enviados}, mas falhou pra: ${falhas.join(", ")} (provavelmente limite de envio do Supabase — tenta de novo em alguns minutos).`
+          `Enviado pra ${enviados}, mas falhou pra: ${falhas.join(", ")} (provavelmente limite de envio do Supabase — tenta de novo em alguns minutos).`,
         )}`;
 
   revalidatePath("/membros");

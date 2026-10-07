@@ -7,6 +7,8 @@ import {
   MoreHorizontal,
   Plus,
   Search,
+  UserCheck,
+  UserX,
   Users,
   X,
 } from "lucide-react";
@@ -29,6 +31,7 @@ import {
 } from "@/lib/acessos";
 import { type CategoriaProcesso, type PerfilUsuario } from "@/lib/types";
 import {
+  alterarStatusMembro,
   alterarSenhaMembro,
   cancelarConvite,
   editarEmailMembro,
@@ -248,6 +251,29 @@ export function UsuariosAcessos({
             {label}
           </button>
         ))}
+        <div className="my-1 border-t border-border" />
+        <form action={alterarStatusMembro}>
+          <input type="hidden" name="usuario_id" value={p.id} />
+          <input type="hidden" name="ativo" value={String(!p.ativo)} />
+          <BotaoComConfirmacao
+            disabled={p.id === meuId && p.ativo}
+            mensagem={
+              p.ativo
+                ? `Desativar o acesso de ${p.nome}? O histórico será preservado.`
+                : `Reativar o acesso de ${p.nome}?`
+            }
+            textoEnviando={p.ativo ? "Desativando..." : "Reativando..."}
+            className={`flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm disabled:cursor-not-allowed disabled:opacity-45 ${p.ativo ? "text-rose-700 hover:bg-rose-50" : "text-emerald-700 hover:bg-emerald-50"}`}
+            title={
+              p.id === meuId && p.ativo
+                ? "Você não pode desativar seu próprio acesso"
+                : undefined
+            }
+          >
+            {p.ativo ? <UserX size={16} /> : <UserCheck size={16} />}
+            {p.ativo ? "Desativar acesso" : "Reativar acesso"}
+          </BotaoComConfirmacao>
+        </form>
       </div>
     </details>
   );
