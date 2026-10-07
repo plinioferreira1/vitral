@@ -3,18 +3,27 @@ import { createClient } from "@/lib/supabase/server";
 import { avisar } from "@/lib/aviso";
 import type { Database } from "@/lib/database.types";
 
+/** O que as telas e ações usam do login: quem é e o e-mail. */
+export type UsuarioLogado = { id: string; email?: string };
+
 /**
  * Usuário logado + linha em `usuarios`, memorizado por requisição
  * (React `cache`): o layout e a página que chamarem isto na mesma
  * renderização fazem uma única ida ao Supabase, em vez de repetir
- * getUser() + select em usuarios em cada um.
+ * a conferência do login + select em usuarios em cada um.
  */
 export const getUsuarioAtual = cache(async () => {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { user: null, usuario: null };
+  // O proxy já conferiu (e renovou, se preciso) este mesmo login no começo da
+  // requisição; aqui basta ler quem é, sem outra ida ao servidor de
+  // autenticação quando o projeto usa chaves assimétricas.
+  const { data: sessao } = await supabase.auth.getClaims();
+  const claims = sessao?.claims;
+  if (!claims?.sub) return { user: null, usuario: null };
+  const user: UsuarioLogado = {
+    id: claims.sub,
+    email: typeof claims.email === "string" ? claims.email : undefined,
+  };
 
   const { data: usuario } = await supabase
     .from("usuarios")

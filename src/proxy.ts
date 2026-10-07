@@ -53,9 +53,12 @@ export async function proxy(request: NextRequest) {
     },
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims confere a assinatura do login sem ir ao servidor de autenticação
+  // quando o projeto usa chaves assimétricas (e renova a sessão se estiver
+  // para vencer). Com chave simétrica ele mesmo consulta o servidor, como o
+  // getUser fazia. Acesso desativado continua barrado logo abaixo (`ativo`).
+  const { data: sessao } = await supabase.auth.getClaims();
+  const user = sessao?.claims?.sub ? { id: sessao.claims.sub } : null;
 
   const isPublic = PUBLIC_PATHS.some((p) =>
     request.nextUrl.pathname.startsWith(p),

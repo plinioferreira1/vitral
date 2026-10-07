@@ -36,6 +36,7 @@ export default async function AppLayout({
     permissoes,
     { data: etapasNotificacao },
     { data: avisosFerias },
+    { data: notificacoesDispensadas },
   ] = await Promise.all([
     supabase
       .from("tenants")
@@ -70,11 +71,8 @@ export default async function AppLayout({
             criado_em: string;
           }[],
         }),
+    supabase.from("notificacoes_dispensadas").select("etapa_id, data_prevista"),
   ]);
-
-  const { data: notificacoesDispensadas } = await supabase
-    .from("notificacoes_dispensadas")
-    .select("etapa_id, data_prevista");
 
   const chavesDispensadas = new Set(
     (notificacoesDispensadas ?? []).map(

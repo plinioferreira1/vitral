@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { alternarEtapaOnboarding } from "./actions";
 import { MateriaisCorretor } from "@/components/materiais-corretor";
 import { TutoriaisSistema } from "@/components/tutoriais-sistema";
@@ -9,25 +10,23 @@ import { BotaoEnviar } from "@/components/botao-enviar";
 
 export default async function CorretorPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getUsuarioAtual();
 
-  const { data: etapas } = await supabase
-    .from("onboarding_etapas")
-    .select("id, nome, descricao, link, ordem")
-    .order("ordem", { ascending: true });
-
-  const { data: statusRaw } = await supabase
-    .from("onboarding_status")
-    .select("id, etapa_id, concluida")
-    .eq("usuario_id", user?.id ?? "");
-
-  const { data: tutoriais } = await supabase
-    .from("tutoriais")
-    .select("id, categoria, tipo, titulo, descricao, conteudo, link, ordem")
-    .order("categoria", { ascending: true })
-    .order("ordem", { ascending: true });
+  const [{ data: etapas }, { data: statusRaw }, { data: tutoriais }] = await Promise.all([
+    supabase
+      .from("onboarding_etapas")
+      .select("id, nome, descricao, link, ordem")
+      .order("ordem", { ascending: true }),
+    supabase
+      .from("onboarding_status")
+      .select("id, etapa_id, concluida")
+      .eq("usuario_id", user?.id ?? ""),
+    supabase
+      .from("tutoriais")
+      .select("id, categoria, tipo, titulo, descricao, conteudo, link, ordem")
+      .order("categoria", { ascending: true })
+      .order("ordem", { ascending: true }),
+  ]);
 
   const statusPorEtapa = new Map((statusRaw ?? []).map((s) => [s.etapa_id, s]));
   const total = etapas?.length ?? 0;

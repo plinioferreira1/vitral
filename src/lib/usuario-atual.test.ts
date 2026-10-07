@@ -10,7 +10,8 @@ let linhaUsuario: {
 
 vi.mock("@/lib/supabase/server", () => ({
   createClient: async () => ({
-    auth: { getUser: async () => ({ data: { user: logado } }) },
+    // sem sessão o getClaims devolve data nula; com sessão, as claims do token (sub = id)
+    auth: { getClaims: async () => ({ data: logado ? { claims: { sub: logado.id } } : null, error: null }) },
     from: () => ({
       select: () => ({
         eq: () => ({ single: async () => ({ data: linhaUsuario }) }),

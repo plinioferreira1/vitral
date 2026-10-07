@@ -60,19 +60,15 @@ export default async function AutorizacaoDetalhePage({
     responsavel: { id: string; nome: string } | null;
   };
 
-  const { data: membros } = await supabase
-    .from("usuarios")
-    .select("id, nome")
-    .eq("ativo", true)
-    .order("nome");
-
-  const { data: signatarios } = await supabase
-    .from("autorizacao_signatarios")
-    .select("*")
-    .eq("autorizacao_id", id)
-    .order("ordem", { ascending: true });
-
-  const siteUrl = await obterSiteUrl();
+  const [{ data: membros }, { data: signatarios }, siteUrl] = await Promise.all([
+    supabase.from("usuarios").select("id, nome").eq("ativo", true).order("nome"),
+    supabase
+      .from("autorizacao_signatarios")
+      .select("*")
+      .eq("autorizacao_id", id)
+      .order("ordem", { ascending: true }),
+    obterSiteUrl(),
+  ]);
 
   return (
     <div className="max-w-2xl space-y-6">

@@ -1,3 +1,4 @@
+import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { NovoProcessoForm } from "./form";
@@ -12,16 +13,9 @@ export default async function NovoProcessoPage({
   const supabase = await createClient();
   const { erro } = await searchParams;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Mesma busca já feita pelo layout nesta renderização — reaproveitada.
+  const { user, usuario: meuUsuario } = await getUsuarioAtual();
   if (!user) redirect("/login");
-
-  const { data: meuUsuario } = await supabase
-    .from("usuarios")
-    .select("nivel_acesso")
-    .eq("id", user.id)
-    .single();
 
   const vejoTudo = meuUsuario?.nivel_acesso === "diretor" || meuUsuario?.nivel_acesso === "gerente";
 

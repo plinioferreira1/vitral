@@ -90,15 +90,34 @@ export default async function ContratoLocacaoPage({
 
   const supabase = await createClient();
 
-  const { data: contrato } = await supabase
-    .from("contratos_locacao")
-    .select(
-      `*, imoveis ( endereco ),
-       locador:clientes!contratos_locacao_locador_id_fkey ( nome, telefone, email ),
-       locatario:clientes!contratos_locacao_locatario_id_fkey ( nome, telefone, email )`
-    )
-    .eq("id", id)
-    .single();
+  const inicioAno = `${ano}-01-01`;
+  const fimAno = `${ano}-12-01`;
+
+  // Contrato, rescisão em andamento e contas do ano dependem só do id —
+  // vão juntos ao banco, em vez de um esperar o outro.
+  const [{ data: contrato }, { data: rescisaoAtiva }, { data: contasRaw }] = await Promise.all([
+    supabase
+      .from("contratos_locacao")
+      .select(
+        `*, imoveis ( endereco ),
+         locador:clientes!contratos_locacao_locador_id_fkey ( nome, telefone, email ),
+         locatario:clientes!contratos_locacao_locatario_id_fkey ( nome, telefone, email )`
+      )
+      .eq("id", id)
+      .single(),
+    supabase
+      .from("rescisoes_locacao")
+      .select("*")
+      .eq("contrato_id", id)
+      .eq("status", "em_andamento")
+      .maybeSingle(),
+    supabase
+      .from("contas_locacao")
+      .select("*")
+      .eq("contrato_id", id)
+      .gte("competencia", inicioAno)
+      .lte("competencia", fimAno),
+  ]);
 
   if (!contrato) notFound();
 
@@ -116,16 +135,6 @@ export default async function ContratoLocacaoPage({
     luz: c.responsavel_luz,
     gas: c.responsavel_gas,
   };
-
-  const inicioAno = `${ano}-01-01`;
-  const fimAno = `${ano}-12-01`;
-
-  const { data: rescisaoAtiva } = await supabase
-    .from("rescisoes_locacao")
-    .select("*")
-    .eq("contrato_id", id)
-    .eq("status", "em_andamento")
-    .maybeSingle();
 
   let rescisaoEtapas: RescisaoEtapa[] = [];
   let rescisaoChecklist: RescisaoChecklistItem[] = [];
@@ -147,13 +156,6 @@ export default async function ContratoLocacaoPage({
       rescisaoChecklist = checklistData ?? [];
     }
   }
-
-  const { data: contasRaw } = await supabase
-    .from("contas_locacao")
-    .select("*")
-    .eq("contrato_id", id)
-    .gte("competencia", inicioAno)
-    .lte("competencia", fimAno);
 
   const contasPorChave = new Map((contasRaw ?? []).map((cc) => [`${cc.tipo}-${cc.competencia}`, cc]));
 

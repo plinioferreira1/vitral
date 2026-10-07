@@ -1,3 +1,4 @@
+import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { createClient } from "@/lib/supabase/server";
 import { getPermissoesUsuario } from "@/lib/permissoes";
 import { calcularUrgencia } from "@/lib/alertas";
@@ -8,14 +9,8 @@ import { ptBR } from "date-fns/locale";
 
 export default async function RelatorioSemanalPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("nivel_acesso")
-    .eq("id", user?.id ?? "")
-    .single();
+  // Mesma busca já feita pelo layout nesta renderização — reaproveitada.
+  const { user, usuario } = await getUsuarioAtual();
 
   const { podeConfigurar } = await getPermissoesUsuario(
     supabase,

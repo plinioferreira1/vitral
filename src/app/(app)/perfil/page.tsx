@@ -1,3 +1,4 @@
+import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { atualizarPerfil } from "./actions";
@@ -31,9 +32,7 @@ export default async function PerfilPage({
   searchParams: Promise<{ erro?: string; salvo?: string }>;
 }) {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const { user } = await getUsuarioAtual();
   if (!user) redirect("/login");
 
   const { data: usuario } = await supabase

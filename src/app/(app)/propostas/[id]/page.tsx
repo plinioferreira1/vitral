@@ -57,25 +57,20 @@ export default async function PropostaDetalhePage({
     responsavel: { id: string; nome: string } | null;
   };
 
-  const { data: membros } = await supabase
-    .from("usuarios")
-    .select("id, nome")
-    .eq("ativo", true)
-    .order("nome");
-
-  const { data: condicoes } = await supabase
-    .from("carta_proposta_condicoes")
-    .select("descricao, valor")
-    .eq("carta_proposta_id", id)
-    .order("ordem", { ascending: true });
-
-  const { data: signatarios } = await supabase
-    .from("carta_proposta_signatarios")
-    .select("*")
-    .eq("carta_proposta_id", id)
-    .order("ordem", { ascending: true });
-
-  const siteUrl = await obterSiteUrl();
+  const [{ data: membros }, { data: condicoes }, { data: signatarios }, siteUrl] = await Promise.all([
+    supabase.from("usuarios").select("id, nome").eq("ativo", true).order("nome"),
+    supabase
+      .from("carta_proposta_condicoes")
+      .select("descricao, valor")
+      .eq("carta_proposta_id", id)
+      .order("ordem", { ascending: true }),
+    supabase
+      .from("carta_proposta_signatarios")
+      .select("*")
+      .eq("carta_proposta_id", id)
+      .order("ordem", { ascending: true }),
+    obterSiteUrl(),
+  ]);
 
   return (
     <div className="max-w-2xl space-y-6">

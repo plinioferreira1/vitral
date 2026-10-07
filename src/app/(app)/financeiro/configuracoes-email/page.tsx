@@ -1,3 +1,4 @@
+import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { createClient } from "@/lib/supabase/server";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { Mail, Send } from "lucide-react";
@@ -9,14 +10,8 @@ const campoClasse =
 
 export default async function ConfiguracoesEmailPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  const { data: usuario } = await supabase
-    .from("usuarios")
-    .select("tenant_id")
-    .eq("id", user?.id ?? "")
-    .single();
+  // Mesma busca já feita pelo layout nesta renderização — reaproveitada.
+  const { usuario } = await getUsuarioAtual();
 
   const { data: destinatarios } = await supabase
     .from("financeiro_email_destinatarios")
