@@ -87,6 +87,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   if (operacional && p.podeConfigurar) itens.push({
     label: "Relatórios",
     children: [
+      { href: "/painel-sacra", label: "Painel Sacra" },
       { href: "/relatorio-semanal", label: "Resumo semanal" },
       { href: "/financeiro/relatorios", label: "Relatórios financeiros" },
     ],

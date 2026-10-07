@@ -16,12 +16,14 @@ describe("navegação por acesso", () => {
     expect(itens.map((i) => i.label)).not.toContain("Configurações");
     expect(destinos(itens).some((href) => href.startsWith("/financeiro"))).toBe(false);
     expect(destinos(itens)).not.toContain("/relatorio-semanal");
+    expect(destinos(itens)).not.toContain("/painel-sacra");
     expect(destinos(itens)).toContain("/locacao?aba=multa");
   });
   it("não oferece calendário operacional ou multa ao corretor", () => {
     const hrefs = destinos(montarMenu({ ...gestor, ehCorretor: true }));
     expect(hrefs).toContain("/avaliacoes");
     expect(hrefs).toContain("/minhas-vendas");
+    expect(hrefs).not.toContain("/painel-sacra");
     expect(hrefs.some((h) => h.startsWith("/vendas"))).toBe(false);
     expect(hrefs).not.toContain("/calendario");
     expect(hrefs).not.toContain("/locacao?aba=multa");
@@ -39,6 +41,7 @@ describe("navegação por acesso", () => {
   it("cada destino tem uma única entrada principal", () => {
     const hrefs = destinos(montarMenu(gestor));
     expect(new Set(hrefs).size).toBe(hrefs.length);
+    expect(hrefs).toContain("/painel-sacra");
     expect(hrefs).not.toContain("/financeiro/agenda");
     // a calculadora de custas do financiamento é diferente da simulação de cartório
     expect(hrefs).toContain("/financiamentos?aba=custas");
