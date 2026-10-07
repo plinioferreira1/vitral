@@ -3,7 +3,16 @@ import { NextResponse, type NextRequest } from "next/server";
 
 // "/api/cron": chamado pelo agendamento da Vercel, sem usuário logado — a
 // própria rota exige o CRON_SECRET. "/cadastro" recebe as fichas públicas.
-const PUBLIC_PATHS = ["/login", "/auth", "/redefinir-senha", "/assinar", "/visita", "/api/cron", "/cadastro"];
+const PUBLIC_PATHS = [
+  "/login",
+  "/auth",
+  "/redefinir-senha",
+  "/acesso-desativado",
+  "/assinar",
+  "/visita",
+  "/api/cron",
+  "/cadastro",
+];
 const ROTAS_CORRETOR = [
   "/",
   "/corretor",
@@ -31,21 +40,25 @@ export async function proxy(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value),
+          );
           supabaseResponse = NextResponse.next({ request });
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options),
           );
         },
       },
-    }
+    },
   );
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const isPublic = PUBLIC_PATHS.some((p) => request.nextUrl.pathname.startsWith(p));
+  const isPublic = PUBLIC_PATHS.some((p) =>
+    request.nextUrl.pathname.startsWith(p),
+  );
 
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
@@ -53,27 +66,48 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && request.nextUrl.pathname === "/login") {
-    const url = request.nextUrl.clone();
-    url.pathname = "/";
-    return NextResponse.redirect(url);
-  }
-
-  if (user && !isPublic) {
+  if (user) {
     const { data: usuario } = await supabase
       .from("usuarios")
-      .select("nivel_acesso")
+      .select("nivel_acesso, ativo")
       .eq("id", user.id)
       .single();
 
+    if (usuario?.ativo === false) {
+      if (request.nextUrl.pathname !== "/acesso-desativado") {
+        const url = request.nextUrl.clone();
+        url.pathname = "/acesso-desativado";
+        url.search = "";
+        return NextResponse.redirect(url);
+      }
+      return supabaseResponse;
+    }
+
+    if (
+      request.nextUrl.pathname === "/login" ||
+      request.nextUrl.pathname === "/acesso-desativado"
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/";
+      return NextResponse.redirect(url);
+    }
+
     const rotaPermitida = ROTAS_CORRETOR.some(
-      (r) => request.nextUrl.pathname === r || request.nextUrl.pathname.startsWith(`${r}/`)
+      (r) =>
+        request.nextUrl.pathname === r ||
+        request.nextUrl.pathname.startsWith(`${r}/`),
     );
-    if (usuario?.nivel_acesso === "corretor" && !rotaPermitida) {
+    if (!isPublic && usuario?.nivel_acesso === "corretor" && !rotaPermitida) {
       const url = request.nextUrl.clone();
       url.pathname = "/cartorio";
       return NextResponse.redirect(url);
     }
+  }
+
+  if (!user && request.nextUrl.pathname === "/acesso-desativado") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    return NextResponse.redirect(url);
   }
 
   return supabaseResponse;
