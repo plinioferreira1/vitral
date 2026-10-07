@@ -29,3 +29,4 @@ create policy "usuario atualiza a si mesmo" on public.usuarios
   for update to authenticated
   using (id = (select auth.uid()) and ativo = true)
   with check (id = (select auth.uid()) and ativo = true);
+
