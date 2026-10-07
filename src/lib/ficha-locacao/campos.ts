@@ -5,6 +5,8 @@
  * usa as mesmas regras para conferir antes de gravar.
  */
 
+import { moedaParaNumero } from "../moeda";
+
 export type DadosFicha = Record<string, string | number | boolean | null>;
 
 export const TIPOS_LOCATARIO = ["titular", "corresponsavel", "fiador"] as const;
@@ -33,7 +35,7 @@ export type Campo = {
 
 export type Secao = { id: string; titulo: string; etapa: number; campos: Campo[]; descricao?: string; visivel?: Regra };
 
-export const ETAPAS = ["Proposta", "Dados pessoais", "Renda", "Bens e referências", "Documentos", "Declaração"] as const;
+export const ETAPAS = ["Proposta", "Dados pessoais", "Renda", "Bens e referências", "Documentos", "Conferência e assinatura"] as const;
 export const ETAPA_DOCUMENTOS = 4;
 export const ETAPA_DECLARACAO = 5;
 
@@ -134,12 +136,12 @@ export const SECOES: Secao[] = [
       { chave: "profissao", rotulo: "Profissão", obrigatorio: true },
       { chave: "empresa", rotulo: "Empresa / origem da renda", obrigatorio: true, larga: true },
       { chave: "cargo", rotulo: "Cargo exercido", obrigatorio: comEmpresa },
-      { chave: "data_admissao", rotulo: "Data de admissão / início da atividade", formato: "data", obrigatorio: comEmpresa },
+      { chave: "data_admissao", rotulo: "Data de admissão / início da atividade", formato: "data", obrigatorio: (d) => texto(d, "tipo_renda") === "Assalariado(a)" },
       { chave: "empresa_endereco", rotulo: "Endereço da empresa", obrigatorio: comEmpresa, larga: true, ajuda: "Rua, número, complemento, cidade/UF e CEP." },
       { chave: "empresa_telefone", rotulo: "Telefone da empresa", formato: "telefone", obrigatorio: comEmpresa },
       { chave: "renda_mensal", rotulo: "Renda mensal (líquida)", formato: "moeda", obrigatorio: true },
       { chave: "outros_rendimentos", rotulo: "Outros rendimentos", formato: "moeda", ajuda: "Apenas se houver. Ex.: aluguel." },
-      { chave: "outros_rendimentos_origem", rotulo: "Origem dos outros rendimentos" },
+      { chave: "outros_rendimentos_origem", rotulo: "Origem dos outros rendimentos", obrigatorio: (d) => texto(d, "outros_rendimentos") !== "" },
     ],
   },
   {
@@ -165,7 +167,7 @@ export const SECOES: Secao[] = [
     campos: [
       { chave: "banco", rotulo: "Banco", obrigatorio: true },
       { chave: "agencia", rotulo: "Agência", obrigatorio: true },
-      { chave: "conta_abertura", rotulo: "Data de abertura da conta", obrigatorio: true, ajuda: "Pode ser aproximada. Ex.: 03/2015." },
+      { chave: "conta_abertura", rotulo: "Data de abertura da conta", ajuda: "Pode ser aproximada. Ex.: 03/2015." },
       { chave: "agencia_cidade", rotulo: "Cidade da agência", obrigatorio: true },
     ],
   },
@@ -175,7 +177,7 @@ export const SECOES: Secao[] = [
       { chave: "referencia_nome", rotulo: "Nome completo", obrigatorio: true },
       { chave: "referencia_parentesco", rotulo: "Parentesco", obrigatorio: true, ajuda: "Parentesco ou relação com a sua referência." },
       { chave: "referencia_telefone", rotulo: "Telefone / WhatsApp", formato: "telefone", obrigatorio: true },
-      { chave: "referencia_endereco", rotulo: "Endereço", obrigatorio: true, larga: true },
+      { chave: "referencia_endereco", rotulo: "Endereço", larga: true },
     ],
   },
   {
@@ -185,6 +187,11 @@ export const SECOES: Secao[] = [
       { chave: "ref_imobiliaria_cidade", rotulo: "Cidade da imobiliária" },
       { chave: "ref_imobiliaria_telefone", rotulo: "Telefone / WhatsApp", formato: "telefone" },
     ],
+  },
+  {
+    id: "dispensa_ir", titulo: "Documento não aplicável", etapa: 4,
+    descricao: "Se você não apresenta declaração de imposto de renda, explique o motivo. A equipe conferirá essa informação na análise.",
+    campos: [{ chave: "ir_nao_aplicavel", rotulo: "Motivo para não apresentar imposto de renda", formato: "longo", larga: true }],
   },
   {
     id: "observacoes", titulo: "Observações", etapa: 3,
@@ -237,7 +244,8 @@ export function pendencias(d: DadosFicha, tipo: TipoLocatario, etapa?: number): 
         (c.formato === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)) ||
         (c.formato === "telefone" && digitos(valor).length < 10) ||
         (c.formato === "cep" && digitos(valor).length !== 8) ||
-        (c.formato === "data" && !/^\d{4}-\d{2}-\d{2}$/.test(valor)) ||
+        (c.formato === "data" && (!/^\d{4}-\d{2}-\d{2}$/.test(valor) || !Number.isFinite(Date.parse(valor)) || new Date(valor).toISOString().slice(0, 10) !== valor)) ||
+        (c.formato === "moeda" && moedaParaNumero(valor) <= 0) ||
         (c.formato === "lista" && !c.opcoes?.includes(valor));
       if (invalido) lista.push({ chave: c.chave, rotulo: c.rotulo, etapa: s.etapa, motivo: "invalido" });
     }
@@ -305,10 +313,11 @@ export const DOCUMENTACAO_POR_OCUPACAO = [
 /** Tipos de anexo oferecidos, conforme a pessoa, a garantia e a renda. */
 export function anexosDe(tipo: TipoLocatario, garantia: string, d: DadosFicha): string[] {
   const lista = ["Documento de identidade (CPF e RG)", "Certidão de estado civil", "Comprovante de residência", "Comprovantes de renda — 3 últimos", "Imposto de renda e recibo"];
+  if (tipo !== "fiador" && ["Título de Capitalização", "Garantia Investe"].includes(garantia)) lista.splice(lista.indexOf("Comprovantes de renda — 3 últimos"), 1);
   if (casado(d, tipo)) lista.push("CPF e RG do cônjuge");
   if (tipo !== "fiador" && garantia === "Seguro Fiança") lista.push("Última fatura do cartão de crédito");
   if (tipo !== "fiador" && ["Título de Capitalização", "Garantia Investe"].includes(garantia)) lista.push("6 últimos contracheques", "6 últimas movimentações bancárias");
-  if (tipo === "fiador" || temImovel(d, tipo)) lista.push("Escritura e certidão de ônus do imóvel");
+  if (tipo === "fiador" && temImovel(d, tipo)) lista.push("Escritura e certidão de ônus do imóvel");
   if (texto(d, "tipo_renda") === "Empresário(a)") lista.push("Contrato social, extratos PJ, pró-labore e DECORE");
   if (["Aposentado(a)", "Pensionista"].includes(texto(d, "tipo_renda"))) lista.push("Extrato e comprovante do benefício");
   lista.push("Outros documentos");
