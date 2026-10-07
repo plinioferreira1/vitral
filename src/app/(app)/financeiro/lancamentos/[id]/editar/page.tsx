@@ -1,3 +1,4 @@
+import { BotaoEnviar } from "@/components/botao-enviar";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlertCircle, ArrowLeft, CalendarDays, FileText, Wallet } from "lucide-react";
@@ -104,9 +105,9 @@ export default async function EditarLancamentoFinanceiroPage({
             Ajuste dados cadastrais, vencimento e condição de pagamento sem perder o histórico financeiro.
           </p>
         </div>
-        <button type="submit" className="rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90">
+        <BotaoEnviar className="rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90">
           Salvar alterações
-        </button>
+        </BotaoEnviar>
       </div>
 
       {lancamento.recorrencia_id && (
@@ -245,14 +246,23 @@ export default async function EditarLancamentoFinanceiroPage({
         </div>
       </section>
 
+      {lancamento.tipo === "despesa" && (
+        <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+          <h2 className="mb-2 text-base font-bold text-ink">Anexo da despesa</h2>
+          <p className="mb-3 text-sm text-ink-muted">Guarde o boleto ou documento desta ocorrência.</p>
+          <Link href={`/financeiro/lancamentos/${id}/anexos`} className="text-sm font-semibold text-brand underline">Ver ou anexar arquivo</Link>
+          <p className="mt-2 text-xs text-ink-muted">Salve primeiro as alterações deste formulário antes de abrir o anexo.</p>
+        </section>
+      )}
+
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 px-6 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-[1180px] justify-between gap-3">
           <Link href={retorno} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-ink-muted hover:bg-background">
             Voltar
           </Link>
-          <button type="submit" className="rounded-lg bg-brand px-5 py-2 text-sm font-bold text-white shadow-sm hover:opacity-90">
+          <BotaoEnviar className="rounded-lg bg-brand px-5 py-2 text-sm font-bold text-white shadow-sm hover:opacity-90">
             Salvar
-          </button>
+          </BotaoEnviar>
         </div>
       </div>
     </form>

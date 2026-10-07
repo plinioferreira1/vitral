@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Ban, CheckCircle2, Copy, MoreHorizontal, Pencil, RefreshCcw, Tag, Trash2, X, Undo2 } from "lucide-react";
+import { Ban, CheckCircle2, Copy, MoreHorizontal, Paperclip, Pencil, RefreshCcw, Tag, Trash2, X, Undo2 } from "lucide-react";
 import {
   cancelarLancamento,
   categorizarLancamento,
@@ -206,6 +206,11 @@ export function MenuAcoesLancamento({
               )}
 
               <div className="space-y-1">
+                {tipo === "despesa" && (
+                  <Link href={`/financeiro/lancamentos/${id}/anexos`} className={itemClasse}>
+                    <Paperclip size={15} strokeWidth={2} /> Anexo / boleto
+                  </Link>
+                )}
                 {editavel && (
                   <Link href={`/financeiro/lancamentos/${id}/editar`} className={itemClasse}>
                     <Pencil size={15} strokeWidth={2} /> Editar

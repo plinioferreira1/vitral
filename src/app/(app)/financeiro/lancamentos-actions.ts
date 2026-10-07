@@ -1,5 +1,7 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
+import { salvarAnexoDespesa, validarAnexoDespesa } from "@/lib/anexo-despesa-servidor";
 import { avisar, checar } from "@/lib/aviso";
 import type { TablesInsert } from "@/lib/database.types";
 import { formatarCpfCnpj, formatarTelefone } from "@/lib/mascaras";
@@ -38,6 +40,13 @@ export async function criarLancamento(formData: FormData) {
   const descricao = String(formData.get("descricao") ?? "").trim();
   const valor = moedaParaNumero(formData.get("valor"));
   if (!descricao || !valor) return;
+
+  const anexo = await validarAnexoDespesa(formData.get("anexo"));
+  if (anexo.erro || (anexo.arquivo && tipo !== "despesa")) {
+    await avisar("erro", anexo.erro ?? "Anexos disponíveis apenas em despesas.");
+    return;
+  }
+  let idAnexo: string | null = null;
 
   const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
   let pessoaId = campo("pessoa_id");
@@ -89,8 +98,10 @@ export async function criarLancamento(formData: FormData) {
   if (!recorrente) {
     const vencimento = campo("vencimento");
     if (!vencimento) return;
+    const id = randomUUID();
     const salvou = await checar(
       supabase.from("financeiro_lancamentos").insert({
+        id,
         ...dadosComuns,
         valor,
         vencimento,
@@ -99,6 +110,7 @@ export async function criarLancamento(formData: FormData) {
       "salvar"
     );
     if (!salvou) return;
+    idAnexo = id;
   } else {
     const frequencia = valorDaLista("financeiro_frequencia", formData.get("frequencia"), "mensal");
     const dataInicio = campo("data_inicio") ?? campo("vencimento");
@@ -149,6 +161,7 @@ export async function criarLancamento(formData: FormData) {
       numeroOcorrencias,
       diaUtil: usaDiaUtil ? diaUtil : null,
     }).map(({ vencimento, competencia }) => ({
+      id: randomUUID(),
       ...dadosComuns,
       valor,
       vencimento,
@@ -162,6 +175,7 @@ export async function criarLancamento(formData: FormData) {
         "salvar"
       );
       if (!salvouOcorrencias) return;
+      idAnexo = ocorrencias[0].id ?? null;
     }
   }
 
@@ -169,6 +183,14 @@ export async function criarLancamento(formData: FormData) {
   revalidatePath(caminho);
   revalidatePath("/financeiro");
   if (criouPessoaInline) revalidatePath("/financeiro/pessoas");
+  if (anexo.arquivo && idAnexo) {
+    const salvouAnexo = await salvarAnexoDespesa(idAnexo, anexo.arquivo);
+    if (!salvouAnexo) {
+      await avisar("erro", "A despesa foi salva, mas o anexo não foi enviado. Envie novamente nesta tela, sem criar outra despesa.");
+      redirect(`/financeiro/lancamentos/${idAnexo}/anexos`);
+    }
+    revalidatePath(caminho);
+  }
   redirect(retornoSeguro(formData, caminho));
 }
 

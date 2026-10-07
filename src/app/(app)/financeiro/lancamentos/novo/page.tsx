@@ -1,3 +1,5 @@
+import { CampoAnexoDespesa } from "@/components/financeiro/campo-anexo-despesa";
+import { BotaoEnviar } from "@/components/botao-enviar";
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, FileText, Repeat, UserPlus, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
@@ -81,9 +83,9 @@ export default async function NovoLancamentoFinanceiroPage({
               : "Lance uma movimentação no modelo operacional do financeiro, com dados principais, condição de pagamento e recorrência."}
           </p>
         </div>
-        <button type="submit" className="rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90">
+        <BotaoEnviar className="rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90">
           Salvar lançamento
-        </button>
+        </BotaoEnviar>
       </div>
 
       <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
@@ -276,14 +278,22 @@ export default async function NovoLancamentoFinanceiroPage({
         </div>
       </section>
 
+      {tipo === "despesa" && (
+        <section className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+          <h2 className="mb-4 text-base font-bold text-ink">Anexo da despesa</h2>
+          <CampoAnexoDespesa />
+          <p className="mt-3 text-xs text-ink-muted">Se houver recorrência, o arquivo será anexado apenas à primeira ocorrência. Os próximos boletos podem ser anexados pelo menu de cada despesa.</p>
+        </section>
+      )}
+
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 px-6 py-3 backdrop-blur">
         <div className="mx-auto flex max-w-[1180px] justify-between gap-3">
           <Link href={retorno} className="rounded-lg border border-border px-4 py-2 text-sm font-semibold text-ink-muted hover:bg-background">
             Voltar
           </Link>
-          <button type="submit" className="rounded-lg bg-brand px-5 py-2 text-sm font-bold text-white shadow-sm hover:opacity-90">
+          <BotaoEnviar className="rounded-lg bg-brand px-5 py-2 text-sm font-bold text-white shadow-sm hover:opacity-90">
             Salvar
-          </button>
+          </BotaoEnviar>
         </div>
       </div>
     </form>

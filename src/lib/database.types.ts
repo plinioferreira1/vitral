@@ -3422,6 +3422,61 @@ export type Database = {
           },
         ]
       }
+      financeiro_anexos: {
+        Row: {
+          caminho: string
+          criado_em: string
+          criado_por: string | null
+          lancamento_id: string
+          mime: string
+          nome: string
+          tamanho: number
+          tenant_id: string
+        }
+        Insert: {
+          caminho: string
+          criado_em?: string
+          criado_por?: string | null
+          lancamento_id: string
+          mime: string
+          nome: string
+          tamanho: number
+          tenant_id: string
+        }
+        Update: {
+          caminho?: string
+          criado_em?: string
+          criado_por?: string | null
+          lancamento_id?: string
+          mime?: string
+          nome?: string
+          tamanho?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_anexos_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_anexos_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: true
+            referencedRelation: "financeiro_lancamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_anexos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       financeiro_baixas: {
         Row: {
           conta_bancaria_id: string | null

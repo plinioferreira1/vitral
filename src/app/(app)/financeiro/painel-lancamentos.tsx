@@ -2,6 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import {
   Repeat,
+  Paperclip,
   Wallet,
   AlertTriangle,
   RefreshCcw,
@@ -75,6 +76,7 @@ type LancamentoLinha = {
   forma_pagamento: string | null;
   numero_documento: string | null;
   observacoes: string | null;
+  financeiro_anexos: { nome: string } | null;
   financeiro_pessoas: { nome: string } | null;
   financeiro_categorias: { nome: string } | null;
   financeiro_unidades: { nome: string } | null;
@@ -196,7 +198,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     supabase
       .from("financeiro_lancamentos")
       .select(
-        "id, descricao, valor, vencimento, competencia, status, recorrencia_id, pessoa_id, categoria_id, centro_custo_id, unidade_id, conta_bancaria_id, forma_pagamento, numero_documento, observacoes, financeiro_pessoas ( nome ), financeiro_categorias ( nome ), financeiro_unidades ( nome ), financeiro_contas_bancarias ( nome )"
+        "id, descricao, valor, vencimento, competencia, status, recorrencia_id, pessoa_id, categoria_id, centro_custo_id, unidade_id, conta_bancaria_id, forma_pagamento, numero_documento, observacoes, financeiro_anexos ( nome ), financeiro_pessoas ( nome ), financeiro_categorias ( nome ), financeiro_unidades ( nome ), financeiro_contas_bancarias ( nome )"
       )
       .eq("tipo", tipo)
       .order("vencimento"),
@@ -615,7 +617,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
                       </td>
 
                       <td className="px-4 py-3 text-ink">
-                        <div className="max-w-[380px] break-words font-medium" title={l.descricao}>{l.descricao} {l.recorrencia_id && <Repeat size={12} className="inline text-ink-muted" />}</div>
+                        <div className="max-w-[380px] break-words font-medium" title={l.descricao}>{l.descricao} {tipo === "despesa" && l.financeiro_anexos && <Link href={`/financeiro/lancamentos/${l.id}/anexos`} aria-label={`Ver anexo de ${l.descricao}`} title={l.financeiro_anexos.nome} className="ml-1 inline-flex align-middle text-brand"><Paperclip size={14} /></Link>} {l.recorrencia_id && <Repeat size={12} className="inline text-ink-muted" />}</div>
                         <div className="mt-1 text-xs text-ink-muted lg:hidden">
                           {[pessoa?.nome, categoria?.nome ?? "Sem categoria", conta?.nome].filter(Boolean).join(" · ")}
                         </div>
