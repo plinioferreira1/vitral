@@ -35,7 +35,7 @@ async function exigirGestor() {
  * manual aqui).
  */
 async function exigirPermissaoSobreMembro(usuarioAlvoId: string) {
-  const { user, eu } = await exigirGestor();
+  const { user, eu, tenantId } = await exigirGestor();
   const supabase = await createClient();
 
   const { data: alvo } = await supabase
@@ -48,7 +48,7 @@ async function exigirPermissaoSobreMembro(usuarioAlvoId: string) {
     redirect(`/membros?erro=${encodeURIComponent("Membro não encontrado.")}`);
   }
 
-  return { supabase, meuId: user.id, alvo };
+  return { supabase, meuId: user.id, alvo, tenantId };
 }
 
 export async function alterarStatusMembro(formData: FormData) {
@@ -183,63 +183,48 @@ export async function atualizarCategoriasMembro(formData: FormData) {
 export async function editarNomeMembro(formData: FormData) {
   const usuarioId = String(formData.get("usuario_id") ?? "");
   const novoNome = String(formData.get("novo_nome") ?? "").trim();
-  if (!usuarioId || !novoNome) return;
-
-  const { supabase } = await exigirPermissaoSobreMembro(usuarioId);
-
-  if (
-    !(await checar(
-      supabase.from("usuarios").update({ nome: novoNome }).eq("id", usuarioId),
-      "atualizar",
-    ))
-  )
+  if (!usuarioId || !novoNome || novoNome.length > 200) {
+    await avisar("erro", "Informe um nome com até 200 caracteres.");
     return;
-
+  }
+  const { tenantId } = await exigirPermissaoSobreMembro(usuarioId);
+  let admin;
+  try { admin = createAdminClient(); } catch {
+    await avisar("erro", "Não foi possível atualizar o nome agora. Tente novamente.");
+    return;
+  }
+  // A gestão não usa a política de autoedição. Exige uma linha gravada e a empresa já conferida.
+  if (!(await checar(admin.from("usuarios").update({ nome: novoNome }).eq("id", usuarioId).eq("tenant_id", tenantId).select("id").single(), "atualizar o nome"))) return;
   revalidatePath("/membros");
-  await avisar("sucesso", "Nome atualizado.");
+  revalidatePath("/", "layout");
+  await avisar("sucesso", "Nome atualizado na conta e nos cadastros de corretor vinculados.");
   return true;
 }
 
 export async function editarEmailMembro(formData: FormData) {
   const usuarioId = String(formData.get("usuario_id") ?? "");
-  const novoEmail = String(formData.get("novo_email") ?? "").trim();
-  if (!usuarioId || !novoEmail) return;
-
-  const { supabase } = await exigirPermissaoSobreMembro(usuarioId);
-
-  let admin;
-  try {
-    admin = createAdminClient();
-  } catch {
-    redirect(
-      `/membros?erro=${encodeURIComponent(
-        "A chave de administrador ainda não está configurada no servidor. Confirme se o redeploy no Vercel já pegou a SUPABASE_SERVICE_ROLE_KEY.",
-      )}`,
-    );
-  }
-
-  const { error: errAuth } = await admin.auth.admin.updateUserById(usuarioId, {
-    email: novoEmail,
-    email_confirm: true,
-  });
-
-  if (errAuth) {
-    redirect(`/membros?erro=${encodeURIComponent(errAuth.message)}`);
-  }
-
-  if (
-    !(await checar(
-      supabase
-        .from("usuarios")
-        .update({ email: novoEmail })
-        .eq("id", usuarioId),
-      "atualizar",
-    ))
-  )
+  const novoEmail = String(formData.get("novo_email") ?? "").trim().toLowerCase();
+  if (!usuarioId || novoEmail.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(novoEmail)) {
+    await avisar("erro", "Informe um e-mail válido.");
     return;
-
+  }
+  const { tenantId } = await exigirPermissaoSobreMembro(usuarioId);
+  let admin;
+  try { admin = createAdminClient(); } catch {
+    await avisar("erro", "Não foi possível atualizar o e-mail agora. Tente novamente.");
+    return;
+  }
+  // O trigger do Auth sincroniza usuarios na mesma transação, inclusive para usuários desativados.
+  const { error: errAuth } = await admin.auth.admin.updateUserById(usuarioId, { email: novoEmail, email_confirm: true });
+  if (errAuth) redirect(`/membros?erro=${encodeURIComponent(errAuth.message)}`);
+  const { data: cadastro, error } = await admin.from("usuarios").select("email").eq("id", usuarioId).eq("tenant_id", tenantId).single();
   revalidatePath("/membros");
-  await avisar("sucesso", "E-mail de login atualizado.");
+  revalidatePath("/", "layout");
+  if (error || cadastro?.email?.toLowerCase() !== novoEmail) {
+    await avisar("erro", "Não foi possível confirmar a atualização do cadastro. Atualize a página antes de tentar novamente.");
+    return;
+  }
+  await avisar("sucesso", "E-mail atualizado no login e no cadastro.");
   return true;
 }
 
