@@ -11,6 +11,7 @@ import {
   montarMensagem,
   normalizarCompetencia,
   planejarGeracao,
+  podeMarcarSemDebitoEmLote,
   resumirPainel,
   rotuloCompetencia,
   rotuloCompetenciaCurto,
@@ -244,6 +245,14 @@ describe("painel", () => {
     expect(acaoNecessaria(linha({ contratoId: "9", administradoraId: null })).texto).toContain("Vincular administradora");
     expect(acaoNecessaria(linha({ contratoId: "8", condominio: { id: "x", status: "sem_debitos" }, iptu: { id: "y", status: "sem_debitos" } }))).toEqual({ texto: "Tudo conferido", tom: "ok" });
     expect(acaoNecessaria(linhas[4]).texto).toBe("Sem conferência nesta competência");
+  });
+
+  it("ação rápida não sobrescreve débito nem item não aplicável", () => {
+    expect(podeMarcarSemDebitoEmLote("pendente")).toBe(true);
+    expect(podeMarcarSemDebitoEmLote("aguardando_administradora")).toBe(true);
+    expect(podeMarcarSemDebitoEmLote("sem_debitos")).toBe(true);
+    expect(podeMarcarSemDebitoEmLote("com_debitos")).toBe(false);
+    expect(podeMarcarSemDebitoEmLote("nao_se_aplica")).toBe(false);
   });
 });
 

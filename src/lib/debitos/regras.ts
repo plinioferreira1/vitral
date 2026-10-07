@@ -53,6 +53,11 @@ export function estaPendente(status: StatusVerificacao): boolean {
   return status === "pendente" || status === "aguardando_administradora";
 }
 
+/** Ações rápidas nunca sobrescrevem débito identificado ou item não aplicável. */
+export function podeMarcarSemDebitoEmLote(status: StatusVerificacao): boolean {
+  return status !== "com_debitos" && status !== "nao_se_aplica";
+}
+
 // ---------------------------------------------------------------
 // competência (sempre o dia 1º do mês, "AAAA-MM-01")
 // ---------------------------------------------------------------

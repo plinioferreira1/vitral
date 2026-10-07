@@ -24,18 +24,15 @@ import { carregarDetalhe, carregarPainel, carregarPermissoes } from "./dados";
 import { Administradoras } from "./_componentes/administradoras";
 import { Configuracoes } from "./_componentes/configuracoes";
 import { DetalheImovel } from "./_componentes/detalhe-imovel";
-import { Iptu } from "./_componentes/iptu";
 import { ModalDetalhe } from "./_componentes/modal-detalhe";
 import { Painel } from "./_componentes/painel";
 import { Solicitacoes } from "./_componentes/solicitacoes";
 import { hrefPainel } from "./_componentes/ui";
 
 const ABAS = [
-  ["painel", "Painel"],
+  ["painel", "Conferência do mês"],
   ["solicitacoes", "Solicitações"],
-  ["iptu", "IPTU/TLP"],
-  ["administradoras", "Administradoras"],
-  ["configuracoes", "Configurações"],
+  ["ajustes", "Ajustes"],
 ] as const;
 type Aba = (typeof ABAS)[number][0];
 
@@ -56,9 +53,10 @@ export default async function ControleDebitosPage({
 
   const atual = competenciaDe(hojeISO());
   const competencia = normalizarCompetencia(sp.mes) ?? atual;
+  const abaLegada = sp.aba === "administradoras" || sp.aba === "configuracoes" ? "ajustes" : sp.aba === "iptu" ? "painel" : sp.aba;
   const aba: Aba = daLista(
     ABAS.map((a) => a[0]),
-    sp.aba
+    abaLegada
   ) ?? "painel";
 
   let dados = await carregarPainel(supabase, tenantId, competencia);
@@ -75,7 +73,7 @@ export default async function ControleDebitosPage({
   const filtros: FiltrosPainel = {
     q: (sp.q ?? "").trim().slice(0, 80) || undefined,
     situacao: daLista(SITUACOES_FILTRO, sp.situacao),
-    tipo: daLista(TIPOS_VERIFICACAO, sp.tipo),
+    tipo: daLista(TIPOS_VERIFICACAO, sp.tipo) ?? (sp.aba === "iptu" ? "iptu_tlp" : null),
     administradoraId: sp.adm === "sem" || dados.administradoras.some((a) => a.id === sp.adm) ? sp.adm : null,
     metodo: daLista(METODOS_CONSULTA, sp.metodo),
   };
@@ -96,7 +94,7 @@ export default async function ControleDebitosPage({
     linhaDetalhe
       ? carregarDetalhe(supabase, linhaDetalhe.contratoId, [linhaDetalhe.verificacaoCondominio?.id, linhaDetalhe.verificacaoIptu?.id].filter(Boolean) as string[])
       : Promise.resolve(null),
-    aba === "configuracoes" ? supabase.from("debitos_eventos").select("*").order("criado_em", { ascending: false }).limit(40) : Promise.resolve({ data: [] }),
+    aba === "ajustes" ? supabase.from("debitos_eventos").select("*").order("criado_em", { ascending: false }).limit(40) : Promise.resolve({ data: [] }),
   ]);
   const urlIptu = obterProvedorTributos(dados.config).urlConsulta(null);
   const mesHref = (c: string) => hrefPainel({ aba: params.aba }, { mes: c === atual ? null : c.slice(0, 7) });
@@ -137,7 +135,7 @@ export default async function ControleDebitosPage({
         ))}
       </nav>
 
-      {naoGerada && aba !== "administradoras" && aba !== "configuracoes" && (
+      {naoGerada && aba !== "ajustes" && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
           <p>As conferências de {rotuloCompetencia(competencia)} ainda não foram geradas.</p>
           {perms.operar && (
@@ -153,9 +151,24 @@ export default async function ControleDebitosPage({
 
       {aba === "painel" && <Painel dados={dados} linhas={linhasFiltradas} competencia={competencia} params={params} filtros={filtros} perms={perms} />}
       {aba === "solicitacoes" && <Solicitacoes dados={dados} competencia={competencia} params={params} perms={perms} agoraIso={new Date().toISOString()} />}
-      {aba === "iptu" && <Iptu dados={dados} competencia={competencia} params={params} urlIptu={urlIptu} perms={perms} />}
-      {aba === "administradoras" && <Administradoras dados={dados} perms={perms} />}
-      {aba === "configuracoes" && <Configuracoes config={dados.config} eventos={eventosRecentes.data ?? []} perms={perms} />}
+      {aba === "ajustes" && (
+        <div className="space-y-8">
+          <section className="space-y-3">
+            <div>
+              <h2 className="text-base font-semibold text-ink">Administradoras</h2>
+              <p className="text-sm text-ink-muted">Cadastre os contatos e defina como cada condomínio é consultado.</p>
+            </div>
+            <Administradoras dados={dados} perms={perms} />
+          </section>
+          <section className="space-y-3 border-t border-border pt-7">
+            <div>
+              <h2 className="text-base font-semibold text-ink">Automação e preferências</h2>
+              <p className="text-sm text-ink-muted">Ajustes menos frequentes da rotina mensal.</p>
+            </div>
+            <Configuracoes config={dados.config} eventos={eventosRecentes.data ?? []} perms={perms} />
+          </section>
+        </div>
+      )}
 
       {linhaDetalhe && detalhe && (
         <ModalDetalhe key={linhaDetalhe.contratoId} titulo={linhaDetalhe.imovel} subtitulo={`Conferência de ${rotuloCompetencia(competencia)}`} hrefFechar={hrefPainel(params, {})}>
