@@ -485,3 +485,25 @@ export async function reenviarRedefinicaoParaTodos() {
   revalidatePath("/membros");
   redirect(`/membros?${msg}`);
 }
+
+/** O vínculo é explícito e confirmado pela gestão; não é inferido pelo nome. */
+export async function vincularCorretor(formData: FormData) {
+ const { tenantId } = await exigirGestor();
+ const corretorId = String(formData.get("corretor_id") ?? "");
+ const usuarioId = String(formData.get("conta_corretor_id") ?? "") || null;
+ const anterior = String(formData.get("vinculo_anterior") ?? "") || null;
+ const supabase = await createClient();
+ const { data: corretor } = await supabase.from("corretores").select("id,usuario_id").eq("id",corretorId).eq("tenant_id",tenantId).maybeSingle();
+ if (!corretor || corretor.usuario_id !== anterior) { await avisar("erro", "O vínculo foi alterado ou o corretor não foi encontrado. Atualize a página."); return; }
+ if (usuarioId) {
+  const { data: alvo } = await supabase.from("usuarios").select("id").eq("id",usuarioId).eq("tenant_id",tenantId).eq("nivel_acesso","corretor").eq("ativo",true).maybeSingle();
+  if (!alvo) { await avisar("erro","Escolha uma conta ativa de corretor da mesma empresa."); return; }
+ }
+ let operacao = supabase.from("corretores").update({ usuario_id: usuarioId }).eq("id",corretorId).eq("tenant_id",tenantId);
+ operacao = anterior ? operacao.eq("usuario_id",anterior) : operacao.is("usuario_id",null);
+ const { data, error } = await operacao.select("id").maybeSingle();
+ if (!(await checar(Promise.resolve({ error }),"vincular o corretor"))) return;
+ if (!data) { await avisar("erro","O vínculo mudou. Atualize a página e tente novamente."); return; }
+ revalidatePath("/membros"); revalidatePath("/minhas-vendas"); revalidatePath("/");
+ await avisar("sucesso",usuarioId ? "Conta vinculada ao corretor. As vendas atribuídas a ele já podem ser consultadas." : "Vínculo retirado. O acesso às vendas deste cadastro foi removido.");
+}

@@ -33,6 +33,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
     ],
   };
   const itens: ItemMenu[] = [{ href: "/", label: "Início" }];
+  if (p.ehCorretor) itens.push({ href: "/minhas-vendas", label: "Minhas vendas" });
   if (operacional) {
     itens.push({ href: "/calendario", label: "Calendário" });
     if (p.temVenda) itens.push({

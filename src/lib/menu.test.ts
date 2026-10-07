@@ -21,6 +21,8 @@ describe("navegação por acesso", () => {
   it("não oferece calendário operacional ou multa ao corretor", () => {
     const hrefs = destinos(montarMenu({ ...gestor, ehCorretor: true }));
     expect(hrefs).toContain("/avaliacoes");
+    expect(hrefs).toContain("/minhas-vendas");
+    expect(hrefs.some((h) => h.startsWith("/vendas"))).toBe(false);
     expect(hrefs).not.toContain("/calendario");
     expect(hrefs).not.toContain("/locacao?aba=multa");
     expect(hrefs.some((h) => h.startsWith("/financeiro"))).toBe(false);

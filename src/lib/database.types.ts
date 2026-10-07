@@ -4581,6 +4581,45 @@ export type Database = {
           },
         ]
       }
+      processo_atualizacoes_corretor: {
+        Row: {
+          autor_id: string
+          criado_em: string
+          id: string
+          mensagem: string
+          processo_id: string
+        }
+        Insert: {
+          autor_id: string
+          criado_em?: string
+          id?: string
+          mensagem: string
+          processo_id: string
+        }
+        Update: {
+          autor_id?: string
+          criado_em?: string
+          id?: string
+          mensagem?: string
+          processo_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processo_atualizacoes_corretor_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processo_atualizacoes_corretor_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processos: {
         Row: {
           banco_id: string | null
@@ -6043,6 +6082,7 @@ export type Database = {
         Args: { p_colaborador: string }
         Returns: boolean
       }
+      minhas_vendas: { Args: { p_id?: string }; Returns: Json }
       seed_etapas_padrao: { Args: { p_tenant_id: string }; Returns: undefined }
       seed_modelos_padrao: { Args: { p_tenant_id: string }; Returns: undefined }
       termo_entrega_assinatura_buscar: {

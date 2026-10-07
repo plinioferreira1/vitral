@@ -1,0 +1,22 @@
+export type EtapaVenda = { id: string; nome: string; status: string; prevista: string | null; realizada: string | null; ordem: number };
+export type VendaCorretor = {
+ id: string; numero: string; status: string; imovel: string | null; comprador: string | null; vendedor: string | null; responsavel: string | null;
+ prazo_contrato: string | null; assinatura_contrato: string | null; etapas: EtapaVenda[];
+ atualizacoes: { id: string; mensagem: string; criado_em: string; autor: string | null }[];
+};
+export type MinhasVendas = { vinculado: boolean; vendas: VendaCorretor[] };
+export const STATUS_VENDA: Record<string, string> = { ativo: "Em andamento", pendente: "Pendente", concluido: "Concluída", cancelado: "Cancelada", arquivado: "Arquivada" };
+export const STATUS_ETAPA: Record<string, string> = { pendente: "Pendente", em_andamento: "Em andamento", concluida: "Concluída", bloqueada: "Bloqueada" };
+export function andamento(v: VendaCorretor) { return !["concluido", "cancelado", "arquivado"].includes(v.status); }
+export function resumoVenda(v: VendaCorretor, hoje: string) {
+ const abertas = v.etapas.filter((e) => e.status !== "concluida");
+ const proximo = [...abertas].filter((e) => e.prevista).sort((a,b) => a.prevista!.localeCompare(b.prevista!))[0] ?? null;
+ return { atual: abertas.find((e) => e.status === "em_andamento") ?? abertas[0] ?? null, proximo,
+  etapaVencida: andamento(v) && abertas.some((e) => e.prevista && e.prevista < hoje),
+  contratoVencido: andamento(v) && !!v.prazo_contrato && v.prazo_contrato < hoje,
+  concluidas: v.etapas.length - abertas.length, total: v.etapas.length };
+}
+export function filtrarVendas(vendas: VendaCorretor[], filtro: string, hoje: string) {
+ return vendas.filter((v) => filtro === "todas" || (filtro === "concluidas" ? v.status === "concluido" : filtro === "vencidas" ? resumoVenda(v, hoje).etapaVencida || resumoVenda(v, hoje).contratoVencido : andamento(v)));
+}
+export function dataVenda(data: string | null) { if (!data) return "Prazo ainda não definido"; return new Date(`${data}T12:00:00-03:00`).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" }); }
