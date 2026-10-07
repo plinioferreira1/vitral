@@ -14,6 +14,7 @@ import {
   competenciaDe,
   emailValido,
   normalizarCompetencia,
+  podeMarcarSemDebitoEmLote,
   rotuloCompetencia,
   type StatusVerificacao,
   type TipoVerificacao,
@@ -329,9 +330,10 @@ async function marcarEmLote(ctx: Contexto, contratoIds: string[], competencia: s
       const v = await obterOuCriarVerificacao(ctx, contratoId, tipo, competencia);
       if (!v) continue;
       if (v.status === status) continue;
-      // nunca passa por cima de um débito já identificado
-      if (v.status === "com_debitos") {
-        puladas++;
+      // "Não se aplica" é uma decisão cadastral e não deve virar
+      // "sem débitos" por uma ação rápida ou em lote.
+      if (status === "sem_debitos" && !podeMarcarSemDebitoEmLote(v.status as StatusVerificacao)) {
+        if (v.status === "com_debitos") puladas++;
         continue;
       }
       const { error } = await ctx.supabase
