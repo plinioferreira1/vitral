@@ -8,6 +8,20 @@ export type VendaCorretor = {
 export type MinhasVendas = { vinculado: boolean; vendas: VendaCorretor[] };
 export const STATUS_VENDA: Record<string, string> = { ativo: "Em andamento", pendente: "Pendente", concluido: "Concluída", cancelado: "Cancelada", arquivado: "Arquivada" };
 export const STATUS_ETAPA: Record<string, string> = { pendente: "Pendente", em_andamento: "Em andamento", concluida: "Concluída", bloqueada: "Bloqueada" };
+export function situacaoEtapaVenda(etapa: EtapaVenda, hoje: string, vendaAtiva = true) {
+ const atrasada = vendaAtiva && etapa.status !== "concluida" && !!etapa.prevista && etapa.prevista < hoje;
+ const cores: Record<string, string> = {
+  concluida: "border-emerald-200 bg-emerald-50 text-emerald-800",
+  pendente: "border-amber-200 bg-amber-50 text-amber-800",
+  em_andamento: "border-sky-200 bg-sky-50 text-sky-800",
+  bloqueada: "border-violet-200 bg-violet-50 text-violet-800",
+ };
+ return {
+  texto: atrasada ? `${STATUS_ETAPA[etapa.status] ?? etapa.status} · Atrasada` : STATUS_ETAPA[etapa.status] ?? etapa.status,
+  classe: atrasada ? "border-rose-200 bg-rose-50 text-rose-800" : cores[etapa.status] ?? "border-slate-200 bg-slate-50 text-slate-700",
+  atrasada,
+ };
+}
 export function andamento(v: VendaCorretor) { return !["concluido", "cancelado", "arquivado"].includes(v.status); }
 export function resumoVenda(v: VendaCorretor, hoje: string) {
  const abertas = v.etapas.filter((e) => e.status !== "concluida");

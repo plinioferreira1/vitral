@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { listarComissoes, resumoComissoes, valorComissao, filtrarVendas, resumoVenda, type VendaCorretor } from "./minhas-vendas";
+import { situacaoEtapaVenda, listarComissoes, resumoComissoes, valorComissao, filtrarVendas, resumoVenda, type VendaCorretor } from "./minhas-vendas";
 const venda: VendaCorretor = { id:"a", numero:"001",status:"ativo",imovel:null,comprador:null,vendedor:null,responsavel:null,prazo_contrato:"2026-10-20",assinatura_contrato:null,atualizacoes:[],etapas:[{id:"1",nome:"Contrato",status:"concluida",prevista:"2026-09-01",realizada:"2026-09-01",ordem:0},{id:"2",nome:"Registro",status:"em_andamento",prevista:"2026-10-05",realizada:null,ordem:1}] };
 describe("acompanhamento das próprias vendas",()=>{
+ it("marca atraso somente em etapas abertas de vendas ativas e após o prazo",()=>{
+  const etapa = venda.etapas[1];
+  expect(situacaoEtapaVenda(etapa,"2026-10-07")).toMatchObject({atrasada:true,texto:"Em andamento · Atrasada"});
+  expect(situacaoEtapaVenda(etapa,"2026-10-05").atrasada).toBe(false);
+  expect(situacaoEtapaVenda(etapa,"2026-10-07",false).atrasada).toBe(false);
+  expect(situacaoEtapaVenda({...etapa,prevista:null},"2026-10-07").atrasada).toBe(false);
+  expect(situacaoEtapaVenda(venda.etapas[0],"2026-10-07")).toMatchObject({atrasada:false,texto:"Concluída"});
+ });
  it("distingue atraso de etapa e prazo contratual",()=>{expect(resumoVenda(venda,"2026-10-07")).toMatchObject({etapaVencida:true,contratoVencido:false,concluidas:1});});
  it("não trata concluídas ou prazo de hoje como vencidos",()=>{expect(resumoVenda({...venda,status:"concluido"},"2026-10-30")).toMatchObject({etapaVencida:false,contratoVencido:false});expect(resumoVenda(venda,"2026-10-05").etapaVencida).toBe(false);});
  it("não inventa prazos onde não foram definidos",()=>{expect(resumoVenda({...venda,prazo_contrato:null,etapas:[]},"2026-10-07")).toMatchObject({atual:null,proximo:null,etapaVencida:false,contratoVencido:false});});
