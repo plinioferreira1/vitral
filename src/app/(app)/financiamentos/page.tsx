@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getEventosCalendario } from "@/lib/queries";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
-import { ResumoPrazos } from "@/components/resumo-prazos";
+import { PainelResumoProcessos } from "@/components/painel-resumo-processos";
 import { CalendarioGrid } from "@/components/calendario-grid";
 import type { ProcessoRow } from "@/components/tabela-processos";
 import { ListaFinanciamentos, type AcompanhamentoFinanciamento } from "@/components/lista-financiamentos";
@@ -73,9 +73,9 @@ export default async function FinanciamentosPage({
     idsEmAndamento.length > 0
       ? await supabase
           .from("etapas")
-          .select("processo_id, nome, status, ordem, especial, data_prevista, usuarios!etapas_responsavel_id_fkey ( nome )")
+          .select("id, processo_id, nome, status, ordem, especial, data_prevista, usuarios!etapas_responsavel_id_fkey ( nome )")
           .in("processo_id", idsEmAndamento)
-      : { data: [] as EtapaAcompanhamento[], error: null };
+      : { data: [] as (EtapaAcompanhamento & { id: string })[], error: null };
 
   const acompanhamento: Record<string, AcompanhamentoFinanciamento> = {};
   for (const [id, etapa] of Object.entries(etapasAtuais((etapasRaw ?? []) as EtapaAcompanhamento[]))) {
@@ -95,6 +95,39 @@ export default async function FinanciamentosPage({
 
   const eventos = todosEventos.filter((e) => e.categoria === "financiamento");
   const referencia = new Date(`${hojeISO()}T00:00:00`);
+
+  const processosAtrasados = new Set<string>();
+  const processosVencemHoje = new Set<string>();
+  const processosVencemEmBreve = new Set<string>();
+  const processoPorId = new Map(emAndamento.map((processo) => [processo.id, processo]));
+
+  const prioridades = (etapasRaw ?? [])
+    .filter((etapa) => etapa.status !== "concluida" && etapa.data_prevista)
+    .map((etapa) => {
+      const { urgencia, dias_para_vencer } = calcularUrgencia({
+        status: etapa.status as "pendente" | "em_andamento" | "concluida" | "bloqueada",
+        data_prevista: etapa.data_prevista,
+      });
+      if (urgencia === "atrasada") processosAtrasados.add(etapa.processo_id);
+      if (urgencia === "vence_hoje") processosVencemHoje.add(etapa.processo_id);
+      if (urgencia === "vence_em_breve") processosVencemEmBreve.add(etapa.processo_id);
+      return { ...etapa, urgencia, dias_para_vencer, processo: processoPorId.get(etapa.processo_id) };
+    })
+    .filter((etapa) =>
+      ["atrasada", "vence_hoje", "vence_em_breve"].includes(etapa.urgencia)
+    )
+    .sort((a, b) => a.data_prevista!.localeCompare(b.data_prevista!));
+
+  const volumeEmNegociacao = emAndamento.reduce(
+    (total, processo) => total + Number(processo.valor_financiado ?? 0),
+    0
+  );
+  const volumeFormatado = new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(volumeEmNegociacao);
 
   let cardsKanban: CardKanban[] = [];
   let colunas: string[] = [];
@@ -191,12 +224,8 @@ export default async function FinanciamentosPage({
 
       {aba === "resumo" ? (
         <div className="space-y-6">
-          <ResumoPrazos
-            eventos={eventos}
-            hrefEmAberto="/calendario?categoria=financiamento"
-            hrefFiltro={(urgencia) => `/calendario?categoria=financiamento&urgencia=${urgencia}`}
-            compacto
-          />
+          <PainelResumoProcessos categoria="financiamento" ativos={emAndamento.length} encerrados={concluidos.length} atrasados={processosAtrasados.size} proximos={new Set([...processosVencemHoje, ...processosVencemEmBreve]).size} hoje={processosVencemHoje.size} volume={volumeFormatado} prioridades={prioridades} />
+          {erroEtapas && <p role="alert" className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Não foi possível carregar as prioridades. Atualize a página para tentar novamente.</p>}
 
           <section className="rounded-2xl border border-border/60 bg-surface p-3 shadow-sm sm:p-5">
             <CabecalhoSecao
