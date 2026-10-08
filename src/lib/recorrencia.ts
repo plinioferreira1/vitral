@@ -1,3 +1,5 @@
+import { ehDiaUtilFinanceiro, proximoDiaUtilFinanceiro } from "./calendario-financeiro";
+
 /**
  * Cálculo das datas de um lançamento financeiro recorrente.
  *
@@ -52,7 +54,7 @@ export function somarDias(iso: string, dias: number): string {
 }
 
 /**
- * N-ésimo dia útil (seg a sex, sem considerar feriados) de um mês.
+ * N-ésimo dia útil financeiro (seg a sex, considerando feriados) de um mês.
  * Se o mês não tiver dias úteis suficientes, cai no último dia útil dele.
  */
 export function nEsimoDiaUtil(ano: number, mesIndex0: number, n: number): string {
@@ -60,10 +62,10 @@ export function nEsimoDiaUtil(ano: number, mesIndex0: number, n: number): string
   let ultimoUtil = paraISO(ano, mesIndex0, 1);
   const ultimoDia = new Date(Date.UTC(ano, mesIndex0 + 1, 0)).getUTCDate();
   for (let dia = 1; dia <= ultimoDia; dia++) {
-    const semana = new Date(Date.UTC(ano, mesIndex0, dia)).getUTCDay();
-    if (semana !== 0 && semana !== 6) {
+    const data = paraISO(ano, mesIndex0, dia);
+    if (ehDiaUtilFinanceiro(data)) {
       contador++;
-      ultimoUtil = paraISO(ano, mesIndex0, dia);
+      ultimoUtil = data;
       if (contador === n) return ultimoUtil;
     }
   }
@@ -80,6 +82,8 @@ export interface ParametrosRecorrencia {
   numeroOcorrencias?: number | null;
   /** Se informado (e a frequência for mensal ou maior), vence no N-ésimo dia útil do mês. */
   diaUtil?: number | null;
+  /** Move datas fixas em dias não úteis para o próximo dia útil financeiro. */
+  ajustarDiasNaoUteis?: boolean;
   maximo?: number;
 }
 
@@ -97,20 +101,21 @@ export function datasDaRecorrencia(p: ParametrosRecorrencia): { vencimento: stri
   const resultado: { vencimento: string; competencia: string }[] = [];
 
   for (let i = 0; i < limite; i++) {
-    let vencimento: string;
+    let vencimentoBase: string;
     let competencia: string;
 
     if (usaDiaUtil) {
       const alvo = somarMeses(p.dataInicio, i * meses!);
       const [ano, mes] = partes(alvo);
-      vencimento = nEsimoDiaUtil(ano, mes, p.diaUtil!);
+      vencimentoBase = nEsimoDiaUtil(ano, mes, p.diaUtil!);
       competencia = paraISO(ano, mes, 1);
     } else {
-      vencimento = meses === null ? somarDias(p.dataInicio, i * 7) : somarMeses(p.dataInicio, i * meses);
-      competencia = vencimento;
+      vencimentoBase = meses === null ? somarDias(p.dataInicio, i * 7) : somarMeses(p.dataInicio, i * meses);
+      competencia = vencimentoBase;
     }
 
-    if (p.dataFim && vencimento > p.dataFim) break;
+    if (p.dataFim && vencimentoBase > p.dataFim) break;
+    const vencimento = p.ajustarDiasNaoUteis ? proximoDiaUtilFinanceiro(vencimentoBase) : vencimentoBase;
     resultado.push({ vencimento, competencia });
   }
 

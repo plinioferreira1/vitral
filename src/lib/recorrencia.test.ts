@@ -22,6 +22,10 @@ describe("nEsimoDiaUtil", () => {
     expect(nEsimoDiaUtil(2026, 7, 1)).toBe("2026-08-03");
     expect(nEsimoDiaUtil(2026, 7, 5)).toBe("2026-08-07");
   });
+  it("pula feriados", () => {
+    // 07/09/2026 é segunda-feira, mas é feriado nacional.
+    expect(nEsimoDiaUtil(2026, 8, 5)).toBe("2026-09-08");
+  });
   it("cai no último dia útil se o mês não tiver dias úteis suficientes", () => {
     // fevereiro/2026 tem 20 dias úteis; o 25º vira o último (27/02, sexta)
     expect(nEsimoDiaUtil(2026, 1, 25)).toBe("2026-02-27");
@@ -65,7 +69,20 @@ describe("datasDaRecorrencia", () => {
     const r = datasDaRecorrencia({ dataInicio: "2026-08-01", frequencia: "mensal", numeroOcorrencias: 2, diaUtil: 5 });
     expect(r).toEqual([
       { vencimento: "2026-08-07", competencia: "2026-08-01" },
-      { vencimento: "2026-09-07", competencia: "2026-09-01" },
+      { vencimento: "2026-09-08", competencia: "2026-09-01" },
+    ]);
+  });
+
+  it("move vencimento fixo de despesa para o próximo dia útil e preserva a competência", () => {
+    const r = datasDaRecorrencia({
+      dataInicio: "2026-10-10",
+      frequencia: "mensal",
+      numeroOcorrencias: 2,
+      ajustarDiasNaoUteis: true,
+    });
+    expect(r).toEqual([
+      { vencimento: "2026-10-13", competencia: "2026-10-10" },
+      { vencimento: "2026-11-10", competencia: "2026-11-10" },
     ]);
   });
 
