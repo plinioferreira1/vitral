@@ -1,4 +1,5 @@
 import { NavegacaoSecoes } from "@/components/navegacao-secoes";
+import { corretoresComissao } from "@/lib/corretores-comissao";
 import { AtualizacoesCorretor } from "../../minhas-vendas/atualizacoes-equipe";
 import { identificacaoProcesso } from "@/lib/identificacao-processo";
 import type { Etapa } from "@/lib/types";
@@ -1025,6 +1026,8 @@ function ComissaoForm({
     | null;
   corretores: { id: string; nome: string }[];
 }) {
+  const opcoesCorretores = corretoresComissao(corretores, comissao?.beneficiario_id);
+  const beneficiarioAnterior = corretores.find(c => c.id === comissao?.beneficiario_id);
   return (
     <form
       action={salvarComissao}
@@ -1041,7 +1044,10 @@ function ComissaoForm({
           className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
         >
           <option value="">Selecione</option>
-          {corretores.map((c) => (
+          {beneficiarioAnterior && !opcoesCorretores.some(c => c.id === beneficiarioAnterior.id) && (
+            <option hidden value={beneficiarioAnterior.id}>{beneficiarioAnterior.nome} (cadastro anterior)</option>
+          )}
+          {opcoesCorretores.map((c) => (
             <option key={c.id} value={c.id}>
               {c.nome}
             </option>
