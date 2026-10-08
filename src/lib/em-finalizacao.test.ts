@@ -10,6 +10,17 @@ describe("telas em finalização", () => {
   it("liberado, vale a permissão normal do módulo", () => {
     expect(liberadoParaNivel("debitos", "supervisor", false)).toBe(true);
   });
+  it("Controle de Débitos já entra para o supervisor (gerente de locação), mas não para os demais", () => {
+    for (const nivel of ["supervisor", "gerente_locacao"]) expect(liberadoParaNivel("debitos", nivel, true)).toBe(true);
+    for (const nivel of ["auxiliar", "corretor", "social_media"]) expect(liberadoParaNivel("debitos", nivel, true)).toBe(false);
+    expect(liberadoParaNivel("termosEntrega", "supervisor", true)).toBe(false);
+  });
+  it("o menu mostra o Controle de Débitos ao supervisor com Locação, e só a ele fora da gestão", () => {
+    const supervisor = { ehCorretor: false, ehSocialMedia: false, nivelComAcessoTotal: false, podeConfigurar: false, temVenda: false, temFinanciamento: false, temLocacao: true };
+    expect(JSON.stringify(montarMenu(supervisor))).toContain("/locacao/debitos");
+    expect(JSON.stringify(montarMenu({ ...supervisor, temLocacao: false }))).not.toContain("/locacao/debitos");
+    expect(JSON.stringify(montarMenu(supervisor))).not.toContain("/avaliacoes");
+  });
   it("o menu não mostra as telas a quem não é da gestão", () => {
     const base = { ehCorretor: false, ehSocialMedia: false, nivelComAcessoTotal: true, temVenda: true, temFinanciamento: true, temLocacao: true };
     const hrefs = (podeConfigurar: boolean) => JSON.stringify(montarMenu({ ...base, podeConfigurar }));

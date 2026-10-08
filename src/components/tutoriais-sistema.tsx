@@ -67,6 +67,16 @@ function CardTutorial({ t }: { t: Tutorial }) {
           </a>
         )}
         {t.conteudo && <p className="whitespace-pre-line text-ink-muted">{t.conteudo}</p>}
+        {t.tipo !== "video" && t.link && (
+          <a
+            href={t.link}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          >
+            Abrir guia ilustrado →
+          </a>
+        )}
       </div>
     </details>
   );

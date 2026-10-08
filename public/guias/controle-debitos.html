@@ -1,0 +1,457 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Guia do Controle de Débitos</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Source+Sans+3:wght@400;600;700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: coluna única de leitura; cada passo = texto curto + réplica da tela com marcadores dourados numerados + legenda dos marcadores. */
+:root{
+  --bg:#f6f5f7; --surface:#ffffff; --fg:#1d1a1c; --muted:#6a6368; --line:#e3dfe2;
+  --red:#731515; --red-soft:#f7e6e6; --gold:#e9b824; --gold-ink:#3a2c00; --note:#fff7d6; --note-line:#ecd98a;
+  --display:"Bricolage Grotesque","Trebuchet MS",sans-serif;
+  --body:"Source Sans 3","Segoe UI",Arial,sans-serif;
+  --ui:"Inter","Segoe UI",Arial,sans-serif;
+  /* cores das réplicas de tela: iguais às do Vitral, fixas nos dois temas, como numa captura */
+  --m-bg:#f7f5f2; --m-surface:#ffffff; --m-ink:#1c1917; --m-muted:#78716c; --m-border:#e7e5e4; --m-brand:#731515; --m-brand-soft:#fbe9ea;
+  --m-amber-bg:#fffbeb; --m-amber:#92400e; --m-amber-line:#fde68a;
+  --m-sky-bg:#f0f9ff; --m-sky:#075985; --m-sky-line:#bae6fd;
+  --m-green-bg:#ecfdf5; --m-green:#065f46; --m-green-line:#a7f3d0; --m-green-solid:#047857;
+  --m-rose-bg:#fff1f2; --m-rose:#9f1239; --m-rose-line:#fecdd3;
+  --m-stone-bg:#f5f5f4; --m-stone:#57534e; --m-stone-line:#e7e5e4;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#171416; --surface:#211d20; --fg:#f1ecef; --muted:#b0a6ac; --line:#3a3338;
+  --red:#f0a3a3; --red-soft:#3a1c1e; --gold:#f0c53d; --gold-ink:#2b2000; --note:#3a3118; --note-line:#6b5a1e; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#171416; --surface:#211d20; --fg:#f1ecef; --muted:#b0a6ac; --line:#3a3338;
+  --red:#f0a3a3; --red-soft:#3a1c1e; --gold:#f0c53d; --gold-ink:#2b2000; --note:#3a3118; --note-line:#6b5a1e; color-scheme:dark }
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:17px;line-height:1.55}
+.wrap{max-width:940px;margin:0 auto;padding-inline:20px;padding-block:36px 72px;display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(2rem,5vw,2.9rem);font-weight:700}
+h2{font-size:1.55rem;font-weight:700}
+h3{font-size:1.1rem;font-weight:600}
+p{margin:0;max-width:68ch}
+a{color:var(--red)}
+a:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.eyebrow{font-size:.8rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--red)}
+header{display:flex;flex-direction:column;gap:14px}
+.lead{font-size:1.15rem;color:var(--muted)}
+.path{display:inline-flex;flex-wrap:wrap;gap:8px;align-items:center;font-weight:600}
+.path span{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:3px 10px}
+.toc{display:flex;flex-wrap:wrap;gap:8px 18px;margin:0;padding:14px 0 0;list-style:none;border-top:2px solid var(--fg);font-weight:600}
+section{display:flex;flex-direction:column;gap:16px;scroll-margin-top:16px}
+.step-n{display:inline-grid;place-items:center;width:2rem;height:2rem;border-radius:50%;background:var(--red);color:var(--surface);font-family:var(--display);font-size:1rem;margin-right:10px;vertical-align:.12em}
+.note{background:var(--note);border:1px solid var(--note-line);border-radius:8px;padding:12px 16px;max-width:none}
+.note b{font-weight:700}
+.pin{display:inline-grid;place-items:center;min-width:1.45em;height:1.45em;padding:0 .3em;border-radius:999px;background:var(--gold);color:var(--gold-ink);font:700 12px/1 var(--ui);box-shadow:0 0 0 2px var(--m-surface);flex:none;vertical-align:middle}
+ol.legend{margin:0;padding:0;list-style:none;display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(270px,1fr))}
+ol.legend li{display:flex;gap:10px;align-items:flex-start}
+ol.legend .pin{box-shadow:none;margin-top:.2em}
+ul.plain{margin:0;padding-left:1.2em;display:grid;gap:6px;max-width:70ch}
+
+/* tabela de selos */
+.selos{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+.selos div{display:flex;flex-direction:column;gap:5px;align-items:flex-start;border-left:3px solid var(--line);padding-left:12px}
+.selos small{color:var(--muted);font-size:.92rem;line-height:1.4}
+
+/* réplica de tela */
+.scr{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--m-bg);color:var(--m-ink);font-family:var(--ui);font-size:13px;line-height:1.45}
+.scr-bar{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;background:var(--surface);color:var(--muted);border-bottom:1px solid var(--line);padding:7px 14px;font:600 12px/1.4 var(--body);letter-spacing:.03em}
+.scr-body{padding:16px;display:flex;flex-direction:column;gap:12px}
+.m-card{background:var(--m-surface);border:1px solid var(--m-border);border-radius:12px;padding:14px;min-width:0}
+.m-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.m-between{justify-content:space-between}
+.m-h{font-size:17px;font-weight:600}
+.m-muted{color:var(--m-muted);font-size:12px}
+.m-b{font-weight:600}
+.m-tabs{display:flex;gap:4px;border-bottom:1px solid var(--m-border);overflow-x:auto}
+.m-tabs span{padding:8px 11px;font-weight:500;color:var(--m-muted);white-space:nowrap;border-bottom:2px solid transparent;display:inline-flex;gap:6px;align-items:center}
+.m-tabs .on{color:var(--m-brand);border-color:var(--m-brand)}
+.m-month{display:inline-flex;align-items:center;gap:10px;background:var(--m-surface);border:1px solid var(--m-border);border-radius:11px;padding:6px 10px;font-weight:600}
+.m-bar{height:8px;background:var(--m-bg);border-radius:0 0 11px 11px;margin:12px -14px -14px}
+.m-bar i{display:block;height:100%;background:var(--m-brand);border-radius:0 0 0 11px}
+.m-kpis{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.m-kpi{border-radius:11px;padding:12px;border:1px solid}
+.m-kpi b{display:block;font-size:26px;line-height:1.2}
+.amber{background:var(--m-amber-bg);color:var(--m-amber);border-color:var(--m-amber-line)}
+.sky{background:var(--m-sky-bg);color:var(--m-sky);border-color:var(--m-sky-line)}
+.green{background:var(--m-green-bg);color:var(--m-green);border-color:var(--m-green-line)}
+.rose{background:var(--m-rose-bg);color:var(--m-rose);border-color:var(--m-rose-line)}
+.stone{background:var(--m-stone-bg);color:var(--m-stone);border-color:var(--m-stone-line)}
+.selo{display:inline-flex;align-items:center;gap:4px;border:1px solid;border-radius:999px;padding:1px 9px;font:500 12px/1.6 var(--ui);white-space:nowrap}
+.m-alert{border-radius:11px;border:1px solid var(--m-amber-line);background:var(--m-amber-bg);color:var(--m-amber);padding:10px 14px}
+.m-chip{border-radius:999px;padding:5px 11px;font-size:12px;font-weight:600;background:var(--m-bg);color:var(--m-muted)}
+.m-chip.on{background:var(--m-brand);color:#fff}
+.m-btn{display:inline-flex;align-items:center;gap:6px;border-radius:8px;padding:7px 11px;font-size:12px;font-weight:600;border:1px solid var(--m-border);background:var(--m-surface);color:var(--m-ink);white-space:nowrap}
+.m-btn.pri{background:var(--m-brand);border-color:var(--m-brand);color:#fff}
+.m-btn.ok{background:var(--m-green-solid);border-color:var(--m-green-solid);color:#fff}
+.m-btn.link{border-color:transparent;background:transparent;color:var(--m-brand);padding-inline:4px}
+.m-btn.off{opacity:.45}
+.m-input{border:1px solid var(--m-border);border-radius:8px;padding:7px 10px;background:var(--m-surface);color:var(--m-muted);font-size:12px;min-width:0;flex:1 1 130px}
+.m-lbl{display:flex;flex-direction:column;gap:3px;font-size:11px;color:var(--m-muted);font-weight:500;flex:1 1 130px;min-width:0}
+.m-item{display:grid;grid-template-columns:minmax(0,1.5fr) auto auto minmax(0,1.6fr);gap:10px 14px;align-items:start;padding:12px 0;border-top:1px solid var(--m-border)}
+.m-item:first-child{border-top:0;padding-top:0}
+.m-item:last-child{padding-bottom:0}
+.m-opt{border:1px solid var(--m-border);border-radius:8px;padding:6px 10px;font-weight:500;color:var(--m-muted);background:var(--m-surface);font-size:12px}
+.m-opt.on{border-color:var(--m-rose-line);background:var(--m-rose-bg);color:var(--m-rose)}
+.m-box{border:1px solid var(--m-border);border-radius:11px;padding:12px;display:flex;flex-direction:column;gap:10px}
+.m-inner{background:var(--m-bg);border-radius:8px;padding:10px 12px}
+.m-up{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.m-pre{background:var(--m-bg);border-radius:8px;padding:10px;white-space:pre-wrap;font-size:12px;margin:0;font-family:var(--ui)}
+.m-grid2{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+@media (max-width:640px){ .m-item{grid-template-columns:1fr 1fr} .m-item>:first-child,.m-item>:last-child{grid-column:1/-1} body{font-size:16px} }
+
+/* checklist */
+.check{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.check label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.check input{width:1.15em;height:1.15em;margin-top:.25em;accent-color:var(--red);flex:none}
+.check input:checked+span{color:var(--muted);text-decoration:line-through}
+.check button{align-self:flex-start;font:600 .9rem var(--body);background:none;border:1px solid var(--line);color:var(--fg);border-radius:6px;padding:5px 12px;cursor:pointer}
+.two{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+.two>div{display:flex;flex-direction:column;gap:8px;min-width:0}
+footer{color:var(--muted);font-size:.92rem;border-top:1px solid var(--line);padding-top:16px}
+</style>
+<style>body{margin:0}img{max-width:100%}</style>
+</head>
+<body>
+
+<div class="wrap">
+
+<header>
+  <a href="/corretor" style="font-weight:600;text-decoration:none">← Voltar ao Vitral</a>
+  <span class="eyebrow">Vitral · Locação · Treinamento</span>
+  <h1>Controle de Débitos: como fazer a conferência do mês</h1>
+  <p class="lead">Todo mês conferimos se cada imóvel alugado está em dia com o condomínio e com o IPTU/TLP. Este guia mostra a rotina completa, tela por tela.</p>
+  <p class="path"><span>Menu</span>›<span>Locação</span>›<span>Controle de débitos</span></p>
+  <p class="note"><b>Sobre as telas deste guia:</b> são réplicas da página real com imóveis, nomes e valores fictícios. Os números dourados <span class="pin">1</span> marcam onde olhar ou clicar e são explicados logo abaixo de cada tela.</p>
+  <ul class="toc">
+    <li><a href="#visao">Entenda a página</a></li>
+    <li><a href="#p1">1 Abrir o mês</a></li>
+    <li><a href="#p2">2 Cadastros</a></li>
+    <li><a href="#p3">3 Pedir por e-mail</a></li>
+    <li><a href="#p4">4 Portal</a></li>
+    <li><a href="#p5">5 IPTU/TLP</a></li>
+    <li><a href="#p6">6 Registrar resultado</a></li>
+    <li><a href="#p7">7 Respostas</a></li>
+    <li><a href="#p8">8 Fechar o mês</a></li>
+    <li><a href="#check">Checklist</a></li>
+  </ul>
+</header>
+
+<section id="visao">
+  <h2>Entenda a página em um minuto</h2>
+  <p>Para cada imóvel com contrato ativo, o Vitral cria duas conferências por mês: uma de <b>Condomínio</b> e uma de <b>IPTU/TLP</b>. O seu trabalho é consultar cada uma e registrar o resultado. A página tem três abas:</p>
+  <ul class="plain">
+    <li><b>Conferência do mês</b>: a fila de imóveis, onde você trabalha a maior parte do tempo.</li>
+    <li><b>Solicitações</b>: os e-mails enviados às administradoras de condomínio e as respostas.</li>
+    <li><b>Ajustes</b>: cadastro das administradoras e automação (a automação só a diretoria e a gerência alteram).</li>
+  </ul>
+  <h3>O que cada selo significa</h3>
+  <div class="selos">
+    <div><span class="selo amber">◷ Pendente</span><small>Ninguém conferiu ainda. É o que você precisa resolver.</small></div>
+    <div><span class="selo sky">✉ Aguardando</span><small>O e-mail foi enviado e a administradora ainda não respondeu.</small></div>
+    <div><span class="selo green">✓ Sem débito</span><small>Conferido e em dia. Concluído.</small></div>
+    <div><span class="selo rose">⚠ Com débito</span><small>Há valor em aberto lançado. Precisa de acompanhamento.</small></div>
+    <div><span class="selo stone">⊖ Não se aplica</span><small>Não há o que conferir, por exemplo casa sem condomínio.</small></div>
+  </div>
+</section>
+
+<section id="p1">
+  <h2><span class="step-n">1</span>Abra a página e confira o mês</h2>
+  <p>Ao abrir, a página já mostra o mês atual. As conferências são criadas sozinhas no início do mês, então a fila normalmente já está pronta.</p>
+  <div class="scr">
+    <div class="scr-bar"><span>Aba Conferência do mês</span><span>Dados fictícios</span></div>
+    <div class="scr-body">
+      <div class="m-row m-between">
+        <div><div class="m-h">Controle de Débitos</div><div class="m-muted">Conferência mensal de condomínio e IPTU/TLP dos imóveis administrados.</div></div>
+        <div class="m-row"><span class="pin">1</span><span class="m-month">‹ &nbsp;Outubro/2026&nbsp; ›</span></div>
+      </div>
+      <div class="m-tabs"><span class="on">Conferência do mês <span class="pin">2</span></span><span>Solicitações</span><span>Ajustes</span></div>
+      <div class="m-card">
+        <div class="m-row m-between"><div><div class="m-b">Progresso de Outubro/2026 <span class="pin">3</span></div><div class="m-muted">9 de 24 conferências concluídas</div></div><div class="m-h" style="color:var(--m-brand)">38%</div></div>
+        <div class="m-bar"><i style="width:38%"></i></div>
+      </div>
+      <div class="m-kpis">
+        <div class="m-kpi amber"><span class="m-b">Precisa conferir</span> <span class="pin">4</span><b>11</b><span>Condomínio ou IPTU/TLP</span></div>
+        <div class="m-kpi sky"><span class="m-b">Aguardando resposta</span><b>4</b><span>Solicitações às administradoras</span></div>
+        <div class="m-kpi rose"><span class="m-b">Com débito</span><b>1</b><span>Exige acompanhamento</span></div>
+      </div>
+    </div>
+  </div>
+  <ol class="legend">
+    <li><span class="pin">1</span><span>As setas trocam de mês. Fora do mês atual aparece o atalho <b>Mês atual</b> para voltar.</span></li>
+    <li><span class="pin">2</span><span>As três abas da página.</span></li>
+    <li><span class="pin">3</span><span>Quanto do mês já foi conferido. A meta é chegar a 100%.</span></li>
+    <li><span class="pin">4</span><span>Os três cartões são clicáveis: cada um filtra a fila para mostrar só aquela situação.</span></li>
+  </ol>
+  <p class="note"><b>Se aparecer o aviso amarelo</b> “As conferências de … ainda não foram geradas”, clique em <b>Gerar conferências deste mês</b>. Pode clicar sem medo: o Vitral nunca duplica.</p>
+</section>
+
+<section id="p2">
+  <h2><span class="step-n">2</span>Resolva os cadastros que faltam</h2>
+  <p>O Vitral só sabe como conferir o condomínio se o imóvel estiver ligado a uma administradora. Quando falta esse vínculo, aparece um aviso amarelo acima da fila.</p>
+  <div class="scr">
+    <div class="scr-bar"><span>Aviso na fila e vínculo dentro do imóvel</span><span>Dados fictícios</span></div>
+    <div class="scr-body">
+      <div class="m-alert m-row m-between"><span><b>2</b> imóveis precisam de administradora vinculada.</span><span class="m-row"><u class="m-b">Resolver cadastros</u><span class="pin">1</span></span></div>
+      <div class="m-box" style="background:var(--m-surface)">
+        <div class="m-b" style="color:var(--m-muted)">▾ Vínculo com o condomínio e a administradora <span class="pin">2</span></div>
+        <div class="m-row" style="align-items:flex-end">
+          <label class="m-lbl">Possui condomínio? <span class="m-input">Sim</span></label>
+          <label class="m-lbl">Administradora <span class="pin">3</span><span class="m-input">Gestão Alfa Condomínios</span></label>
+          <label class="m-lbl">Nome do condomínio <span class="m-input">Residencial Ipê Amarelo</span></label>
+          <label class="m-lbl">Unidade <span class="m-input">304</span></label>
+          <label class="m-lbl">Bloco <span class="m-input">B</span></label>
+          <label class="m-lbl">Inscrição do imóvel no DF <span class="pin">4</span><span class="m-input">00000000</span></label>
+        </div>
+        <div><span class="m-btn">Salvar vínculo</span></div>
+      </div>
+    </div>
+  </div>
+  <ol class="legend">
+    <li><span class="pin">1</span><span><b>Resolver cadastros</b> filtra a fila só com os imóveis sem administradora. Clique no endereço de cada um para abrir.</span></li>
+    <li><span class="pin">2</span><span>Dentro do imóvel, no bloco Condomínio, abra <b>Vínculo com o condomínio e a administradora</b>.</span></li>
+    <li><span class="pin">3</span><span>Escolha a administradora. Se o imóvel é casa sem condomínio, marque <b>Possui condomínio? Não</b> e o item vira “Não se aplica”.</span></li>
+    <li><span class="pin">4</span><span>A inscrição é usada na consulta do IPTU/TLP. Unidade, bloco e código vão no e-mail para a administradora.</span></li>
+  </ol>
+  <p>A administradora não está na lista? Cadastre em <b>Ajustes → + Nova administradora</b>, com nome, e-mail para solicitação e o método de consulta (portal ou e-mail). <b>Nunca escreva senha de portal</b> em nenhum campo.</p>
+</section>
+
+<section id="p3">
+  <h2><span class="step-n">3</span>Condomínio por e-mail: peça a posição</h2>
+  <p>Para as administradoras consultadas por e-mail, o Vitral monta um único e-mail por administradora com todas as unidades dela. Vá para a aba <b>Solicitações</b>.</p>
+  <div class="scr">
+    <div class="scr-bar"><span>Aba Solicitações</span><span>Dados fictícios</span></div>
+    <div class="scr-body">
+      <div class="m-card m-row m-between">
+        <div style="flex:1 1 260px;min-width:0"><div class="m-b">Solicitações de Outubro/2026</div><div class="m-muted">Cada administradora recebe um único e-mail com todas as unidades dela. Envio automático desligado: os e-mails só saem quando alguém clica em enviar.</div></div>
+        <div class="m-row"><span class="m-btn">Enviar teste para mim</span><span class="pin">1</span><span class="m-btn pri">Enviar agora (2)</span><span class="pin">2</span></div>
+      </div>
+      <div class="m-grid2">
+        <div class="m-card" style="display:flex;flex-direction:column;gap:10px">
+          <div class="m-row m-between"><div><div class="m-b">Gestão Alfa Condomínios</div><div class="m-muted">3 unidade(s) · contato@alfa.exemplo</div></div><span class="m-muted">✉ E-mail</span></div>
+          <div class="m-row m-between"><span>SQS 000 Bloco B, Apto 304</span><span class="selo amber">◷ Pendente</span></div>
+          <div class="m-row m-between"><span>Rua 00 Norte, Lote 5, Apto 1102</span><span class="selo amber">◷ Pendente</span></div>
+          <div class="m-row" style="border-top:1px solid var(--m-border);padding-top:10px"><span class="m-btn">Enviar agora</span><span class="pin">3</span><span class="m-btn">Marcar todas sem débito</span></div>
+          <div class="m-muted m-b">▸ Ver o e-mail que será enviado <span class="pin">4</span></div>
+        </div>
+        <div class="m-card" style="display:flex;flex-direction:column;gap:10px">
+          <div class="m-row m-between"><div><div class="m-b">Beta Administradora</div><div class="m-muted">2 unidade(s) · financeiro@beta.exemplo</div></div><span class="m-muted">✉ E-mail</span></div>
+          <div class="m-row m-between"><span>Av. das Araucárias 000, Apto 601</span><span class="selo sky">✉ Aguardando</span></div>
+          <div class="m-inner"><div class="m-up m-muted">Envios deste mês</div><div class="m-row m-between" style="margin-top:6px"><span class="m-muted">05/10/2026 09:14 · 2 unidade(s)</span><span class="selo amber">Aguardando resposta</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ol class="legend">
+    <li><span class="pin">1</span><span><b>Enviar teste para mim</b> manda o e-mail só para você, para ver como fica. Nada vai para a administradora.</span></li>
+    <li><span class="pin">2</span><span><b>Enviar agora (N)</b> envia para todas as administradoras de e-mail que ainda não receberam o pedido do mês. O Vitral pede confirmação.</span></li>
+    <li><span class="pin">3</span><span>Ou envie para uma administradora só. Depois do primeiro envio o botão vira <b>Reenviar solicitação</b>.</span></li>
+    <li><span class="pin">4</span><span>Confira destinatário, assunto e a lista de unidades antes de enviar.</span></li>
+  </ol>
+  <p>Depois do envio, as unidades passam de <span class="selo amber">◷ Pendente</span> para <span class="selo sky">✉ Aguardando</span>. Na fila, o botão <b>Pedir posição</b> faz o mesmo para um imóvel só.</p>
+</section>
+
+<section id="p4">
+  <h2><span class="step-n">4</span>Condomínio por portal: consulte no site</h2>
+  <p>Quando a administradora tem portal, a consulta é feita por você no site dela. Na fila, clique no endereço do imóvel para abrir o detalhe.</p>
+  <div class="scr">
+    <div class="scr-bar"><span>Detalhe do imóvel · bloco Condomínio</span><span>Dados fictícios</span></div>
+    <div class="scr-body">
+      <div class="m-card m-box">
+        <div class="m-row m-between"><span class="m-up m-b">Condomínio</span><span class="selo amber">◷ Pendente de verificação</span></div>
+        <div class="m-inner" style="display:flex;flex-direction:column;gap:8px">
+          <div><div class="m-b">Administradora: Portal Gama Síndicos</div><div class="m-muted">Consulta pelo portal · (61) 0000-0000</div></div>
+          <div class="m-b" style="color:var(--m-green);font-size:12px">● Consulta online disponível</div>
+          <div class="m-row"><span class="m-btn">🌐 Abrir portal ↗</span><span class="pin">1</span><span class="m-muted">A Sacra tem login próprio neste portal.</span></div>
+          <div class="m-muted">Para localizar a unidade: bloco + número do apartamento <span class="pin">2</span></div>
+          <div class="m-row" style="gap:22px"><span><span class="m-muted">Condomínio</span><br><b>Edifício Jacarandá</b></span><span><span class="m-muted">Unidade</span><br><b>1102</b></span><span><span class="m-muted">Bloco</span><br><b>A</b></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ol class="legend">
+    <li><span class="pin">1</span><span><b>Abrir portal</b> abre o site da administradora em outra aba. A senha não fica no Vitral: use o acesso que a gerência passou a você.</span></li>
+    <li><span class="pin">2</span><span>As orientações e os dados da unidade mostram o que digitar no portal para achar o imóvel.</span></li>
+  </ol>
+  <p>Consultou? Volte ao Vitral e registre o resultado (passo 6).</p>
+</section>
+
+<section id="p5">
+  <h2><span class="step-n">5</span>IPTU/TLP: consulte na Receita do DF</h2>
+  <p>No mesmo detalhe do imóvel, logo abaixo do Condomínio, fica o bloco IPTU/TLP. O Vitral não acessa o site da Receita: ele leva você até lá com a inscrição em mãos.</p>
+  <div class="scr">
+    <div class="scr-bar"><span>Detalhe do imóvel · bloco IPTU/TLP</span><span>Dados fictícios</span></div>
+    <div class="scr-body">
+      <div class="m-card m-box">
+        <div class="m-row m-between"><span class="m-up m-b">IPTU/TLP</span><span class="selo amber">◷ Pendente de verificação</span></div>
+        <div class="m-inner m-row m-between">
+          <div><div class="m-muted">Inscrição do imóvel no DF</div><div class="m-h">00000000</div></div>
+          <div class="m-row"><span class="m-btn">Copiar inscrição</span><span class="pin">1</span><span class="m-btn">Consultar IPTU/TLP ↗</span><span class="pin">2</span></div>
+        </div>
+        <div class="m-muted">A consulta é feita por você no serviço oficial da Receita do DF; o Vitral não acessa o site. Depois, registre o resultado aqui.</div>
+      </div>
+    </div>
+  </div>
+  <ol class="legend">
+    <li><span class="pin">1</span><span><b>Copiar inscrição</b> copia só os números, prontos para colar.</span></li>
+    <li><span class="pin">2</span><span><b>Consultar IPTU/TLP</b> abre o serviço oficial em outra aba. Cole a inscrição e veja se há parcelas em aberto.</span></li>
+  </ol>
+  <p>Se aparecer “Não cadastrada”, preencha a inscrição no vínculo do imóvel (passo 2) antes de consultar.</p>
+</section>
+
+<section id="p6">
+  <h2><span class="step-n">6</span>Registre o resultado</h2>
+  <p>Há dois caminhos, conforme o que você encontrou.</p>
+  <h3>Está tudo em dia</h3>
+  <div class="scr">
+    <div class="scr-bar"><span>Fila do mês</span><span>Dados fictícios</span></div>
+    <div class="scr-body">
+      <div class="m-row"><span class="m-chip on">Todos</span><span class="m-chip">A conferir</span><span class="m-chip">Aguardando</span><span class="m-chip">Com débito</span><span class="m-chip">Concluídos</span></div>
+      <div class="m-card">
+        <div class="m-item">
+          <div><div class="m-b">SQS 000 Bloco B, Apto 304</div><div class="m-muted">Marina Exemplo · Gestão Alfa Condomínios</div></div>
+          <span class="selo rose">⚠ Com débito</span><span class="selo green">✓ Sem débito</span>
+          <div><div style="color:var(--m-rose);font-weight:600;font-size:12px;margin-bottom:6px">Débito identificado</div><span class="m-btn link">Ver débito ⚠</span></div>
+        </div>
+        <div class="m-item">
+          <div><div class="m-b">Rua 00 Norte, Lote 5, Apto 1102</div><div class="m-muted">Carlos Modelo · Portal Gama Síndicos</div></div>
+          <span class="selo amber">◷ Pendente</span><span class="selo amber">◷ Pendente</span>
+          <div><div style="color:var(--m-amber);font-size:12px;margin-bottom:6px">Conferir condomínio · conferir IPTU/TLP</div><div class="m-row"><span class="m-btn ok">✓ Tudo certo</span><span class="pin">1</span><span class="m-btn link">Registrar débito ⚠</span><span class="pin">2</span></div></div>
+        </div>
+        <div class="m-item">
+          <div><div class="m-b">Av. das Araucárias 000, Apto 601</div><div class="m-muted">Paula Fictícia · Beta Administradora</div></div>
+          <span class="selo sky">✉ Aguardando</span><span class="selo green">✓ Sem débito</span>
+          <div><div style="color:var(--m-amber);font-size:12px;margin-bottom:6px">Aguardando administradora</div><div class="m-row"><span class="m-btn ok">✓ Tudo certo</span><span class="m-btn link">Registrar débito ⚠</span></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ol class="legend">
+    <li><span class="pin">1</span><span><b>Tudo certo</b> marca de uma vez condomínio <u>e</u> IPTU/TLP como sem débito. Use só depois de conferir os dois.</span></li>
+    <li><span class="pin">2</span><span><b>Registrar débito</b> abre o detalhe do imóvel para lançar o valor em aberto.</span></li>
+  </ol>
+  <p>Conferiu só um dos dois? Abra o imóvel e registre cada bloco separadamente. A fila é ordenada sozinha: débitos primeiro, depois pendentes, aguardando e concluídos.</p>
+
+  <h3>Encontrei um débito</h3>
+  <div class="scr">
+    <div class="scr-bar"><span>Detalhe do imóvel · registrar conferência</span><span>Dados fictícios</span></div>
+    <div class="scr-body">
+      <div class="m-card m-box">
+        <div class="m-muted m-b">Resultado da conferência <span class="pin">1</span></div>
+        <div class="m-row"><span class="m-opt">Sem débitos</span><span class="m-opt on">Com débitos</span><span class="m-opt">Aguardando administradora</span><span class="m-opt">Não se aplica</span><span class="m-opt">Voltar a pendente</span></div>
+        <div class="m-box rose" style="background:var(--m-rose-bg)">
+          <div class="m-b" style="font-size:12px">Dados do débito <span class="pin">2</span></div>
+          <div class="m-row" style="align-items:flex-end">
+            <label class="m-lbl">Valor (R$) <span class="m-input">842,30</span></label>
+            <label class="m-lbl">Vencimento <span class="m-input">10/09/2026</span></label>
+            <label class="m-lbl">Competência do débito <span class="m-input">09/2026</span></label>
+            <label class="m-lbl">Descrição <span class="m-input">Cota ordinária</span></label>
+          </div>
+          <div class="m-row"><span class="m-btn" style="border-style:dashed">📎 Anexar documento</span><span class="pin">3</span></div>
+        </div>
+        <label class="m-lbl">Observação da conferência (opcional) <span class="m-input">&nbsp;</span></label>
+        <div class="m-row"><span class="m-btn pri">Registrar conferência</span><span class="pin">4</span></div>
+      </div>
+    </div>
+  </div>
+  <ol class="legend">
+    <li><span class="pin">1</span><span>Escolha <b>Com débitos</b>. Os campos do débito aparecem em seguida.</span></li>
+    <li><span class="pin">2</span><span>Preencha pelo menos valor, vencimento ou descrição. No IPTU/TLP os campos são exercício, parcela e situação.</span></li>
+    <li><span class="pin">3</span><span>Anexe o boleto ou o DAR se tiver: PDF, JPG ou PNG de até 10 MB.</span></li>
+    <li><span class="pin">4</span><span><b>Registrar conferência</b> salva. Para lançar outra parcela do mesmo imóvel, repita o lançamento.</span></li>
+  </ol>
+  <p class="note"><b>Lançou errado?</b> Clique em <b>Remover</b> ao lado do débito. Enquanto houver débito lançado, o Vitral não deixa trocar a situação: remova primeiro e depois registre a correta. Ao remover o último, a conferência volta a pendente.</p>
+</section>
+
+<section id="p7">
+  <h2><span class="step-n">7</span>Registre as respostas das administradoras</h2>
+  <p>Quando a administradora responder ao e-mail, volte à aba <b>Solicitações</b> e encontre o envio em “Envios deste mês”.</p>
+  <div class="scr">
+    <div class="scr-bar"><span>Aba Solicitações · registrar resposta</span><span>Dados fictícios</span></div>
+    <div class="scr-body">
+      <div class="m-card m-box">
+        <div class="m-row m-between"><span class="m-muted">05/10/2026 09:14 · 2 unidade(s) · para financeiro@beta.exemplo</span><span class="selo amber">Aguardando resposta</span></div>
+        <div class="m-b" style="color:var(--m-brand);font-size:12px">▾ Registrar resposta <span class="pin">1</span></div>
+        <div class="m-row m-between"><span>Edifício Aroeira<br>Bloco C, unidade 601</span><span class="m-row">◉ Sem débito &nbsp; ○ Com débito &nbsp; ○ Não informado <span class="pin">2</span></span></div>
+        <div class="m-row m-between" style="border-top:1px solid var(--m-border);padding-top:10px"><span>Edifício Aroeira<br>Bloco C, unidade 204</span><span>○ Sem débito &nbsp; ◉ Com débito &nbsp; ○ Não informado</span></div>
+        <div class="m-row"><span class="m-btn">Salvar resposta</span><span class="pin">3</span></div>
+      </div>
+    </div>
+  </div>
+  <ol class="legend">
+    <li><span class="pin">1</span><span>Abra <b>Registrar resposta</b> no envio correspondente.</span></li>
+    <li><span class="pin">2</span><span>Marque o que foi informado para cada unidade. O que ficar em “Não informado” continua aguardando.</span></li>
+    <li><span class="pin">3</span><span>Ao salvar, as unidades marcadas são atualizadas na fila.</span></li>
+  </ol>
+  <p class="note"><b>Marcou “Com débito” aqui?</b> Falta o valor. Abra cada imóvel e lance valor e vencimento como no passo 6.</p>
+  <p>Se a administradora não responder em 7 dias, o envio passa a mostrar <span class="selo rose">Sem resposta</span> e aparece um aviso na página inicial do Vitral. Use <b>Reenviar solicitação</b> ou ligue para o telefone do cadastro.</p>
+</section>
+
+<section id="p8">
+  <h2><span class="step-n">8</span>Feche o mês</h2>
+  <p>O mês está fechado quando o progresso chega a <b>100%</b>: nada em “Precisa conferir” e nada em “Aguardando resposta”. O que sobra em “Com débito” é a lista de acompanhamento. Avise a gerência sobre cada item dela.</p>
+  <div class="two">
+    <div>
+      <h3>Atalhos que economizam tempo</h3>
+      <ul class="plain">
+        <li><b>Ações em lote</b>: marque vários imóveis na fila, abra “Ações em lote”, escolha a ação (Condomínio sem débito, IPTU/TLP sem débito, Tudo sem débito, Pedir posição ou Alterar administradora) e clique em Aplicar.</li>
+        <li><b>Marcar todas sem débito</b>, na aba Solicitações, quando a administradora responde que está tudo em dia.</li>
+        <li><b>Busca</b> por imóvel, inquilino ou administradora, e <b>Mais filtros</b> por tipo, administradora e método.</li>
+      </ul>
+    </div>
+    <div>
+      <h3>O que o Vitral protege sozinho</h3>
+      <ul class="plain">
+        <li>As ações rápidas e em lote nunca apagam um débito já lançado.</li>
+        <li>Toda alteração fica no “Registro de atividades” do imóvel, com nome e horário.</li>
+        <li>O histórico dos meses anteriores aparece no fim do detalhe de cada imóvel.</li>
+        <li>Conferência esquecida de mês anterior vira aviso na página inicial.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section id="check">
+  <h2>Checklist do mês</h2>
+  <p>Marque conforme avança. As marcações ficam salvas só neste navegador.</p>
+  <div class="check" id="lista">
+    <label><input type="checkbox" id="c1"><span>Abri a página e as conferências do mês estão geradas</span></label>
+    <label><input type="checkbox" id="c2"><span>Nenhum imóvel sem administradora vinculada</span></label>
+    <label><input type="checkbox" id="c3"><span>Enviei as solicitações por e-mail às administradoras</span></label>
+    <label><input type="checkbox" id="c4"><span>Consultei os condomínios de portal e registrei</span></label>
+    <label><input type="checkbox" id="c5"><span>Consultei o IPTU/TLP de todos os imóveis e registrei</span></label>
+    <label><input type="checkbox" id="c6"><span>Registrei as respostas recebidas das administradoras</span></label>
+    <label><input type="checkbox" id="c7"><span>Cobrei quem está “Sem resposta”</span></label>
+    <label><input type="checkbox" id="c8"><span>Todo débito tem valor e vencimento lançados</span></label>
+    <label><input type="checkbox" id="c9"><span>Progresso em 100% e gerência avisada dos débitos</span></label>
+    <button type="button" id="limpar">Limpar para o próximo mês</button>
+  </div>
+</section>
+
+<footer>Guia interno da Sacra Netimóveis para o módulo Controle de Débitos do Vitral. Telas ilustrativas com dados fictícios; a aparência real pode ter pequenas diferenças.</footer>
+</div>
+
+<script>
+(function(){
+  var K="guia-debitos-check", caixas=[].slice.call(document.querySelectorAll("#lista input"));
+  var estado={};
+  try{ estado=JSON.parse(localStorage.getItem(K)||"{}")||{}; }catch(e){}
+  function salvar(){ try{ localStorage.setItem(K,JSON.stringify(estado)); }catch(e){} }
+  caixas.forEach(function(c){
+    c.checked=!!estado[c.id];
+    c.addEventListener("change",function(){ estado[c.id]=c.checked; salvar(); });
+  });
+  document.getElementById("limpar").addEventListener("click",function(){
+    estado={}; caixas.forEach(function(c){ c.checked=false; }); salvar();
+  });
+})();
+</script>
+</body>
+</html>
