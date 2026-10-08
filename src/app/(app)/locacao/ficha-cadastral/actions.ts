@@ -72,7 +72,10 @@ export async function criarFichaLocacao(formData: FormData) {
   const email = String(formData.get("proponente_email") ?? "").trim().toLowerCase();
   const imovel = String(formData.get("imovel_referencia") ?? "").trim();
   const validade = Math.min(90, Math.max(1, Number(formData.get("validade_dias") ?? 30)));
-  if (!nome || !email || !imovel) return;
+  if (!nome || !email || !imovel) {
+    await avisar("erro", "Preencha o nome, o e-mail e o imóvel de interesse.");
+    return;
+  }
   const supabase = await createClient() as unknown as SupabaseClient;
   const { data, error } = await supabase.from("fichas_cadastrais_locacao").insert({
     tenant_id: sessao.usuario.tenant_id, proponente_nome: nome, proponente_email: email,
@@ -80,7 +83,11 @@ export async function criarFichaLocacao(formData: FormData) {
     expira_em: new Date(Date.now() + validade * 86400000).toISOString(),
     dados: { nome_completo: nome, email, imovel_interesse: imovel },
   }).select("id").single();
-  if (error || !data) return;
+  if (!await checar(Promise.resolve({ error }), "criar a ficha")) return;
+  if (!data) {
+    await avisar("erro", "Não foi possível criar a ficha. Tente novamente.");
+    return;
+  }
   revalidatePath("/locacao/ficha-cadastral");
   redirect(`/locacao/ficha-cadastral/${data.id}`);
 }
