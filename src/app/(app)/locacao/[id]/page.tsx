@@ -30,7 +30,10 @@ import { hojeISO } from "@/lib/data-br";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { apagarContrato } from "../bulk-actions";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
-import { FileWarning, FileText, Calendar } from "lucide-react";
+import { CheckCircle2, Clock, AlertTriangle, FileWarning, FileText, Calendar } from "lucide-react";
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { INPUT_CLASS } from "@/components/ui/styles";
+import { CartaoIndicador } from "@/components/cartao-indicador";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { SecaoCondominio } from "../debitos/_componentes/secao-condominio";
 
@@ -170,15 +173,10 @@ export default async function ContratoLocacaoPage({
         { id: "rescisao-contrato", label: "Rescisão" }, { id: "gestao-contrato", label: "Gestão do contrato" },
       ]} />
       <div id="resumo-contrato" className="scroll-mt-20 rounded-2xl border border-border/70 bg-surface p-6 shadow-sm">
-        <VoltarLink href="/locacao" label="Locação" />
+        <VoltarLink href="/locacao?aba=contratos" label="Contratos de Locação" />
         <SucessoBanner mostrar={salvo === "1"} texto="Contrato salvo com sucesso." />
-        <div className="mt-2 flex items-start justify-between gap-3">
-          <div>
-            <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-              {c.imoveis?.endereco ?? c.numero ?? "Sem imóvel definido"}
-            </h1>
-          </div>
-          <div className="flex shrink-0 items-center gap-2">
+        <CabecalhoPagina titulo={c.imoveis?.endereco ?? c.numero ?? "Sem imóvel definido"} descricao={`Contrato ${c.numero}`} acao={
+          <div className="flex flex-wrap items-center gap-2">
             {rescisaoAtiva && (
               <span className="rounded-full border border-amber-200 bg-amber-50 px-2.5 py-1 text-xs font-medium text-amber-700">
                 Em rescisão
@@ -194,7 +192,7 @@ export default async function ContratoLocacaoPage({
               {c.ativo ? "Ativo" : `Encerrado${c.data_encerramento ? " em " + new Date(c.data_encerramento + "T00:00:00").toLocaleDateString("pt-BR") : ""}`}
             </span>
           </div>
-        </div>
+        } />
 
         <div className="mt-4 grid gap-4 rounded-xl border border-border/60 bg-surface p-4 shadow-sm sm:grid-cols-3">
           <div>
@@ -203,7 +201,7 @@ export default async function ContratoLocacaoPage({
             </p>
             <p className="text-sm font-medium text-ink">{c.locador?.nome ?? "—"}</p>
             {c.locador?.telefone && <p className="text-xs text-ink-muted">{c.locador.telefone}</p>}
-            {c.locador?.email && <p className="text-xs text-ink-muted">{c.locador.email}</p>}
+            {c.locador?.email && <p className="break-all text-xs text-ink-muted">{c.locador.email}</p>}
           </div>
           <div>
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
@@ -211,7 +209,7 @@ export default async function ContratoLocacaoPage({
             </p>
             <p className="text-sm font-medium text-ink">{c.locatario?.nome ?? "—"}</p>
             {c.locatario?.telefone && <p className="text-xs text-ink-muted">{c.locatario.telefone}</p>}
-            {c.locatario?.email && <p className="text-xs text-ink-muted">{c.locatario.email}</p>}
+            {c.locatario?.email && <p className="break-all text-xs text-ink-muted">{c.locatario.email}</p>}
           </div>
           <div>
             <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-ink-muted">
@@ -222,6 +220,12 @@ export default async function ContratoLocacaoPage({
         </div>
       </div>
 
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Resumo das contas do ano">
+        <CartaoIndicador compacto icon={Calendar} valor={contasComDados.length} label={`Contas em ${ano}`} />
+        <CartaoIndicador compacto icon={CheckCircle2} valor={contasComDados.filter(cc => cc.status === "pago").length} label="Pagas" tom="sucesso" />
+        <CartaoIndicador compacto icon={AlertTriangle} valor={contasComDados.filter(cc => calcularEstadoVisual(cc.status as StatusContaLocacao, cc.vencimento) === "vencido").length} label="Vencidas" tom="perigo" />
+        <CartaoIndicador compacto icon={Clock} valor={contasComDados.filter(cc => calcularEstadoVisual(cc.status as StatusContaLocacao, cc.vencimento) === "em_dia").length} label="Pendentes sem atraso" tom="alerta" />
+      </div>
       {/* Grid de contas */}
       <section id="contas-contrato" className="scroll-mt-20">
         <CabecalhoSecao
@@ -249,6 +253,12 @@ export default async function ContratoLocacaoPage({
           Toque em uma conta para marcar como paga ou desfazer a marcação. No celular, deslize a tabela para ver os demais meses.
         </p>
 
+        <div className="mb-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-ink-muted" aria-label="Legenda das contas">
+          <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded border border-emerald-500 bg-emerald-500" />Paga</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded border-2 border-rose-500" />Vencida</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded border-2 border-amber-400" />Pendente sem atraso</span>
+          <span className="inline-flex items-center gap-1.5"><span className="h-3 w-3 rounded border-2 border-border-strong" />Não aplicável</span>
+        </div>
         <div className="overflow-x-auto rounded-xl border border-border/60 bg-surface shadow-sm p-2">
           <table className="w-full min-w-[760px] border-separate" style={{ borderSpacing: "3px" }}>
             <thead>
@@ -322,8 +332,8 @@ export default async function ContratoLocacaoPage({
             <span className="hidden text-xs font-normal text-ink-muted group-open:inline">ocultar</span>
           </summary>
           <div className="overflow-x-auto border-t border-border">
-            <table className="w-full min-w-[680px] text-sm">
-              <thead>
+            <table className="block w-full text-sm md:table">
+              <thead className="hidden md:table-header-group">
                 <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
                   <th className="px-4 py-2.5 font-medium">Conta</th>
                   <th className="px-4 py-2.5 font-medium">Mês</th>
@@ -331,11 +341,11 @@ export default async function ContratoLocacaoPage({
                   <th className="px-4 py-2.5 font-medium">Valor e vencimento</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="block divide-y divide-border md:table-row-group">
                 {contasComDados
                   .sort((a, b) => a.competencia.localeCompare(b.competencia))
                   .map((cc) => (
-                    <tr key={cc.id}>
+                    <tr key={cc.id} className="grid grid-cols-2 gap-1 p-3 md:table-row md:p-0">
                       <td className="px-4 py-2 text-ink">{TIPO_CONTA_LABEL[cc.tipo as TipoContaLocacao]}</td>
                       <td className="px-4 py-2 text-ink-muted">
                         {new Date(cc.competencia + "T00:00:00").toLocaleDateString("pt-BR", {
@@ -343,14 +353,14 @@ export default async function ContratoLocacaoPage({
                           year: "numeric",
                         })}
                       </td>
-                      <td className="px-4 py-2">
+                      <td className="col-span-2 px-4 py-2">
                         {(() => {
                           const estado = calcularEstadoVisual(
                             cc.status as StatusContaLocacao,
                             cc.vencimento
                           );
                           const texto =
-                            estado === "pago" ? "Pago" : estado === "vencido" ? "Vencido" : "Em dia";
+                            estado === "pago" ? "Pago" : estado === "vencido" ? "Vencido" : "Pendente sem atraso";
                           const cor =
                             estado === "pago"
                               ? "border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -358,29 +368,30 @@ export default async function ContratoLocacaoPage({
                                 ? "border-rose-200 bg-rose-50 text-rose-700"
                                 : "border-amber-200 bg-amber-50 text-amber-700";
                           return (
-                            <span className={`rounded-full border px-2 py-0.5 text-xs font-medium ${cor}`}>
+                            <span className={`inline-flex rounded-full border px-2 py-0.5 text-xs font-medium ${cor}`}>
                               {texto}
                             </span>
                           );
                         })()}
                       </td>
-                      <td className="px-4 py-2">
-                        <form action={atualizarDetalhesConta} className="flex items-center gap-1.5">
+                      <td className="col-span-2 px-4 py-2">
+                        <form action={atualizarDetalhesConta} className="flex flex-wrap items-center gap-2">
                           <input type="hidden" name="conta_id" value={cc.id} />
                           <input type="hidden" name="contrato_id" value={id} />
+                          <label htmlFor={`conta-valor-${cc.id}`} className="sr-only">Valor da conta</label>
                           <CampoMoeda
-                            name="valor"
+                            id={`conta-valor-${cc.id}`} name="valor"
                             defaultValue={cc.valor ?? undefined}
-                            className="w-20 rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
+                            className={`${INPUT_CLASS} min-h-11 !w-28 !text-base md:!text-sm`}
                           />
                           <input
-                            name="vencimento"
+                            aria-label="Vencimento da conta" name="vencimento"
                             type="date"
                             defaultValue={cc.vencimento ?? ""}
-                            className="rounded-md border border-border bg-surface px-2 py-1 text-xs outline-none focus:border-brand"
+                            className={`${INPUT_CLASS} min-h-11 min-w-0 !w-auto !text-base md:!text-sm`}
                           />
                           <BotaoEnviar
-                            className="rounded-md border border-border px-2 py-1 text-xs text-ink-muted hover:bg-background"
+                            className="min-h-11 rounded-lg border border-border px-3 py-2 text-sm text-ink-muted hover:bg-background"
                           >
                             Salvar
                           </BotaoEnviar>
