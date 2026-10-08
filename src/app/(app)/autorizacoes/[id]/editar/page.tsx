@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { VoltarLink } from "@/components/voltar-link";
@@ -72,21 +74,18 @@ export default async function EditarAutorizacaoPage({
   const temSegundoProprietario = (signatarios ?? []).some((s) => s.ordem === 2);
 
   const campoClasse =
-    "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
+    `${INPUT_CLASS} min-h-11 text-base sm:text-sm`;
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <VoltarLink href={`/autorizacoes/${id}`} label="Autorização" />
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Editar autorização de venda</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Só é possível editar enquanto nenhum proprietário tiver assinado.
-        </p>
+        <CabecalhoPagina titulo="Editar autorização de venda" descricao={<>Só é possível editar enquanto nenhum proprietário tiver assinado.</>} />
       </div>
 
       <form
         action={atualizarAutorizacao}
-        className="space-y-5 rounded-xl border border-border bg-surface p-5 shadow-sm"
+        className={`${CARD_CLASS} space-y-6 p-5 sm:p-7`}
       >
         <input type="hidden" name="id" value={a.id} />
 
@@ -95,80 +94,80 @@ export default async function EditarAutorizacaoPage({
             Proprietário(a)
           </p>
           <div className="space-y-3">
-            <input
+            <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">Nome completo do proprietário</span><input id="vendedor_nome"
               name="vendedor_nome"
               required
               defaultValue={a.vendedor?.nome ?? ""}
               placeholder="Nome completo"
               className={campoClasse}
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <CampoCPF
+            /></label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">CPF do proprietário</span><CampoCPF id="vendedor_cpf"
                 name="vendedor_cpf"
                 defaultValue={a.vendedor?.cpf_cnpj ?? ""}
                 className={campoClasse}
-              />
-              <input
+              /></label>
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">RG do proprietário</span><input id="vendedor_rg"
                 name="vendedor_rg"
                 defaultValue={a.vendedor?.rg ?? ""}
                 placeholder="RG"
                 className={campoClasse}
-              />
+              /></label>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <input
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">Telefone do proprietário</span><input type="tel" id="vendedor_telefone"
                 name="vendedor_telefone"
                 defaultValue={a.vendedor?.telefone ?? ""}
                 placeholder="Telefone"
                 className={campoClasse}
-              />
-              <input
+              /></label>
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">Endereço do proprietário</span><input id="vendedor_endereco"
                 name="vendedor_endereco"
                 defaultValue={a.vendedor?.endereco ?? ""}
                 placeholder="Endereço"
                 className={campoClasse}
-              />
+              /></label>
             </div>
           </div>
         </div>
 
-        <details className="group" open={!!a.conjuge || temSegundoProprietario}>
-          <summary className="cursor-pointer select-none text-xs font-medium text-brand">
+        <details className="group rounded-xl border border-border bg-background/50 p-4" open={!!a.conjuge || temSegundoProprietario}>
+          <summary className="flex min-h-11 cursor-pointer items-center text-sm font-semibold text-brand">
             + Adicionar cônjuge / segundo proprietário
           </summary>
           <div className="mt-3 space-y-3">
-            <input
+            <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">Nome completo do segundo proprietário</span><input id="conjuge_nome"
               name="conjuge_nome"
               defaultValue={a.conjuge?.nome ?? ""}
               placeholder="Nome completo"
               className={campoClasse}
-            />
-            <div className="grid grid-cols-2 gap-3">
-              <CampoCPF
+            /></label>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">CPF do segundo proprietário</span><CampoCPF id="conjuge_cpf"
                 name="conjuge_cpf"
                 defaultValue={a.conjuge?.cpf_cnpj ?? ""}
                 className={campoClasse}
-              />
-              <input
+              /></label>
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">RG do segundo proprietário</span><input id="conjuge_rg"
                 name="conjuge_rg"
                 defaultValue={a.conjuge?.rg ?? ""}
                 placeholder="RG"
                 className={campoClasse}
-              />
+              /></label>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <input
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">Telefone do segundo proprietário</span><input type="tel" id="conjuge_telefone"
                 name="conjuge_telefone"
                 defaultValue={a.conjuge?.telefone ?? ""}
                 placeholder="Telefone"
                 className={campoClasse}
-              />
-              <input
+              /></label>
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">Endereço do segundo proprietário</span><input id="conjuge_endereco"
                 name="conjuge_endereco"
                 defaultValue={a.conjuge?.endereco ?? ""}
                 placeholder="Endereço"
                 className={campoClasse}
-              />
+              /></label>
             </div>
           </div>
         </details>
@@ -176,18 +175,18 @@ export default async function EditarAutorizacaoPage({
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-muted">Imóvel</p>
           <div className="space-y-3">
-            <input
+            <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">Endereço do imóvel</span><input id="imovel"
               name="imovel"
               required
               defaultValue={a.imoveis?.endereco ?? ""}
               placeholder="Endereço completo do imóvel"
               className={campoClasse}
-            />
+            /></label>
             <div>
-              <label className="mb-1 block text-xs font-medium text-ink-muted">
+              <label className="mb-1 block text-xs font-medium text-ink-muted" htmlFor="regiao_administrativa">
                 Região Administrativa
               </label>
-              <input
+              <input id="regiao_administrativa"
                 name="regiao_administrativa"
                 required
                 list="regioes-administrativas"
@@ -205,68 +204,68 @@ export default async function EditarAutorizacaoPage({
                 imóvel). Comece a digitar pra ver sugestões.
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <input
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">CEP</span><input id="cep"
                 name="cep"
                 defaultValue={a.imoveis?.cep ?? ""}
                 placeholder="CEP"
                 className={campoClasse}
-              />
-              <input
+              /></label>
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">Matrícula</span><input id="matricula"
                 name="matricula"
                 defaultValue={a.imoveis?.matricula ?? ""}
                 placeholder="Matrícula"
                 className={campoClasse}
-              />
+              /></label>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <input
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">Área construída (m²)</span><input id="area_construida"
                 name="area_construida"
                 defaultValue={a.imoveis?.area_construida ?? ""}
                 placeholder="Área construída (m²)"
                 className={campoClasse}
-              />
-              <input
+              /></label>
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">Área do lote (m²)</span><input id="area_lote"
                 name="area_lote"
                 defaultValue={a.imoveis?.area_lote ?? ""}
                 placeholder="Área do lote (m²)"
                 className={campoClasse}
-              />
+              /></label>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <input
+            <div className="grid gap-4 sm:grid-cols-2">
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">Inscrição de IPTU</span><input id="inscricao_iptu"
                 name="inscricao_iptu"
                 defaultValue={a.imoveis?.inscricao_iptu ?? ""}
                 placeholder="Inscrição de IPTU"
                 className={campoClasse}
-              />
-              <CampoMoeda
+              /></label>
+              <label className="block text-sm font-medium text-ink"><span className="mb-1.5 block">Condomínio mensal</span><CampoMoeda id="valor_condominio"
                 name="valor_condominio"
                 defaultValue={a.imoveis?.valor_condominio ?? null}
                 placeholder="Condomínio (R$)"
-              />
+              className={`${INPUT_CLASS} min-h-11 text-base sm:text-sm`} /></label>
             </div>
           </div>
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-ink">
+        <label className="flex min-h-11 items-center gap-3 rounded-lg border border-border bg-background/50 p-3 text-sm text-ink">
           <input
             type="checkbox"
             name="segundo_proprietario"
             defaultChecked={temSegundoProprietario}
-            className="accent-brand"
+            className="h-4 w-4 shrink-0 accent-brand"
           />
           O cônjuge/segundo proprietário também precisa assinar
         </label>
 
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Valor de anúncio</label>
-            <CampoMoeda name="valor_imovel" defaultValue={a.valor_imovel} placeholder="500.000,00" />
+            <label className="mb-1 block text-xs font-medium text-ink-muted" htmlFor="valor_imovel">Valor de anúncio</label>
+            <CampoMoeda id="valor_imovel" name="valor_imovel" defaultValue={a.valor_imovel} placeholder="500.000,00" className={`${INPUT_CLASS} min-h-11 text-base sm:text-sm`} />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Comissão (%)</label>
-            <input
+            <label className="mb-1 block text-xs font-medium text-ink-muted" htmlFor="comissao_percentual">Comissão (%)</label>
+            <input id="comissao_percentual"
               name="comissao_percentual"
               type="number"
               step="0.01"
@@ -278,10 +277,10 @@ export default async function EditarAutorizacaoPage({
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">
+          <label className="mb-1 block text-xs font-medium text-ink-muted" htmlFor="prazo_dias">
             Prazo da autorização (dias)
           </label>
-          <input
+          <input id="prazo_dias"
             name="prazo_dias"
             type="number"
             defaultValue={a.prazo_dias ?? 90}
@@ -289,21 +288,22 @@ export default async function EditarAutorizacaoPage({
           />
         </div>
 
-        <label className="flex items-center gap-2 text-sm text-ink">
+        <label className="flex min-h-11 items-center gap-3 rounded-lg border border-border bg-background/50 p-3 text-sm text-ink">
           <input
             type="checkbox"
             name="exclusividade"
             defaultChecked={a.exclusividade}
-            className="accent-brand"
+            className="h-4 w-4 shrink-0 accent-brand"
           />
           Com exclusividade
         </label>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">
+          <label htmlFor="observacoes" className="mb-1 block text-xs font-medium text-ink-muted">
             Descrição do imóvel / Observações (opcional)
           </label>
           <textarea
+            id="observacoes"
             name="observacoes"
             rows={3}
             defaultValue={a.observacoes ?? ""}
@@ -312,7 +312,7 @@ export default async function EditarAutorizacaoPage({
           />
         </div>
 
-        <BotaoSubmit className="w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white hover:opacity-90">
+        <BotaoSubmit className={`${PRIMARY_BUTTON_CLASS} min-h-11 w-full`}>
           Salvar alterações
         </BotaoSubmit>
       </form>

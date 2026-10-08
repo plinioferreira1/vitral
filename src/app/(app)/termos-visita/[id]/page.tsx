@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { VoltarLink } from "@/components/voltar-link";
@@ -73,19 +75,11 @@ export default async function TermoVisitaDetalhePage({
   const siteUrl = await obterSiteUrl();
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <div>
         <VoltarLink href="/termos-visita" label="Termos de Visita" />
-        <div className="flex items-center gap-3">
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-            {t.imoveis?.endereco ?? "—"}
-          </h1>
-          <span
-            className={`rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_COR[t.status]}`}
-          >
-            {STATUS_LABEL[t.status]}
-          </span>
-        </div>
+        <CabecalhoPagina titulo={t.imoveis?.endereco ?? "Imóvel não informado"} descricao="Termo de visita"  />
+        <span className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${STATUS_COR[t.status]}`}>{STATUS_LABEL[t.status]}</span>
         <p className="mt-1 text-sm text-ink-muted">Cliente: {t.clientes?.nome ?? "—"}</p>
         {t.status === "assinado" && t.assinado_em && (
           <div className="mt-3">
@@ -108,7 +102,7 @@ export default async function TermoVisitaDetalhePage({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 rounded-xl border border-border/60 bg-surface p-5 shadow-sm sm:grid-cols-3">
+      <div className={`${CARD_CLASS} grid gap-5 p-5 sm:grid-cols-3 sm:p-6`}>
         <div>
           <p className="text-xs text-ink-muted">Valor do imóvel</p>
           <p className="text-sm font-medium text-ink">{brl(t.valor_imovel)}</p>
@@ -125,7 +119,7 @@ export default async function TermoVisitaDetalhePage({
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <div className={`${CARD_CLASS} p-5 sm:p-6`}>
         <h2 className="mb-3 text-sm font-semibold text-ink">Assinatura</h2>
         {t.assinado_em ? (
           <div>
@@ -145,13 +139,13 @@ export default async function TermoVisitaDetalhePage({
             )}
           </div>
         ) : (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
             <BotaoCopiarLink url={`${siteUrl}/visita/${t.token}`} />
             <a
               href={`/visita/${t.token}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs font-medium text-brand hover:underline"
+              className={`${SECONDARY_BUTTON_CLASS} min-h-11`}
             >
               Abrir pra assinar agora →
             </a>
@@ -159,29 +153,27 @@ export default async function TermoVisitaDetalhePage({
         )}
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <div className={`${CARD_CLASS} p-5 sm:p-6`}>
         <h2 className="mb-3 text-sm font-semibold text-ink">Feedback da visita</h2>
         <form action={atualizarFeedbackVisita} className="space-y-3">
           <input type="hidden" name="id" value={t.id} />
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">
-              Nota (0 a 10)
-            </label>
+            <label className="mb-1.5 block text-sm font-medium text-ink" htmlFor="nota">Nota (0 a 10)</label>
             <input
-              name="nota"
+              id="nota" name="nota"
               type="number"
               min={0}
               max={10}
               defaultValue={t.nota ?? undefined}
-              className="w-24 rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              className={`${INPUT_CLASS} min-h-11 max-w-32 text-base sm:text-sm`}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Impressão</label>
+            <label className="mb-1.5 block text-sm font-medium text-ink" htmlFor="feedback">Impressão</label>
             <select
-              name="feedback"
+              id="feedback" name="feedback"
               defaultValue={t.feedback ?? ""}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              className={`${INPUT_CLASS} min-h-11 text-base sm:text-sm`}
             >
               <option value="">Não informado</option>
               {Object.entries(FEEDBACK_LABEL).map(([valor, label]) => (
@@ -192,16 +184,16 @@ export default async function TermoVisitaDetalhePage({
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Observações</label>
+            <label className="mb-1.5 block text-sm font-medium text-ink" htmlFor="observacoes">Observações</label>
             <textarea
-              name="observacoes"
+              id="observacoes" name="observacoes"
               rows={3}
               defaultValue={t.observacoes ?? ""}
-              className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+              className={`${INPUT_CLASS} min-h-11 text-base sm:text-sm`}
             />
           </div>
           <BotaoEnviar
-            className="rounded-md border border-border px-4 py-2 text-sm font-medium text-ink hover:bg-background"
+            className={`${PRIMARY_BUTTON_CLASS} min-h-11`}
           >
             Salvar feedback
           </BotaoEnviar>
@@ -211,7 +203,7 @@ export default async function TermoVisitaDetalhePage({
       {t.status === "pendente" && (
         <form action={cancelarTermoVisita}>
           <input type="hidden" name="id" value={t.id} />
-          <BotaoEnviar className="text-xs font-medium text-ink-muted hover:text-rose-600">
+          <BotaoEnviar className="inline-flex min-h-11 items-center rounded-lg border border-rose-200 bg-rose-50 px-4 text-sm font-medium text-rose-700 hover:bg-rose-100">
             Cancelar este termo
           </BotaoEnviar>
         </form>
@@ -221,7 +213,7 @@ export default async function TermoVisitaDetalhePage({
         <input type="hidden" name="id" value={t.id} />
         <BotaoComConfirmacao
           mensagem="Apagar este termo de visita? Essa ação não pode ser desfeita."
-          className="text-xs font-medium text-ink-muted hover:text-rose-600"
+          className="inline-flex min-h-11 items-center rounded-lg border border-rose-200 bg-rose-50 px-4 text-sm font-medium text-rose-700 hover:bg-rose-100"
         >
           Apagar termo
         </BotaoComConfirmacao>

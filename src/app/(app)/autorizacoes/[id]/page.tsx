@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -71,36 +73,20 @@ export default async function AutorizacaoDetalhePage({
   ]);
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="mx-auto max-w-4xl space-y-6">
       <div>
         <VoltarLink href="/autorizacoes" label="Autorizações" />
-        <div className="flex items-center gap-3">
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-            {a.imoveis?.endereco ?? "—"}
-          </h1>
-          <span
-            className={`rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_COR[a.status]}`}
-          >
-            {STATUS_LABEL[a.status]}
-          </span>
-          {a.status === "pendente" && (
-            <Link
-              href={`/autorizacoes/${a.id}/editar`}
-              className="text-xs font-medium text-brand hover:underline"
-            >
-              Editar
-            </Link>
-          )}
-        </div>
+        <CabecalhoPagina titulo={a.imoveis?.endereco ?? "Imóvel não informado"} descricao="Autorização de venda" acao={a.status === "pendente" ? <Link href={`/autorizacoes/${a.id}/editar`} className={SECONDARY_BUTTON_CLASS}>Editar autorização</Link> : undefined} />
+        <span className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${STATUS_COR[a.status]}`}>{STATUS_LABEL[a.status]}</span>
         <p className="mt-1 text-sm text-ink-muted">Proprietário: {a.clientes?.nome ?? "—"}</p>
         <p className="mt-0.5 text-xs text-ink-muted">Criado por: {a.usuarios?.nome ?? "—"}</p>
-        <form action={salvarResponsavelAutorizacao} className="mt-1.5 flex items-center gap-1.5">
+        <form action={salvarResponsavelAutorizacao} className={`${CARD_CLASS} mt-5 flex flex-wrap items-end gap-3 p-4`}>
           <input type="hidden" name="id" value={a.id} />
-          <label className="text-xs text-ink-muted">Responsável:</label>
+          <label htmlFor="responsavel-autorizacao" className="w-full text-sm font-medium text-ink">Responsável pela autorização</label>
           <select
-            name="responsavel_id"
+            id="responsavel-autorizacao" name="responsavel_id"
             defaultValue={a.responsavel?.id ?? ""}
-            className="rounded-md border border-border bg-background px-2 py-1 text-xs text-ink outline-none focus:border-brand"
+            className={`${INPUT_CLASS} min-h-11 min-w-0 flex-1 basis-48 text-base sm:text-sm`}
           >
             <option value="">Ninguém</option>
             {(membros ?? []).map((m) => (
@@ -110,7 +96,7 @@ export default async function AutorizacaoDetalhePage({
             ))}
           </select>
           <BotaoEnviar
-            className="rounded-md border border-border px-2 py-1 text-xs font-medium text-ink hover:opacity-80"
+            className={`${PRIMARY_BUTTON_CLASS} min-h-11`}
           >
             Salvar
           </BotaoEnviar>
@@ -142,7 +128,7 @@ export default async function AutorizacaoDetalhePage({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 rounded-xl border border-border/60 bg-surface p-5 shadow-sm sm:grid-cols-3">
+      <div className={`${CARD_CLASS} grid gap-5 p-5 sm:grid-cols-3 sm:p-6`}>
         <div>
           <p className="text-xs text-ink-muted">Valor do imóvel</p>
           <p className="text-sm font-medium text-ink">{brl(a.valor_imovel)}</p>
@@ -162,12 +148,12 @@ export default async function AutorizacaoDetalhePage({
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <div className={`${CARD_CLASS} p-5 sm:p-6`}>
         <h2 className="mb-3 text-sm font-semibold text-ink">Assinaturas</h2>
         <ul className="space-y-3">
           {(signatarios ?? []).map((s) => (
             <li key={s.id} className="rounded-lg border border-border/60 bg-background p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm font-medium text-ink">{s.nome_esperado}</p>
                 {s.assinado_em ? (
                   <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
@@ -199,13 +185,13 @@ export default async function AutorizacaoDetalhePage({
                   )}
                 </div>
               ) : (
-                <div className="mt-3 flex items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-3">
                   <BotaoCopiarLink url={`${siteUrl}/assinar/${s.token}`} />
                   <a
                     href={`/assinar/${s.token}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs font-medium text-brand hover:underline"
+                    className={`${SECONDARY_BUTTON_CLASS} min-h-11`}
                   >
                     Abrir pra assinar agora →
                   </a>
@@ -220,7 +206,7 @@ export default async function AutorizacaoDetalhePage({
         <form action={cancelarAutorizacao}>
           <input type="hidden" name="id" value={a.id} />
           <BotaoEnviar
-            className="text-xs font-medium text-ink-muted hover:text-rose-600"
+            className="inline-flex min-h-11 items-center rounded-lg border border-rose-200 bg-rose-50 px-4 text-sm font-medium text-rose-700 hover:bg-rose-100"
           >
             Cancelar esta autorização
           </BotaoEnviar>
@@ -231,7 +217,7 @@ export default async function AutorizacaoDetalhePage({
         <input type="hidden" name="id" value={a.id} />
         <BotaoComConfirmacao
           mensagem="Apagar esta autorização? Essa ação não pode ser desfeita."
-          className="text-xs font-medium text-ink-muted hover:text-rose-600"
+          className="inline-flex min-h-11 items-center rounded-lg border border-rose-200 bg-rose-50 px-4 text-sm font-medium text-rose-700 hover:bg-rose-100"
         >
           Apagar autorização
         </BotaoComConfirmacao>

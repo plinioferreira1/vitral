@@ -57,13 +57,13 @@ export default async function AssinarPage({
   const data = dataRaw as DadosAssinatura | null;
 
   return (
-    <div className="mx-auto min-h-screen max-w-xl px-4 py-10">
+    <div className="mx-auto min-h-screen max-w-3xl px-4 py-6 sm:py-10">
       <div className="mb-6 text-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src="/brand/sacra-logo-vertical-bordo.png"
           alt="Sacra Netimóveis"
-          className="mx-auto h-24 w-auto object-contain"
+          className="mx-auto h-20 w-auto object-contain sm:h-24"
         />
       </div>
 
@@ -81,8 +81,8 @@ export default async function AssinarPage({
         </div>
       ) : (
         <>
-          <div className="mb-6 space-y-4 rounded-xl border border-border bg-surface p-6 text-sm leading-relaxed text-ink shadow-sm">
-            <h1 className="text-center text-base font-bold uppercase tracking-wide">
+          <div className="mb-6 space-y-5 overflow-hidden break-words rounded-2xl border border-border bg-surface p-5 text-sm leading-7 text-ink shadow-sm sm:p-8">
+            <h1 className="border-b border-border pb-5 text-center text-xl font-bold leading-tight tracking-tight text-brand sm:text-2xl">
               Autorização de Venda de Imóvel
             </h1>
 

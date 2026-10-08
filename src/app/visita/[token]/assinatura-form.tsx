@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
+import { Loader2, PenLine, CheckCircle2 } from "lucide-react";
 import { CanvasAssinatura } from "@/components/canvas-assinatura";
 import { CampoCPF } from "@/components/campo-cpf";
 import { registrarAssinaturaVisita } from "./actions";
 
 export function AssinaturaVisitaForm({ token }: { token: string }) {
+  const envioEmCurso = useRef(false);
   const [nome, setNome] = useState("");
   const [cpf, setCpf] = useState("");
   const [rg, setRg] = useState("");
@@ -16,21 +19,29 @@ export function AssinaturaVisitaForm({ token }: { token: string }) {
   const [concluido, setConcluido] = useState(false);
 
   async function enviar() {
+    if (envioEmCurso.current) return;
+    envioEmCurso.current = true;
     setErro(null);
     setEnviando(true);
+    try {
     const resultado = await registrarAssinaturaVisita(token, nome, cpf, rg, assinatura ?? "");
-    setEnviando(false);
     if (!resultado.ok) {
       setErro(resultado.erro ?? "Não foi possível registrar a assinatura.");
       return;
     }
     setConcluido(true);
+    } catch {
+      setErro("Não foi possível confirmar o retorno da assinatura. Reabra este link para conferir se ela foi registrada antes de tentar novamente.");
+    } finally {
+      envioEmCurso.current = false;
+      setEnviando(false);
+    }
   }
 
   if (concluido) {
     return (
       <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-center">
-        <p className="text-base font-semibold text-emerald-800">Assinatura registrada!</p>
+        <CheckCircle2 size={28} className="mx-auto mb-3 text-emerald-700" /><p className="text-base font-semibold text-emerald-800">Assinatura registrada!</p>
         <p className="mt-1 text-sm text-emerald-700">
           Obrigado, {nome.split(" ")[0]}. Já pode fechar esta página.
         </p>
@@ -39,39 +50,43 @@ export function AssinaturaVisitaForm({ token }: { token: string }) {
   }
 
   return (
-    <div className="rounded-xl border border-border bg-surface p-5 shadow-sm">
-      <label className="mb-1 block text-xs font-medium text-ink-muted">Nome completo</label>
+    <div className={`${CARD_CLASS} p-5 sm:p-7`}>
+      <h2 className="mb-4 flex items-center gap-2 text-lg font-semibold text-ink"><PenLine size={20} className="text-brand" /> Sua assinatura</h2>
+      <label htmlFor="nome-assinatura" className="mb-1.5 block text-sm font-medium text-ink">Nome completo</label>
       <input
+        id="nome-assinatura" autoComplete="name" disabled={enviando}
         value={nome}
         onChange={(e) => setNome(e.target.value)}
         placeholder="Digite seu nome completo"
-        className="mb-3 w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+        className={`${INPUT_CLASS} mb-3 min-h-11 text-base`}
       />
 
-      <div className="mb-4 grid grid-cols-2 gap-3">
+      <div className="mb-4 grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">CPF (opcional)</label>
-          <CampoCPF value={cpf} onChange={setCpf} />
+          <label htmlFor="cpf-assinatura" className="mb-1.5 block text-sm font-medium text-ink">CPF (opcional)</label>
+          <CampoCPF id="cpf-assinatura" value={cpf} onChange={setCpf} className={`${INPUT_CLASS} min-h-11 text-base`} />
         </div>
         <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">RG (opcional)</label>
+          <label htmlFor="rg-assinatura" className="mb-1.5 block text-sm font-medium text-ink">RG (opcional)</label>
           <input
+            id="rg-assinatura" disabled={enviando}
             value={rg}
             onChange={(e) => setRg(e.target.value)}
-            className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
+            className={`${INPUT_CLASS} min-h-11 text-base`}
           />
         </div>
       </div>
 
-      <label className="mb-1 block text-xs font-medium text-ink-muted">Assinatura</label>
+      <label className="mb-1.5 block text-sm font-medium text-ink">Assinatura</label>
       <CanvasAssinatura onChange={setAssinatura} />
 
-      <label className="mt-4 flex items-start gap-2 text-xs text-ink">
+      <label className="mt-5 flex min-h-11 items-start gap-3 rounded-xl border border-border bg-background/50 p-4 text-sm leading-6 text-ink">
         <input
           type="checkbox"
+          disabled={enviando}
           checked={concordo}
           onChange={(e) => setConcordo(e.target.checked)}
-          className="mt-0.5 accent-brand"
+          className="mt-1 h-4 w-4 shrink-0 accent-brand"
         />
         <span>
           Li e concordo com os termos descritos acima, e reconheço que esta ação constitui
@@ -80,15 +95,16 @@ export function AssinaturaVisitaForm({ token }: { token: string }) {
         </span>
       </label>
 
-      {erro && <p className="mt-3 text-sm text-rose-600">{erro}</p>}
+      {erro && <p role="alert" className="mt-4 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{erro}</p>}
 
       <button
         type="button"
         onClick={enviar}
         disabled={enviando || !nome.trim() || !assinatura || !concordo}
-        className="mt-4 w-full rounded-md bg-brand px-4 py-2.5 text-sm font-medium text-white transition hover:opacity-90 disabled:opacity-50"
+        aria-busy={enviando || undefined}
+        className={`${PRIMARY_BUTTON_CLASS} mt-5 min-h-12 w-full disabled:opacity-50`}
       >
-        {enviando ? "Enviando..." : "Confirmar assinatura"}
+        {enviando ? <><Loader2 size={17} className="animate-spin" /> Registrando assinatura…</> : "Confirmar assinatura"}
       </button>
     </div>
   );
