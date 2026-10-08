@@ -199,6 +199,11 @@ export default async function EditarLancamentoFinanceiroPage({
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Vencimento *</label>
             <input name="vencimento" type="date" defaultValue={lancamento.vencimento} required className={campoClasse} />
+            {lancamento.tipo === "despesa" && (
+              <p className="mt-1 text-xs text-ink-muted">
+                Fins de semana e feriados são ajustados para o próximo dia útil.
+              </p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>

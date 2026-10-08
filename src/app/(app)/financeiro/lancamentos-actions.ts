@@ -7,6 +7,7 @@ import type { TablesInsert } from "@/lib/database.types";
 import { formatarCpfCnpj, formatarTelefone } from "@/lib/mascaras";
 import { moedaParaNumero } from "@/lib/moeda";
 import { hojeISO } from "@/lib/data-br";
+import { proximoDiaUtilFinanceiro } from "@/lib/calendario-financeiro";
 import { escopoExclusaoValido, idsParaExcluir, type EscopoExclusao } from "@/lib/exclusao-lancamentos";
 import { datasDaRecorrencia, mesesPorFrequencia, type Frequencia } from "@/lib/recorrencia";
 import { createClient } from "@/lib/supabase/server";
@@ -96,8 +97,9 @@ export async function criarLancamento(formData: FormData) {
   const recorrente = formData.get("recorrente") === "on";
 
   if (!recorrente) {
-    const vencimento = campo("vencimento");
-    if (!vencimento) return;
+    const vencimentoInformado = campo("vencimento");
+    if (!vencimentoInformado) return;
+    const vencimento = tipo === "despesa" ? proximoDiaUtilFinanceiro(vencimentoInformado) : vencimentoInformado;
     const id = randomUUID();
     const salvou = await checar(
       supabase.from("financeiro_lancamentos").insert({
@@ -105,7 +107,7 @@ export async function criarLancamento(formData: FormData) {
         ...dadosComuns,
         valor,
         vencimento,
-        competencia: campo("competencia") ?? vencimento,
+        competencia: campo("competencia") ?? vencimentoInformado,
       }),
       "salvar"
     );
@@ -160,6 +162,7 @@ export async function criarLancamento(formData: FormData) {
       dataFim,
       numeroOcorrencias,
       diaUtil: usaDiaUtil ? diaUtil : null,
+      ajustarDiasNaoUteis: tipo === "despesa",
     }).map(({ vencimento, competencia }) => ({
       id: randomUUID(),
       ...dadosComuns,
@@ -457,8 +460,9 @@ export async function editarLancamento(formData: FormData) {
 
   const descricao = String(formData.get("descricao") ?? "").trim();
   const valor = moedaParaNumero(formData.get("valor"));
-  const vencimento = String(formData.get("vencimento") ?? "").trim();
-  if (!descricao || !valor || !vencimento) return;
+  const vencimentoInformado = String(formData.get("vencimento") ?? "").trim();
+  if (!descricao || !valor || !vencimentoInformado) return;
+  const vencimento = atual.tipo === "despesa" ? proximoDiaUtilFinanceiro(vencimentoInformado) : vencimentoInformado;
 
   const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
   const escopo = String(formData.get("escopo") ?? "um");
@@ -500,9 +504,10 @@ export async function editarLancamento(formData: FormData) {
 
     const frequencia = valorDaLista("financeiro_frequencia", recorrencia.frequencia, "mensal") as Frequencia;
     const novasDatas = datasDaRecorrencia({
-      dataInicio: vencimento,
+      dataInicio: vencimentoInformado,
       frequencia,
       numeroOcorrencias: futuras.length,
+      ajustarDiasNaoUteis: atual.tipo === "despesa",
     });
     const competenciaInformada = campo("competencia");
 
@@ -515,8 +520,8 @@ export async function editarLancamento(formData: FormData) {
             vencimento: novasDatas[index]?.vencimento ?? vencimento,
             competencia:
               index === 0
-                ? competenciaInformada ?? novasDatas[index]?.competencia ?? vencimento
-                : novasDatas[index]?.competencia ?? vencimento,
+                ? competenciaInformada ?? novasDatas[index]?.competencia ?? vencimentoInformado
+                : novasDatas[index]?.competencia ?? vencimentoInformado,
           })
           .eq("id", futura.id)
       )
@@ -535,7 +540,7 @@ export async function editarLancamento(formData: FormData) {
         .update({
           descricao: dadosCadastrais.descricao,
           valor: dadosCadastrais.valor,
-          data_inicio: vencimento,
+          data_inicio: vencimentoInformado,
           tipo_vencimento: "fixo",
           dia_util: null,
           pessoa_id: dadosCadastrais.pessoa_id,
@@ -556,7 +561,7 @@ export async function editarLancamento(formData: FormData) {
         .update({
           ...dadosCadastrais,
           vencimento,
-          competencia: campo("competencia") ?? vencimento,
+          competencia: campo("competencia") ?? vencimentoInformado,
         })
         .eq("id", id),
       "atualizar"

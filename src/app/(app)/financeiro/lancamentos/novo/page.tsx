@@ -193,6 +193,11 @@ export default async function NovoLancamentoFinanceiroPage({
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Vencimento *</label>
             <input name="vencimento" type="date" defaultValue={clone?.vencimento ?? hoje} required className={campoClasse} />
+            {tipo === "despesa" && (
+              <p className="mt-1 text-xs text-ink-muted">
+                Se cair em fim de semana ou feriado, vai automaticamente para o próximo dia útil.
+              </p>
+            )}
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>
@@ -248,6 +253,11 @@ export default async function NovoLancamentoFinanceiroPage({
 
         <div className="mt-4 space-y-2 rounded-lg bg-background p-3">
           <p className="text-xs font-semibold text-ink">Vencimento de cada ocorrência</p>
+          {tipo === "despesa" && (
+            <p className="text-xs text-ink-muted">
+              Todas as ocorrências são ajustadas para o próximo dia útil quando necessário.
+            </p>
+          )}
           <div className="flex flex-wrap gap-4">
             <label className="flex items-center gap-2 text-xs text-ink">
               <input type="radio" name="tipo_vencimento" value="fixo" defaultChecked className="accent-brand" />
