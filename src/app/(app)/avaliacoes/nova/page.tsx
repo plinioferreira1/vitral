@@ -29,21 +29,23 @@ export default async function NovaAvaliacaoPage() {
   const { data: imoveis } = await supabase.from("imoveis").select("id, endereco, regiao_administrativa").order("endereco").limit(500);
 
   return (
-    <div className="max-w-3xl space-y-5">
+    <div className="w-full space-y-5">
       <div>
         <VoltarLink href="/avaliacoes" label="Avaliação de Imóveis" />
         <CabecalhoPagina titulo="Nova avaliação" descricao="Comece pelos dados do cliente e do imóvel. Depois, adicione referências de mercado e personalize o laudo." />
       </div>
 
-      <form action={criarAvaliacao} className="space-y-5">
+      <form action={criarAvaliacao} className="grid gap-5 xl:grid-cols-2 [&>section]:min-w-0">
         <input type="hidden" name="modalidade" value="estudo_comercial" />
 
+        <div className="xl:col-span-2">
         <Cartao titulo="Cliente">
           <div className="grid gap-3 sm:grid-cols-2">
             <Campo label="Nome do cliente" name="solicitante_nome" />
             <Campo label="Telefone ou e-mail (opcional)" name="solicitante_contato" />
           </div>
         </Cartao>
+        </div>
 
         <Cartao titulo="Finalidade e tipo de imóvel" descricao="Venda e locação nunca se misturam: cada avaliação usa só comparáveis e unidades da sua finalidade.">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -61,6 +63,7 @@ export default async function NovaAvaliacaoPage() {
           </div>
         </Cartao>
 
+        <div className="min-w-0">
         <Cartao titulo="Imóvel" descricao="Importe um imóvel já cadastrado no Vitral (endereço, matrícula, área e proprietário vêm junto) ou informe o endereço.">
           <div className="space-y-3">
             <label className="block">
@@ -76,7 +79,7 @@ export default async function NovaAvaliacaoPage() {
               </select>
             </label>
             <Campo label="Endereço ou identificação do imóvel" name="titulo" placeholder="Ex.: Rua 16 Sul, lote 4, apto 1007 — Residencial X" ajuda="Obrigatório se nenhum imóvel cadastrado for escolhido." />
-            <div className="grid gap-3 sm:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2">
               <Campo label="Bairro / região" name="bairro" />
               <Campo label="Cidade" name="cidade" defaultValue="Brasília" />
               <Campo label="Proprietário" name="proprietario_nome" />
@@ -85,9 +88,13 @@ export default async function NovaAvaliacaoPage() {
           </div>
         </Cartao>
 
+        </div>
+
+        <div className="xl:col-span-2">
         <BotaoEnviar className={PRIMARY_BUTTON_CLASS} textoEnviando="Criando…">
           Criar e continuar
         </BotaoEnviar>
+        </div>
       </form>
     </div>
   );
