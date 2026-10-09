@@ -162,6 +162,8 @@ export async function criarAvaliacao(formData: FormData) {
 
   let titulo = texto(formData, "titulo", 200);
   const dados: DadosAvaliacao = {
+    solicitante_nome: texto(formData, "solicitante_nome", 200) || undefined,
+    solicitante_contato: texto(formData, "solicitante_contato", 200) || undefined,
     vistoria_status: "nao_realizada",
     ...(modalidade === "estudo_comercial" ? { objetivo: finalidade === "venda"
       ? "Orientar a definição do preço de divulgação para venda do imóvel."
@@ -333,7 +335,8 @@ export async function salvarEtapa(formData: FormData) {
   const ctx = await contexto(texto(formData, "avaliacao_id", 40));
   if (!ctx || !(await editavel(ctx))) return;
   const etapa = texto(formData, "etapa", 30);
-  const definicao = CAMPOS_DADOS[etapa];
+  const simples = etapa === "dados_comerciais" && ctx.avaliacao.modalidade === "estudo_comercial";
+  const definicao = simples ? { ...CAMPOS_DADOS.dados, ...CAMPOS_DADOS.imovel } : CAMPOS_DADOS[etapa];
   if (!definicao) return;
 
   const dados: Record<string, unknown> = { ...ctx.avaliacao.dados };
@@ -363,7 +366,7 @@ export async function salvarEtapa(formData: FormData) {
     }
   };
 
-  if (etapa === "dados") {
+  if (etapa === "dados" || simples) {
     const modalidade = valorDaListaLocal(MODALIDADES, formData.get("modalidade"), ctx.avaliacao.modalidade);
     const finalidade = valorDaListaLocal(FINALIDADES, formData.get("finalidade"), ctx.avaliacao.finalidade);
     const tipologia = valorDaListaLocal(TIPOLOGIAS, formData.get("tipologia"), ctx.avaliacao.tipologia);
@@ -381,7 +384,7 @@ export async function salvarEtapa(formData: FormData) {
     coluna("data_base", dataOuNull(formData, "data_base"));
     coluna("proprietario_nome", textoOuNull(formData, "proprietario_nome", 200));
   }
-  if (etapa === "imovel") {
+  if (etapa === "imovel" || simples) {
     const titulo = texto(formData, "titulo", 200);
     if (!titulo) {
       await avisar("erro", "Informe a identificação do imóvel.");
@@ -585,8 +588,18 @@ export async function salvarComparavel(formData: FormData) {
   const ctx = await contexto(texto(formData, "avaliacao_id", 40));
   if (!ctx || !(await editavel(ctx))) return;
   const campos = camposComparavel(formData);
+  const anterior = ctx.comparaveis.find(x => x.id === texto(formData, "comparavel_id", 40));
+  if (ctx.avaliacao.modalidade === "estudo_comercial" && anterior) {
+    for (const chave of ["tipologia", "quartos", "suites", "vagas", "data_atualizacao", "status_anuncio", "diferencas"] as const) {
+      if (!formData.has(chave)) Object.assign(campos, { [chave]: anterior[chave] });
+    }
+  }
   if (!campos.identificacao) {
     await avisar("erro", "Informe a identificação do comparável.");
+    return;
+  }
+  if (ctx.avaliacao.modalidade === "estudo_comercial" && (!campos.area_m2 || !campos.preco)) {
+    await avisar("erro", "Informe a área e o preço do imóvel comparável, maiores que zero.");
     return;
   }
   if (campos.fonte_url && !/^https?:\/\//i.test(campos.fonte_url)) {
@@ -1314,4 +1327,57 @@ export async function salvarAssinaturaAvaliadora(formData: FormData) {
   if (!ok) return;
   revalidatePath("/avaliacoes/configuracao");
   await avisar("sucesso", "Assinatura salva. Ela só aparece em documentos que você aprovar e emitir.");
+}
+
+/** Laudo comercial: valor definido pela equipe e textos livres, sem fatores ou faixa obrigatória. */
+export async function salvarLaudoComercial(formData: FormData) {
+  const ctx = await contexto(texto(formData, "avaliacao_id", 40));
+  if (!ctx || !(await editavel(ctx)) || ctx.avaliacao.modalidade !== "estudo_comercial") return;
+  const dados = { ...ctx.avaliacao.dados };
+  for (const chave of ["carta_texto", "parecer_avaliadora", "conclusao_texto", "limitacoes_texto"] as const) {
+    dados[chave] = texto(formData, chave, 6000) || undefined;
+  }
+  const valor = numeroOuNull(formData, "valor_sugerido");
+  const mudou = valor !== ctx.avaliacao.valor_sugerido ||
+    ["carta_texto", "parecer_avaliadora", "conclusao_texto", "limitacoes_texto"].some(chave =>
+      (dados[chave as keyof DadosAvaliacao] ?? "") !== (ctx.avaliacao.dados[chave as keyof DadosAvaliacao] ?? ""));
+  if (mudou) {
+    const ok = await aposEdicao(ctx, {
+      tipo: "laudo_editado", descricao: "Valor sugerido e textos do laudo comercial atualizados.",
+      dados: { anterior: ctx.avaliacao.valor_sugerido, novo: valor },
+    }, { valor_sugerido: valor, dados: dados as Json });
+    if (!ok) return;
+  }
+  if (formData.get("acao") === "emitir") await emitirLaudoComercial(formData);
+  else if (formData.get("acao") === "revisao") await enviarParaRevisao(formData);
+  else await avisar("sucesso", mudou ? "Laudo salvo. Você já pode conferir o PDF." : "Nada mudou no laudo.");
+}
+
+/** Um botão para a gestão, preservando aprovação, hash e versão imutável. */
+export async function emitirLaudoComercial(formData: FormData) {
+  const ctx = await contexto(texto(formData, "avaliacao_id", 40));
+  if (!ctx || ctx.avaliacao.modalidade !== "estudo_comercial" || !(await editavel(ctx))) return;
+  if (!podeAprovar(ctx.papel, ctx.avaliacao.modalidade)) {
+    await avisar("erro", "Envie o laudo para um diretor, gerente ou responsável configurado emitir.");
+    return;
+  }
+  if (ctx.avaliacao.status === "emitido") {
+    redirect(`/avaliacoes/${ctx.id}?etapa=historico`);
+  }
+  const validacao = validarParaEmissao(ctx.conteudo);
+  if (validacao.bloqueios.length) {
+    await avisar("erro", "Complete as pendências e salve o laudo antes de emitir.");
+    return;
+  }
+  if (ctx.avaliacao.status !== "aprovado") {
+    const ok = await checar(ctx.supabase.from("avaliacoes").update({
+      status: "aprovado", aprovado_hash: hashConteudo(ctx.conteudo), comentario_revisao: null,
+    }).eq("id", ctx.id).select("id").single(), "aprovar o laudo");
+    if (!ok) return;
+    await registrar(ctx, "aprovado", `Laudo conferido para emissão por ${ctx.sessao.usuario.nome}.`, { hash: hashConteudo(ctx.conteudo) });
+    revalidatePath(`/avaliacoes/${ctx.id}`);
+    revalidatePath("/avaliacoes");
+  }
+  // Recarrega e confere o hash: uma edição concorrente impede a emissão.
+  await emitirVersao(formData);
 }

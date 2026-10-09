@@ -36,12 +36,12 @@ export default async function AvaliacoesPage({
   let consulta = supabase
     .from("avaliacoes")
     .select(
-      "id, codigo, modalidade, finalidade, tipologia, status, titulo, proprietario_nome, bairro, valor_calculado, valor_sugerido, versao_atual, atualizado_em, criado_por"
+      "id, codigo, modalidade, finalidade, tipologia, status, titulo, proprietario_nome, bairro, valor_calculado, valor_sugerido, dados, versao_atual, atualizado_em, criado_por"
     )
     .order("atualizado_em", { ascending: false })
     .limit(200);
   const q = (filtros.q ?? "").trim().replace(/[%,()]/g, " ");
-  if (q) consulta = consulta.or(`titulo.ilike.%${q}%,proprietario_nome.ilike.%${q}%,codigo.ilike.%${q}%,bairro.ilike.%${q}%`);
+  if (q) consulta = consulta.or(`titulo.ilike.%${q}%,proprietario_nome.ilike.%${q}%,codigo.ilike.%${q}%,bairro.ilike.%${q}%,dados->>solicitante_nome.ilike.%${q}%`);
   if ((MODALIDADES as readonly string[]).includes(filtros.modalidade ?? "")) consulta = consulta.eq("modalidade", filtros.modalidade!);
   if ((FINALIDADES as readonly string[]).includes(filtros.finalidade ?? "")) consulta = consulta.eq("finalidade", filtros.finalidade!);
   if ((STATUS_AVALIACAO as readonly string[]).includes(filtros.status ?? "")) consulta = consulta.eq("status", filtros.status!);
@@ -64,7 +64,7 @@ export default async function AvaliacoesPage({
         <div>
           <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Avaliações de imóveis</h1>
           <p className="mt-1 max-w-3xl text-sm text-ink-muted">
-            Estimativas comerciais para venda e locação, com pesquisa de mercado, memória de cálculo e relatório para o cliente.
+            Preencha os dados do cliente e do imóvel, adicione comparáveis e emita um laudo personalizado.
             Consulte também as avaliações e documentos técnicos já cadastrados.
           </p>
         </div>
@@ -185,13 +185,13 @@ export default async function AvaliacoesPage({
                       {a.codigo} · {ROTULO_MODALIDADE_CURTO[a.modalidade as Modalidade]} · {ROTULO_FINALIDADE[a.finalidade as Finalidade]} ·{" "}
                       {ROTULO_TIPOLOGIA[a.tipologia as Tipologia]}
                       {a.bairro ? ` · ${a.bairro}` : ""}
-                      {a.proprietario_nome ? ` · ${a.proprietario_nome}` : ""}
+                      {typeof (a.dados as Record<string, unknown> | null)?.solicitante_nome === "string" ? ` · ${(a.dados as Record<string, unknown>).solicitante_nome}` : a.proprietario_nome ? ` · ${a.proprietario_nome}` : ""}
                     </p>
                   </div>
                   <div className="flex items-center justify-between gap-6 text-xs text-ink-muted sm:justify-end">
                     <div className="sm:text-right">
                       <p className="num text-sm font-semibold text-ink">{moeda(a.valor_sugerido === null ? null : Number(a.valor_sugerido), a.finalidade as Finalidade)}</p>
-                      <p>calculado: {moeda(a.valor_calculado === null ? null : Number(a.valor_calculado), a.finalidade as Finalidade)}</p>
+                      {a.modalidade === "ptam" && <p>calculado: {moeda(a.valor_calculado === null ? null : Number(a.valor_calculado), a.finalidade as Finalidade)}</p>}
                     </div>
                     <div className="text-right">
                       <p>{nomes.get(a.criado_por) ?? "—"}</p>

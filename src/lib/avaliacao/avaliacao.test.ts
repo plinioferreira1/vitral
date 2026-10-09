@@ -251,24 +251,37 @@ describe("validação para emissão", () => {
     expect(validarParaEmissao(conteudo()).bloqueios).toEqual([]);
   });
 
-  it("valor diferente do calculado exige justificativa", () => {
-    const semJust = validarParaEmissao(conteudo(avaliacao({ valor_sugerido: 699000 })));
-    expect(semJust.bloqueios.some((b) => b.mensagem.includes("justificativa"))).toBe(true);
-    const base = avaliacao({ valor_sugerido: 699000 });
-    base.dados = { ...base.dados, justificativa_valor: "Margem para negociação combinada com a proprietária." };
-    expect(validarParaEmissao(conteudo(base)).bloqueios).toEqual([]);
+  it("comercial aceita valor manual sem faixa, recorte ou justificativa matemática", () => {
+    const a = avaliacao({ valor_sugerido: 699000, bairro: null, cidade: null });
+    a.dados = { endereco: "Rua fictícia, 1", conclusao_texto: "Valor definido pela análise comercial." };
+    expect(validarParaEmissao(conteudo(a, [])).bloqueios).toEqual([]);
   });
 
-  it("amostra pequena sem justificativa bloqueia; sem amostra não há conclusão", () => {
-    const dois = validarParaEmissao(conteudo(avaliacao(), tres.slice(0, 2)));
-    expect(dois.bloqueios.some((b) => b.mensagem.includes("Amostra com 2"))).toBe(true);
-    const zero = validarParaEmissao(conteudo(avaliacao(), []));
-    expect(zero.bloqueios.some((b) => b.mensagem.includes("sem amostra"))).toBe(true);
+  it("comercial aceita um comparável sem link ou data; PTAM continua exigindo fonte e amostra", () => {
+    const refs = [comp({ id: "d", data_coleta: null, fonte_url: null })];
+    expect(validarParaEmissao(conteudo(avaliacao(), refs)).bloqueios).toEqual([]);
+    const r = validarParaEmissao(conteudo(avaliacao({ modalidade: "ptam" }), refs));
+    expect(r.bloqueios.filter(b => b.mensagem.includes("Comparável d"))).toHaveLength(2);
+    expect(r.bloqueios.some(b => b.mensagem.includes("Amostra com 1"))).toBe(true);
   });
 
-  it("comparável sem data ou sem fonte bloqueia", () => {
-    const r = validarParaEmissao(conteudo(avaliacao(), [...tres, comp({ id: "d", data_coleta: null, fonte_url: null })]));
-    expect(r.bloqueios.filter((b) => b.mensagem.includes("Comparável d")).length).toBe(2);
+  it("comercial exige cliente, endereço, área, valor e conclusão salvos", () => {
+    const a = avaliacao({ proprietario_nome: null, area_m2: null, valor_sugerido: null });
+    a.dados = {};
+    const pendencias = validarParaEmissao(conteudo(a, [])).bloqueios;
+    expect(pendencias).toHaveLength(5);
+    expect(new Set(pendencias.map(b => b.etapa))).toEqual(new Set(["dados", "revisao"]));
+  });
+
+  it("comercial não emite comparável incompleto, mas ignora referências retiradas do laudo", () => {
+    const invalido = comp({ id: "x", area_m2: null, preco: null });
+    expect(validarParaEmissao(conteudo(avaliacao(), [invalido])).bloqueios.some(b => b.etapa === "comparaveis")).toBe(true);
+    expect(validarParaEmissao(conteudo(avaliacao(), [{ ...invalido, incluido: false }])).bloqueios).toEqual([]);
+  });
+
+  it("PTAM mantém a justificativa obrigatória quando o valor difere do cálculo", () => {
+    const r = validarParaEmissao(conteudo(avaliacao({ modalidade: "ptam", valor_sugerido: 699000 })));
+    expect(r.bloqueios.some(b => b.mensagem.includes("justificativa"))).toBe(true);
   });
 
   it("texto provisório bloqueia", () => {
@@ -311,7 +324,7 @@ describe("validação para emissão", () => {
     const c = conteudo(a, [...alugueis, ...tres]);
     expect(c.calculo.amostraFinal).toBe(3);
     expect(c.calculo.valorCalculado).toBe(3500);
-    expect(validarParaEmissao(c).bloqueios.some((b) => b.mensagem.includes("não se misturam"))).toBe(true);
+    expect(validarParaEmissao(c).bloqueios.some((b) => b.mensagem.includes("não podem ser misturadas"))).toBe(true);
     expect(validarParaEmissao(conteudo(a, alugueis)).bloqueios).toEqual([]);
   });
 });

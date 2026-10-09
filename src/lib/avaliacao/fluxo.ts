@@ -2,10 +2,8 @@ import { ETAPAS_EDITOR, type EtapaEditor, type Modalidade } from "./tipos";
 
 const COMERCIAIS = [
   { chave: "dados", rotulo: "Imóvel e cliente" },
-  { chave: "comparaveis", rotulo: "Pesquisa de mercado" },
-  { chave: "preco", rotulo: "Estimativa de preço" },
-  { chave: "textos", rotulo: "Relatório para o cliente" },
-  { chave: "revisao", rotulo: "Revisar e emitir" },
+  { chave: "comparaveis", rotulo: "Imóveis comparáveis" },
+  { chave: "revisao", rotulo: "Laudo e emissão" },
   { chave: "historico", rotulo: "Histórico" },
 ] as const;
 
@@ -15,5 +13,8 @@ export function etapasDaAvaliacao(modalidade: Modalidade) {
 
 /** Favoritos e links de validação antigos apontam para a seção agrupada. */
 export function etapaDoFluxo(modalidade: Modalidade, etapa: EtapaEditor): EtapaEditor {
-  return modalidade === "estudo_comercial" && ["imovel", "vistoria", "localizacao"].includes(etapa) ? "dados" : etapa;
+  if (modalidade !== "estudo_comercial") return etapa;
+  if (["imovel", "vistoria", "localizacao"].includes(etapa)) return "dados";
+  if (["preco", "textos"].includes(etapa)) return "revisao";
+  return etapa;
 }

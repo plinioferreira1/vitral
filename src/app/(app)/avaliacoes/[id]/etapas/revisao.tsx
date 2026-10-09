@@ -342,9 +342,9 @@ export function EtapaHistorico({
                     {v.tipo_assinatura === "visual" ? "assinatura visual da avaliadora" : "sem assinatura (aprovação eletrônica)"}
                   </p>
                   <p className="num mt-0.5 text-xs text-ink-muted">
-                    Calculado {moeda(v.valor_calculado === null ? null : Number(v.valor_calculado), fin)} · sugerido{" "}
-                    <strong className="text-ink">{moeda(v.valor_sugerido === null ? null : Number(v.valor_sugerido), fin)}</strong> · faixa{" "}
-                    {moeda(v.faixa_min === null ? null : Number(v.faixa_min), fin)} a {moeda(v.faixa_max === null ? null : Number(v.faixa_max), fin)}
+                    {a.modalidade === "ptam" ? `Calculado ${moeda(v.valor_calculado === null ? null : Number(v.valor_calculado), fin)} · sugerido` : "Valor sugerido"}{" "}
+                    <strong className="text-ink">{moeda(v.valor_sugerido === null ? null : Number(v.valor_sugerido), fin)}</strong>
+                    {a.modalidade === "ptam" && <> · faixa {moeda(v.faixa_min === null ? null : Number(v.faixa_min), fin)} a {moeda(v.faixa_max === null ? null : Number(v.faixa_max), fin)}</>}
                   </p>
                   <p className="mt-0.5 break-all font-mono text-[10px] text-ink-muted">hash {v.hash_conteudo.slice(0, 24)}…</p>
                 </div>
@@ -363,7 +363,7 @@ export function EtapaHistorico({
             <input type="hidden" name="avaliacao_id" value={a.id} />
             <p className="text-sm font-semibold text-ink">Duplicar para reavaliação</p>
             <p className="text-xs leading-5 text-ink-muted">Copia os dados e os comparáveis para uma nova avaliação, com data-base de hoje. Os comparáveis ficam marcados para reconferência; vistoria e fotos não são copiadas.</p>
-            <label className="block">
+            {a.modalidade === "estudo_comercial" ? <input type="hidden" name="modalidade" value="estudo_comercial" /> : <label className="block">
               <span className={ROTULO_CLASS}>Documento da nova avaliação</span>
               <select name="modalidade" defaultValue={a.modalidade} className={INPUT_CLASS}>
                 {MODALIDADES.map((m) => (
@@ -372,7 +372,7 @@ export function EtapaHistorico({
                   </option>
                 ))}
               </select>
-            </label>
+            </label>}
             <BotaoEnviar className={SECONDARY_BUTTON_CLASS} textoEnviando="Duplicando…">
               Duplicar
             </BotaoEnviar>

@@ -6,6 +6,7 @@
  * à emissão e ao PDF de teste. Seções sem dados não são impressas.
  */
 
+import { gerarPdfComercial } from "./pdf-comercial";
 import { arredondarValor, passoArredondamento, posicaoNaFaixa, precoPorM2 } from "./calculo";
 import type { ConteudoAvaliacao } from "./conteudo";
 import { A4, BASE, COR, Diagramador, LARGURA_UTIL, MARGEM, limpar, type FontesPdf, type Imagem } from "./pdf-base";
@@ -93,6 +94,7 @@ function configuracao(c: { quartos: number | null; suites: number | null; vagas:
 // ---------- documento ----------
 
 export async function gerarPdfAvaliacao(c: ConteudoAvaliacao, o: OpcoesPdf): Promise<Uint8Array> {
+  if (c.modalidade === "estudo_comercial") return gerarPdfComercial(c, o);
   const ptam = c.modalidade === "ptam";
   const fin = c.finalidade;
   const d = c.dados;

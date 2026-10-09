@@ -28,6 +28,24 @@ export function validarParaEmissao(c: ConteudoAvaliacao): ResultadoValidacao {
   const p = c.precificacao;
   const ptam = c.modalidade === "ptam";
 
+  if (!ptam) {
+    if (vazio(c.data_base)) bloquear("dados", "Informe a data da avaliação.");
+    if (vazio(d.solicitante_nome) && vazio(c.proprietario_nome) && vazio(d.destinatario)) bloquear("dados", "Informe o nome do cliente.");
+    if (vazio(d.endereco)) bloquear("dados", "Informe o endereço do imóvel.");
+    if (!c.area_m2 || !Number.isFinite(c.area_m2) || c.area_m2 <= 0) bloquear("dados", "Informe uma área maior que zero.");
+    if (!p.valor_sugerido || !Number.isFinite(p.valor_sugerido) || p.valor_sugerido <= 0) bloquear("revisao", "Informe o valor sugerido.");
+    if (vazio(d.conclusao_texto)) bloquear("revisao", "Escreva e salve a conclusão do laudo.");
+    for (const chave of ["carta_texto", "parecer_avaliadora", "conclusao_texto", "limitacoes_texto"] as const) {
+      if (PADRAO_PLACEHOLDER.test(d[chave] ?? "")) bloquear("revisao", "Revise os textos provisórios do laudo antes de emitir.");
+    }
+    for (const x of c.comparaveis.filter((x) => x.incluido)) {
+      if (x.finalidade !== c.finalidade) bloquear("comparaveis", "Venda e locação não podem ser misturadas nos comparáveis.");
+      if (!x.identificacao.trim() || !x.preco || !Number.isFinite(x.preco) || x.preco <= 0 || !x.area_m2 || !Number.isFinite(x.area_m2) || x.area_m2 <= 0) bloquear("comparaveis", `Complete identificação, área e preço do comparável \"${x.identificacao}\".`);
+      if (x.fonte_url && !/^https?:\/\//i.test(x.fonte_url)) bloquear("comparaveis", "Revise o link do comparável: use http:// ou https://.");
+    }
+    return { bloqueios, alertas };
+  }
+
   // --- identificação e finalidade
   if (vazio(c.data_base)) bloquear("dados", "Informe a data-base da avaliação.");
   if (vazio(d.objetivo)) bloquear("dados", "Descreva o objetivo da avaliação.");

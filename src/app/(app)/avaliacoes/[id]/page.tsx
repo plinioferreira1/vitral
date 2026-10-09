@@ -1,4 +1,6 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import Link from "next/link";
+import { DadosComerciais, ComparaveisComerciais, LaudoComercial } from "./etapas/comercial";
 import { notFound, redirect } from "next/navigation";
 import { VoltarLink } from "@/components/voltar-link";
 import { podeAcessarModulo } from "@/lib/avaliacao/permissoes";
@@ -56,7 +58,7 @@ export default async function AvaliacaoPage({
         : [];
   const [assinados, vendasRaw, versoesRes, eventosRes, assinaturaRes] = await Promise.all([
     caminhos.length ? supabase.storage.from(BUCKET_AVALIACOES).createSignedUrls(caminhos, 3600) : Promise.resolve({ data: [] }),
-    etapa === "comparaveis" && a.finalidade === "venda"
+    !comercial && etapa === "comparaveis" && a.finalidade === "venda"
       ? supabase
           .from("processos")
           .select("id, numero_processo, status, valor_total, data_assinatura, data_conclusao, criado_em, imoveis ( endereco, area_construida, regiao_administrativa )")
@@ -105,14 +107,8 @@ export default async function AvaliacaoPage({
     <div className="space-y-5">
       <div>
         <VoltarLink href="/avaliacoes" label="Avaliação de Imóveis" />
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-[24px] font-bold leading-tight tracking-tight text-ink sm:text-[28px]">{a.titulo}</h1>
-          <SeloStatus status={a.status} />
-        </div>
-        <p className="mt-1 text-sm text-ink-muted">
-          {a.codigo} · {ROTULO_MODALIDADE[a.modalidade]} · {ROTULO_FINALIDADE[a.finalidade]} · {ROTULO_TIPOLOGIA[a.tipologia]}
-          {a.versao_atual > 0 ? ` · última versão emitida: ${a.versao_atual}` : ""}
-        </p>
+        <CabecalhoPagina titulo={<span className="flex flex-wrap items-center gap-3">{a.titulo}<SeloStatus status={a.status} /></span>}
+          descricao={`${a.codigo} · ${ROTULO_MODALIDADE[a.modalidade]} · ${ROTULO_FINALIDADE[a.finalidade]} · ${ROTULO_TIPOLOGIA[a.tipologia]}${a.versao_atual > 0 ? ` · última versão emitida: ${a.versao_atual}` : ""}`} />
       </div>
 
       {c.linha.comentario_revisao && a.status === "rascunho" && (
@@ -137,11 +133,11 @@ export default async function AvaliacaoPage({
                 <Link
                   href={`/avaliacoes/${a.id}?etapa=${e.chave}`}
                   aria-current={ativo ? "step" : undefined}
-                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-medium transition ${
+                  className={`flex items-center gap-2 rounded-lg border min-h-11 px-3 py-2 text-sm font-medium transition ${
                     ativo ? "border-brand bg-brand text-white" : "border-border/80 bg-surface text-ink-muted hover:text-ink"
                   }`}
                 >
-                  <span className={`num text-xs ${ativo ? "text-white/80" : "text-ink-muted"}`}>{i + 1}</span>
+                  <span className={`num text-xs ${ativo ? "text-white/80" : "text-ink-muted"}`}>{e.chave === "historico" ? "↗" : i + 1}</span>
                   {e.rotulo}
                   {pendencias > 0 && (
                     <span className={`num rounded-full px-1.5 text-[11px] font-bold ${ativo ? "bg-white text-brand" : "bg-rose-100 text-rose-700"}`} title={`${pendencias} pendência(s) para emitir`}>
@@ -155,29 +151,22 @@ export default async function AvaliacaoPage({
         </ol>
       </nav>
 
-      {etapa === "dados" && (
+      {comercial && etapa === "dados" && <DadosComerciais {...propsEtapa} />}
+      {comercial && etapa === "comparaveis" && <ComparaveisComerciais c={c} />}
+      {comercial && etapa === "revisao" && <LaudoComercial c={c} papel={papel} validacao={validacao} />}
+      {!comercial && etapa === "dados" && (
         <div className="space-y-5">
           <EtapaDados {...propsEtapa} />
-          {comercial && <>
-            <EtapaImovel {...propsEtapa} />
-            <details className="rounded-xl border border-border bg-surface p-4">
-              <summary className="cursor-pointer font-semibold text-ink">Vistoria e características observadas</summary>
-              <div className="mt-4"><EtapaVistoria {...propsEtapa} /></div>
-            </details>
-            <details className="rounded-xl border border-border bg-surface p-4">
-              <summary className="cursor-pointer font-semibold text-ink">Localização e entorno</summary>
-              <div className="mt-4"><EtapaLocalizacao {...propsEtapa} /></div>
-            </details>
-          </>}
+
         </div>
       )}
       {etapa === "imovel" && <EtapaImovel {...propsEtapa} />}
       {etapa === "vistoria" && <EtapaVistoria {...propsEtapa} />}
       {etapa === "localizacao" && <EtapaLocalizacao {...propsEtapa} />}
-      {etapa === "comparaveis" && <EtapaComparaveis {...propsEtapa} vendasInternas={vendasInternas} />}
+      {!comercial && etapa === "comparaveis" && <EtapaComparaveis {...propsEtapa} vendasInternas={vendasInternas} />}
       {etapa === "preco" && <EtapaPreco c={c} />}
       {etapa === "textos" && <EtapaTextos {...propsEtapa} />}
-      {etapa === "revisao" && <EtapaRevisao c={c} papel={papel} validacao={validacao} temAssinatura={!!assinaturaRes.data} />}
+      {!comercial && etapa === "revisao" && <EtapaRevisao c={c} papel={papel} validacao={validacao} temAssinatura={!!assinaturaRes.data} />}
       {etapa === "historico" && <EtapaHistorico c={c} versoes={versoesRes.data ?? []} eventos={eventosRes.data ?? []} />}
 
       {proxima && (

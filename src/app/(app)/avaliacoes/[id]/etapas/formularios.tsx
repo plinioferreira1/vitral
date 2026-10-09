@@ -88,7 +88,7 @@ export function EtapaDados({ c }: Props) {
 
 // ---------------------------------------------------------------
 
-function ListaArquivos({ arquivos, avaliacaoId, urls, permiteCapa }: { arquivos: ArquivoAvaliacao[]; avaliacaoId: string; urls: Record<string, string>; permiteCapa?: boolean }) {
+export function ListaArquivos({ arquivos, avaliacaoId, urls, permiteCapa }: { arquivos: ArquivoAvaliacao[]; avaliacaoId: string; urls: Record<string, string>; permiteCapa?: boolean }) {
   if (arquivos.length === 0) return <p className="text-sm text-ink-muted">Nenhum arquivo ainda.</p>;
   return (
     <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
