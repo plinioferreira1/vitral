@@ -24,18 +24,19 @@ export default async function BuscarPage({
   if (termo.length >= 2) {
     // Busca por endereço do imóvel primeiro (é o caso mais comum),
     // depois por nome de comprador/vendedor — junta os resultados.
-    const { data: porImovel } = await supabase
-      .from("processos")
-      .select(
-        "id, numero_processo, categoria, imoveis!inner ( endereco ), comprador:clientes!processos_comprador_id_fkey ( nome ), vendedor:clientes!processos_vendedor_id_fkey ( nome )"
-      )
-      .ilike("imoveis.endereco", `%${termo}%`)
-      .limit(20);
-
-    const { data: idsComprador } = await supabase
-      .from("clientes")
-      .select("id")
-      .ilike("nome", `%${termo}%`);
+    const [{ data: porImovel }, { data: idsComprador }] = await Promise.all([
+      supabase
+        .from("processos")
+        .select(
+          "id, numero_processo, categoria, imoveis!inner ( endereco ), comprador:clientes!processos_comprador_id_fkey ( nome ), vendedor:clientes!processos_vendedor_id_fkey ( nome )"
+        )
+        .ilike("imoveis.endereco", `%${termo}%`)
+        .limit(20),
+      supabase
+        .from("clientes")
+        .select("id")
+        .ilike("nome", `%${termo}%`),
+    ]);
 
     const idsClientes = (idsComprador ?? []).map((c) => c.id);
     const { data: porCliente } =

@@ -12,19 +12,19 @@ const campoClasse =
 
 export default async function ConfiguracoesEmailPage() {
   const supabase = await createClient();
-  // Mesma busca já feita pelo layout nesta renderização — reaproveitada.
-  const { usuario } = await getUsuarioAtual();
-
-  const { data: destinatarios } = await supabase
-    .from("financeiro_email_destinatarios")
-    .select("id, email, nome, ativo")
-    .order("criado_em");
-
-  const { data: ultimosEnvios } = await supabase
-    .from("financeiro_email_envios")
-    .select("id, enviado_em, sucesso, erro, destinatarios, tipo")
-    .order("enviado_em", { ascending: false })
-    .limit(8);
+  const [{ usuario }, { data: destinatarios }, { data: ultimosEnvios }] = await Promise.all([
+    // Mesma busca já feita pelo layout nesta renderização — reaproveitada.
+    getUsuarioAtual(),
+    supabase
+      .from("financeiro_email_destinatarios")
+      .select("id, email, nome, ativo")
+      .order("criado_em"),
+    supabase
+      .from("financeiro_email_envios")
+      .select("id, enviado_em, sucesso, erro, destinatarios, tipo")
+      .order("enviado_em", { ascending: false })
+      .limit(8),
+  ]);
 
   return (
     <div className="financeiro-ui mx-auto max-w-[1100px] space-y-5">

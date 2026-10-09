@@ -45,17 +45,18 @@ export default async function EditarCartaPropostaPage({
     redirect(`/propostas/${id}`);
   }
 
-  const { data: condicoesRaw } = await supabase
-    .from("carta_proposta_condicoes")
-    .select("descricao, valor")
-    .eq("carta_proposta_id", id)
-    .order("ordem", { ascending: true });
+  const [{ data: condicoesRaw }, { data: signatarios }] = await Promise.all([
+    supabase
+      .from("carta_proposta_condicoes")
+      .select("descricao, valor")
+      .eq("carta_proposta_id", id)
+      .order("ordem", { ascending: true }),
+    supabase
+      .from("carta_proposta_signatarios")
+      .select("ordem")
+      .eq("carta_proposta_id", id),
+  ]);
   const condicoes = condicoesRaw ?? [];
-
-  const { data: signatarios } = await supabase
-    .from("carta_proposta_signatarios")
-    .select("ordem")
-    .eq("carta_proposta_id", id);
   const temSegundoProponente = (signatarios ?? []).some((s) => s.ordem === 2);
 
   return (

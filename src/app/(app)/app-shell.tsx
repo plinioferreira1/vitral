@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
+import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   Home,
@@ -32,6 +33,7 @@ import {
   X,
   ChevronRight,
   Wallet,
+  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import { hrefAtivoMenu } from "@/lib/menu";
@@ -116,6 +118,15 @@ function iconePara(hrefOuLabel: string): LucideIcon {
 
 function prefetchDoLink(href: string) {
   return href === "/corretor" ? false : undefined;
+}
+
+function IndicadorLink() {
+  const { pending } = useLinkStatus();
+  return (
+    <span className="flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
+      {pending && <Loader2 size={13} className="animate-spin text-brand" />}
+    </span>
+  );
 }
 
 export function AppShell({
@@ -209,9 +220,12 @@ export function AppShell({
       className="flex w-full items-center justify-center rounded-md px-2 py-1 transition hover:bg-background"
       aria-label={tenantName}
     >
-      <img
+      <Image
         src="/brand/sacra-logo-bordo.png"
         alt={tenantName}
+        width={121}
+        height={36}
+        priority
         className="h-9 w-auto object-contain"
       />
     </Link>
@@ -240,7 +254,8 @@ export function AppShell({
               }`}
             >
               <Icone size={17} strokeWidth={2} className="shrink-0" />
-              <span>{item.label}</span>
+              <span className="min-w-0 flex-1">{item.label}</span>
+              <IndicadorLink />
             </Link>
           );
         }
@@ -309,13 +324,14 @@ export function AppShell({
                                   href={neto.href!}
                                   prefetch={prefetchDoLink(neto.href!)}
                                   onClick={() => setMenuAberto(false)}
-                                  className={`block rounded-lg px-2.5 py-1.5 text-sm transition ${
+                                  className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition ${
                                     ativo
                                       ? "bg-brand-soft font-medium text-brand"
                                       : "text-ink-muted hover:bg-background hover:text-ink"
                                   }`}
                                 >
-                                  {neto.label}
+                                  <span className="min-w-0 flex-1">{neto.label}</span>
+                                  <IndicadorLink />
                                 </Link>
                               );
                             })}
@@ -333,13 +349,14 @@ export function AppShell({
                       href={child.href!}
                       prefetch={prefetchDoLink(child.href!)}
                       onClick={() => setMenuAberto(false)}
-                      className={`block rounded-lg px-2.5 py-1.5 text-sm transition ${
+                      className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition ${
                         ativo
                           ? "bg-brand-soft font-medium text-brand"
                           : "text-ink-muted hover:bg-background hover:text-ink"
                       }`}
                     >
-                      {child.label}
+                      <span className="min-w-0 flex-1">{child.label}</span>
+                      <IndicadorLink />
                     </Link>
                   );
                 })}
