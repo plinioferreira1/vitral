@@ -54,10 +54,18 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
 
   // equipe (gestor/administrador): quem registra ponto, situação de hoje e correções pendentes
   const equipe = acesso.perms.gestorDeEquipe ? colaboradores.filter((c) => c.registra_ponto && c.id !== acesso.eu?.id) : [];
-  const dadosEquipe = equipe.length ? await carregarPonto(supabase, somarDias(hoje, -1)) : null;
+  const [dadosEquipe, dados] = await Promise.all([
+    equipe.length ? carregarPonto(supabase, somarDias(hoje, -1)) : Promise.resolve(null),
+    alvo?.registra_ponto
+      ? carregarPonto(
+          supabase,
+          alvo.ponto_inicio && alvo.ponto_inicio < `${mes}-01` ? alvo.ponto_inicio : `${mes}-01`,
+          alvo.id,
+        )
+      : Promise.resolve(null),
+  ]);
   const pendentes = (dadosEquipe?.correcoes ?? []).filter((c) => c.status === "pendente" && equipe.some((e) => e.id === c.colaborador_id));
 
-  const dados = alvo?.registra_ponto ? await carregarPonto(supabase, alvo.ponto_inicio && alvo.ponto_inicio < `${mes}-01` ? alvo.ponto_inicio : `${mes}-01`, alvo.id) : null;
   const ctx = alvo && dados ? contextoPonto(alvo, acesso.config, dados, agoraIso) : null;
   const diaHoje = ctx ? diaDoContexto(ctx, hoje) : null;
   const dias = ctx ? espelho(ctx, diasDoMes(mes)) : [];

@@ -199,9 +199,9 @@ export function MenuAcoesLancamento({
                       </option>
                     ))}
                   </select>
-                  <button type="submit" className="w-full rounded-md bg-brand px-3 py-2 text-xs font-bold text-white hover:opacity-90">
+                  <BotaoEnviar textoEnviando="Salvando…" className="w-full rounded-md bg-brand px-3 py-2 text-xs font-bold text-white hover:opacity-90">
                     Salvar categoria
-                  </button>
+                  </BotaoEnviar>
                 </form>
               )}
 
@@ -229,12 +229,12 @@ export function MenuAcoesLancamento({
                     </Link>
                     <form action={cancelarLancamento}>
                       <input type="hidden" name="id" value={id} />
-                      <button
-                        type="submit"
+                      <BotaoEnviar
+                        textoEnviando="Cancelando…"
                         className="flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-ink-muted hover:bg-rose-50 hover:text-rose-700"
                       >
                         <Ban size={15} strokeWidth={2} /> Cancelar
-                      </button>
+                      </BotaoEnviar>
                     </form>
                   </>
                 )}
@@ -246,9 +246,9 @@ export function MenuAcoesLancamento({
                 {status === "cancelado" && (
                   <form action={reativarLancamento}>
                     <input type="hidden" name="id" value={id} />
-                    <button type="submit" className={itemClasse}>
+                    <BotaoEnviar textoEnviando="Reativando…" className={itemClasse}>
                       <RefreshCcw size={15} strokeWidth={2} /> Reativar
-                    </button>
+                    </BotaoEnviar>
                   </form>
                 )}
                 <button

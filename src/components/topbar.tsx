@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Search, Bell, Calendar, X, AlertTriangle, Clock3, CheckCircle2 } from "lucide-react";
+import { BotaoEnviar } from "@/components/botao-enviar";
 
 export interface NotificacaoTopBar {
   id: string;
@@ -102,12 +103,12 @@ export function TopBar({
                   action={limparTodasAction}
                   onSubmit={() => setNotificacoesAbertas(false)}
                 >
-                  <button
-                    type="submit"
+                  <BotaoEnviar
+                    textoEnviando="Limpando…"
                     className="rounded-lg px-2.5 py-1.5 text-xs font-semibold text-brand transition hover:bg-brand-soft"
                   >
                     Limpar tudo
-                  </button>
+                  </BotaoEnviar>
                 </form>
               )}
               <button type="button" aria-label="Fechar notificações" onClick={() => setNotificacoesAbertas(false)} className="flex h-11 w-11 items-center justify-center rounded-lg text-ink-muted hover:bg-background"><X size={18} /></button>
