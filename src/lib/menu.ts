@@ -30,9 +30,6 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       { href: "/calculadora-data", label: "Cálculo de datas" },
       { href: "/cartorio", label: "Simulação de custas" },
       ...(!p.ehSocialMedia && verAvaliacoes ? [{ href: "/avaliacoes", label: "Avaliações de imóveis" }] : []),
-      ...(operacional && p.temLocacao
-        ? [{ href: "/locacao?aba=multa", label: "Cálculo de multa rescisória" }]
-        : []),
     ],
   };
   const itens: ItemMenu[] = [{ href: "/", label: "Início" }];
@@ -64,6 +61,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
         { href: "/locacao?aba=inadimplencias", label: "Contas da locação" },
         ...(verDebitos ? [{ href: "/locacao/debitos", label: "Controle de débitos" }] : []),
         { href: "/locacao/ficha-cadastral", label: "Fichas cadastrais" },
+        { href: "/locacao?aba=multa", label: "Cálculo de multa rescisória" },
       ],
     });
   }
