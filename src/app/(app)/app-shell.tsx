@@ -72,6 +72,7 @@ interface Props {
 // menu (os subitens dentro de um grupo não têm ícone próprio, igual
 // na referência visual).
 const ICONES: { prefixo: string; Icone: LucideIcon }[] = [
+  { prefixo: "/painel-sacra", Icone: BarChart3 },
   { prefixo: "/vendas", Icone: Tag },
   { prefixo: "/financiamentos", Icone: Landmark },
   { prefixo: "/locacao", Icone: Building2 },

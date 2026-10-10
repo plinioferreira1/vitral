@@ -36,6 +36,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   if (p.ehCorretor) itens.push({ href: "/minhas-vendas", label: "Minhas vendas" });
   if (operacional) {
     itens.push({ href: "/calendario", label: "Calendário" });
+    if (p.podeConfigurar) itens.push({ href: "/painel-sacra", label: "Métricas da empresa" });
     if (p.temVenda) itens.push({
       label: "Vendas",
       children: [
@@ -87,7 +88,6 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   if (operacional && p.podeConfigurar) itens.push({
     label: "Relatórios",
     children: [
-      { href: "/painel-sacra", label: "Painel Sacra" },
       { href: "/relatorio-semanal", label: "Resumo semanal" },
       { href: "/financeiro/relatorios", label: "Relatórios financeiros" },
     ],
