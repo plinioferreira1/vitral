@@ -22,7 +22,7 @@ export function DadosComerciais({ c, tenantId, urls }: { c: AvaliacaoCompleta; t
       <input type="hidden" name="etapa" value="dados_comerciais" />
       <input type="hidden" name="modalidade" value="estudo_comercial" />
       <Cartao titulo="Cliente">
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <Campo label="Nome do cliente" name="solicitante_nome" defaultValue={d.solicitante_nome ?? a.proprietario_nome ?? d.destinatario} required />
           <Campo label="Telefone ou e-mail (opcional)" name="solicitante_contato" defaultValue={d.solicitante_contato} />
           <Campo label="Proprietário (se diferente do cliente)" name="proprietario_nome" defaultValue={a.proprietario_nome} />
@@ -110,9 +110,9 @@ export function LaudoComercial({ c, papel, validacao }: { c: AvaliacaoCompleta; 
   return <div className="space-y-5">
     <form action={salvarLaudoComercial} className="space-y-5">
       <input type="hidden" name="avaliacao_id" value={a.id} />
-      <Cartao titulo="Valor e conclusão" descricao="Você define o valor e a análise. Salve os textos antes de conferir ou emitir o PDF.">
-        <Campo label={a.finalidade === "venda" ? "Valor sugerido para venda (R$)" : "Aluguel mensal sugerido (R$)"} name="valor_sugerido" defaultValue={numero(a.valor_sugerido)} inputMode="decimal" required />
-        <div className="mt-4 space-y-4">
+      <Cartao titulo="Valor e conclusão" descricao="Defina o valor e personalize os textos. Para conferir o PDF, salve primeiro. Salvar e emitir faz as duas ações de uma vez.">
+        <Campo label={a.finalidade === "venda" ? "Valor sugerido para venda (R$)" : "Aluguel mensal sugerido (R$)"} name="valor_sugerido" defaultValue={numero(a.valor_sugerido)} inputMode="decimal" required className="xl:w-1/2 xl:pr-2" />
+        <div className="mt-4 grid gap-4 xl:grid-cols-2">
           <AreaTexto label="Apresentação ao cliente" name="carta_texto" defaultValue={d.carta_texto ?? "Apresentamos nossa avaliação comercial do imóvel, preparada para apoiar sua decisão e a definição do preço de divulgação."} />
           <AreaTexto label="Análise do imóvel e do mercado (opcional)" name="parecer_avaliadora" defaultValue={d.parecer_avaliadora ?? d.fundamentacao} rows={5} />
           <AreaTexto label="Conclusão" name="conclusao_texto" defaultValue={d.conclusao_texto ?? "O valor sugerido considera as características informadas do imóvel e as referências disponíveis na data desta avaliação. A negociação final dependerá das condições do mercado e das propostas recebidas."} rows={4} />

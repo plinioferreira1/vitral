@@ -157,7 +157,7 @@ export default async function FinanceiroDashboardPage({
   const saldoPrevisto = saldoConsolidado + totalEntradas30 - totalSaidas30;
 
   return (
-    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
+    <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5">
       <CabecalhoPagina titulo="Visão geral do Financeiro" descricao="Saldos, compromissos e recebimentos. Comece pelos vencidos e pelo que vence hoje." acao={
         <div className="flex gap-1 rounded-lg border border-border/60 bg-surface p-1 text-sm">
           {Object.entries(PERIODOS).map(([valor, label]) => (

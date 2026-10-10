@@ -12,7 +12,7 @@ const NUM_CONDICOES = 6;
 
 export default function NovaCartaPropostaPage() {
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <div>
         <VoltarLink href="/propostas" label="Cartas Proposta" />
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Nova carta proposta</h1>

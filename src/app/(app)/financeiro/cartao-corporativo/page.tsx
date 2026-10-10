@@ -44,7 +44,7 @@ export default async function CartaoCorporativoPage({
 
   if (!cartoes || cartoes.length === 0) {
     return (
-      <div className="financeiro-ui mx-auto max-w-[1100px] space-y-5">
+      <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5">
         <CabecalhoPagina titulo="Cartões e faturas" descricao={<> Importe a fatura do cartão da empresa e categorize os lançamentos pra controlar os gastos por
             categoria e centro de resultado.
            </>} />
@@ -111,7 +111,7 @@ export default async function CartaoCorporativoPage({
   })();
 
   return (
-    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
+    <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5">
       <CabecalhoPagina titulo="Cartões e faturas" descricao={<> Importe a fatura do cartão da empresa e categorize os lançamentos pra controlar os gastos por
           categoria e centro de resultado.
          </>} />

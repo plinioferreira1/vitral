@@ -36,7 +36,7 @@ export default async function TransferenciasPage() {
   const contasAtivas = (contas ?? []).filter((c) => c.ativa);
 
   return (
-    <div className="financeiro-ui mx-auto max-w-[1180px] space-y-5">
+    <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5">
       <CabecalhoPagina titulo="Transferências entre contas" descricao={<> Pagar a fatura do cartão com a conta corrente, aplicar ou resgatar investimento, mover dinheiro entre bancos.
           Não conta como receita nem despesa — só tira de uma conta e põe na outra.
          </>} />

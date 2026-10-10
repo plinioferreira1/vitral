@@ -81,7 +81,7 @@ export default async function SolicitacaoFeriasPage({ params }: { params: Promis
     : [];
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <div>
         <VoltarLink href={souDono ? "/ferias" : "/ferias/equipe"} label={souDono ? "Minhas férias" : "Solicitações de férias"} />
         <div className="flex flex-wrap items-center gap-2">

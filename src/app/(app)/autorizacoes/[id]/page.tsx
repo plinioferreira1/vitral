@@ -73,7 +73,7 @@ export default async function AutorizacaoDetalhePage({
   ]);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto w-full min-w-0 space-y-6">
       <div>
         <VoltarLink href="/autorizacoes" label="Autorizações" />
         <CabecalhoPagina titulo={a.imoveis?.endereco ?? "Imóvel não informado"} descricao="Autorização de venda" acao={a.status === "pendente" ? <Link href={`/autorizacoes/${a.id}/editar`} className={SECONDARY_BUTTON_CLASS}>Editar autorização</Link> : undefined} />

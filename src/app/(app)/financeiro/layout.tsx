@@ -5,5 +5,5 @@ import { NavegacaoFinanceiro } from "@/components/financeiro/navegacao-financeir
 export default async function FinanceiroLayout({ children }: { children: React.ReactNode }) {
   const { user, usuario } = await getUsuarioAtual();
   if (!user || !usuario?.ativo || !usuario.tenant_id || !GESTORES.includes(usuario.nivel_acesso)) notFound();
-  return <div className="mx-auto max-w-[1480px] space-y-6"><NavegacaoFinanceiro />{children}</div>;
+  return <div className="mx-auto w-full min-w-0 space-y-6"><NavegacaoFinanceiro />{children}</div>;
 }

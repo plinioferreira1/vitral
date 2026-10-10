@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { redirect } from "next/navigation";
 import { localDe, podeDecidirSobre, somarDias } from "@/lib/dp/ponto";
 import { createClient } from "@/lib/supabase/server";
@@ -28,11 +29,8 @@ export default async function AusenciasPage() {
   const pendentes = lista.filter((a) => a.status === "pendente" && decide(a.colaborador_id));
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
-      <div>
-        <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Ausências e afastamentos</h1>
-        <p className="mt-1 text-sm text-ink-muted">Faltas, atestados, folgas e licenças. O que for registrado aqui já entra no ponto: dia abonado não vira falta.</p>
-      </div>
+    <div className="mx-auto w-full min-w-0 space-y-5">
+      <CabecalhoPagina titulo="Ausências e afastamentos" descricao="Faltas, atestados, folgas e licenças. O que for registrado aqui já entra no ponto: dia abonado não vira falta." />
 
       {pendentes.length > 0 && (
         <section className="rounded-2xl border border-amber-200 bg-amber-50 p-4">

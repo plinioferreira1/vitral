@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FilePlus2, Settings } from "lucide-react";
@@ -61,13 +62,7 @@ export default async function AvaliacoesPage({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Avaliações de imóveis</h1>
-          <p className="mt-1 max-w-3xl text-sm text-ink-muted">
-            Preencha os dados do cliente e do imóvel, adicione comparáveis e emita um laudo personalizado.
-            Consulte também as avaliações e documentos técnicos já cadastrados.
-          </p>
-        </div>
+        <CabecalhoPagina titulo="Avaliações de imóveis" descricao="Preencha os dados do cliente e do imóvel, adicione comparáveis e emita um laudo personalizado. Consulte também as avaliações e documentos técnicos já cadastrados." />
         <div className="flex flex-wrap gap-2">
           {podeConfigurar(papel) && (
             <Link href="/avaliacoes/configuracao" className={SECONDARY_BUTTON_CLASS}>

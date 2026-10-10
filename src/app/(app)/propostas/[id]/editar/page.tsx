@@ -60,7 +60,7 @@ export default async function EditarCartaPropostaPage({
   const temSegundoProponente = (signatarios ?? []).some((s) => s.ordem === 2);
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <div>
         <VoltarLink href={`/propostas/${id}`} label="Proposta" />
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Editar carta proposta</h1>

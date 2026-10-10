@@ -33,7 +33,7 @@ export default async function ColaboradoresPage({ searchParams }: { searchParams
   const incompletos = todos.filter((c) => c.status === "ativo" && (!c.data_admissao || !c.vinculo)).length;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Colaboradores</h1>

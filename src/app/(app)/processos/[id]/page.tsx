@@ -151,7 +151,7 @@ export default async function ProcessoDetalhePage({
     : 0;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto w-full min-w-0 space-y-6">
       <NavegacaoSecoes secoes={[
         { id: "resumo-processo", label: "Resumo" }, { id: "dados-processo", label: "Dados e responsáveis" },
         { id: "prazos-processo", label: "Prazos" }, { id: "etapas-processo", label: "Etapas e checklist" },

@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CalendarPlus } from "lucide-react";
@@ -50,12 +51,9 @@ export default async function MinhasFeriasPage() {
   const historico = minhas.filter((s) => !emAndamento(s.status) && !["programado", "em_ferias"].includes(situacao(s, hoje)));
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Minhas férias</h1>
-          <p className="mt-1 text-sm text-ink-muted">Seu saldo, seus pedidos e a conversa com o gestor em um só lugar.</p>
-        </div>
+        <CabecalhoPagina titulo="Minhas férias" descricao="Seu saldo, seus pedidos e a conversa com o gestor em um só lugar." />
         {acesso.participa && (
           <Link href="/ferias/solicitar" className={PRIMARY_BUTTON_CLASS}>
             <CalendarPlus size={16} /> Solicitar férias

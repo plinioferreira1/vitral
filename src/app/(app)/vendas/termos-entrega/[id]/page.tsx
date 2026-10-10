@@ -67,7 +67,7 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
   const pdf = `${BASE}/${id}/pdf`;
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <div className={`${CARD_CLASS} overflow-hidden`}>
         <div className="h-1.5 bg-gradient-to-r from-brand via-brand/80 to-gold" />
         <div className="p-4 sm:p-6">

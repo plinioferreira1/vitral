@@ -77,7 +77,7 @@ export default async function PontoPage({ searchParams }: { searchParams: Promis
   const minhasCorrecoes = (dados?.correcoes ?? []).slice(0, 8);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <div>
         <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Controle de ponto</h1>
         {alvo && !proprio && (

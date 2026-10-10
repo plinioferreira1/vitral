@@ -28,7 +28,7 @@ export default async function SolicitarFeriasPage({ searchParams }: { searchPara
   const temSaldo = saldos.some((s) => s.adquirido && s.disponivel > 0);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <div>
         <VoltarLink href="/ferias" label="Minhas férias" />
         <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">{origem ? "Alterar férias" : "Solicitar férias"}</h1>

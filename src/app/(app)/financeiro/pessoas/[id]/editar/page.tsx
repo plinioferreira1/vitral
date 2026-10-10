@@ -56,7 +56,7 @@ export default async function EditarPessoaFinanceiroPage({
     .reduce((soma, l) => soma + Number(l.valor), 0);
 
   return (
-    <div className="financeiro-ui mx-auto max-w-[1180px] space-y-5">
+    <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link

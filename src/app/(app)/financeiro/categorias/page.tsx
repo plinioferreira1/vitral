@@ -58,7 +58,7 @@ export default async function FinanceiroCategoriasPage({
     : (centros ?? []);
 
   return (
-    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
+    <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5">
       <CabecalhoPagina titulo="Categorias e centros de resultado" descricao={<> Organize as contas a pagar e a receber para que cada lançamento pertença a uma categoria e,
           opcionalmente, a um centro de resultado.
          </>} />

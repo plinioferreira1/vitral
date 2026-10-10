@@ -1,5 +1,7 @@
 "use client";
 
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+
 import { useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { brl } from "@/lib/proporcionalidade";
@@ -153,15 +155,8 @@ export default function CartorioPage() {
   };
 
   return (
-    <div className="max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-          Simulação de Custas
-        </h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Estimativa de ITBI, escritura e registro pra passar pro cliente.
-        </p>
-      </div>
+    <div className="w-full min-w-0 space-y-6">
+      <CabecalhoPagina titulo="Simulação de Custas" descricao="Estimativa de ITBI, escritura e registro pra passar pro cliente." />
 
       <div className="space-y-5">
         <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">

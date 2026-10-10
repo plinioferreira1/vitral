@@ -27,7 +27,7 @@ export default async function ConfiguracoesEmailPage() {
   ]);
 
   return (
-    <div className="financeiro-ui mx-auto max-w-[1100px] space-y-5">
+    <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5">
       <CabecalhoPagina titulo="Resumos diários por e-mail" descricao={<> Todo dia às 9h (horário de Brasília) quem estiver ativo na lista abaixo recebe dois e-mails: o resumo
           financeiro e o resumo dos processos (etapas atrasadas, do dia, dos próximos 7 dias e prazos de contrato).
          </>} />

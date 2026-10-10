@@ -1,13 +1,14 @@
 "use client";
 
+import { hojeISO } from "@/lib/data-br";
+import { INPUT_CLASS } from "@/components/ui/styles";
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+
 import { useState, useMemo } from "react";
 import { addYears, addMonths, addDays, format, isWeekend } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 export default function CalculadoraDataPage() {
-  const hoje = new Date();
-  const hojeISO = hoje.toISOString().slice(0, 10);
-
   const [dataInicial, setDataInicial] = useState(hojeISO);
   const [operacao, setOperacao] = useState<"somar" | "subtrair">("somar");
   const [dias, setDias] = useState("");
@@ -37,24 +38,19 @@ export default function CalculadoraDataPage() {
     return data;
   }, [dataInicial, operacao, dias, meses, anos]);
 
-  const campoClasse =
-    "w-full rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand";
+  const campoClasse = INPUT_CLASS;
 
   return (
-    <div className="max-w-xl space-y-6">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Cálculo de datas</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Some ou subtraia dias, meses e anos de uma data — pra calcular prazos, vencimentos e
-          cronogramas rapidinho.
-        </p>
-      </div>
+    <div className="w-full min-w-0 space-y-6">
+      <CabecalhoPagina titulo="Cálculo de datas" descricao="Some ou subtraia dias, meses e anos de uma data — pra calcular prazos, vencimentos e cronogramas rapidinho." />
 
+      <div className="grid gap-5 lg:grid-cols-2">
       <div className="space-y-5 rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
         <div>
-          <label className="mb-1 block text-xs font-medium text-ink-muted">Data inicial</label>
+          <label htmlFor="data-inicial" className="mb-1 block text-xs font-medium text-ink-muted">Data inicial</label>
           <input
             type="date"
+            id="data-inicial"
             value={dataInicial}
             onChange={(e) => setDataInicial(e.target.value)}
             className={campoClasse}
@@ -87,10 +83,11 @@ export default function CalculadoraDataPage() {
 
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Dias</label>
+            <label htmlFor="prazo-dias" className="mb-1 block text-xs font-medium text-ink-muted">Dias</label>
             <input
               type="number"
               min={0}
+              id="prazo-dias"
               value={dias}
               onChange={(e) => setDias(e.target.value)}
               placeholder="0"
@@ -98,10 +95,11 @@ export default function CalculadoraDataPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Meses</label>
+            <label htmlFor="prazo-meses" className="mb-1 block text-xs font-medium text-ink-muted">Meses</label>
             <input
               type="number"
               min={0}
+              id="prazo-meses"
               value={meses}
               onChange={(e) => setMeses(e.target.value)}
               placeholder="0"
@@ -109,10 +107,11 @@ export default function CalculadoraDataPage() {
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Anos</label>
+            <label htmlFor="prazo-anos" className="mb-1 block text-xs font-medium text-ink-muted">Anos</label>
             <input
               type="number"
               min={0}
+              id="prazo-anos"
               value={anos}
               onChange={(e) => setAnos(e.target.value)}
               placeholder="0"
@@ -149,6 +148,7 @@ export default function CalculadoraDataPage() {
             </div>
           </>
         )}
+      </div>
       </div>
     </div>
   );

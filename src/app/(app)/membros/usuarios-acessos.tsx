@@ -287,7 +287,7 @@ export function UsuariosAcessos({
     );
   };
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="mb-1 text-xs font-medium text-ink-muted">

@@ -67,7 +67,7 @@ export default async function NovoLancamentoFinanceiroPage({
   const retorno = tipo === "receita" ? "/financeiro/contas-a-receber#lista" : "/financeiro/contas-a-pagar#lista";
 
   return (
-    <form action={criarLancamento} className="financeiro-ui mx-auto max-w-[1180px] space-y-5 pb-24">
+    <form action={criarLancamento} className="financeiro-ui mx-auto w-full min-w-0 space-y-5 pb-24">
       <input type="hidden" name="tipo" value={tipo} />
       <input type="hidden" name="return_to" value={retorno} />
 

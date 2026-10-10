@@ -166,7 +166,7 @@ export default async function ContratoLocacaoPage({
   const contasComDados = (contasRaw ?? []).filter((cc) => cc.status !== "nao_aplicavel");
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto w-full min-w-0 space-y-6">
       <NavegacaoSecoes secoes={[
         { id: "resumo-contrato", label: "Resumo" }, { id: "contas-contrato", label: "Contas" },
         { id: "condominio-contrato", label: "Condomínio" }, { id: "dados-contrato", label: "Dados e responsáveis" },

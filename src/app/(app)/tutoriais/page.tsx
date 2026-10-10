@@ -30,7 +30,7 @@ export default async function TutoriaisPage() {
   const categorias = Array.from(new Set(tutoriais.map((t) => t.categoria)));
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto w-full min-w-0 space-y-6">
       <ContextoConfiguracao />
       <CabecalhoPagina titulo="Gerenciar tutoriais" descricao={<> Tutoriais de como usar o Vitral, organizados por categoria (ex: Vendas, Financiamento,
           Locação, Google Agenda). Aparecem pra todo mundo na Central de ajuda. Pode ser um vídeo

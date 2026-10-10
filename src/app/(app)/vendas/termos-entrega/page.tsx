@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Plus, Search, Settings } from "lucide-react";
@@ -114,10 +115,7 @@ export default async function TermosEntregaPage({ searchParams }: { searchParams
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Termos de Entrega de Chaves</h1>
-          <p className="mt-1 text-sm text-ink-muted">Entrega das chaves com a proporcionalidade de condomínio, IPTU/TLP e demais encargos entre vendedor e comprador.</p>
-        </div>
+        <CabecalhoPagina titulo="Termos de Entrega de Chaves" descricao="Entrega das chaves com a proporcionalidade de condomínio, IPTU/TLP e demais encargos entre vendedor e comprador." />
         <div className="flex flex-wrap gap-2">
           {perms.configurar && (
             <Link href={`${BASE}/configuracao`} className={SECONDARY_BUTTON_CLASS}>

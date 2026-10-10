@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
@@ -42,12 +43,7 @@ export default async function PropostasPage() {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Propostas de compra</h1>
-          <p className="mt-1 text-sm text-ink-muted">
-            Proposta de compra — envie um link ou assine na hora, durante a visita.
-          </p>
-        </div>
+        <CabecalhoPagina titulo="Propostas de compra" descricao="Proposta de compra — envie um link ou assine na hora, durante a visita." />
         <Link
           href="/propostas/nova"
           className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"

@@ -90,7 +90,7 @@ export default async function FinanceiroPessoasPage({
   }
 
   return (
-    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
+    <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <CabecalhoPagina titulo="Pessoas e empresas" descricao={<> Cadastro central de pessoas e empresas usado em contas a pagar e a receber.
            </>} />

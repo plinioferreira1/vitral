@@ -19,7 +19,7 @@ export default async function FichasCadastraisLocacaoPage() {
   const concluidas = fichas.filter((f) => f.status === "concluida").length;
   const pendentes = fichas.filter((f) => ["aguardando", "em_preenchimento"].includes(f.status)).length;
   const podeExcluir = !!usuario?.ativo && GESTORES.includes(usuario.nivel_acesso);
-  return <div className="mx-auto max-w-7xl space-y-6">
+  return <div className="mx-auto w-full min-w-0 space-y-6">
     <CabecalhoPagina titulo="Fichas cadastrais" descricao="Acompanhe o preenchimento, confira os dados e baixe o PDF assinado das fichas recebidas." acao={<Link href="/locacao/ficha-cadastral/nova" className={PRIMARY_BUTTON_CLASS}><Plus size={17} /> Nova ficha</Link>} />
     {error ? <p role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">Não foi possível carregar as fichas. Atualize a página para tentar novamente.</p> : <>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

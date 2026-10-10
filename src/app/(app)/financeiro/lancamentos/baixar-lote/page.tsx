@@ -82,7 +82,7 @@ export default async function BaixarLancamentosEmLotePage({
   const acao = tipo === "receita" ? "recebimentos" : "pagamentos";
 
   return (
-    <form action={registrarBaixaEmLote} className="financeiro-ui mx-auto max-w-[1180px] space-y-5 pb-24">
+    <form action={registrarBaixaEmLote} className="financeiro-ui mx-auto w-full min-w-0 space-y-5 pb-24">
       {itens.map((lancamento) => (
         <input key={lancamento.id} type="hidden" name="ids" value={lancamento.id} />
       ))}

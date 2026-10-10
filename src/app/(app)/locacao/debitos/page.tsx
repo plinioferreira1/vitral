@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
@@ -103,10 +104,7 @@ export default async function ControleDebitosPage({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-semibold text-ink sm:text-2xl">Controle de Débitos</h1>
-          <p className="text-sm text-ink-muted">Conferência mensal de condomínio e IPTU/TLP dos imóveis administrados.</p>
-        </div>
+        <CabecalhoPagina titulo="Controle de Débitos" descricao="Conferência mensal de condomínio e IPTU/TLP dos imóveis administrados." />
         <div className="flex items-center gap-1 rounded-xl border border-border bg-surface p-1">
           <Link href={mesHref(somarMeses(competencia, -1))} aria-label="Mês anterior" className="rounded-lg p-2 text-ink-muted hover:bg-background">
             <ChevronLeft size={16} />

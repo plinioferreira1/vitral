@@ -35,7 +35,7 @@ export default async function ConfiguracoesDPPage() {
   );
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <ContextoConfiguracao />
       <CabecalhoPagina titulo="Configurações do Departamento Pessoal" descricao={<> Listas do cadastro e regras de ponto e férias. Nada disso fica fixo no sistema. </>} />
 

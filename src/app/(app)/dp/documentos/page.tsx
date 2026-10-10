@@ -32,7 +32,7 @@ export default async function DocumentosPage({ searchParams }: { searchParams: P
   const admin = acesso.perms.administrador;
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <div>
         <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Documentos</h1>
         <p className="mt-1 text-sm text-ink-muted">{admin ? "Contratos, termos, atestados e recibos de cada colaborador, em pasta privada." : "Seus documentos guardados pela empresa."}</p>

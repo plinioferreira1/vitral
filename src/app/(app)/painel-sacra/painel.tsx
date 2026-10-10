@@ -18,7 +18,7 @@ function Secao({ titulo, descricao, children }: { titulo: string; descricao: str
 }
 
 export function PainelSacra() {
-  return <div className="mx-auto max-w-7xl space-y-6">
+  return <div className="mx-auto w-full min-w-0 space-y-6">
     <CabecalhoPagina titulo="Painel Sacra" descricao="Resultados comerciais, comissões e desempenho da equipe em um só lugar." acao={<span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-xs font-medium text-amber-800"><Hourglass size={14} aria-hidden="true" />Aguardando a planilha</span>} />
 
     <div className="rounded-xl border border-brand/15 bg-brand-soft p-4 text-sm leading-6 text-ink"><p className="font-semibold">A estrutura do painel está pronta.</p><p className="mt-1 text-ink-muted">Os indicadores serão preenchidos após recebermos e conferirmos a planilha. O VGC representa a comissão gerada para a Sacra; os repasses aos corretores serão tratados separadamente.</p></div>

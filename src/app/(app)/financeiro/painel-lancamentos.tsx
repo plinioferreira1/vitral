@@ -309,7 +309,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     ["por_pagina", f.por_pagina],
   ];
   return (
-    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
+    <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5">
       <CabecalhoPagina titulo={titulo}
         descricao={tipo === "receita" ? "Acompanhe os valores a receber e registre recebimentos completos ou parciais." : "Acompanhe vencimentos, consulte os boletos e registre pagamentos completos ou parciais."}
         acao={<Link href={`/financeiro/lancamentos/novo?tipo=${tipo}`} className={PRIMARY_BUTTON_CLASS}><Plus size={16} /> {tipo === "receita" ? "Nova receita" : "Nova despesa"}</Link>}

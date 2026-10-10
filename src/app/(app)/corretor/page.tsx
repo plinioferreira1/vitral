@@ -1,3 +1,4 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
@@ -33,13 +34,8 @@ export default async function CorretorPage() {
   const concluidas = (etapas ?? []).filter((e) => statusPorEtapa.get(e.id)?.concluida).length;
 
   return (
-    <div className="max-w-2xl space-y-6">
-      <div>
-        <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Central de ajuda</h1>
-        <p className="mt-1 text-sm text-ink-muted">
-          Primeiros passos, tutoriais de como usar o sistema e materiais de referência.
-        </p>
-      </div>
+    <div className="w-full min-w-0 space-y-6">
+      <CabecalhoPagina titulo="Central de ajuda" descricao="Primeiros passos, tutoriais de como usar o sistema e materiais de referência." />
 
       {total > 0 && (
         <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">

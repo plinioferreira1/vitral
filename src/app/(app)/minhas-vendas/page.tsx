@@ -14,7 +14,7 @@ export default async function MinhasVendasPage({ searchParams }: { searchParams:
  const comissoes = listarComissoes(dados.vendas, pagamento), resumo = resumoComissoes(dados.vendas);
  const vendas = filtrarVendas(dados.vendas, filtro, hoje);
  const vencidas = dados.vendas.filter((v) => { const r = resumoVenda(v, hoje); return r.etapaVencida || r.contratoVencido; }).length;
- return <div className="mx-auto max-w-5xl space-y-6">
+ return <div className="mx-auto w-full min-w-0 space-y-6">
   <CabecalhoPagina titulo="Minhas vendas" descricao="Acompanhe as etapas, os prazos e suas comissões nas vendas vinculadas a você. A equipe responsável atualiza os processos." />
   {!dados.vinculado ? <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">Seu acesso ainda não foi vinculado ao cadastro de corretor. Solicite o vínculo à gestão.</div> : <>
    <nav aria-label="Seções de minhas vendas" className="flex gap-2">{[[false,"Vendas","/minhas-vendas"],[true,"Minhas comissões","/minhas-vendas?aba=comissoes"]].map(([ativa,nome,href]) => <Link key={String(nome)} href={String(href)} aria-current={abaComissoes === ativa ? "page" : undefined} className={`min-h-11 rounded-lg border px-4 py-3 text-sm ${abaComissoes === ativa ? "bg-brand text-white" : "border-border"}`}>{nome}</Link>)}</nav>

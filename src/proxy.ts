@@ -32,6 +32,14 @@ const ROTAS_CORRETOR = [
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
+  // Redirecionamentos também precisam devolver os cookies renovados pelo Auth.
+  // Sem isso, o navegador repete a requisição com a sessão anterior.
+  const redirecionar = (url: URL) => {
+    const resposta = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach(cookie => resposta.cookies.set(cookie));
+    return resposta;
+  };
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -67,7 +75,7 @@ export async function proxy(request: NextRequest) {
   if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return redirecionar(url);
   }
 
   if (user) {
@@ -82,7 +90,7 @@ export async function proxy(request: NextRequest) {
         const url = request.nextUrl.clone();
         url.pathname = "/acesso-desativado";
         url.search = "";
-        return NextResponse.redirect(url);
+        return redirecionar(url);
       }
       return supabaseResponse;
     }
@@ -93,7 +101,7 @@ export async function proxy(request: NextRequest) {
     ) {
       const url = request.nextUrl.clone();
       url.pathname = "/";
-      return NextResponse.redirect(url);
+      return redirecionar(url);
     }
 
     const rotaPermitida = ROTAS_CORRETOR.some(
@@ -104,14 +112,14 @@ export async function proxy(request: NextRequest) {
     if (!isPublic && usuario?.nivel_acesso === "corretor" && !rotaPermitida) {
       const url = request.nextUrl.clone();
       url.pathname = "/cartorio";
-      return NextResponse.redirect(url);
+      return redirecionar(url);
     }
   }
 
   if (!user && request.nextUrl.pathname === "/acesso-desativado") {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
-    return NextResponse.redirect(url);
+    return redirecionar(url);
   }
 
   return supabaseResponse;

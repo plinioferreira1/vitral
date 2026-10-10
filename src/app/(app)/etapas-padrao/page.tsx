@@ -40,7 +40,7 @@ export default async function EtapasPadraoPage({
   const especiais = (etapas ?? []).filter((e) => e.tipo === "especial");
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto w-full min-w-0 space-y-6">
       <ContextoConfiguracao />
       <CabecalhoPagina titulo="Etapas dos processos" descricao={<> A <b>sequência normal</b>é a linha do tempo do processo, em ordem. As{" "}<b>situações especiais</b>são exceções que podem acontecer a qualquer momento, fora
           da ordem (judicial, inadimplência, acordo) — não entram na linha do tempo.

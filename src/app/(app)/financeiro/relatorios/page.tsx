@@ -192,7 +192,7 @@ export default async function RelatoriosFinanceirosPage({
   })();
 
   return (
-    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
+    <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <CabecalhoPagina titulo="Relatórios financeiros" descricao={<> Visualize e exporte os dados de recebimentos e despesas da sua imobiliária.
            </>} />

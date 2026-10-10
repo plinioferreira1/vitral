@@ -16,7 +16,7 @@ export default async function NovoColaboradorPage() {
   const [{ data: colaboradores }, { data: usuarios }] = await Promise.all([supabase.from("dp_colaboradores").select("id, nome, usuario_id").neq("status", "desligado").order("nome"), supabase.from("usuarios").select("id, nome").eq("ativo", true).order("nome")]);
   const ocupados = new Set((colaboradores ?? []).map((c) => c.usuario_id).filter(Boolean));
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <div>
         <VoltarLink href="/dp/colaboradores" label="Colaboradores" />
         <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Novo colaborador</h1>

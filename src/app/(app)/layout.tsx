@@ -170,7 +170,7 @@ export default async function AppLayout({
       <AvisoTela aviso={aviso} />
 
       <main className="min-w-0 flex-1">
-        <div className="app-content mx-auto max-w-[1600px] px-4 py-5 sm:px-8 sm:py-8">
+        <div className="app-content mx-auto w-full min-w-0 px-4 py-5 sm:px-8 sm:py-8">
           <div className="mb-6">
             <Suspense fallback={<TopBarCarregando />}>
               <TopBarComDados hoje={hoje} nivelAcesso={usuario.nivel_acesso} />

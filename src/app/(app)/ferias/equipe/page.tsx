@@ -36,7 +36,7 @@ export default async function EquipeFeriasPage({ searchParams }: { searchParams:
     pessoas.sort((a, b) => (a.departamento ?? "").localeCompare(b.departamento ?? "") || a.nome.localeCompare(b.nome));
 
     return (
-      <div className="mx-auto max-w-6xl space-y-5">
+      <div className="mx-auto w-full min-w-0 space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Calendário da equipe</h1>
           <div className="flex items-center gap-1 rounded-xl border border-border bg-surface p-1">
@@ -121,7 +121,7 @@ export default async function EquipeFeriasPage({ searchParams }: { searchParams:
   const lista = daEquipe.filter((s) => grupoDoGestor(s.status) === grupo);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <div>
         <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Solicitações de férias</h1>
         <p className="mt-1 text-sm text-ink-muted">{acesso.administrador ? "Pedidos de toda a equipe." : "Pedidos da sua equipe."} Abra um pedido para ver o impacto na equipe e responder.</p>

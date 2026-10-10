@@ -56,7 +56,7 @@ export default async function ChecklistsFinanciamentoPage() {
   }));
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <ContextoConfiguracao />
       <CabecalhoPagina titulo="Modelos de checklist de financiamento" descricao={<> Crie quantos checklists quiser (ex: Conformidade, Assinatura E-notariado). Cada um pode
           ter várias seções, e cada seção seus próprios itens. Aparece na aba Checklists de

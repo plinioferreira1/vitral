@@ -73,7 +73,7 @@ export default async function PropostaDetalhePage({
   ]);
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <div>
         <VoltarLink href="/propostas" label="Cartas Proposta" />
         <div className="flex items-center gap-3">

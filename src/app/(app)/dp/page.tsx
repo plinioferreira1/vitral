@@ -90,7 +90,7 @@ export default async function ResumoDPPage() {
   const soEu = !acesso.perms.gestorDeEquipe;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <div>
         <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Departamento Pessoal</h1>
         <p className="mt-1 text-sm text-ink-muted">{soEu ? "Seu ponto, suas férias e seus documentos." : `Como está a equipe hoje, ${dataBR(hoje)}.`}</p>

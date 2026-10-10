@@ -23,7 +23,7 @@ export default async function AnexoDespesaPage({ params }: { params: Promise<{ i
   ]);
   if (!despesa) notFound();
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto w-full min-w-0 space-y-6">
       <Link href="/financeiro/contas-a-pagar#lista" className="inline-flex items-center gap-2 text-sm text-ink-muted hover:text-brand"><ArrowLeft size={16} /> Voltar às despesas</Link>
       <NavegacaoLancamento id={id} tipo="despesa" status={despesa.status} />
       <div>

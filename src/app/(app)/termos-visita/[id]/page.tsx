@@ -75,7 +75,7 @@ export default async function TermoVisitaDetalhePage({
   const siteUrl = await obterSiteUrl();
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto w-full min-w-0 space-y-6">
       <div>
         <VoltarLink href="/termos-visita" label="Termos de Visita" />
         <CabecalhoPagina titulo={t.imoveis?.endereco ?? "Imóvel não informado"} descricao="Termo de visita"  />

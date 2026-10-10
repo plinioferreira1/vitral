@@ -10,7 +10,7 @@ import { User, Home } from "lucide-react";
 
 export default function NovaAutorizacaoPage() {
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto w-full min-w-0 space-y-6">
       <div>
         <VoltarLink href="/autorizacoes" label="Autorizações" />
         <CabecalhoPagina titulo="Nova autorização de venda" descricao={<>Depois de criar, você vai poder copiar o link de assinatura de cada proprietário, ou

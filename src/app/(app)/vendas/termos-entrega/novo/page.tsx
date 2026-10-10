@@ -58,7 +58,7 @@ export default async function NovoTermoPage({ searchParams }: { searchParams: Pr
     .slice(0, 40);
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <div>
         <VoltarLink href={BASE} label="Termos de entrega de chaves" />
         <h1 className="text-[26px] font-bold leading-tight tracking-tight text-ink">Novo termo de entrega de chaves</h1>

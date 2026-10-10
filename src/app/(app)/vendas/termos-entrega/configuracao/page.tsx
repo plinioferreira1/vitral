@@ -25,7 +25,7 @@ export default async function ModeloTermoPage() {
   const multa = `${Math.floor(modelo.multaDiariaCentavos / 100)},${String(modelo.multaDiariaCentavos % 100).padStart(2, "0")}`;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <ContextoConfiguracao />
       <div>
         <VoltarLink href="/vendas/termos-entrega" label="Termos de entrega de chaves" />

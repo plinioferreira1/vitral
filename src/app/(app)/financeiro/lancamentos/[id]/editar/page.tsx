@@ -92,7 +92,7 @@ export default async function EditarLancamentoFinanceiroPage({
   const ultimaOcorrencia = ocorrencias[ocorrencias.length - 1]?.vencimento;
 
   return (
-    <form action={editarLancamento} className="financeiro-ui mx-auto max-w-[1180px] space-y-5 pb-24">
+    <form action={editarLancamento} className="financeiro-ui mx-auto w-full min-w-0 space-y-5 pb-24">
       <input type="hidden" name="id" value={lancamento.id} />
       <input type="hidden" name="return_to" value={retorno} />
       <NavegacaoLancamento id={id} tipo={lancamento.tipo} status={lancamento.status} />

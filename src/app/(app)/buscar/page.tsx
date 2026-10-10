@@ -60,7 +60,7 @@ export default async function BuscarPage({
   }
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <div>
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Busca</h1>
         <p className="mt-1 text-sm text-ink-muted">

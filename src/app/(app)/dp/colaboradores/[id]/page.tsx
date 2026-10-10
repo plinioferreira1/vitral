@@ -50,7 +50,7 @@ export default async function FichaColaboradorPage({ params, searchParams }: { p
   const { data: gestor } = c.gestor_id ? await supabase.from("dp_colaboradores").select("nome").eq("id", c.gestor_id).maybeSingle() : { data: null };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="mx-auto w-full min-w-0 space-y-5">
       <div>
         {perms.gestorDeEquipe && <VoltarLink href="/dp/colaboradores" label="Colaboradores" />}
         <div className="flex flex-wrap items-center gap-4">

@@ -109,7 +109,7 @@ export default async function ContasBancariasPage({
   });
 
   return (
-    <div className="financeiro-ui mx-auto max-w-[1480px] space-y-5">
+    <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <CabecalhoPagina titulo="Contas bancárias" descricao={<> Saldo calculado a partir do saldo inicial + pagamentos, recebimentos e transferências entre contas.
            </>} />

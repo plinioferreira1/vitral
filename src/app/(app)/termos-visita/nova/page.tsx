@@ -11,7 +11,7 @@ export default function NovoTermoVisitaPage() {
   const hoje = hojeISO();
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto w-full min-w-0 space-y-6">
       <div>
         <VoltarLink href="/termos-visita" label="Termos de Visita" />
         <CabecalhoPagina titulo="Novo termo de visita" descricao={<>Depois de criar, você vai poder copiar o link de assinatura, ou passar o

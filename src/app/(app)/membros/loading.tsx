@@ -3,7 +3,7 @@ export default function Loading() {
     <div
       role="status"
       aria-label="Carregando usuários e acessos"
-      className="mx-auto max-w-6xl animate-pulse space-y-5"
+      className="mx-auto w-full min-w-0 animate-pulse space-y-5"
     >
       <div className="h-9 w-64 rounded-lg bg-border/60" />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

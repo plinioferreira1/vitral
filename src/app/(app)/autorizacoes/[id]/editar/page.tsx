@@ -77,7 +77,7 @@ export default async function EditarAutorizacaoPage({
     `${INPUT_CLASS} min-h-11 text-base sm:text-sm`;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto w-full min-w-0 space-y-6">
       <div>
         <VoltarLink href={`/autorizacoes/${id}`} label="Autorização" />
         <CabecalhoPagina titulo="Editar autorização de venda" descricao={<>Só é possível editar enquanto nenhum proprietário tiver assinado.</>} />

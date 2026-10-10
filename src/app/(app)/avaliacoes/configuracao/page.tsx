@@ -31,7 +31,7 @@ export default async function ConfiguracaoAvaliacaoPage() {
   const l = config.limiares;
 
   return (
-    <div className="max-w-4xl space-y-5">
+    <div className="w-full min-w-0 space-y-5">
       <ContextoConfiguracao />
       <div>
         <VoltarLink href="/avaliacoes" label="Avaliação de Imóveis" />

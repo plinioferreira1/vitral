@@ -84,7 +84,7 @@ export default async function BaixarLancamentoFinanceiroPage({
   const quitado = lancamento.status === "pago";
 
   return (
-    <div className="financeiro-ui mx-auto max-w-[1180px] space-y-5 pb-24">
+    <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5 pb-24">
       <NavegacaoLancamento id={id} tipo={lancamento.tipo} status={lancamento.status} />
       <Link href={retorno} className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"><ArrowLeft size={16} /> Voltar à lista</Link>
       <CabecalhoPagina titulo={quitado ? `Histórico de ${acao}` : titulo} descricao={lancamento.descricao} />

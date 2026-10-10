@@ -9,7 +9,7 @@ import { criarFichaLocacao } from "../actions";
 const campo = `${INPUT_CLASS} mt-1.5 min-h-11 text-base sm:text-sm`;
 
 export default function NovaFichaLocacaoPage() {
-  return <div className="mx-auto max-w-4xl space-y-6">
+  return <div className="mx-auto w-full min-w-0 space-y-6">
     <div><VoltarLink href="/locacao/ficha-cadastral" label="Fichas cadastrais" /><CabecalhoPagina titulo="Nova ficha cadastral" descricao="Crie a solicitação do titular. O cliente recebe um link individual para preencher os dados e assinar." /></div>
     <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
       <form action={criarFichaLocacao} className={`${CARD_CLASS} space-y-5 p-5 sm:p-6`}>

@@ -61,7 +61,7 @@ export default async function DetalheFichaPage({ params }: { params: Promise<{ i
     dados.tem_corresponsavel === "Sim" && dados.corresponsavel_nome && !jaTem("corresponsavel") ? { tipo: "corresponsavel" as const, nome: String(dados.corresponsavel_nome), email: String(dados.corresponsavel_email ?? ""), telefone: String(dados.corresponsavel_telefone ?? "") } : null,
   ].filter((p) => p !== null);
 
-  return <div className="mx-auto max-w-5xl space-y-6">
+  return <div className="mx-auto w-full min-w-0 space-y-6">
     <div><VoltarLink href="/locacao/ficha-cadastral" label="Fichas cadastrais" /><CabecalhoPagina titulo={ficha.proponente_nome || "Proponente não informado"} descricao={ficha.imovel_referencia} acao={<>{ficha.status === "concluida" && <a href={`/locacao/ficha-cadastral/${ficha.id}/pdf`} className={PRIMARY_BUTTON_CLASS}><Download size={16} /> PDF assinado</a>}</>} /><div className="mt-3 flex flex-wrap items-center gap-2"><span className="rounded-full bg-brand-soft px-3 py-1 text-xs font-semibold text-brand">{ROTULO_TIPO[tipo]}</span><span className={`rounded-full px-3 py-1 text-xs font-semibold ${status.classe}`}>{status.label}</span></div></div>
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
       <div className={`${CARD_CLASS} p-4`}><UsersRound size={18} className="text-brand" /><p className="mt-2 text-xl font-bold">{pessoas.length}</p><p className="text-xs text-ink-muted">Pessoas na proposta</p></div>

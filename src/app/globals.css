@@ -138,7 +138,8 @@ body {
 
 .financeiro-page {
   margin-inline: auto;
-  max-width: 92.5rem;
+  width: 100%;
+  min-width: 0;
   color: var(--ink);
 }
 
@@ -206,4 +207,15 @@ body {
   .financeiro-ui { max-width: none; color: #111827; }
   .financeiro-ui .rounded-xl,
   .financeiro-ui .rounded-2xl { break-inside: avoid; box-shadow: none; }
+}
+
+/* Controles e foco consistentes entre os módulos, incluindo telas legadas. */
+.app-content { min-width: 0; }
+.app-content :is(input, select, textarea) { max-width: 100%; min-width: 0; }
+.app-content :is(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-content .animate-pulse, .app-content .animate-spin { animation: none; }
 }

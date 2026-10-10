@@ -36,7 +36,7 @@ export default async function GoogleAgendaPage() {
   });
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto w-full min-w-0 space-y-6">
       <ContextoConfiguracao />
       <CabecalhoPagina titulo="Integração com Google Agenda" descricao={<> A partir de agora, os prazos de etapa e o alerta de contagem regressiva do prazo final
           do contrato (Vendas/Financiamentos) são enviados sozinhos pro Google Agenda sempre que

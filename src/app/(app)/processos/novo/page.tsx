@@ -41,7 +41,7 @@ export default async function NovoProcessoPage({
   );
 
   return (
-    <div className="max-w-4xl space-y-6">
+    <div className="w-full min-w-0 space-y-6">
       <div>
         <VoltarLink href="/" label="Início" />
         <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">Novo processo</h1>

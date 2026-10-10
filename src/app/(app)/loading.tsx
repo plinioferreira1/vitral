@@ -1,8 +1,12 @@
+import { CarregamentoDemorado } from "@/components/carregamento-demorado";
+
 // Mostrado instantaneamente ao navegar entre páginas enquanto o servidor
 // busca os dados — sem isso o clique parecia "travado" até a página inteira
 // ficar pronta. Também habilita o prefetch das rotas dinâmicas no Next 16.
 export default function Carregando() {
   return (
+    <div className="space-y-5">
+      <CarregamentoDemorado />
     <div className="animate-pulse space-y-6" aria-busy="true" aria-label="Carregando">
       <div className="space-y-2">
         <div className="h-7 w-64 rounded-md bg-border/70" />
@@ -18,6 +22,7 @@ export default function Carregando() {
           <div key={i} className="h-4 rounded-md bg-border/50" style={{ width: `${90 - i * 8}%` }} />
         ))}
       </div>
+    </div>
     </div>
   );
 }

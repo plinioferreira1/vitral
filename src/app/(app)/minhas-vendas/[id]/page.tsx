@@ -13,7 +13,7 @@ export default async function MinhaVendaPage({ params }: { params: Promise<{ id:
  const v = dados?.vendas[0]; if (!v) notFound();
  const hoje = hojeISO();
  const r = resumoVenda(v, hoje);
- return <div className="mx-auto max-w-4xl space-y-6"><Link href="/minhas-vendas" className="text-sm text-brand">← Minhas vendas</Link>
+ return <div className="mx-auto w-full min-w-0 space-y-6"><Link href="/minhas-vendas" className="text-sm text-brand">← Minhas vendas</Link>
   <div><p className="text-xs text-ink-muted">{v.numero} · {STATUS_VENDA[v.status] ?? v.status}</p><h1 className="mt-2 break-words text-3xl font-bold">{v.imovel || "Imóvel ainda não informado"}</h1><p className="mt-2 text-sm text-ink-muted">Consulta do andamento. As alterações são realizadas pela equipe responsável.</p></div>
   <section className="rounded-xl border border-border bg-white p-5"><h2 className="font-semibold">Resumo da venda</h2><dl className="mt-4 grid gap-4 sm:grid-cols-2">{[["Comprador",v.comprador],["Vendedor",v.vendedor],["Responsável pelo acompanhamento",v.responsavel],["Assinatura do contrato",v.assinatura_contrato ? dataVenda(v.assinatura_contrato) : null],["Prazo final do contrato",dataVenda(v.prazo_contrato)],["Etapa atual",r.atual?.nome]].map(([nome,valor]) => <div key={nome}><dt className="text-xs text-ink-muted">{nome}</dt><dd className="mt-1 break-words text-sm">{valor || "Ainda não informado"}</dd></div>)}</dl>{r.etapaVencida && <p className="mt-4 text-sm text-rose-700">Há etapa com prazo vencido.</p>}{r.contratoVencido && <p className="mt-2 text-sm text-rose-700">O prazo final contratual está vencido.</p>}</section>
   <ComissoesVenda comissoes={v.comissoes ?? []} />
