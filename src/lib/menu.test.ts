@@ -11,10 +11,10 @@ function destinos(itens: ItemMenu[]): string[] {
     item.children.flatMap((filho) => "href" in filho ? [filho.href] : filho.children.map((neto) => neto.href)));
 }
 describe("navegação por acesso", () => {
-  it("posiciona Métricas da empresa imediatamente abaixo de Calendário", () => {
+  it("posiciona Resultados imediatamente abaixo de Calendário", () => {
     const menu = montarMenu(gestor);
     const indice = menu.findIndex(item => "href" in item && item.href === "/calendario");
-    expect(menu[indice + 1]).toEqual({ href: "/painel-sacra", label: "Métricas da empresa" });
+    expect(menu[indice + 1]).toEqual({ href: "/painel-sacra", label: "Resultados" });
     expect(destinos([menu.find(item => item.label === "Relatórios")!])).not.toContain("/painel-sacra");
   });
   it("mantém financeiro, relatórios e administração fora do menu do auxiliar", () => {

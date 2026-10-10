@@ -1,10 +1,11 @@
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { somarVgcEmpresa, type ComissaoConferidaVgc } from "./vgc-empresa";
 import type { Database } from "@/lib/database.types";
 import { somarVgvEmpresa, type VendaHistoricaVgv, type VendaVgv, rankingVgvEmpresa, type CorretorVgv } from "./vgv-empresa";
 
 /** Consulta com RLS e empresa explícita; pagina para não truncar o VGV em 1.000 vendas. */
-export async function obterVgvEmpresa(supabase: SupabaseClient<Database>, tenantId: string, ano: number, historico: readonly VendaHistoricaVgv[], corretores: readonly CorretorVgv[], processosForaDoAno: readonly string[] = []) {
+export async function obterVgvEmpresa(supabase: SupabaseClient<Database>, tenantId: string, ano: number, historico: readonly VendaHistoricaVgv[], corretores: readonly CorretorVgv[], processosForaDoAno: readonly string[] = [], comissoes: readonly ComissaoConferidaVgc[] = []) {
   const vendas: VendaVgv[] = [];
   const tamanho = 500;
   for (let inicio = 0; ; inicio += tamanho) {
@@ -17,5 +18,5 @@ export async function obterVgvEmpresa(supabase: SupabaseClient<Database>, tenant
     vendas.push(...data);
     if (data.length < tamanho) break;
   }
-  return { ...somarVgvEmpresa(ano, vendas, historico, processosForaDoAno), ...rankingVgvEmpresa(ano, vendas, historico, corretores, processosForaDoAno) };
+  return { vgc: somarVgcEmpresa(ano, vendas, comissoes, processosForaDoAno), ...somarVgvEmpresa(ano, vendas, historico, processosForaDoAno), ...rankingVgvEmpresa(ano, vendas, historico, corretores, processosForaDoAno) };
 }

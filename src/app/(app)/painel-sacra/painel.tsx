@@ -1,18 +1,20 @@
-import { Flag, House, Target, TrendingUp, Trophy } from "lucide-react";
+import Link from "next/link";
+import { Flag, House, Target, TrendingUp, Trophy, Wallet } from "lucide-react";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { CartaoKpi } from "@/components/cartao-kpi";
 import type { LinhaRankingVgv } from "@/lib/vgv-empresa";
+import type { somarVgcEmpresa } from "@/lib/vgc-empresa";
 import { progressoVgv } from "@/lib/metricas-empresa";
 
 const moeda = (centavos: number) => (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-type DadosVgv = { ano: number; realizadoCentavos: number; metaCentavos: number; cadastradoCentavos: number; historicoCentavos: number; semValor: number; ranking: LinhaRankingVgv[]; semParticipacao: number };
+type DadosVgv = { ano: number; realizadoCentavos: number; metaCentavos: number; cadastradoCentavos: number; historicoCentavos: number; semValor: number; ranking: LinhaRankingVgv[]; semParticipacao: number; vgc: ReturnType<typeof somarVgcEmpresa> };
 
 export function PainelSacra({ dados }: { dados: DadosVgv }) {
   const progresso = progressoVgv(dados.realizadoCentavos, dados.metaCentavos);
   const percentual = progresso.percentual.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
   return <div className="w-full min-w-0 space-y-6">
-    <CabecalhoPagina titulo="Métricas da empresa" descricao="O volume de vendas da Sacra e o caminho até a meta anual." acao={<span className="rounded-full border border-border bg-surface px-4 py-2 text-sm font-semibold">Ano {dados.ano}</span>} />
+    <CabecalhoPagina titulo="Resultados" descricao="Vendas, comissões geradas e o caminho até a meta anual." acao={<span className="rounded-full border border-border bg-surface px-4 py-2 text-sm font-semibold">Ano {dados.ano}</span>} />
 
     <section aria-labelledby="vgv-titulo" className="relative overflow-hidden rounded-2xl bg-brand p-6 text-white shadow-sm sm:p-8 lg:p-10">
       <div className="flex flex-wrap items-start justify-between gap-6">
@@ -42,6 +44,25 @@ export function PainelSacra({ dados }: { dados: DadosVgv }) {
       <CartaoKpi label={progresso.restanteCentavos > 0 ? "Falta para a meta" : "Meta alcançada"} valor={moeda(progresso.restanteCentavos)} icon={Flag} tom="sucesso" rodape={<p className="mt-3 text-sm text-ink-muted">{progresso.restanteCentavos > 0 ? "Volume de vendas necessário para atingir o objetivo." : "O VGV realizado atingiu o objetivo anual."}</p>} />
     </div>
 
+    <section className="rounded-2xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="vgc-titulo">
+      <h2 id="vgc-titulo" className="flex items-center gap-2 font-semibold"><Wallet size={20} className="text-brand" aria-hidden="true" />VGC — comissões geradas</h2>
+      <p className="mt-2 text-sm leading-6 text-ink-muted">Comissões destinadas à Sacra e aos corretores que faziam parte da equipe na venda. Parcelas de parceiros externos ficam fora. Valores gerados, sem indicar que já foram recebidos.</p>
+      <div className="mt-5 grid gap-4 md:grid-cols-2">
+        <CartaoKpi label="VGC apurado" valor={moeda(dados.vgc.apuradoCentavos)} icon={Wallet} tom="marca" rodape={<p className="mt-3 text-sm text-ink-muted">{dados.vgc.vendasConferidas} vendas conferidas. Base revisada em 10/10/2026.</p>} />
+        <CartaoKpi label="VGC aguardando confirmação" valor={moeda(dados.vgc.pendenteCentavos)} icon={Flag} tom="info" rodape={<p className="mt-3 text-sm text-ink-muted">{dados.vgc.pendencias.length} vendas com rateios pendentes. Este valor não está somado ao VGC apurado.</p>} />
+      </div>
+      <p className="mt-4 text-xs leading-5 text-ink-muted">O VGC usa os valores contratuais conferidos; não é estimado pelo preço do imóvel. Novas vendas e alterações de comissão precisam de nova conferência.</p>
+      {dados.vgc.semConferencia > 0 && <p className="mt-3 text-sm text-ink-muted">{dados.vgc.semConferencia} venda(s) cadastrada(s) ainda sem comissão conferida.</p>}
+      {dados.vgc.pendencias.length > 0 && <details className="mt-5 rounded-xl border border-border p-4">
+        <summary className="cursor-pointer font-medium">Ver pendências do VGC</summary>
+        <ul className="mt-4 space-y-4">{dados.vgc.pendencias.map(p => <li key={p.id} className="text-sm leading-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-2"><span className="font-semibold">{p.imovel}</span><span className="tabular-nums">{moeda(p.valorCentavos)}</span></div>
+          <p className="text-ink-muted">{p.pendencia}</p>
+          <div className="mt-1 flex flex-wrap gap-4"><a className="text-brand underline underline-offset-4" href={p.fonte} target="_blank" rel="noreferrer">Ver contrato</a>{p.processoId && <Link className="text-brand underline underline-offset-4" href={`/processos/${p.processoId}`}>Abrir venda</Link>}</div>
+        </li>)}</ul>
+      </details>}
+    </section>
+
     <section className="rounded-2xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="ranking-titulo">
       <h2 id="ranking-titulo" className="flex items-center gap-2 font-semibold"><Trophy size={20} className="text-brand" aria-hidden="true" />Ranking de corretores por VGV</h2>
       <p className="mt-2 text-sm leading-6 text-ink-muted">Cada corretor da Sacra recebe o VGV integral das vendas em que participa como captador ou vendedor. Uma venda compartilhada conta para os dois; no total da empresa, conta uma única vez.</p>
@@ -61,7 +82,7 @@ export function PainelSacra({ dados }: { dados: DadosVgv }) {
       <dl className="mt-3 grid gap-3 sm:grid-cols-2"><div><dt className="text-ink-muted">Vendas cadastradas em {dados.ano}</dt><dd className="font-semibold tabular-nums">{moeda(dados.cadastradoCentavos)}</dd></div><div><dt className="text-ink-muted">Histórico complementar conferido</dt><dd className="font-semibold tabular-nums">{moeda(dados.historicoCentavos)}</dd></div></dl>
       <p className="mt-3 text-ink-muted">Uma nova venda entra automaticamente pelo valor e pelo ano da data base do cadastro. Alterações de valor e cancelamentos também atualizam o painel ao abri-lo novamente.</p>
       <p className="mt-1 text-ink-muted">O histórico da aba Comissões 2026 e os contratos conferidos complementam as vendas anteriores. O Reserva Parque Clube está incluído pelo contrato, com R$ 620 mil. As vendas já vinculadas ao Vitral usam o valor do cadastro e entram uma única vez.</p>
-      <p className="mt-1 text-ink-muted">A segunda QI 10 (R$ 515 mil), Golden Park e Costa Verde entram somente quando cadastradas. A primeira QI 10 e a QE 12 já estão incluídas.</p>
+      <p className="mt-1 text-ink-muted">Segunda QI 10, Golden Park, Costa Verde, Reserva Parque Clube, L’Essence du Parc e os dois imóveis da permuta foram pré-cadastrados. Os vínculos com o histórico mantêm cada venda uma única vez no total.</p>
       {dados.semValor > 0 && <p className="mt-2 text-xs text-ink-muted">{dados.semValor} processo(s) de venda sem valor informado não acrescentam volume ao VGV.</p>}
     </aside>
   </div>;

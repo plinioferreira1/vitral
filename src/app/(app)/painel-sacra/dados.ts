@@ -14,20 +14,17 @@ export const PROCESSOS_FORA_DO_ANO = [
 
 // Fonte: aba 💰 Comissões 2026, B4:H60, arquivo enviado em 09/10/2026.
 // SHA-256: 4edcb2ccdc2e06b083a8a7cbfb2374255397862bd4771ea6d031f2b066f3b38a
-// Linhas 57 (Costa Verde), 58 (Golden Park) e 60 (segunda QI 10) fora
-// do saldo histórico: entram somente pelo cadastro de venda.
+// Costa Verde, Golden Park e segunda QI 10 pré-cadastradas em 10/10/2026.
+// Sete vínculos explícitos substituem o histórico sem duplicar o VGV.
+// linha -1 identifica Reserva Parque Clube, fora da planilha, contrato de 08/09/2026.
 // QE 12 (linha 59) e primeira QI 10 (linha 31) já vinculadas por UUID.
 // Casa Arniqueiras = Jardim das Oliveiras, confirmado pelo usuário.
 // Outros vínculos conferidos por imóvel e valor, nunca só pelo preço.
 export const HISTORICO_VGV: readonly VendaHistoricaVgv[] = [
   {
-    // Identificador reservado a documento fora da planilha (não é uma linha dela).
-    // Reserva Parque Clube: CTT assinado em 08/09/2026, Drive
-    // 1nZ3fJGUEaikyvNPnHekPYyJqxhd3ujnQ. Inclusão confirmada em 10/10/2026.
-    // Ao cadastrar essa venda, vincular processoId aqui para não duplicar o VGV.
-    // Participação no ranking ainda não confirmada.
-    linha: -1,
-    valorCentavos: 62_000_000,
+    "linha": -1,
+    "valorCentavos": 62000000,
+    "processoId": "61b1f65d-9566-4758-8e85-e0ce43beab15"
   },
   {
     "linha": 4,
@@ -277,7 +274,8 @@ export const HISTORICO_VGV: readonly VendaHistoricaVgv[] = [
     "participantesIds": [
       "a3c3886d-224e-41ca-9d28-1039abfa2135",
       "d96cd9a0-be85-417e-b9c2-40eebcc4dc43"
-    ]
+    ],
+    "processoId": "cc0b4444-24c5-4bb3-8c62-4237af2163ae"
   },
   {
     "linha": 41,
@@ -285,7 +283,8 @@ export const HISTORICO_VGV: readonly VendaHistoricaVgv[] = [
     "participantesIds": [
       "a3c3886d-224e-41ca-9d28-1039abfa2135",
       "d96cd9a0-be85-417e-b9c2-40eebcc4dc43"
-    ]
+    ],
+    "processoId": "f8e0dffb-507d-434e-91d7-83f9fb53a3a9"
   },
   {
     "linha": 42,
@@ -392,7 +391,8 @@ export const HISTORICO_VGV: readonly VendaHistoricaVgv[] = [
   {
     "linha": 56,
     "valorCentavos": 112000000,
-    "participantesIds": []
+    "participantesIds": [],
+    "processoId": "6e4411d1-1edf-489b-9100-4667915c05d0"
   },
   {
     "linha": 59,
@@ -400,6 +400,30 @@ export const HISTORICO_VGV: readonly VendaHistoricaVgv[] = [
     "processoId": "440d6abf-ce0b-4030-89f4-acb387ed736a",
     "participantesIds": [
       "d96cd9a0-be85-417e-b9c2-40eebcc4dc43"
+    ]
+  },
+  {
+    "linha": 58,
+    "valorCentavos": 43000000,
+    "processoId": "c556773f-f3a2-450e-88f7-10e894580238",
+    "participantesIds": [
+      "d96cd9a0-be85-417e-b9c2-40eebcc4dc43"
+    ]
+  },
+  {
+    "linha": 60,
+    "valorCentavos": 51500000,
+    "processoId": "da658fe9-4307-4f2d-9462-33d5dfbad465",
+    "participantesIds": [
+      "84bb35db-05bc-40a1-a930-64da46bde791"
+    ]
+  },
+  {
+    "linha": 57,
+    "valorCentavos": 41000000,
+    "processoId": "d3206aa1-5bff-46d3-8ec6-d1e477a28bbf",
+    "participantesIds": [
+      "a3c3886d-224e-41ca-9d28-1039abfa2135"
     ]
   }
 ];
