@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Link, { useLinkStatus } from "next/link";
 import Image from "next/image";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
@@ -33,7 +32,6 @@ import {
   X,
   ChevronRight,
   Wallet,
-  Loader2,
   type LucideIcon,
 } from "lucide-react";
 import { hrefAtivoMenu } from "@/lib/menu";
@@ -116,19 +114,8 @@ function iconePara(hrefOuLabel: string): LucideIcon {
   return achado?.Icone ?? FileText;
 }
 
-function prefetchDoLink(href: string) {
-  return href === "/corretor" ? false : undefined;
-}
-
-function IndicadorLink() {
-  const { pending } = useLinkStatus();
-  return (
-    <span className="flex h-4 w-4 shrink-0 items-center justify-center" aria-hidden="true">
-      {pending && <Loader2 size={13} className="animate-spin text-brand" />}
-    </span>
-  );
-}
-
+// Links do menu usam navegação de documento para que o conteúdo e a URL
+// sejam carregados juntos, sem depender de uma transição RSC pendente.
 export function AppShell({
   navItems,
   tenantName,
@@ -214,7 +201,8 @@ export function AppShell({
     .join("");
 
   const logo = (
-    <Link
+    // eslint-disable-next-line @next/next/no-html-link-for-pages -- Navegação completa intencional para evitar transições presas no menu.
+    <a
       href="/"
       onClick={() => setMenuAberto(false)}
       className="flex w-full items-center justify-center rounded-md px-2 py-1 transition hover:bg-background"
@@ -228,7 +216,7 @@ export function AppShell({
         priority
         className="h-9 w-auto object-contain"
       />
-    </Link>
+    </a>
   );
 
   const nav = (
@@ -238,11 +226,10 @@ export function AppShell({
           const ativo = item.href === hrefAtivo;
           const Icone = iconePara(item.href!);
           return (
-            <Link
+            <a
               key={item.label}
               aria-current={ativo ? "page" : undefined}
               href={item.href!}
-              prefetch={prefetchDoLink(item.href!)}
               onClick={() => {
                 setMenuAberto(false);
                 setGruposAbertos(new Set());
@@ -255,8 +242,7 @@ export function AppShell({
             >
               <Icone size={17} strokeWidth={2} className="shrink-0" />
               <span className="min-w-0 flex-1">{item.label}</span>
-              <IndicadorLink />
-            </Link>
+            </a>
           );
         }
 
@@ -318,11 +304,10 @@ export function AppShell({
                             {child.children.map((neto) => {
                               const ativo = neto.href === hrefAtivo;
                               return (
-                                <Link
+                                <a
                                   key={neto.href}
                                   aria-current={ativo ? "page" : undefined}
                                   href={neto.href!}
-                                  prefetch={prefetchDoLink(neto.href!)}
                                   onClick={() => setMenuAberto(false)}
                                   className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition ${
                                     ativo
@@ -331,8 +316,7 @@ export function AppShell({
                                   }`}
                                 >
                                   <span className="min-w-0 flex-1">{neto.label}</span>
-                                  <IndicadorLink />
-                                </Link>
+                                </a>
                               );
                             })}
                           </div>
@@ -343,11 +327,10 @@ export function AppShell({
 
                   const ativo = child.href === hrefAtivo;
                   return (
-                    <Link
+                    <a
                       key={child.href}
                       aria-current={ativo ? "page" : undefined}
                       href={child.href!}
-                      prefetch={prefetchDoLink(child.href!)}
                       onClick={() => setMenuAberto(false)}
                       className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm transition ${
                         ativo
@@ -356,8 +339,7 @@ export function AppShell({
                       }`}
                     >
                       <span className="min-w-0 flex-1">{child.label}</span>
-                      <IndicadorLink />
-                    </Link>
+                    </a>
                   );
                 })}
               </div>
@@ -370,7 +352,7 @@ export function AppShell({
 
   const rodape = (
     <div className="shrink-0 border-t border-border bg-surface pt-3">
-      <Link
+      <a
         href="/perfil"
         onClick={() => setMenuAberto(false)}
         className="flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition hover:bg-background"
@@ -386,7 +368,7 @@ export function AppShell({
           <p className="truncate text-sm font-medium text-ink">{userName}</p>
           <p className="truncate text-xs text-ink-muted">{userCargo || userPerfil}</p>
         </span>
-      </Link>
+      </a>
       <form action={sairAction}>
         <BotaoEnviar
           className="mt-1 flex w-full items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-left text-xs text-ink-muted transition hover:bg-background hover:text-ink"
