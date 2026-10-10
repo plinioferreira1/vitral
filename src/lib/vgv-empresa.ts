@@ -19,14 +19,15 @@ export type VendaHistoricaVgv = {
 /** O vínculo explícito substitui a linha da planilha pelo cadastro atual.
  * Não comparar só nomes ou preços: duas vendas podem ter o mesmo valor.
  */
-export function somarVgvEmpresa(ano: number, vendas: readonly VendaVgv[], historico: readonly VendaHistoricaVgv[]) {
+export function somarVgvEmpresa(ano: number, vendas: readonly VendaVgv[], historico: readonly VendaHistoricaVgv[], processosForaDoAno: readonly string[] = []) {
+  const foraDoAno = new Set(processosForaDoAno);
   const ids = new Set<string>();
   let cadastradoCentavos = 0;
   let semValor = 0;
   for (const venda of vendas) {
     if (ids.has(venda.id)) throw new Error("Processo duplicado no cálculo do VGV.");
     ids.add(venda.id);
-    if (venda.categoria !== "venda" || venda.status === "cancelado" ||
+    if (foraDoAno.has(venda.id) || venda.categoria !== "venda" || venda.status === "cancelado" ||
         !venda.data_criacao.startsWith(`${ano}-`)) continue;
     if (venda.valor_total === null || venda.valor_total === 0) {
       semValor++;
@@ -60,7 +61,8 @@ export function somarVgvEmpresa(ano: number, vendas: readonly VendaVgv[], histor
 export type CorretorVgv = { id: string; nome: string; aliases?: readonly string[] };
 export type LinhaRankingVgv = { id: string; nome: string; valorCentavos: number; vendas: number; posicao: number };
 
-export function rankingVgvEmpresa(ano: number, vendas: readonly VendaVgv[], historico: readonly VendaHistoricaVgv[], corretores: readonly CorretorVgv[]) {
+export function rankingVgvEmpresa(ano: number, vendas: readonly VendaVgv[], historico: readonly VendaHistoricaVgv[], corretores: readonly CorretorVgv[], processosForaDoAno: readonly string[] = []) {
+  const foraDoAno = new Set(processosForaDoAno);
   const canonicos = new Map(corretores.flatMap(c => [c.id, ...(c.aliases ?? [])].map(id => [id, c.id] as const)));
   const ranking = new Map<string, Omit<LinhaRankingVgv, "posicao">>();
   const porProcesso = new Map(historico.filter(h => h.processoId).map(h => [h.processoId!, h]));
@@ -76,7 +78,7 @@ export function rankingVgvEmpresa(ano: number, vendas: readonly VendaVgv[], hist
     }
   };
   for (const venda of vendas) {
-    if (venda.categoria !== "venda" || venda.status === "cancelado" || !venda.data_criacao.startsWith(`${ano}-`) || !venda.valor_total) continue;
+    if (foraDoAno.has(venda.id) || venda.categoria !== "venda" || venda.status === "cancelado" || !venda.data_criacao.startsWith(`${ano}-`) || !venda.valor_total) continue;
     const linha = porProcesso.get(venda.id);
     const atuais = [venda.captador_id, venda.corretor_id].filter((id): id is string => !!id);
     // Captador preenchido indica os dois papéis informados no cadastro atual.

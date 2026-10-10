@@ -4,7 +4,7 @@ import type { Database } from "@/lib/database.types";
 import { somarVgvEmpresa, type VendaHistoricaVgv, type VendaVgv, rankingVgvEmpresa, type CorretorVgv } from "./vgv-empresa";
 
 /** Consulta com RLS e empresa explícita; pagina para não truncar o VGV em 1.000 vendas. */
-export async function obterVgvEmpresa(supabase: SupabaseClient<Database>, tenantId: string, ano: number, historico: readonly VendaHistoricaVgv[], corretores: readonly CorretorVgv[]) {
+export async function obterVgvEmpresa(supabase: SupabaseClient<Database>, tenantId: string, ano: number, historico: readonly VendaHistoricaVgv[], corretores: readonly CorretorVgv[], processosForaDoAno: readonly string[] = []) {
   const vendas: VendaVgv[] = [];
   const tamanho = 500;
   for (let inicio = 0; ; inicio += tamanho) {
@@ -17,5 +17,5 @@ export async function obterVgvEmpresa(supabase: SupabaseClient<Database>, tenant
     vendas.push(...data);
     if (data.length < tamanho) break;
   }
-  return { ...somarVgvEmpresa(ano, vendas, historico), ...rankingVgvEmpresa(ano, vendas, historico, corretores) };
+  return { ...somarVgvEmpresa(ano, vendas, historico, processosForaDoAno), ...rankingVgvEmpresa(ano, vendas, historico, corretores, processosForaDoAno) };
 }

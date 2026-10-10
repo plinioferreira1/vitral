@@ -4,6 +4,14 @@ import type { VendaHistoricaVgv, CorretorVgv } from "@/lib/vgv-empresa";
 export const TENANT_SACRA = "fc91a390-af99-4357-95e1-e173a8213abf";
 export const METRICAS_SACRA = { ano: 2026, metaCentavos: 7_000_000_000 };
 
+// Vendas de 2025 ainda ativas por pendências, confirmadas pelo usuário em 09/10/2026.
+// A data de criação do processo não deve incluí-las nas métricas de 2026.
+// Vínculos por UUID: outras vendas futuras no mesmo empreendimento continuam elegíveis.
+export const PROCESSOS_FORA_DO_ANO = [
+  "09ab8ff7-6645-4c72-aed4-57a4ba7be308", // Oasis 1802A
+  "bea2f434-cc60-4a96-ad29-072c404ade49", // Bouganville 401 (já datado em 2025)
+] as const;
+
 // Fonte: aba 💰 Comissões 2026, B4:H60, arquivo enviado em 09/10/2026.
 // SHA-256: 4edcb2ccdc2e06b083a8a7cbfb2374255397862bd4771ea6d031f2b066f3b38a
 // Linhas 57 (Costa Verde), 58 (Golden Park) e 60 (segunda QI 10) fora

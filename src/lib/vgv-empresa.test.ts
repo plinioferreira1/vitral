@@ -73,3 +73,19 @@ describe("ranking por participação", () => {
     expect(resultado).toEqual({ ranking: [], semParticipacao: 1 });
   });
 });
+
+// Processos antigos podem ser abertos no ano atual por pendências operacionais.
+it("retira vendas de anos anteriores do total e ranking sem recuperar o histórico vinculado", () => {
+  const vendas = [
+    venda("oasis-antigo", 1_600_000, { corretor_id: "amanda" }),
+    venda("bouganville-antigo", 345_000, { corretor_id: "amanda" }),
+    venda("nova-venda-oasis", 900_000, { corretor_id: "amanda" }),
+  ];
+  const historico = [{ linha: 4, valorCentavos: 160_000_000, processoId: "oasis-antigo", participantesIds: ["amanda"] }];
+  const excluidos = ["oasis-antigo", "bouganville-antigo"];
+  expect(somarVgvEmpresa(2026, vendas, historico, excluidos).realizadoCentavos).toBe(90_000_000);
+  expect(rankingVgvEmpresa(2026, vendas, historico, [{ id: "amanda", nome: "Amanda" }], excluidos).ranking)
+    .toEqual([{ id: "amanda", nome: "Amanda", valorCentavos: 90_000_000, vendas: 1, posicao: 1 }]);
+  expect(vendas).toHaveLength(3);
+  expect(vendas.every(v => v.status === "ativo")).toBe(true);
+});
