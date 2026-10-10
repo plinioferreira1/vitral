@@ -58,9 +58,9 @@ export function PainelSacra({ dados }: { dados: DadosVgv }) {
 
     <aside className="rounded-xl border border-border bg-surface p-5 text-sm leading-6">
       <h2 className="font-semibold">Como o VGV é atualizado</h2>
-      <dl className="mt-3 grid gap-3 sm:grid-cols-2"><div><dt className="text-ink-muted">Vendas cadastradas em {dados.ano}</dt><dd className="font-semibold tabular-nums">{moeda(dados.cadastradoCentavos)}</dd></div><div><dt className="text-ink-muted">Histórico complementar da planilha</dt><dd className="font-semibold tabular-nums">{moeda(dados.historicoCentavos)}</dd></div></dl>
+      <dl className="mt-3 grid gap-3 sm:grid-cols-2"><div><dt className="text-ink-muted">Vendas cadastradas em {dados.ano}</dt><dd className="font-semibold tabular-nums">{moeda(dados.cadastradoCentavos)}</dd></div><div><dt className="text-ink-muted">Histórico complementar conferido</dt><dd className="font-semibold tabular-nums">{moeda(dados.historicoCentavos)}</dd></div></dl>
       <p className="mt-3 text-ink-muted">Uma nova venda entra automaticamente pelo valor e pelo ano da data base do cadastro. Alterações de valor e cancelamentos também atualizam o painel ao abri-lo novamente.</p>
-      <p className="mt-1 text-ink-muted">O histórico da aba Comissões 2026 complementa as vendas anteriores. As vendas já vinculadas ao Vitral usam o valor do cadastro e entram uma única vez.</p>
+      <p className="mt-1 text-ink-muted">O histórico da aba Comissões 2026 e os contratos conferidos complementam as vendas anteriores. O Reserva Parque Clube está incluído pelo contrato, com R$ 620 mil. As vendas já vinculadas ao Vitral usam o valor do cadastro e entram uma única vez.</p>
       <p className="mt-1 text-ink-muted">A segunda QI 10 (R$ 515 mil), Golden Park e Costa Verde entram somente quando cadastradas. A primeira QI 10 e a QE 12 já estão incluídas.</p>
       {dados.semValor > 0 && <p className="mt-2 text-xs text-ink-muted">{dados.semValor} processo(s) de venda sem valor informado não acrescentam volume ao VGV.</p>}
     </aside>

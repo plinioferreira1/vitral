@@ -21,6 +21,15 @@ export const PROCESSOS_FORA_DO_ANO = [
 // Outros vínculos conferidos por imóvel e valor, nunca só pelo preço.
 export const HISTORICO_VGV: readonly VendaHistoricaVgv[] = [
   {
+    // Identificador reservado a documento fora da planilha (não é uma linha dela).
+    // Reserva Parque Clube: CTT assinado em 08/09/2026, Drive
+    // 1nZ3fJGUEaikyvNPnHekPYyJqxhd3ujnQ. Inclusão confirmada em 10/10/2026.
+    // Ao cadastrar essa venda, vincular processoId aqui para não duplicar o VGV.
+    // Participação no ranking ainda não confirmada.
+    linha: -1,
+    valorCentavos: 62_000_000,
+  },
+  {
     "linha": 4,
     "valorCentavos": 123000000,
     "participantesIds": []
