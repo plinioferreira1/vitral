@@ -4678,6 +4678,7 @@ export type Database = {
       processos: {
         Row: {
           banco_id: string | null
+          captador_id: string | null
           categoria: Database["public"]["Enums"]["categoria_processo"]
           codigo_san: string | null
           comprador_id: string | null
@@ -4695,6 +4696,7 @@ export type Database = {
           numero_processo: string
           numero_proposta_contrato: string | null
           origem: string | null
+          participacao_vgv_revisada: boolean
           responsavel_id: string | null
           status: string
           tenant_id: string
@@ -4705,6 +4707,7 @@ export type Database = {
         }
         Insert: {
           banco_id?: string | null
+          captador_id?: string | null
           categoria?: Database["public"]["Enums"]["categoria_processo"]
           codigo_san?: string | null
           comprador_id?: string | null
@@ -4722,6 +4725,7 @@ export type Database = {
           numero_processo: string
           numero_proposta_contrato?: string | null
           origem?: string | null
+          participacao_vgv_revisada?: boolean
           responsavel_id?: string | null
           status?: string
           tenant_id: string
@@ -4732,6 +4736,7 @@ export type Database = {
         }
         Update: {
           banco_id?: string | null
+          captador_id?: string | null
           categoria?: Database["public"]["Enums"]["categoria_processo"]
           codigo_san?: string | null
           comprador_id?: string | null
@@ -4749,6 +4754,7 @@ export type Database = {
           numero_processo?: string
           numero_proposta_contrato?: string | null
           origem?: string | null
+          participacao_vgv_revisada?: boolean
           responsavel_id?: string | null
           status?: string
           tenant_id?: string
@@ -4763,6 +4769,13 @@ export type Database = {
             columns: ["banco_id"]
             isOneToOne: false
             referencedRelation: "bancos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processos_captador_id_fkey"
+            columns: ["captador_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
             referencedColumns: ["id"]
           },
           {

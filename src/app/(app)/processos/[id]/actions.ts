@@ -153,6 +153,7 @@ export async function concluirEtapa(formData: FormData) {
       after(() => reconciliarAlertaContratoFinal(supabase, processoId));
       revalidatePath(`/processos/${processoId}`);
       revalidatePath("/vendas");
+  revalidatePath("/painel-sacra");
       revalidatePath("/financiamentos");
     }
   }
@@ -181,6 +182,7 @@ export async function reabrirEtapa(formData: FormData) {
     await checar(supabase.from("processos").update({ status: "ativo" }).eq("id", processoId), "atualizar");
     after(() => reconciliarAlertaContratoFinal(supabase, processoId));
     revalidatePath("/vendas");
+  revalidatePath("/painel-sacra");
       revalidatePath("/financiamentos");
   }
 
@@ -210,6 +212,7 @@ export async function salvarDatasContrato(formData: FormData) {
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/vendas");
+  revalidatePath("/painel-sacra");
   revalidatePath("/financiamentos");
 }
 
@@ -254,6 +257,7 @@ export async function salvarEnderecoImovel(formData: FormData) {
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/vendas");
+  revalidatePath("/painel-sacra");
   revalidatePath("/financiamentos");
   revalidatePath("/");
 }
@@ -270,6 +274,7 @@ export async function salvarCodigoSanProcesso(formData: FormData) {
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/vendas");
+  revalidatePath("/painel-sacra");
   revalidatePath("/financiamentos");
 }
 
@@ -359,6 +364,10 @@ export async function salvarDadosProcesso(formData: FormData) {
     data_assinatura: campo("data_assinatura"),
     data_final_contrato: campo("data_final_contrato"),
   };
+  if (existente.categoria === "venda" && formData.has("captador_nome")) {
+    dadosProcesso.participacao_vgv_revisada = true;
+    dadosProcesso.captador_id = await resolverOuCriar(supabase, "corretores", "nome", tenantId, campo("captador_nome") ?? "");
+  }
   if (bancoId) dadosProcesso.banco_id = bancoId;
   if (corretorId) dadosProcesso.corretor_id = corretorId;
   if (responsavelId) dadosProcesso.responsavel_id = responsavelId;
@@ -378,6 +387,7 @@ export async function salvarDadosProcesso(formData: FormData) {
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/vendas");
+  revalidatePath("/painel-sacra");
   revalidatePath("/financiamentos");
   revalidatePath("/");
 }

@@ -1,11 +1,12 @@
-import { Flag, House, Target, TrendingUp } from "lucide-react";
+import { Flag, House, Target, TrendingUp, Trophy } from "lucide-react";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { CartaoKpi } from "@/components/cartao-kpi";
+import type { LinhaRankingVgv } from "@/lib/vgv-empresa";
 import { progressoVgv } from "@/lib/metricas-empresa";
 
 const moeda = (centavos: number) => (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-type DadosVgv = { ano: number; realizadoCentavos: number; metaCentavos: number };
+type DadosVgv = { ano: number; realizadoCentavos: number; metaCentavos: number; cadastradoCentavos: number; historicoCentavos: number; semValor: number; ranking: LinhaRankingVgv[]; semParticipacao: number };
 
 export function PainelSacra({ dados }: { dados: DadosVgv }) {
   const progresso = progressoVgv(dados.realizadoCentavos, dados.metaCentavos);
@@ -36,15 +37,32 @@ export function PainelSacra({ dados }: { dados: DadosVgv }) {
     </section>
 
     <div className="grid gap-4 md:grid-cols-3">
-      <CartaoKpi label="VGV realizado" valor={moeda(dados.realizadoCentavos)} icon={House} tom="marca" rodape={<p className="mt-3 text-sm text-ink-muted">Total da aba Comissões 2026.</p>} />
+      <CartaoKpi label="VGV realizado" valor={moeda(dados.realizadoCentavos)} icon={House} tom="marca" rodape={<p className="mt-3 text-sm text-ink-muted">Vendas cadastradas + histórico complementar.</p>} />
       <CartaoKpi label="Meta anual de VGV" valor={moeda(dados.metaCentavos)} icon={Target} tom="info" rodape={<p className="mt-3 text-sm text-ink-muted">Objetivo da empresa para {dados.ano}.</p>} />
       <CartaoKpi label={progresso.restanteCentavos > 0 ? "Falta para a meta" : "Meta alcançada"} valor={moeda(progresso.restanteCentavos)} icon={Flag} tom="sucesso" rodape={<p className="mt-3 text-sm text-ink-muted">{progresso.restanteCentavos > 0 ? "Volume de vendas necessário para atingir o objetivo." : "O VGV realizado atingiu o objetivo anual."}</p>} />
     </div>
 
+    <section className="rounded-2xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="ranking-titulo">
+      <h2 id="ranking-titulo" className="flex items-center gap-2 font-semibold"><Trophy size={20} className="text-brand" aria-hidden="true" />Ranking de corretores por VGV</h2>
+      <p className="mt-2 text-sm leading-6 text-ink-muted">Cada corretor da Sacra recebe o VGV integral das vendas em que participa como captador ou vendedor. Uma venda compartilhada conta para os dois; no total da empresa, conta uma única vez.</p>
+      {dados.ranking.length > 0 ? <ol className="mt-5 divide-y divide-border">
+        {dados.ranking.map(linha => <li key={linha.id} className="grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-4 gap-y-2 py-4 sm:grid-cols-[2.5rem_minmax(0,1fr)_auto]">
+          <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${linha.posicao === 1 ? "bg-brand text-white" : "bg-brand-soft text-brand"}`}>{linha.posicao}º</span>
+          <div className="min-w-0"><p className="font-semibold">{linha.nome}</p><p className="mt-1 text-xs text-ink-muted">{linha.vendas} {linha.vendas === 1 ? "venda com participação" : "vendas com participação"}</p><div aria-hidden="true" className="mt-2 h-1.5 overflow-hidden rounded-full bg-background"><div className="h-full rounded-full bg-brand/70" style={{ width: `${linha.valorCentavos / dados.ranking[0].valorCentavos * 100}%` }} /></div></div>
+          <p className="col-start-2 break-words text-lg font-bold tabular-nums text-brand sm:col-start-3">{moeda(linha.valorCentavos)}</p>
+        </li>)}
+      </ol> : <p className="mt-5 rounded-xl bg-background p-4 text-sm text-ink-muted">Ainda não há vendas com participação da equipe identificada.</p>}
+      <p className="mt-4 text-xs leading-5 text-ink-muted">O ranking considera Amanda, Camila, Michele, Plínio e Ricardo. A soma dos resultados individuais pode superar o VGV geral por causa das vendas compartilhadas.</p>
+      {dados.semParticipacao > 0 && <p className="mt-2 text-sm text-ink-muted">{dados.semParticipacao} venda(s) ainda sem participação informada: entram no VGV geral e aguardam identificação para o ranking.</p>}
+    </section>
+
     <aside className="rounded-xl border border-border bg-surface p-5 text-sm leading-6">
-      <div className="flex flex-wrap items-center gap-3"><h2 className="font-semibold">Sobre estes números</h2><span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-800">Planilha em atualização</span></div>
-      <p className="mt-2 text-ink-muted">Base: planilha enviada, aba Comissões 2026. Os valores representam esse retrato e não são atualizados automaticamente.</p>
-      <p className="mt-1 text-ink-muted">O total considera todas as vendas informadas na aba anual, inclusive as que ainda estão sem data preenchida.</p>
+      <h2 className="font-semibold">Como o VGV é atualizado</h2>
+      <dl className="mt-3 grid gap-3 sm:grid-cols-2"><div><dt className="text-ink-muted">Vendas cadastradas em {dados.ano}</dt><dd className="font-semibold tabular-nums">{moeda(dados.cadastradoCentavos)}</dd></div><div><dt className="text-ink-muted">Histórico complementar da planilha</dt><dd className="font-semibold tabular-nums">{moeda(dados.historicoCentavos)}</dd></div></dl>
+      <p className="mt-3 text-ink-muted">Uma nova venda entra automaticamente pelo valor e pelo ano da data base do cadastro. Alterações de valor e cancelamentos também atualizam o painel ao abri-lo novamente.</p>
+      <p className="mt-1 text-ink-muted">O histórico da aba Comissões 2026 complementa as vendas anteriores. As vendas já vinculadas ao Vitral usam o valor do cadastro e entram uma única vez.</p>
+      <p className="mt-1 text-ink-muted">A segunda QI 10 (R$ 515 mil), Golden Park e Costa Verde entram somente quando cadastradas. A primeira QI 10 e a QE 12 já estão incluídas.</p>
+      {dados.semValor > 0 && <p className="mt-2 text-xs text-ink-muted">{dados.semValor} processo(s) de venda sem valor informado não acrescentam volume ao VGV.</p>}
     </aside>
   </div>;
 }

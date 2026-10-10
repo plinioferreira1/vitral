@@ -1,5 +1,6 @@
 import { NavegacaoSecoes } from "@/components/navegacao-secoes";
 import { corretoresComissao } from "@/lib/corretores-comissao";
+import { HISTORICO_VGV } from "../../painel-sacra/dados";
 import { AtualizacoesCorretor } from "../../minhas-vendas/atualizacoes-equipe";
 import { identificacaoProcesso } from "@/lib/identificacao-processo";
 import type { Etapa } from "@/lib/types";
@@ -64,11 +65,12 @@ export default async function ProcessoDetalhePage({
       .from("processos")
       .select(
         `id, numero_processo, codigo_san, numero_proposta_contrato, status, valor_total, valor_financiado, origem, categoria, data_criacao,
-         data_assinatura, data_final_contrato, imovel_id,
+         data_assinatura, data_final_contrato, imovel_id, participacao_vgv_revisada,
          comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
          vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
          imoveis ( endereco ), bancos ( nome ),
          corretores!processos_corretor_id_fkey ( nome ), usuarios ( nome ), modelos_processo ( nome ),
+         captador:corretores!processos_captador_id_fkey ( nome ),
          indicacao:corretores!processos_indicacao_id_fkey ( nome )`
       )
       .eq("id", id)
@@ -135,6 +137,10 @@ export default async function ProcessoDetalhePage({
     numero_proposta_contrato: string | null;
   };
   const p = processo as unknown as P;
+  const participacaoHistorica = !p.participacao_vgv_revisada ? HISTORICO_VGV.find(h => h.processoId === p.id)?.participantesIds : undefined;
+  const nomeHistorico = (indice: number) => corretoresLista?.find(c => c.id === participacaoHistorica?.[indice])?.nome;
+  const captadorExibido = p.captador?.nome ?? nomeHistorico(0);
+  const vendedorExibido = p.corretores?.nome ?? nomeHistorico((participacaoHistorica?.length ?? 1) - 1);
   const ehFinanciamento = p.categoria === "financiamento";
 
   const etapasPadraoSequencial = (etapasPadrao ?? []).filter((ep) => ep.tipo === "sequencial");
@@ -226,13 +232,14 @@ export default async function ProcessoDetalhePage({
               <div className="grid gap-3 sm:grid-cols-2">
                 <CampoTexto label="Banco" name="banco_nome" defaultValue={p.bancos?.nome} listaId="lista-bancos" />
                 <CampoTexto
-                  label="Corretor"
+                  label={p.categoria === "venda" ? "Corretor vendedor" : "Corretor"}
                   name="corretor_nome"
-                  defaultValue={p.corretores?.nome}
+                  defaultValue={vendedorExibido}
                   listaId="lista-corretores"
                 />
               </div>
 
+              {p.categoria === "venda" && <CampoTexto label="Captador (opcional)" name="captador_nome" defaultValue={captadorExibido} listaId="lista-corretores" />}
               <div className="grid gap-3 sm:grid-cols-2">
                 <CampoTexto
                   label="Responsável"
@@ -358,7 +365,8 @@ export default async function ProcessoDetalhePage({
             {!ehFinanciamento && <Info label="Vendedor" value={p.vendedor?.nome} />}
             <Info label="Imóvel" value={p.imoveis?.endereco} />
             <Info label="Banco" value={p.bancos?.nome} />
-            <Info label="Corretor" value={p.corretores?.nome} />
+            <Info label={p.categoria === "venda" ? "Corretor vendedor" : "Corretor"} value={vendedorExibido} />
+            {p.categoria === "venda" && <Info label="Captador" value={captadorExibido} />}
             <Info label="Responsável" value={p.usuarios?.nome} />
             <Info label={ehFinanciamento ? "Proposta/contrato" : "Código SAN"} value={ehFinanciamento ? p.numero_proposta_contrato : p.codigo_san} />
             {ehFinanciamento && (

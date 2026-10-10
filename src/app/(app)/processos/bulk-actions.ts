@@ -79,6 +79,7 @@ export async function moverProcessoParaEtapa(processoId: string, etapaNomeAlvo: 
   after(() => reconciliarAlertaContratoFinal(supabase, processoId));
 
   revalidatePath("/vendas");
+  revalidatePath("/painel-sacra");
   revalidatePath("/financiamentos");
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/");
@@ -100,6 +101,7 @@ export async function apagarProcessosSelecionados(formData: FormData) {
   await checar(supabase.from("processos").delete().in("id", ids), "excluir");
 
   revalidatePath("/vendas");
+  revalidatePath("/painel-sacra");
   revalidatePath("/financiamentos");
 }
 
@@ -125,6 +127,7 @@ export async function apagarProcesso(formData: FormData) {
   await checar(supabase.from("processos").delete().eq("id", id), "excluir");
 
   revalidatePath("/vendas");
+  revalidatePath("/painel-sacra");
   revalidatePath("/financiamentos");
   redirect(processo?.categoria === "financiamento" ? "/financiamentos?aba=andamento" : "/vendas?aba=andamento");
 }

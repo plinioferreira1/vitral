@@ -8,6 +8,7 @@ import { after } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { hojeISO } from "@/lib/data-br";
 import { reconciliarAgendaProcesso } from "@/lib/google-agenda";
@@ -93,6 +94,9 @@ export async function criarProcesso(formData: FormData) {
   // o campo "Indicação" na tela virou o mesmo campo que antes era
   // "Corretor" — usa a mesma pessoa resolvida pros dois papéis.
   const indicacaoId = corretorId;
+  const captadorId = categoria === "venda"
+    ? await resolverOuCriar(supabase, "corretores", "nome", tenantId, String(formData.get("captador_nome") ?? ""))
+    : null;
 
   // Responsável precisa ser alguém que já tem conta no sistema —
   // não dá pra "criar" uma pessoa nova aqui. Se não encontrar pelo
@@ -125,6 +129,8 @@ export async function criarProcesso(formData: FormData) {
       imovel_id: imovelId,
       banco_id: bancoId,
       corretor_id: corretorId,
+      captador_id: captadorId,
+      participacao_vgv_revisada: categoria === "venda",
       responsavel_id: responsavelId,
       tipo: modeloProcesso?.nome ?? null,
       status: "ativo",
@@ -195,5 +201,7 @@ export async function criarProcesso(formData: FormData) {
 
   after(() => reconciliarAgendaProcesso(supabase, processo.id));
 
+  revalidatePath("/painel-sacra");
+  revalidatePath("/vendas");
   redirect(`/processos/${processo.id}`);
 }

@@ -140,11 +140,12 @@ export function NovoProcessoForm({
           </select>
         </div>
         <CampoTexto
-          label={ehFinanciamento ? "Indicação" : "Corretor"}
+          label={ehFinanciamento ? "Indicação" : modeloSelecionado?.categoria === "venda" ? "Corretor vendedor" : "Corretor"}
           name="corretor_nome"
           listId="lista-corretores"
           placeholder={ehFinanciamento ? "Quem indicou o cliente" : "Corretor responsável"}
         />
+        {modeloSelecionado?.categoria === "venda" && <CampoTexto label="Captador (opcional)" name="captador_nome" listId="lista-corretores" placeholder="Quem captou o imóvel" />}
         <div>
           <label htmlFor="novo-responsavel" className="mb-1 block text-xs font-medium text-ink-muted">Responsável</label>
           <select
