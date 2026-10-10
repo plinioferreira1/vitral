@@ -32,7 +32,7 @@ describe("VGV histórico e vendas cadastradas", () => {
   });
   it("sinaliza cadastros sem valor e soma centavos sem perda", () => {
     expect(somarVgvEmpresa(2026, [venda("a", null), venda("b", 0), venda("c", 0.1), venda("d", 0.2)], []))
-      .toEqual({ realizadoCentavos: 30, cadastradoCentavos: 30, historicoCentavos: 0, semValor: 2 });
+      .toEqual({ realizadoCentavos: 30, cadastradoCentavos: 30, historicoCentavos: 0, semValor: 2, numeroVendas: 2 });
   });
   it("rejeita valores negativos e duplicações", () => {
     expect(() => somarVgvEmpresa(2026, [venda("a", -1)], [])).toThrow();
@@ -88,4 +88,20 @@ it("retira vendas de anos anteriores do total e ranking sem recuperar o históri
     .toEqual([{ id: "amanda", nome: "Amanda", valorCentavos: 90_000_000, vendas: 1, posicao: 1 }]);
   expect(vendas).toHaveLength(3);
   expect(vendas.every(v => v.status === "ativo")).toBe(true);
+});
+
+ it("conta as vendas do VGV uma vez, sem vínculos cancelados e sem valor", () => {
+  const resultado = somarVgvEmpresa(2026, [
+    venda("vinculada", 250, { captador_id: "amanda", corretor_id: "plinio" }),
+    venda("nova", 250), venda("cancelada", 100, { status: "cancelado" }),
+    venda("sem", null), venda("antiga", 500),
+  ], [
+    { linha: 1, valorCentavos: 20000, processoId: "vinculada" },
+    { linha: 2, valorCentavos: 10000 },
+    { linha: 3, valorCentavos: 10000, processoId: "cancelada" },
+    { linha: 4, valorCentavos: 10000, processoId: "excluida" },
+    { linha: 5, valorCentavos: 0 },
+  ], ["antiga"]);
+  expect(resultado.numeroVendas).toBe(3);
+  expect(resultado.realizadoCentavos).toBe(60000);
 });

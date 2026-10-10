@@ -8,7 +8,7 @@ import { progressoVgv } from "@/lib/metricas-empresa";
 
 const moeda = (centavos: number) => (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-type DadosVgv = { ano: number; realizadoCentavos: number; metaCentavos: number; cadastradoCentavos: number; historicoCentavos: number; semValor: number; ranking: LinhaRankingVgv[]; semParticipacao: number; vgc: ReturnType<typeof somarVgcEmpresa> };
+type DadosVgv = { ano: number; numeroVendas: number; realizadoCentavos: number; metaCentavos: number; cadastradoCentavos: number; historicoCentavos: number; semValor: number; ranking: LinhaRankingVgv[]; semParticipacao: number; vgc: ReturnType<typeof somarVgcEmpresa> };
 
 export function PainelSacra({ dados }: { dados: DadosVgv }) {
   const progresso = progressoVgv(dados.realizadoCentavos, dados.metaCentavos);
@@ -23,10 +23,17 @@ export function PainelSacra({ dados }: { dados: DadosVgv }) {
           <p className="mt-4 break-words text-3xl font-bold tracking-tight tabular-nums sm:text-4xl xl:text-5xl">{moeda(dados.realizadoCentavos)}</p>
           <p className="mt-3 text-sm text-white/80">Valor geral de vendas dos imóveis da empresa.</p>
         </div>
+        <div className="flex flex-wrap gap-4">
+        <div className="rounded-2xl border border-white/20 bg-white/10 px-5 py-4">
+          <House size={22} aria-hidden="true" className="mb-3 text-white/80" />
+          <p className="text-3xl font-bold tabular-nums">{dados.numeroVendas.toLocaleString("pt-BR")}</p>
+          <p className="mt-1 text-sm text-white/80">{dados.numeroVendas === 1 ? "venda no ano" : "vendas no ano"}</p>
+        </div>
         <div className="rounded-2xl border border-white/20 bg-white/10 px-5 py-4">
           <TrendingUp size={22} aria-hidden="true" className="mb-3 text-white/80" />
           <p className="text-3xl font-bold tabular-nums">{percentual}%</p>
           <p className="mt-1 text-sm text-white/80">da meta anual atingida</p>
+        </div>
         </div>
       </div>
       <div className="mt-8">

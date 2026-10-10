@@ -24,6 +24,7 @@ export function somarVgvEmpresa(ano: number, vendas: readonly VendaVgv[], histor
   const ids = new Set<string>();
   let cadastradoCentavos = 0;
   let semValor = 0;
+  let numeroVendas = 0;
   for (const venda of vendas) {
     if (ids.has(venda.id)) throw new Error("Processo duplicado no cálculo do VGV.");
     ids.add(venda.id);
@@ -36,6 +37,7 @@ export function somarVgvEmpresa(ano: number, vendas: readonly VendaVgv[], histor
     const centavos = Math.round(venda.valor_total * 100);
     if (!Number.isSafeInteger(centavos) || centavos < 0) throw new Error("Valor de venda inválido.");
     cadastradoCentavos += centavos;
+    if (centavos > 0) numeroVendas++;
   }
   const linhas = new Set<number>();
   const vinculados = new Set<string>();
@@ -52,10 +54,11 @@ export function somarVgvEmpresa(ano: number, vendas: readonly VendaVgv[], histor
     }
     if (!Number.isSafeInteger(linha.valorCentavos) || linha.valorCentavos < 0) throw new Error("Histórico inválido.");
     historicoCentavos += linha.valorCentavos;
+    if (linha.valorCentavos > 0) numeroVendas++;
   }
   const realizadoCentavos = cadastradoCentavos + historicoCentavos;
   if (!Number.isSafeInteger(realizadoCentavos)) throw new Error("VGV excede o limite de cálculo.");
-  return { realizadoCentavos, cadastradoCentavos, historicoCentavos, semValor };
+  return { realizadoCentavos, cadastradoCentavos, historicoCentavos, semValor, numeroVendas };
 }
 
 export type CorretorVgv = { id: string; nome: string; aliases?: readonly string[] };
