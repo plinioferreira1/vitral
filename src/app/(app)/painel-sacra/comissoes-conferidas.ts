@@ -5,6 +5,10 @@ import type { ComissaoConferidaVgc } from "@/lib/vgc-empresa";
 // Sem inferir comissão a partir do VGV; parcelas/gestão internas já incluídas não se repetem.
 // Noroeste, Waldivino e Real Park 219: valores integrais confirmados pelo usuário.
 // Valores gerados, sem afirmar recebimento. Pendências ficam fora do subtotal apurado.
+// Em 10/10/2026, o usuário confirmou Plaza (R$ 7.530), Via Turim 607 (R$ 14.400)
+// e Park Way (R$ 42.080), aceitando os rateios encontrados.
+// Samambaia (R$ 14.000) e Loja Águas (R$ 7.000) já estavam incluídas separadamente;
+// o usuário confirmou ambas na mesma ocasião. Não repetir os valores da permuta.
 export const COMISSOES_CONFERIDAS: readonly ComissaoConferidaVgc[] = [
   {
     "id": "contrato-2026-1",
@@ -74,8 +78,7 @@ export const COMISSOES_CONFERIDAS: readonly ComissaoConferidaVgc[] = [
     "ano": 2026,
     "imovel": "Res Plaza ",
     "valorCentavos": 753000,
-    "fonte": "https://drive.google.com/file/d/1HJuti4JYTYv1spPB0ryV3TH6qfLJNC2u/view?usp=drivesdk",
-    "pendencia": "Rateios somam R$ 14.880,00; total declarado R$ 14.700,00. VGC detalhado R$ 7.530,00, sem presumir qual parcela corrigir."
+    "fonte": "https://drive.google.com/file/d/1HJuti4JYTYv1spPB0ryV3TH6qfLJNC2u/view?usp=drivesdk"
   },
   {
     "id": "contrato-2026-11",
@@ -187,8 +190,7 @@ export const COMISSOES_CONFERIDAS: readonly ComissaoConferidaVgc[] = [
     "imovel": "Via Turim 607",
     "valorCentavos": 1440000,
     "fonte": "https://drive.google.com/file/d/1ySDF5F1rfkgovrrbKNY7uPclAMUKDsFb/view?usp=drivesdk",
-    "processoId": "7e6647e9-8ac5-4523-898a-f16d220499fc",
-    "pendencia": "PDF assinado com imagem cortada; versão sem assinatura informa R$ 14.400,00 integralmente para Sacra + equipe. Requer confirmação."
+    "processoId": "7e6647e9-8ac5-4523-898a-f16d220499fc"
   },
   {
     "id": "contrato-2026-26",
@@ -273,8 +275,7 @@ export const COMISSOES_CONFERIDAS: readonly ComissaoConferidaVgc[] = [
     "imovel": "Casa Park Way",
     "valorCentavos": 4208000,
     "fonte": "https://drive.google.com/file/d/1m5O6Ak3-mcnT96nJOCtd6-H6kJijZL_L/view?usp=drivesdk",
-    "processoId": "06af65b0-2e72-4e5b-a8f9-b00240ad0385",
-    "pendencia": "Permuta: comissão Park Way declarada R$ 42.000,00, rateio detalhado R$ 42.080,00. As outras duas propriedades têm comissões próprias, não são novas cópias deste valor."
+    "processoId": "06af65b0-2e72-4e5b-a8f9-b00240ad0385"
   },
   {
     "id": "contrato-2026-37",
