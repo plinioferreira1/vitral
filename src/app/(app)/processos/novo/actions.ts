@@ -1,5 +1,6 @@
 "use server";
 
+import { validarCorretores } from "@/lib/corretores-servidor";
 import { exigirUsuario } from "@/lib/usuario-atual";
 
 import { checar } from "@/lib/aviso";
@@ -85,18 +86,22 @@ export async function criarProcesso(formData: FormData) {
     .eq("id", modeloProcessoId)
     .single();
 
+  const corretorSelecionado = String(formData.get("corretor_id") ?? "").trim() || null;
+  const captadorId = categoria === "venda" ? String(formData.get("captador_id") ?? "").trim() || null : null;
+  if (categoria !== "financiamento") {
+    const erro = !formData.has("corretor_id") ? "Atualize a página e selecione o corretor novamente." : await validarCorretores(supabase, tenantId, [{ id: corretorSelecionado }, { id: captadorId }]);
+    if (erro) redirect('/processos/novo?erro=' + encodeURIComponent(erro));
+  }
+
   // Resolve (ou cria na hora) cada entidade digitada
   const compradorId = await resolverOuCriar(supabase, "clientes", "nome", tenantId, compradorNome);
   const vendedorId = await resolverOuCriar(supabase, "clientes", "nome", tenantId, vendedorNome);
   const imovelId = await resolverOuCriar(supabase, "imoveis", "endereco", tenantId, imovelEndereco);
   const bancoId = await resolverOuCriar(supabase, "bancos", "nome", tenantId, bancoNome);
-  const corretorId = await resolverOuCriar(supabase, "corretores", "nome", tenantId, corretorNome);
+  const corretorId = categoria === "financiamento" ? await resolverOuCriar(supabase, "corretores", "nome", tenantId, corretorNome) : corretorSelecionado;
   // o campo "Indicação" na tela virou o mesmo campo que antes era
   // "Corretor" — usa a mesma pessoa resolvida pros dois papéis.
   const indicacaoId = corretorId;
-  const captadorId = categoria === "venda"
-    ? await resolverOuCriar(supabase, "corretores", "nome", tenantId, String(formData.get("captador_nome") ?? ""))
-    : null;
 
   // Responsável precisa ser alguém que já tem conta no sistema —
   // não dá pra "criar" uma pessoa nova aqui. Se não encontrar pelo

@@ -1,5 +1,5 @@
+import { SeletorCorretor } from "@/components/seletor-corretor";
 import { NavegacaoSecoes } from "@/components/navegacao-secoes";
-import { corretoresComissao } from "@/lib/corretores-comissao";
 import { HISTORICO_VGV } from "../../painel-sacra/dados";
 import { AtualizacoesCorretor } from "../../minhas-vendas/atualizacoes-equipe";
 import { identificacaoProcesso } from "@/lib/identificacao-processo";
@@ -65,7 +65,7 @@ export default async function ProcessoDetalhePage({
       .from("processos")
       .select(
         `id, numero_processo, codigo_san, numero_proposta_contrato, status, valor_total, valor_financiado, origem, categoria, data_criacao,
-         data_assinatura, data_final_contrato, imovel_id, participacao_vgv_revisada,
+         data_assinatura, data_final_contrato, imovel_id, corretor_id, captador_id, participacao_vgv_revisada,
          comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
          vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
          imoveis ( endereco ), bancos ( nome ),
@@ -80,7 +80,7 @@ export default async function ProcessoDetalhePage({
       .select("*, corretores!comissoes_beneficiario_id_fkey ( nome )")
       .eq("processo_id", id)
       .order("criado_em", { ascending: true }),
-    supabase.from("corretores").select("id, nome").order("nome"),
+    supabase.from("corretores").select("id, nome, usuario_id").order("nome"),
     supabase.from("bancos").select("id, nome").order("nome"),
     supabase.from("usuarios").select("id, nome").eq("ativo", true).order("nome"),
     supabase
@@ -231,15 +231,10 @@ export default async function ProcessoDetalhePage({
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <CampoTexto label="Banco" name="banco_nome" defaultValue={p.bancos?.nome} listaId="lista-bancos" />
-                <CampoTexto
-                  label={p.categoria === "venda" ? "Corretor vendedor" : "Corretor"}
-                  name="corretor_nome"
-                  defaultValue={vendedorExibido}
-                  listaId="lista-corretores"
-                />
+                <SeletorCorretor nome="corretor_id" rotulo={p.categoria === "venda" ? "Corretor vendedor" : "Corretor"} corretores={corretoresLista ?? []} atual={p.corretor_id ?? participacaoHistorica?.[(participacaoHistorica?.length ?? 1) - 1]} />
               </div>
 
-              {p.categoria === "venda" && <CampoTexto label="Captador (opcional)" name="captador_nome" defaultValue={captadorExibido} listaId="lista-corretores" />}
+              {p.categoria === "venda" && <SeletorCorretor nome="captador_id" rotulo="Captador (opcional)" corretores={corretoresLista ?? []} atual={p.captador_id ?? participacaoHistorica?.[0]} />}
               <div className="grid gap-3 sm:grid-cols-2">
                 <CampoTexto
                   label="Responsável"
@@ -1032,10 +1027,8 @@ function ComissaoForm({
         observacoes: string | null;
       }
     | null;
-  corretores: { id: string; nome: string }[];
+  corretores: { id: string; nome: string; usuario_id?: string | null }[];
 }) {
-  const opcoesCorretores = corretoresComissao(corretores, comissao?.beneficiario_id);
-  const beneficiarioAnterior = corretores.find(c => c.id === comissao?.beneficiario_id);
   return (
     <form
       action={salvarComissao}
@@ -1044,24 +1037,7 @@ function ComissaoForm({
       <input type="hidden" name="processo_id" value={processoId} />
       {comissao && <input type="hidden" name="comissao_id" value={comissao.id} />}
 
-      <div>
-        <label className="mb-1 block text-xs font-medium text-ink-muted">Corretor</label>
-        <select
-          name="beneficiario_id"
-          defaultValue={comissao?.beneficiario_id ?? ""}
-          className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand"
-        >
-          <option value="">Selecione</option>
-          {beneficiarioAnterior && !opcoesCorretores.some(c => c.id === beneficiarioAnterior.id) && (
-            <option hidden value={beneficiarioAnterior.id}>{beneficiarioAnterior.nome} (cadastro anterior)</option>
-          )}
-          {opcoesCorretores.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.nome}
-            </option>
-          ))}
-        </select>
-      </div>
+      <SeletorCorretor id={`beneficiario-${comissao?.id ?? "nova"}`} nome="beneficiario_id" rotulo="Corretor" corretores={corretores} atual={comissao?.beneficiario_id} />
 
       <div>
         <label className="mb-1 block text-xs font-medium text-ink-muted">Valor previsto (R$)</label>

@@ -32,7 +32,7 @@ export default async function NovoProcessoPage({
     supabase.from("modelos_processo").select("id, nome, descricao, categoria").eq("ativo", true).order("nome"),
     supabase.from("clientes").select("id, nome").order("nome"),
     supabase.from("imoveis").select("id, endereco").order("endereco"),
-    supabase.from("corretores").select("id, nome").order("nome"),
+    supabase.from("corretores").select("id, nome, usuario_id").order("nome"),
     supabase.from("etapas_padrao").select("id, nome, ordem, categoria, tipo").order("ordem", { ascending: true }),
   ]);
 

@@ -1,5 +1,7 @@
 "use server";
 
+import { validarCorretores } from "@/lib/corretores-servidor";
+import { HISTORICO_VGV } from "../../painel-sacra/dados";
 import { exigirUsuario } from "@/lib/usuario-atual";
 
 import { checar, avisar } from "@/lib/aviso";
@@ -303,7 +305,7 @@ export async function salvarDadosProcesso(formData: FormData) {
 
   const { data: existente } = await supabase
     .from("processos")
-    .select("tenant_id, categoria, comprador_id, vendedor_id, imovel_id")
+    .select("tenant_id, categoria, comprador_id, vendedor_id, imovel_id, corretor_id, captador_id, participacao_vgv_revisada")
     .eq("id", processoId)
     .single();
 
@@ -312,6 +314,15 @@ export async function salvarDadosProcesso(formData: FormData) {
   const ehFinanciamento = existente.categoria === "financiamento";
 
   const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
+
+  const historico = !existente.participacao_vgv_revisada ? HISTORICO_VGV.find(h => h.processoId === processoId)?.participantesIds : undefined;
+  const corretorAtual = existente.corretor_id ?? historico?.[(historico?.length ?? 1) - 1] ?? null;
+  const captadorAtual = existente.captador_id ?? historico?.[0] ?? null;
+  const corretorId = formData.has("corretor_id") ? campo("corretor_id") : corretorAtual;
+  const captadorId = formData.has("captador_id") ? campo("captador_id") : captadorAtual;
+  if (!formData.has("corretor_id")) { await avisar("erro", "Atualize a página e selecione os corretores novamente."); return; }
+  const erroCorretores = await validarCorretores(supabase, tenantId, [{ id: corretorId, atual: corretorAtual }, ...(existente.categoria === "venda" ? [{ id: captadorId, atual: captadorAtual }] : [])]);
+  if (erroCorretores) { await avisar("erro", erroCorretores); return; }
 
   // Comprador
   const compradorNome = campo("comprador_nome");
@@ -337,9 +348,8 @@ export async function salvarDadosProcesso(formData: FormData) {
     await checar(supabase.from("imoveis").update({ endereco: enderecoImovel }).eq("id", existente.imovel_id), "atualizar");
   }
 
-  // Banco / Corretor / Indicação — resolve por nome (cria se não existir)
+  // Banco e indicação externa continuam aceitando nomes; equipe é selecionada por ID.
   const bancoId = await resolverOuCriar(supabase, "bancos", "nome", tenantId, campo("banco_nome") ?? "");
-  const corretorId = await resolverOuCriar(supabase, "corretores", "nome", tenantId, campo("corretor_nome") ?? "");
   const indicacaoId = ehFinanciamento
     ? await resolverOuCriar(supabase, "corretores", "nome", tenantId, campo("indicacao_nome") ?? "")
     : null;
@@ -364,12 +374,12 @@ export async function salvarDadosProcesso(formData: FormData) {
     data_assinatura: campo("data_assinatura"),
     data_final_contrato: campo("data_final_contrato"),
   };
-  if (existente.categoria === "venda" && formData.has("captador_nome")) {
+  if (existente.categoria === "venda" && formData.has("captador_id")) {
     dadosProcesso.participacao_vgv_revisada = true;
-    dadosProcesso.captador_id = await resolverOuCriar(supabase, "corretores", "nome", tenantId, campo("captador_nome") ?? "");
+    dadosProcesso.captador_id = captadorId;
   }
   if (bancoId) dadosProcesso.banco_id = bancoId;
-  if (corretorId) dadosProcesso.corretor_id = corretorId;
+  dadosProcesso.corretor_id = corretorId;
   if (responsavelId) dadosProcesso.responsavel_id = responsavelId;
   if (ehFinanciamento) {
     if (formData.has("numero_proposta_contrato")) dadosProcesso.numero_proposta_contrato = campo("numero_proposta_contrato");
@@ -389,6 +399,8 @@ export async function salvarDadosProcesso(formData: FormData) {
   revalidatePath("/vendas");
   revalidatePath("/painel-sacra");
   revalidatePath("/financiamentos");
+  revalidatePath("/minhas-vendas");
+  revalidatePath(`/minhas-vendas/${processoId}`);
   revalidatePath("/");
 }
 
@@ -449,7 +461,8 @@ export async function alternarEtapaPadrao(formData: FormData) {
 }
 
 export async function salvarComissao(formData: FormData) {
-  if (!(await exigirUsuario())) return;
+  const sessao = await exigirUsuario();
+  if (!sessao?.usuario?.tenant_id) return;
   const supabase = await createClient();
   const processoId = String(formData.get("processo_id") ?? "");
   const comissaoId = String(formData.get("comissao_id") ?? "") || null;
@@ -459,6 +472,13 @@ export async function salvarComissao(formData: FormData) {
   const dataPrevista = String(formData.get("data_prevista") ?? "") || null;
   const observacoes = String(formData.get("observacoes") ?? "").trim() || null;
 
+  const tenantId = sessao.usuario.tenant_id;
+  const { data: processo } = await supabase.from("processos").select("id").eq("id", processoId).eq("tenant_id", tenantId).maybeSingle();
+  if (!processo) { await avisar("erro", "Venda não encontrada."); return; }
+  const anterior = comissaoId ? await supabase.from("comissoes").select("beneficiario_id").eq("id", comissaoId).eq("processo_id", processoId).maybeSingle() : null;
+  if (comissaoId && !anterior?.data) { await avisar("erro", "Comissão não encontrada nesta venda."); return; }
+  const erroCorretor = await validarCorretores(supabase, tenantId, [{ id: beneficiarioId, atual: anterior?.data?.beneficiario_id }]);
+  if (erroCorretor) { await avisar("erro", erroCorretor); return; }
   const pago100 = status === "100% pago";
 
   const campos = {
@@ -473,7 +493,7 @@ export async function salvarComissao(formData: FormData) {
   };
 
   if (comissaoId) {
-    await checar(supabase.from("comissoes").update(campos).eq("id", comissaoId), "atualizar");
+    await checar(supabase.from("comissoes").update(campos).eq("id", comissaoId).eq("processo_id", processoId), "atualizar");
   } else {
     await checar(supabase.from("comissoes").insert({ processo_id: processoId, ...campos }), "salvar");
   }

@@ -1,5 +1,6 @@
 "use client";
 
+import { SeletorCorretor } from "@/components/seletor-corretor";
 import { useMemo, useState } from "react";
 import { criarProcesso } from "./actions";
 import type { CategoriaProcesso } from "@/lib/types";
@@ -26,7 +27,7 @@ interface Props {
   etapasPadrao: EtapaPadraoBasica[];
   clientes: { id: string; nome: string }[];
   imoveis: { id: string; endereco: string }[];
-  corretores: { id: string; nome: string }[];
+  corretores: { id: string; nome: string; usuario_id?: string | null }[];
 }
 
 export function NovoProcessoForm({
@@ -139,13 +140,8 @@ export function NovoProcessoForm({
             <option value="BANCO DO BRASIL">BANCO DO BRASIL</option>
           </select>
         </div>
-        <CampoTexto
-          label={ehFinanciamento ? "Indicação" : modeloSelecionado?.categoria === "venda" ? "Corretor vendedor" : "Corretor"}
-          name="corretor_nome"
-          listId="lista-corretores"
-          placeholder={ehFinanciamento ? "Quem indicou o cliente" : "Corretor responsável"}
-        />
-        {modeloSelecionado?.categoria === "venda" && <CampoTexto label="Captador (opcional)" name="captador_nome" listId="lista-corretores" placeholder="Quem captou o imóvel" />}
+        {ehFinanciamento ? <CampoTexto label="Indicação" name="corretor_nome" listId="lista-corretores" placeholder="Quem indicou o cliente" /> : <SeletorCorretor nome="corretor_id" rotulo="Corretor vendedor" corretores={corretores} />}
+        {modeloSelecionado?.categoria === "venda" && <SeletorCorretor nome="captador_id" rotulo="Captador (opcional)" corretores={corretores} />}
         <div>
           <label htmlFor="novo-responsavel" className="mb-1 block text-xs font-medium text-ink-muted">Responsável</label>
           <select
