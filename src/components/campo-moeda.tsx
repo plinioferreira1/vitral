@@ -55,8 +55,8 @@ export function CampoMoeda({
   };
 
   return (
-    <div className="flex items-center gap-1">
-      <span className="text-sm text-ink-muted">R$</span>
+    <div className="flex min-w-0 items-center gap-1">
+      <span className="shrink-0 whitespace-nowrap text-sm text-ink-muted">R$</span>
       <input
         id={id}
         type="text"
@@ -65,10 +65,10 @@ export function CampoMoeda({
         onChange={aoDigitar}
         placeholder={placeholder}
         required={required}
-        className={
+        className={`min-w-0 ${
           className ??
           "w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-        }
+        }`}
       />
       {name && <input type="hidden" name={name} value={(centavos / 100).toFixed(2)} />}
     </div>
