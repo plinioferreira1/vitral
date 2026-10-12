@@ -1,3 +1,5 @@
+import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { CARD_CLASS, INPUT_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -73,20 +75,18 @@ export default async function PropostaDetalhePage({
   ]);
 
   return (
-    <div className="w-full min-w-0 space-y-6">
+    <div className="mx-auto w-full min-w-0 max-w-4xl space-y-6">
       <div>
         <VoltarLink href="/propostas" label="Cartas Proposta" />
-        <div className="flex items-center gap-3">
-          <h1 className="text-[28px] font-bold leading-tight tracking-tight text-ink">
-            {p.imoveis?.endereco ?? "—"}
-          </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <CabecalhoPagina titulo={p.imoveis?.endereco ?? "Imóvel não informado"} />
           <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_COR[p.status]}`}>
             {STATUS_LABEL[p.status]}
           </span>
           {p.status === "pendente" && (
             <Link
               href={`/propostas/${p.id}/editar`}
-              className="text-xs font-medium text-brand hover:underline"
+              className="inline-flex min-h-11 items-center text-sm font-medium text-brand hover:underline"
             >
               Editar
             </Link>
@@ -94,13 +94,13 @@ export default async function PropostaDetalhePage({
         </div>
         <p className="mt-1 text-sm text-ink-muted">Proponente: {p.clientes?.nome ?? "—"}</p>
         <p className="mt-0.5 text-xs text-ink-muted">Criado por: {p.usuarios?.nome ?? "—"}</p>
-        <form action={salvarResponsavelCartaProposta} className="mt-1.5 flex items-center gap-1.5">
+        <form action={salvarResponsavelCartaProposta} className="mt-4 flex flex-wrap items-center gap-3">
           <input type="hidden" name="id" value={p.id} />
-          <label className="text-xs text-ink-muted">Responsável:</label>
+          <label htmlFor="responsavel-proposta" className="text-sm text-ink-muted">Responsável:</label>
           <select
-            name="responsavel_id"
+            id="responsavel-proposta" name="responsavel_id"
             defaultValue={p.responsavel?.id ?? ""}
-            className="rounded-md border border-border bg-background px-2 py-1 text-xs text-ink outline-none focus:border-brand"
+            className={`${INPUT_CLASS} min-h-11 w-full text-base sm:w-auto sm:text-sm`}
           >
             <option value="">Ninguém</option>
             {(membros ?? []).map((m) => (
@@ -110,7 +110,7 @@ export default async function PropostaDetalhePage({
             ))}
           </select>
           <BotaoEnviar
-            className="rounded-md border border-border px-2 py-1 text-xs font-medium text-ink hover:opacity-80"
+            className={`${SECONDARY_BUTTON_CLASS} min-h-11`}
           >
             Salvar
           </BotaoEnviar>
@@ -132,7 +132,7 @@ export default async function PropostaDetalhePage({
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 rounded-xl border border-border/60 bg-surface p-5 shadow-sm sm:grid-cols-3">
+      <div className={`${CARD_CLASS} grid gap-4 p-5 sm:grid-cols-3 sm:p-7`}>
         <div>
           <p className="text-xs text-ink-muted">Valor total da proposta</p>
           <p className="text-sm font-medium text-ink">{brl(p.valor_total)}</p>
@@ -149,14 +149,14 @@ export default async function PropostaDetalhePage({
         </div>
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <div className={`${CARD_CLASS} p-5 sm:p-7`}>
         <h2 className="mb-3 text-sm font-semibold text-ink">Condições de pagamento</h2>
         {(condicoes ?? []).length === 0 ? (
           <p className="text-sm text-ink-muted">Nenhuma condição informada.</p>
         ) : (
           <ul className="space-y-1.5 text-sm text-ink">
             {(condicoes ?? []).map((c, i) => (
-              <li key={i} className="flex items-center justify-between gap-3">
+              <li key={i} className="flex flex-wrap items-start justify-between gap-3 break-words">
                 <span className="text-ink-muted">{c.descricao}</span>
                 <span className="font-medium">{brl(c.valor)}</span>
               </li>
@@ -170,12 +170,12 @@ export default async function PropostaDetalhePage({
         )}
       </div>
 
-      <div className="rounded-xl border border-border/60 bg-surface p-5 shadow-sm">
+      <div className={`${CARD_CLASS} p-5 sm:p-7`}>
         <h2 className="mb-3 text-sm font-semibold text-ink">Assinaturas</h2>
         <ul className="space-y-3">
           {(signatarios ?? []).map((s) => (
             <li key={s.id} className="rounded-lg border border-border/60 bg-background p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm font-medium text-ink">{s.nome_esperado}</p>
                 {s.assinado_em ? (
                   <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
@@ -207,13 +207,13 @@ export default async function PropostaDetalhePage({
                   )}
                 </div>
               ) : (
-                <div className="mt-3 flex items-center gap-2">
+                <div className="mt-3 flex flex-wrap items-center gap-3">
                   <BotaoCopiarLink url={`${siteUrl}/assinar-proposta/${s.token}`} />
                   <a
                     href={`/assinar-proposta/${s.token}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-xs font-medium text-brand hover:underline"
+                    className="inline-flex min-h-11 items-center text-sm font-medium text-brand hover:underline"
                   >
                     Abrir pra assinar agora →
                   </a>
@@ -227,7 +227,7 @@ export default async function PropostaDetalhePage({
       {p.status === "pendente" && (
         <form action={cancelarCartaProposta}>
           <input type="hidden" name="id" value={p.id} />
-          <BotaoEnviar className="text-xs font-medium text-ink-muted hover:text-rose-600">
+          <BotaoEnviar className="inline-flex min-h-11 items-center rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50">
             Cancelar esta proposta
           </BotaoEnviar>
         </form>
@@ -237,7 +237,7 @@ export default async function PropostaDetalhePage({
         <input type="hidden" name="id" value={p.id} />
         <BotaoComConfirmacao
           mensagem="Apagar esta proposta? Essa ação não pode ser desfeita."
-          className="text-xs font-medium text-ink-muted hover:text-rose-600"
+          className="inline-flex min-h-11 items-center rounded-lg border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
         >
           Apagar proposta
         </BotaoComConfirmacao>
