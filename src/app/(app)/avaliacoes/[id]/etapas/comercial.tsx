@@ -1,11 +1,14 @@
 import Link from "next/link";
+import { calcularMetodo, ROTULO_METODO } from "@/lib/avaliacao/metodos";
+import { MetodoForm } from "../../metodo-form";
+import { FATORES_AJUSTE } from "@/lib/avaliacao/tipos";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { podeAprovar, type PapelAvaliacao } from "@/lib/avaliacao/permissoes";
 import { FINALIDADES, ROTULO_FINALIDADE, TIPOLOGIAS, ROTULO_TIPOLOGIA, type Comparavel } from "@/lib/avaliacao/tipos";
 import type { ResultadoValidacao } from "@/lib/avaliacao/validacao";
 import { hojeISO } from "@/lib/data-br";
-import { salvarComparavel, salvarEtapa, salvarLaudoComercial, alterarInclusaoComparavel } from "../../actions";
+import { salvarComparavel, salvarEtapa, salvarLaudoComercial, alterarInclusaoComparavel, adicionarAjuste, removerAjuste } from "../../actions";
 import type { AvaliacaoCompleta } from "../../dados";
 import { AreaTexto, Aviso, Campo, Cartao, moeda, Selecao } from "../../ui";
 import { ListaArquivos } from "./formularios";
@@ -63,13 +66,15 @@ function FormComparavel({ id, finalidade, comparavel: x }: { id: string; finalid
   return <form action={salvarComparavel} className="space-y-4">
     <input type="hidden" name="avaliacao_id" value={id} />
     {x && <input type="hidden" name="comparavel_id" value={x.id} />}
-    <input type="hidden" name="data_coleta" value={x?.data_coleta ?? hojeISO()} />
+
     <input type="hidden" name="fonte_tipo" value={x?.fonte_tipo ?? "manual"} />
     <input type="hidden" name="fonte_nome" value={x?.fonte_nome ?? "Referência informada pela equipe"} />
     {x?.referencia_interna && <input type="hidden" name="referencia_interna" value={x.referencia_interna} />}
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <Campo label="Identificação / endereço" name="identificacao" defaultValue={x?.identificacao} required className="sm:col-span-2" />
       <Campo label="Bairro / localização" name="regiao" defaultValue={x?.regiao} />
+      <Selecao label="Tipo do imóvel" name="tipologia" defaultValue={x?.tipologia ?? ""} opcoes={[{valor: "", rotulo: "Mesmo tipo do imóvel avaliado"}, ...TIPOLOGIAS.map(t => ({ valor: t, rotulo: ROTULO_TIPOLOGIA[t] }))]} />
+      <Campo label="Data da consulta" name="data_coleta" type="date" defaultValue={x?.data_coleta ?? hojeISO()} />
       <Campo label="Área (m²)" name="area_m2" defaultValue={numero(x?.area_m2)} inputMode="decimal" required />
       <Campo label={finalidade === "venda" ? "Preço de venda (R$)" : "Aluguel mensal (R$)"} name="preco" defaultValue={numero(x?.preco)} inputMode="decimal" required />
       <Selecao label="Tipo de preço" name="tipo_preco" defaultValue={x?.tipo_preco ?? "oferta"} opcoes={[{ valor: "oferta", rotulo: "Anunciado" }, { valor: "transacao", rotulo: "Negociado / confirmado" }]} />
@@ -83,12 +88,26 @@ function FormComparavel({ id, finalidade, comparavel: x }: { id: string; finalid
 export function ComparaveisComerciais({ c }: { c: AvaliacaoCompleta }) {
   const a = c.avaliacao;
   return <div className="space-y-5">
-    <Cartao titulo="Imóveis semelhantes" descricao="Referências opcionais para apoiar sua análise. Os preços são apresentados como informados, sem fatores de ajuste ou cálculo automático do valor sugerido.">
+    <Cartao titulo="Imóveis semelhantes" descricao="Referências opcionais para apoiar sua análise. Escolha referências com metragem, tipologia e localização compatíveis. Ajustes opcionais precisam de justificativa; o método comparativo pode ser calculado na etapa do laudo.">
       {c.comparaveis.length === 0 && <p className="text-sm text-ink-muted">Nenhum comparável cadastrado. Você pode adicionar abaixo ou seguir para o laudo.</p>}
       <div className="space-y-3">{c.comparaveis.map(x => <details key={x.id} className="rounded-xl border border-border p-4">
         <summary className="min-h-11 cursor-pointer text-sm font-semibold text-ink">{x.identificacao} · {moeda(x.preco, x.finalidade)}{!x.incluido ? " · Fora do laudo" : ""}</summary>
         <div className="mt-4 space-y-4">
           <FormComparavel id={a.id} finalidade={a.finalidade} comparavel={x} />
+          <details className="rounded-lg bg-background p-4">
+            <summary className="min-h-11 cursor-pointer text-sm font-medium">Ajustes de comparação ({x.ajustes.length})</summary>
+            <p className="mt-2 text-xs leading-5 text-ink-muted">Ajuste o comparável para as condições do imóvel avaliado. Positivo aumenta o preço de referência; negativo reduz. Os fatores são multiplicados e não são preenchidos automaticamente.</p>
+            <ul className="my-3 space-y-3">{x.ajustes.map((aj, indice) => <li key={indice} className="text-sm">
+              <p>{aj.fator}: {aj.percentual > 0 ? "+" : ""}{aj.percentual}% · {aj.justificativa}</p>
+              <form action={removerAjuste}><input type="hidden" name="avaliacao_id" value={a.id} /><input type="hidden" name="comparavel_id" value={x.id} /><input type="hidden" name="indice" value={indice} /><BotaoEnviar className={SECONDARY_BUTTON_CLASS}>Remover ajuste</BotaoEnviar></form>
+            </li>)}</ul>
+            <form action={adicionarAjuste} className="space-y-3">
+              <input type="hidden" name="avaliacao_id" value={a.id} /><input type="hidden" name="comparavel_id" value={x.id} />
+              <div className="grid gap-4 sm:grid-cols-2"><Selecao label="Fator" name="fator" opcoes={FATORES_AJUSTE.map(f => ({ valor: f, rotulo: f }))} /><Campo label="Ajuste (%)" name="percentual" inputMode="decimal" required ajuda="Entre -60 e +60, diferente de zero." /></div>
+              <AreaTexto label="Justificativa do ajuste" name="justificativa" /><Campo label="Fonte do percentual" name="origem" />
+              <BotaoEnviar className={SECONDARY_BUTTON_CLASS}>Adicionar ajuste</BotaoEnviar>
+            </form>
+          </details>
           <form action={alterarInclusaoComparavel}>
             <input type="hidden" name="avaliacao_id" value={a.id} /><input type="hidden" name="comparavel_id" value={x.id} />
             <input type="hidden" name="acao" value={x.incluido ? "excluir" : "incluir"} />
@@ -107,7 +126,17 @@ export function LaudoComercial({ c, papel, validacao }: { c: AvaliacaoCompleta; 
   const a = c.avaliacao;
   const d = a.dados;
   const aprova = podeAprovar(papel, a.modalidade);
+  const metodo = calcularMetodo(d.metodologia, a.finalidade, a.area_m2, a.tipologia, c.comparaveis);
   return <div className="space-y-5">
+    <Cartao titulo="Método de avaliação" descricao="Apoio opcional ao preço. Escolha o método, informe as premissas e decida se deseja aplicar o resultado ao laudo.">
+      <MetodoForm key={`${a.revisao}-${a.finalidade}`} id={a.id} finalidade={a.finalidade} premissas={d.metodologia} />
+      {d.metodologia && <div className="mt-5 rounded-xl border border-border p-4">
+        <h3 className="font-semibold">{ROTULO_METODO[d.metodologia.metodo]} · {metodo.valor == null ? "Revise as premissas" : moeda(metodo.valor, a.finalidade)}</h3>
+        <p className="mt-2 text-xs text-ink-muted">Resultado das premissas salvas. O valor sugerido ao cliente continua no campo abaixo.</p>
+        {metodo.erros.map((e, i) => <p key={i} className="mt-2 text-sm text-brand">{e}</p>)}
+        <details className="mt-3"><summary className="min-h-11 cursor-pointer text-sm">Ver memória de cálculo</summary><ul className="list-disc space-y-2 pl-5 text-sm leading-6">{metodo.memoria.map((m, i) => <li key={i}>{m}</li>)}</ul></details>
+      </div>}
+    </Cartao>
     <form action={salvarLaudoComercial} className="space-y-5">
       <input type="hidden" name="avaliacao_id" value={a.id} />
       <Cartao titulo="Valor e conclusão" descricao="Defina o valor e personalize os textos. Para conferir o PDF, salve primeiro. Salvar e emitir faz as duas ações de uma vez.">

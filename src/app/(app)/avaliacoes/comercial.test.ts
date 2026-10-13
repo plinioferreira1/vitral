@@ -18,7 +18,7 @@ vi.mock("./dados", async (original) => ({
   ...await original<typeof import("./dados")>(), carregarAvaliacao: m.carregar,
   carregarImagensPdf: async () => ({}), carregarFontesPdf: async () => null,
 }));
-import { emitirLaudoComercial, salvarEtapa, salvarLaudoComercial } from "./actions";
+import { emitirLaudoComercial, salvarEtapa, salvarLaudoComercial, salvarMetodoComercial } from "./actions";
 
 let c: AvaliacaoCompleta;
 function form(valores: Record<string, string> = {}) {
@@ -118,5 +118,40 @@ describe("laudo comercial simplificado", () => {
     expect(c.linha.status).toBe("aprovado");
     expect(m.writes.some(w => w.table === "avaliacao_versoes")).toBe(false);
     log.mockRestore();
+  });
+});
+
+describe("método opcional do laudo", () => {
+  const metodoForm = (acao = "") => form({ metodo: "renda", premissas_justificativa: "Contratos e taxa de mercado.", aluguelMensal: "10000", vacanciaPct: "10", despesasMensais: "1000", taxaCapitalizacaoPct: "8", acao });
+  it("salva premissas, preserva o valor manual e invalida aprovação", async () => {
+    c.avaliacao.status = "aprovado";
+    await salvarMetodoComercial(metodoForm());
+    expect(c.avaliacao.valor_sugerido).toBe(700000);
+    expect(c.linha.aprovado_hash).toBeNull();
+    expect(c.avaliacao.dados.metodologia?.metodo).toBe("renda");
+    expect(c.avaliacao.dados.matricula).toBe("Matrícula preservada");
+  });
+  it("recalcula no servidor quando solicitado, ignorando valores forjados", async () => {
+    const f = metodoForm("aplicar"); f.set("valor_calculado", "1");
+    await salvarMetodoComercial(f);
+    expect(c.avaliacao.valor_sugerido).toBe(1200000);
+  });
+  it("recusa taxa zero e não grava premissas inválidas", async () => {
+    const f = metodoForm(); f.set("taxaCapitalizacaoPct", "0");
+    await salvarMetodoComercial(f);
+    expect(m.writes).toHaveLength(0);
+  });
+  it("não troca um aluguel mensal por valor de venda", async () => {
+    c.avaliacao.finalidade = "locacao";
+    await salvarMetodoComercial(metodoForm("aplicar"));
+    expect(m.writes).toHaveLength(0);
+  });
+  it("a alteração das premissas muda o hash do retrato e é validada antes de emitir", async () => {
+    const hash = hashConteudo(c.conteudo);
+    await salvarMetodoComercial(metodoForm());
+    expect(hashConteudo(c.conteudo)).not.toBe(hash);
+    c.conteudo.dados.metodologia!.taxaCapitalizacaoPct = 0;
+    await emitirLaudoComercial(form());
+    expect(m.pdf).not.toHaveBeenCalled();
   });
 });

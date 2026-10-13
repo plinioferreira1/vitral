@@ -1,3 +1,4 @@
+import { calcularMetodo, ROTULO_METODO } from "./metodos";
 import type { ConteudoAvaliacao } from "./conteudo";
 import { COR, Diagramador, LARGURA_UTIL, MARGEM } from "./pdf-base";
 import type { OpcoesPdf } from "./pdf";
@@ -14,6 +15,7 @@ export async function gerarPdfComercial(c: ConteudoAvaliacao, o: OpcoesPdf): Pro
   g.doc.setAuthor("Sacra Netimóveis");
   g.doc.setCreator("Vitral");
   const d = c.dados;
+  const metodo = calcularMetodo(d.metodologia, c.finalidade, c.area_m2, c.tipologia, c.comparaveis);
   const aluguel = c.finalidade === "locacao";
   const cliente = d.solicitante_nome || c.proprietario_nome || d.destinatario || "Cliente";
   const fotos = c.arquivos.filter(x => x.tipo === "imovel" && x.mime_type.startsWith("image/"));
@@ -61,7 +63,7 @@ export async function gerarPdfComercial(c: ConteudoAvaliacao, o: OpcoesPdf): Pro
 
   if (comps.length) {
     g.novaPagina("Imóveis comparáveis", "03");
-    g.abertura("Referências de mercado", "Imóveis semelhantes.", { introducao: "Preços e características informados pela equipe, apresentados sem fatores de ajuste." });
+    g.abertura("Referências de mercado", "Imóveis semelhantes.", { introducao: "Preços e características informados pela equipe. Os ajustes, quando utilizados, estão descritos na memória do método." });
     for (const [i, x] of comps.entries()) {
       g.subtitulo(`Referência ${String(i + 1).padStart(2, "0")}`, { reservar: 115 });
       g.paragrafo(x.identificacao, { fonte: g.serif, tamanho: 15 });
@@ -85,6 +87,17 @@ export async function gerarPdfComercial(c: ConteudoAvaliacao, o: OpcoesPdf): Pro
   g.rotulo(aluguel ? "Aluguel mensal" : "Venda", MARGEM + 18, g.y - 22);
   g.y -= 35;
   g.paragrafo(dinheiro(c.precificacao.valor_sugerido, aluguel), { fonte: g.serif, tamanho: 25, x: MARGEM + 18, largura: LARGURA_UTIL - 36, cor: COR.vinho, depois: 24 });
+  if (d.metodologia) {
+    g.subtitulo("Método e memória de cálculo");
+    g.paragrafo(ROTULO_METODO[d.metodologia.metodo] ?? "Método informado");
+    g.paragrafo(d.metodologia.justificativa);
+    for (const linha of metodo.memoria) g.paragrafo(linha, { tamanho: 9 });
+    if (metodo.erros.length) {
+      g.paragrafo(`Cálculo incompleto: ${metodo.erros.join(" ")}`, { tamanho: 9, cor: COR.vinho });
+    } else if (metodo.valor !== null) {
+      g.paragrafo(`Referência calculada: ${dinheiro(metodo.valor, aluguel)}. Valor final recomendado pela equipe: ${dinheiro(c.precificacao.valor_sugerido, aluguel)}.`, { tamanho: 10 });
+    }
+  }
   if (d.parecer_avaliadora?.trim()) {
     g.subtitulo("Análise do imóvel e do mercado");
     g.paragrafo(d.parecer_avaliadora);
@@ -105,7 +118,7 @@ export async function gerarPdfComercial(c: ConteudoAvaliacao, o: OpcoesPdf): Pro
     g.paragrafo("A análise utiliza informações fornecidas sobre o imóvel, sem vistoria presencial registrada.", { tamanho: 8, cor: COR.cinza });
   }
   const assinante = o.aprovacao?.ehResponsavelTecnica ? c.responsavel.nome : o.aprovacao?.nome;
-  g.subtitulo(o.rascunho ? "Elaboração" : "Responsável pela emissão", { reservar: 100 });
+  g.subtitulo(o.rascunho ? "Elaboração" : "Responsável pela emissão", { reservar: !o.rascunho && o.assinatura ? 100 : 55 });
   if (!o.rascunho && o.assinatura) {
     const assinatura = await g.doc.embedPng(o.assinatura.bytes);
     g.imagemContida(assinatura, MARGEM, g.y - 45, 140, 45, "esquerda");

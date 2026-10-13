@@ -176,6 +176,7 @@ export const LIMIARES_PADRAO: Limiares = {
 
 /** Campos livres do formulário (coluna `dados`). Tudo opcional. */
 export type DadosAvaliacao = {
+  metodologia?: import("./metodos").PremissasMetodo;
   // identificação e finalidade
   solicitante_nome?: string;
   solicitante_documento?: string;

@@ -6,6 +6,7 @@
  * Resolução COFECI nº 1.066/2007.
  */
 
+import { calcularMetodo } from "./metodos";
 import { alertasDaAmostra, posicaoNaFaixa } from "./calculo";
 import type { ConteudoAvaliacao } from "./conteudo";
 import type { EtapaEditor } from "./tipos";
@@ -29,6 +30,8 @@ export function validarParaEmissao(c: ConteudoAvaliacao): ResultadoValidacao {
   const ptam = c.modalidade === "ptam";
 
   if (!ptam) {
+    const metodo = calcularMetodo(d.metodologia, c.finalidade, c.area_m2, c.tipologia, c.comparaveis);
+    for (const erro of metodo.erros) bloquear("revisao", erro);
     if (vazio(c.data_base)) bloquear("dados", "Informe a data da avaliação.");
     if (vazio(d.solicitante_nome) && vazio(c.proprietario_nome) && vazio(d.destinatario)) bloquear("dados", "Informe o nome do cliente.");
     if (vazio(d.endereco)) bloquear("dados", "Informe o endereço do imóvel.");

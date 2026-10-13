@@ -4,6 +4,7 @@
  * guardado, imutável, em cada versão emitida.
  */
 
+import { calcularMetodo } from "./metodos";
 import { createHash } from "node:crypto";
 import { calcularAvaliacao, type ResultadoCalculo } from "./calculo";
 import type {
@@ -73,7 +74,7 @@ export function montarConteudo(entrada: {
     comparaveis,
     arquivos: [...entrada.arquivos].sort((x, y) => x.ordem - y.ordem),
     precificacao: {
-      valor_calculado: calculo.valorCalculado,
+      valor_calculado: a.modalidade === "estudo_comercial" && a.dados?.metodologia ? calcularMetodo(a.dados.metodologia, a.finalidade, a.area_m2, a.tipologia, comparaveis).valor : calculo.valorCalculado,
       faixa_min: a.faixa_manual ? a.faixa_min : calculo.faixaCalculadaMin,
       faixa_max: a.faixa_manual ? a.faixa_max : calculo.faixaCalculadaMax,
       faixa_manual: a.faixa_manual,

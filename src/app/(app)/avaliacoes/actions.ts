@@ -1,5 +1,6 @@
 "use server";
 
+import { calcularMetodo, lerPremissas } from "@/lib/avaliacao/metodos";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { calcularAvaliacao, posicaoNaFaixa } from "@/lib/avaliacao/calculo";
@@ -102,9 +103,13 @@ async function aposEdicao(
   const area = patch.area_m2 !== undefined ? patch.area_m2 : ctx.avaliacao.area_m2;
   const calculo = calcularAvaliacao((comps ?? []).map(paraComparavel), finalidade, area);
 
+  const dadosAtuais = patch.dados !== undefined ? patch.dados as DadosAvaliacao : ctx.avaliacao.dados;
+  const valorMetodo = ctx.avaliacao.modalidade === "estudo_comercial" && dadosAtuais.metodologia
+    ? calcularMetodo(dadosAtuais.metodologia, finalidade, area ?? null, valorDaListaLocal(TIPOLOGIAS, patch.tipologia ?? ctx.avaliacao.tipologia, ctx.avaliacao.tipologia), (comps ?? []).map(paraComparavel)).valor
+    : calculo.valorCalculado;
   const atualizacao: TablesUpdate<"avaliacoes"> = {
     ...patch,
-    valor_calculado: calculo.valorCalculado,
+    valor_calculado: valorMetodo,
     revisao: ctx.linha.revisao + 1,
   };
   const statusAnterior = ctx.avaliacao.status;
@@ -1380,4 +1385,23 @@ export async function emitirLaudoComercial(formData: FormData) {
   }
   // Recarrega e confere o hash: uma edição concorrente impede a emissão.
   await emitirVersao(formData);
+}
+
+/** Apoio opcional ao comercial. O valor manual só muda quando solicitado explicitamente. */
+export async function salvarMetodoComercial(formData: FormData) {
+  const ctx = await contexto(texto(formData, "avaliacao_id", 40));
+  if (!ctx || !(await editavel(ctx)) || ctx.avaliacao.modalidade !== "estudo_comercial") return;
+  let metodologia;
+  try { metodologia = lerPremissas(formData); }
+  catch (erro) { await avisar("erro", erro instanceof Error ? erro.message : "Revise as premissas."); return; }
+  const resultado = calcularMetodo(metodologia, ctx.avaliacao.finalidade, ctx.avaliacao.area_m2, ctx.avaliacao.tipologia, ctx.comparaveis);
+  if (resultado.erros.length) { await avisar("erro", resultado.erros.join(" ")); return; }
+  const dados = { ...ctx.avaliacao.dados, metodologia };
+  const aplicar = formData.get("acao") === "aplicar";
+  if (aplicar && resultado.valor === null) { await avisar("erro", "Selecione e preencha um método para aplicar o cálculo."); return; }
+  const ok = await aposEdicao(ctx, {
+    tipo: "metodo_atualizado", descricao: "Método e premissas da avaliação comercial atualizados.",
+    dados: { metodo: metodologia?.metodo ?? "manual", valor_referencia: resultado.valor, aplicado: aplicar },
+  }, { dados: dados as Json, ...(aplicar ? { valor_sugerido: resultado.valor } : {}) });
+  if (ok) await avisar("sucesso", aplicar ? "Método salvo e valor calculado aplicado ao laudo." : "Método salvo. O valor final do laudo foi preservado.");
 }

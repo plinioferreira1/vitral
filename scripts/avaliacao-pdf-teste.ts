@@ -13,6 +13,7 @@ import { montarConteudo } from "../src/lib/avaliacao/conteudo";
 import { CHAVE_LOGO_BORDO, CHAVE_LOGO_DOURADO, gerarPdfAvaliacao } from "../src/lib/avaliacao/pdf";
 import type { Imagem } from "../src/lib/avaliacao/pdf-base";
 import { LIMIARES_PADRAO, type ArquivoAvaliacao, type AvaliacaoBase, type Comparavel, type Responsavel } from "../src/lib/avaliacao/tipos";
+import { calcularMetodo, type PremissasMetodo } from "../src/lib/avaliacao/metodos";
 import { validarParaEmissao } from "../src/lib/avaliacao/validacao";
 
 const saida = process.argv[2] ?? "./pdf-teste";
@@ -298,6 +299,21 @@ async function main() {
       fontes,
     })
   );
+
+  // Quatro métodos comerciais, com premissas fictícias para revisar memória e paginação.
+  const metodos: PremissasMetodo[] = [
+    { metodo: "comparativo", justificativa: "Referências fictícias da mesma região, ajustadas pelas diferenças descritas." },
+    { metodo: "evolutivo", justificativa: "Terreno por pesquisa fictícia. Custo de reconstrução por orçamento ilustrativo, depreciação pela conservação e fator de comercialização por referências de mercado.", terreno: 300000, areaConstruida: 200, custoM2: 2000, depreciacaoPct: 20, fatorComercializacao: 1.1 },
+    { metodo: "renda", justificativa: "Receita estabilizada fictícia, vacância e despesas do proprietário estimadas. Taxa anual ilustrativa sustentada em referências de investimento.", aluguelMensal: 10000, vacanciaPct: 10, despesasMensais: 1000, taxaCapitalizacaoPct: 8 },
+    { metodo: "involutivo", justificativa: "Cenário fictício de empreendimento com projeto urbanisticamente viável apenas para demonstração. Inclui obras, taxas e comercialização; terreno é o valor residual procurado.", taxaDescontoPct: 10, lucroPct: 20, fluxo: [{ mes: 0, receita: 0, custo: 100000 }, ...Array.from({ length: 24 }, (_, i) => ({ mes: i + 1, receita: 100000, custo: 20000 }))] },
+  ];
+  for (const metodologia of metodos) {
+    const comercial: AvaliacaoBase = { ...ptam, modalidade: "estudo_comercial", dados: { ...ptam.dados, solicitante_nome: "Cliente fictício", metodologia }, valor_sugerido: 700000 };
+    const resultado = calcularMetodo(metodologia, "venda", comercial.area_m2, comercial.tipologia, compsPtam);
+    if (resultado.erros.length) throw new Error(resultado.erros.join(" "));
+    const conteudoMetodo = montarConteudo({ avaliacao: comercial, comparaveis: compsPtam, arquivos: [], responsavel, limiares: LIMIARES_PADRAO });
+    writeFileSync(path.join(saida, `teste-comercial-${metodologia.metodo}.pdf`), await gerarPdfAvaliacao(conteudoMetodo, { rascunho: true, versao: null, emitidoEm: null, elaboradoPor: "Equipe fictícia", aprovacao: null, assinatura: null, imagens, fontes, demonstracao: true }));
+  }
 }
 
 main().catch((erro) => {
