@@ -1,0 +1,212 @@
+@import "tailwindcss";
+
+/*
+  Vitral · direção "Caixilho"
+  Conceito de layout: cada tela é um caixilho — painéis brancos encostados uns
+  nos outros, separados por filetes de chumbo (bordas compartilhadas, sem
+  cartões flutuantes nem sombras). A cor entra como luz por vidros pequenos:
+  identidade da área (vendas, financiamento, locação…) e situação (em dia,
+  hoje, atrasado). Tudo o mais é cal, chumbo e tipografia.
+*/
+
+:root {
+  /* superfícies */
+  --cal: #f2f1ee;          /* fundo do app: cal de parede, cinza levemente quente */
+  --vidro: #ffffff;        /* painel */
+  --vidro-2: #f8f7f5;      /* painel recuado (cabeçalho de tabela, área de filtro) */
+  --chumbo: #221e1d;       /* texto principal e filete forte */
+  --chumbo-2: #59524f;     /* texto secundário (7,2:1 sobre branco) */
+  --chumbo-3: #7d7571;     /* rótulos discretos (4,6:1 sobre branco) */
+  --filete: #dcd8d2;       /* divisão entre painéis */
+  --filete-forte: #221e1d; /* moldura do caixilho */
+
+  /* marca */
+  --bordo: #7b1e24;        /* ação principal (9,9:1 com branco) */
+  --bordo-vivo: #9a2a31;
+  --bordo-vidro: #f5e6e5;
+  --ouro: #8a5d0e;         /* dourado para texto e ícone (5,3:1 sobre branco) */
+  --ouro-luz: #e8b84a;     /* dourado para preenchimento e destaque, nunca texto */
+  --ouro-vidro: #fbf1da;
+
+  /* vidros das áreas (identidade de módulo, como a linha de um metrô) */
+  --area-venda: #8e2430;
+  --area-financiamento: #2856a3;
+  --area-locacao: #0f6e66;
+  --area-financeiro: #9a6510;
+  --area-documentos: #5d4893;
+  --area-pessoas: #4a5d2a;
+
+  /* semântica (sempre acompanhada de ícone e palavra) */
+  --ok: #2d6e46;
+  --ok-vidro: #e3f1e7;
+  --atencao: #96530a;
+  --atencao-vidro: #fbeed8;
+  --critico: #b0261c;
+  --critico-vidro: #fbe6e3;
+  --info: #2856a3;
+  --info-vidro: #e5edf9;
+
+  --foco: #2856a3;
+  --sombra-flutuante: 0 12px 32px -12px rgb(34 30 29 / 0.35), 0 2px 6px rgb(34 30 29 / 0.12);
+
+  --fonte-titulo: "Gabarito", "Archivo", ui-sans-serif, system-ui, sans-serif;
+  --fonte-texto: "Archivo", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --fonte-documento: "Newsreader", Georgia, "Times New Roman", serif;
+
+  --movimento-rapido: 120ms;
+  --movimento-medio: 200ms;
+  --curva: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --cal: #161413;
+    --vidro: #201d1b;
+    --vidro-2: #191716;
+    --chumbo: #f1ede8;
+    --chumbo-2: #bfb7b0;
+    --chumbo-3: #9a918a;
+    --filete: #3a3431;
+    --filete-forte: #8d847e;
+    --bordo: #e48a8f;
+    --bordo-vivo: #f0a2a6;
+    --bordo-vidro: #3b2022;
+    --ouro: #e3b45a;
+    --ouro-luz: #c9962f;
+    --ouro-vidro: #3a2f19;
+    --area-venda: #e07b86;
+    --area-financiamento: #7fa6ea;
+    --area-locacao: #5cc2b6;
+    --area-financeiro: #e0ad55;
+    --area-documentos: #b7a2ea;
+    --area-pessoas: #a9c27c;
+    --ok: #7fcf9b;
+    --ok-vidro: #1d3326;
+    --atencao: #f0b25f;
+    --atencao-vidro: #3a2c16;
+    --critico: #f2867c;
+    --critico-vidro: #3d1f1c;
+    --info: #8fb2f0;
+    --info-vidro: #1d2a40;
+    --foco: #8fb2f0;
+    --sombra-flutuante: 0 12px 32px -12px rgb(0 0 0 / 0.7), 0 2px 6px rgb(0 0 0 / 0.5);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --cal: #161413;
+  --vidro: #201d1b;
+  --vidro-2: #191716;
+  --chumbo: #f1ede8;
+  --chumbo-2: #bfb7b0;
+  --chumbo-3: #9a918a;
+  --filete: #3a3431;
+  --filete-forte: #8d847e;
+  --bordo: #e48a8f;
+  --bordo-vivo: #f0a2a6;
+  --bordo-vidro: #3b2022;
+  --ouro: #e3b45a;
+  --ouro-luz: #c9962f;
+  --ouro-vidro: #3a2f19;
+  --area-venda: #e07b86;
+  --area-financiamento: #7fa6ea;
+  --area-locacao: #5cc2b6;
+  --area-financeiro: #e0ad55;
+  --area-documentos: #b7a2ea;
+  --area-pessoas: #a9c27c;
+  --ok: #7fcf9b;
+  --ok-vidro: #1d3326;
+  --atencao: #f0b25f;
+  --atencao-vidro: #3a2c16;
+  --critico: #f2867c;
+  --critico-vidro: #3d1f1c;
+  --info: #8fb2f0;
+  --info-vidro: #1d2a40;
+  --foco: #8fb2f0;
+  --sombra-flutuante: 0 12px 32px -12px rgb(0 0 0 / 0.7), 0 2px 6px rgb(0 0 0 / 0.5);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-cal: var(--cal);
+  --color-vidro: var(--vidro);
+  --color-vidro-2: var(--vidro-2);
+  --color-chumbo: var(--chumbo);
+  --color-chumbo-2: var(--chumbo-2);
+  --color-chumbo-3: var(--chumbo-3);
+  --color-filete: var(--filete);
+  --color-filete-forte: var(--filete-forte);
+  --color-bordo: var(--bordo);
+  --color-bordo-vivo: var(--bordo-vivo);
+  --color-bordo-vidro: var(--bordo-vidro);
+  --color-ouro: var(--ouro);
+  --color-ouro-luz: var(--ouro-luz);
+  --color-ouro-vidro: var(--ouro-vidro);
+  --color-ok: var(--ok);
+  --color-ok-vidro: var(--ok-vidro);
+  --color-atencao: var(--atencao);
+  --color-atencao-vidro: var(--atencao-vidro);
+  --color-critico: var(--critico);
+  --color-critico-vidro: var(--critico-vidro);
+  --color-info: var(--info);
+  --color-info-vidro: var(--info-vidro);
+  --color-foco: var(--foco);
+  --font-titulo: var(--fonte-titulo);
+  --font-texto: var(--fonte-texto);
+  --font-documento: var(--fonte-documento);
+}
+
+html { -webkit-text-size-adjust: 100%; }
+body {
+  background: var(--cal);
+  color: var(--chumbo);
+  font-family: var(--fonte-texto);
+  font-size: 15px;
+  line-height: 1.5;
+  font-variation-settings: "wdth" 100;
+}
+h1, h2, h3 { font-family: var(--fonte-titulo); text-wrap: balance; letter-spacing: -0.01em; }
+.num { font-variant-numeric: tabular-nums lining-nums; }
+.estreito { font-variation-settings: "wdth" 84; }
+::selection { background: color-mix(in srgb, var(--ouro-luz) 45%, transparent); }
+
+:where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Painéis do caixilho: bordas compartilhadas, sem sombra */
+.caixilho { display: grid; gap: 1px; background: var(--filete); border: 1px solid var(--filete); }
+.caixilho > * { background: var(--vidro); min-width: 0; }
+.caixilho-forte { border-color: var(--filete-forte); }
+
+/* Movimento: entra rápido, sai mais rápido; desliga com preferência do sistema ou do laboratório */
+@keyframes surgir { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes deslizar { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes subir { from { transform: translateY(16px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes acender { 0% { background-color: var(--ouro-vidro); } 100% { background-color: transparent; } }
+@keyframes pulsar { 0%, 100% { opacity: .45; } 50% { opacity: .9; } }
+.anim-surgir { animation: surgir var(--movimento-medio) var(--curva) both; }
+.anim-deslizar { animation: deslizar var(--movimento-medio) var(--curva) both; }
+.anim-subir { animation: subir var(--movimento-medio) var(--curva) both; }
+.anim-acender { animation: acender 1.4s ease-out both; }
+.esqueleto { background: var(--filete); animation: pulsar 1.4s ease-in-out infinite; border-radius: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+}
+.sem-movimento *, .sem-movimento *::before, .sem-movimento *::after {
+  animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important;
+}
+
+/* Documento do cliente (relatório) */
+.folha { font-family: var(--fonte-documento); }
+.folha h1, .folha h2, .folha h3 { font-family: var(--fonte-documento); letter-spacing: 0; }
+
+/* barra de rolagem discreta em áreas internas */
+.rolagem { scrollbar-width: thin; scrollbar-color: var(--filete) transparent; }
+
+/* Grade de uma coluna por padrão sem nunca crescer além do contêiner (conteúdo longo quebra ou rola dentro). */
+@layer base { :where(.grid, .caixilho) { grid-template-columns: minmax(0, 1fr); } }

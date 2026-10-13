@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Laboratório de design: app estático separado, com build próprio.
+    "laboratorio/**",
   ]),
 ]);
 

@@ -11,5 +11,10 @@
       "path": "/api/cron/controle-debitos",
       "schedule": "20 11 * * *"
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "laboratorio-design": false
+    }
+  }
 }
