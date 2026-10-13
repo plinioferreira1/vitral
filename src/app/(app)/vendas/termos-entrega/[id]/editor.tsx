@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDown, ArrowUp, Eye, Loader2, Paperclip, Plus, Save, Trash2, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Eye, FileCheck2, Loader2, Paperclip, Plus, Save, Trash2, X } from "lucide-react";
 import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { formatarCpfCnpj } from "@/lib/mascaras";
 import { createClient } from "@/lib/supabase/client";
@@ -50,7 +50,7 @@ import {
   type Servico,
 } from "@/lib/termo-entrega/conteudo";
 import { formatarCentavos, valorPorExtenso } from "@/lib/termo-entrega/extenso";
-import { registrarAnexo, removerAnexo, salvarTermo } from "../actions";
+import { gerarDocumento, registrarAnexo, removerAnexo, salvarTermo } from "../actions";
 
 const ROTULO = "mb-1 block text-xs font-medium text-ink-muted";
 const BOTAO_MINI = "inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:bg-background hover:text-ink";
@@ -197,7 +197,8 @@ export function EditorTermo({ termoId, tenantId, codigo, versao, inicial, anexos
   const mudarEncargo = (id: string, campos: Partial<EncargoEntrada>) => mudar((d) => ({ ...d, encargos: d.encargos.map((e) => (e.id === id ? { ...e, ...campos } : e)) }));
   const mudarServico = (chave: "energia" | "agua" | "gas", campos: Partial<Servico>) => mudar((d) => ({ ...d, demais: { ...d.demais, [chave]: { ...d.demais[chave], ...campos } } }));
 
-  function salvar(depois?: "previa") {
+  function salvar(depois?: "previa" | "gerar") {
+    if (depois === "gerar" && !window.confirm("Gerar o documento definitivo sem a marca MINUTA? As alterações serão salvas antes de gerar. Ainda é possível voltar a editar enquanto ninguém assinar.")) return;
     iniciar(async () => {
       const r = await salvarTermo(termoId, doc);
       if (!r.ok) {
@@ -205,6 +206,13 @@ export function EditorTermo({ termoId, tenantId, codigo, versao, inicial, anexos
         return;
       }
       setSujo(false);
+      if (depois === "gerar") {
+        const form = new FormData();
+        form.set("id", termoId);
+        await gerarDocumento(form);
+        router.refresh();
+        return;
+      }
       setMensagem({ tipo: "ok", texto: "Rascunho salvo." });
       if (depois === "previa") router.push(`/vendas/termos-entrega/${termoId}?previa=1`);
       else router.refresh();
@@ -337,9 +345,13 @@ export function EditorTermo({ termoId, tenantId, codigo, versao, inicial, anexos
       <button type="button" disabled={salvando} onClick={() => salvar()} className={`${SECONDARY_BUTTON_CLASS} flex-1 disabled:opacity-60`}>
         {salvando ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Salvar rascunho
       </button>
-      <button type="button" disabled={salvando} onClick={() => salvar("previa")} className={`${PRIMARY_BUTTON_CLASS} flex-1 disabled:opacity-60`}>
+      <button type="button" disabled={salvando || pendencias.length > 0} onClick={() => salvar("gerar")} title={pendencias.length ? pendencias.join(" ") : "Salvar as alterações e gerar o PDF sem a marca MINUTA"} className={`${PRIMARY_BUTTON_CLASS} flex-1 disabled:opacity-60`}>
+        {salvando ? <Loader2 size={15} className="animate-spin" /> : <FileCheck2 size={15} />} Gerar documento
+      </button>
+      <button type="button" disabled={salvando} onClick={() => salvar("previa")} className={`${SECONDARY_BUTTON_CLASS} flex-1 disabled:opacity-60`}>
         <Eye size={15} /> Pré-visualizar
       </button>
+      {pendencias.length > 0 && <p className="w-full text-xs text-amber-800">Para gerar: {pendencias[0]}{pendencias.length > 1 ? ` (+${pendencias.length - 1} pendência(s))` : ""}</p>}
     </div>
   );
 
