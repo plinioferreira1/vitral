@@ -71,7 +71,7 @@ function ConteudoFichas({ fichas, podeExcluir, selecionadas, marcadas, setMarcad
         <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Link href={`/locacao/ficha-cadastral/${f.id}`} className="flex min-h-11 min-w-0 flex-1 items-start gap-3 rounded-lg focus-visible:outline-brand">
             <div className="hidden rounded-lg bg-brand-soft p-2 text-brand sm:block"><FileText size={20} /></div>
-            <div className="min-w-0"><p className="break-words font-semibold text-ink">{f.proponente_nome || "Proponente não informado"}</p><p className="mt-0.5 text-xs font-medium text-brand">{ROTULO_TIPO[tipoLocatario(f.tipo_locatario)]}</p><p className="mt-1 break-words text-sm text-ink-muted">{f.imovel_referencia}</p><p className="mt-1 break-all text-xs text-ink-muted">{f.proponente_email}</p></div>
+            <div className="min-w-0"><p className="break-words font-semibold text-ink">{f.proponente_nome || "Aguardando dados do cliente"}</p><p className="mt-0.5 text-xs font-medium text-brand">{ROTULO_TIPO[tipoLocatario(f.tipo_locatario)]}</p><p className="mt-1 break-words text-sm text-ink-muted">{f.imovel_referencia}</p><p className="mt-1 break-all text-xs text-ink-muted">{f.proponente_email}</p></div>
           </Link>
           <div className="flex flex-wrap items-center gap-3 sm:justify-end">
             <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${status.classe}`}>{status.label}</span>

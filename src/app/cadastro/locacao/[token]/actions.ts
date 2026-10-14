@@ -25,9 +25,11 @@ export async function salvarRascunho(token: string, dados: DadosFicha): Promise<
   // Só o que a ficha conhece é gravado (o que vier a mais é descartado).
   dados = limparDados(dados ?? {}, contexto.tipo);
   const salvoEm = new Date().toISOString();
-  const { data: salva, error } = await contexto.admin.from("fichas_cadastrais_locacao").update({ dados, status: "em_preenchimento", proponente_nome: String(dados.nome_completo ?? "").slice(0, 200) || null, proponente_email: String(dados.email ?? "").slice(0, 254) || null, atualizado_em: salvoEm }).eq("id", contexto.ficha.id).neq("status", "concluida").neq("status", "cancelada").select("id").maybeSingle();
+  const { data: salva, error } = await contexto.admin.from("fichas_cadastrais_locacao").update({ dados, status: "em_preenchimento", ...(contexto.tipo === "titular" ? { imovel_referencia: String(dados.imovel_interesse ?? "").slice(0, 500) || null } : {}), proponente_nome: String(dados.nome_completo ?? "").slice(0, 200) || null, proponente_email: String(dados.email ?? "").slice(0, 254) || null, atualizado_em: salvoEm }).eq("id", contexto.ficha.id).neq("status", "concluida").neq("status", "cancelada").select("id").maybeSingle();
   if (error || !salva) return { ok: false, erro: "Não foi possível salvar agora. Tente novamente." };
   revalidatePath(`/cadastro/locacao/${token}`);
+  revalidatePath("/locacao/ficha-cadastral");
+  revalidatePath(`/locacao/ficha-cadastral/${contexto.ficha.id}`);
   return { ok: true, salvoEm };
 }
 
@@ -78,10 +80,11 @@ export async function finalizarFicha(token: string, dados: DadosFicha, assinatur
   if (!assinatura.startsWith("data:image/png;base64,") || assinatura.length > 500000) return { ok: false, erro: "Faça sua assinatura antes de enviar." };
   const listaHeaders = await headers();
   const ip = listaHeaders.get("x-forwarded-for")?.split(",")[0]?.trim() || listaHeaders.get("x-real-ip") || "desconhecido";
-  const { data: concluida, error } = await contexto.admin.from("fichas_cadastrais_locacao").update({ dados, proponente_nome: String(dados.nome_completo).slice(0, 200), proponente_email: String(dados.email).slice(0, 254), assinatura_imagem: assinatura, consentimento_lgpd: true, status: "concluida", concluido_em: new Date().toISOString(), atualizado_em: new Date().toISOString(), ip_conclusao: ip, user_agent_conclusao: String(listaHeaders.get("user-agent") ?? "").slice(0, 500) }).eq("id", contexto.ficha.id).neq("status", "concluida").neq("status", "cancelada").select("id").maybeSingle();
+  const { data: concluida, error } = await contexto.admin.from("fichas_cadastrais_locacao").update({ dados, ...(contexto.tipo === "titular" ? { imovel_referencia: String(dados.imovel_interesse ?? "").slice(0, 500) || null } : {}), proponente_nome: String(dados.nome_completo).slice(0, 200), proponente_email: String(dados.email).slice(0, 254), assinatura_imagem: assinatura, consentimento_lgpd: true, status: "concluida", concluido_em: new Date().toISOString(), atualizado_em: new Date().toISOString(), ip_conclusao: ip, user_agent_conclusao: String(listaHeaders.get("user-agent") ?? "").slice(0, 500) }).eq("id", contexto.ficha.id).neq("status", "concluida").neq("status", "cancelada").select("id").maybeSingle();
   if (error || !concluida) return { ok: false, erro: "Não foi possível concluir a ficha. Tente novamente." };
   revalidatePath(`/cadastro/locacao/${token}`);
   revalidatePath("/locacao/ficha-cadastral");
+  revalidatePath(`/locacao/ficha-cadastral/${contexto.ficha.id}`);
   return { ok: true };
 }
 
@@ -106,5 +109,7 @@ export async function removerDocumento(token: string, documentoId: string): Prom
   const { error } = await contexto.admin.from("ficha_locacao_documentos").delete().eq("id", documentoId).eq("ficha_id", contexto.ficha.id);
   if (error) return { ok: false, erro: "Não foi possível retirar o anexo." };
   revalidatePath(`/cadastro/locacao/${token}`);
+  revalidatePath("/locacao/ficha-cadastral");
+  revalidatePath(`/locacao/ficha-cadastral/${contexto.ficha.id}`);
   return { ok: true };
 }

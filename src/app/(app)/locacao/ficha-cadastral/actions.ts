@@ -68,20 +68,30 @@ export async function excluirFichasLocacao(formData: FormData) {
 export async function criarFichaLocacao(formData: FormData) {
   const sessao = await exigirUsuario();
   if (!sessao?.usuario.tenant_id) return;
-  const nome = String(formData.get("proponente_nome") ?? "").trim();
-  const email = String(formData.get("proponente_email") ?? "").trim().toLowerCase();
-  const imovel = String(formData.get("imovel_referencia") ?? "").trim();
-  const validade = Math.min(90, Math.max(1, Number(formData.get("validade_dias") ?? 30)));
-  if (!nome || !email || !imovel) {
-    await avisar("erro", "Preencha o nome, o e-mail e o imóvel de interesse.");
+  const nome = String(formData.get("proponente_nome") ?? "").trim().slice(0, 200);
+  const email = String(formData.get("proponente_email") ?? "").trim().toLowerCase().slice(0, 254);
+  const imovel = String(formData.get("imovel_referencia") ?? "").trim().slice(0, 500);
+  const validade = Number(formData.get("validade_dias") ?? 30);
+  if (![7, 15, 30, 60].includes(validade)) {
+    await avisar("erro", "Escolha uma validade de 7, 15, 30 ou 60 dias.");
     return;
   }
+  if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    await avisar("erro", "Informe um e-mail válido ou deixe o campo em branco.");
+    return;
+  }
+  // A solicitação pode nascer vazia. A identidade é informada pelo cliente,
+  // sem criar uma pessoa fictícia ou exigir cadastro antecipado.
+  const dados: Record<string, string> = {};
+  if (nome) dados.nome_completo = nome;
+  if (email) dados.email = email;
+  if (imovel) dados.imovel_interesse = imovel;
   const supabase = await createClient() as unknown as SupabaseClient;
   const { data, error } = await supabase.from("fichas_cadastrais_locacao").insert({
-    tenant_id: sessao.usuario.tenant_id, proponente_nome: nome, proponente_email: email,
-    imovel_referencia: imovel, criado_por: sessao.user.id,
+    tenant_id: sessao.usuario.tenant_id, proponente_nome: nome || null, proponente_email: email || null,
+    imovel_referencia: imovel || null, criado_por: sessao.user.id,
     expira_em: new Date(Date.now() + validade * 86400000).toISOString(),
-    dados: { nome_completo: nome, email, imovel_interesse: imovel },
+    dados,
   }).select("id").single();
   if (!await checar(Promise.resolve({ error }), "criar a ficha")) return;
   if (!data) {
