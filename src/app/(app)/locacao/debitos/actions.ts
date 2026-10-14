@@ -13,6 +13,7 @@ import {
   TIPOS_VERIFICACAO,
   competenciaDe,
   emailValido,
+  resolverAdministradora,
   normalizarCompetencia,
   podeMarcarSemDebitoEmLote,
   rotuloCompetencia,
@@ -275,9 +276,44 @@ export async function salvarVinculoCondominio(formData: FormData) {
     await avisar("erro", "O e-mail específico da unidade não parece válido.");
     return;
   }
+  // A administradora é digitada (e-mail ou nome). Se o e-mail ainda não existe, é cadastrada aqui.
+  let administradoraId: string | null = null;
+  if (possui !== false) {
+    if (formData.has("administradora")) {
+      const { data: lista } = await ctx.supabase.from("condominio_administradoras").select("id, nome, email_solicitacao, ativa");
+      const r = resolverAdministradora(lista ?? [], texto(formData, "administradora", 200));
+      if (r.tipo === "invalida") {
+        await avisar("erro", "Digite o e-mail da administradora (ex.: boletos@administradora.com.br) ou o nome exato já cadastrado.");
+        return;
+      }
+      if (r.tipo === "existente") administradoraId = r.administradora.id;
+      if (r.tipo === "nova") {
+        const campos = { nome: r.email, email_solicitacao: r.email, metodo_consulta: "email", ativa: true };
+        const { data: criada, error } = await ctx.supabase
+          .from("condominio_administradoras")
+          .insert({ ...campos, tenant_id: ctx.tenantId, criado_por: ctx.autor.id })
+          .select("id")
+          .single();
+        if (error || !criada) {
+          await avisar("erro", `Não foi possível cadastrar a administradora: ${error?.message ?? "erro desconhecido"}`);
+          return;
+        }
+        administradoraId = criada.id;
+        await registrarEventoDebitos(ctx.supabase, ctx.tenantId, ctx.autor, {
+          acao: "administradora_criada",
+          descricao: `Administradora "${r.email}" cadastrada a partir do contrato.`,
+          administradoraId: criada.id,
+          contratoId,
+          novo: campos,
+        });
+      }
+    } else {
+      administradoraId = texto(formData, "administradora_id", 40) || null;
+    }
+  }
   const novo = {
     possui_condominio: possui,
-    administradora_id: possui === false ? null : texto(formData, "administradora_id", 40) || null,
+    administradora_id: administradoraId,
     condominio_nome: textoOuNull(formData, "condominio_nome", 200),
     condominio_unidade: textoOuNull(formData, "condominio_unidade", 60),
     condominio_bloco: textoOuNull(formData, "condominio_bloco", 60),

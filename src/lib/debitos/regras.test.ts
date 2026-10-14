@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  resolverAdministradora,
+  rotuloAdministradora,
   acaoNecessaria,
   agruparPorAdministradora,
   chaveVerificacao,
@@ -311,5 +313,25 @@ describe("avisos da página inicial", () => {
   });
   it("sem pendências não gera aviso", () => {
     expect(montarAvisosDebitos([{ tipo: "condominio", status: "sem_debitos", competencia: "2026-10-01" }], [], "2026-10-01", "2026-10-20T12:00:00Z", 7)).toEqual([]);
+  });
+});
+
+describe("resolverAdministradora", () => {
+  const lista = [
+    { id: "a", nome: "Ascon", email_solicitacao: "atendimento@ascon.com.br", ativa: true },
+    { id: "b", nome: "Pró Condomínio", email_solicitacao: null, ativa: true },
+    { id: "c", nome: "antiga", email_solicitacao: "contato@ascon.com.br", ativa: false },
+    { id: "d", nome: "Contato Ascon", email_solicitacao: "contato@ascon.com.br", ativa: true },
+  ];
+  it("vazio é nenhuma", () => expect(resolverAdministradora(lista, "  ")).toEqual({ tipo: "nenhuma" }));
+  it("acha pelo e-mail sem diferenciar maiúsculas", () => expect(resolverAdministradora(lista, " Atendimento@ASCON.com.br ")).toMatchObject({ tipo: "existente", administradora: { id: "a" } }));
+  it("acha pelo nome", () => expect(resolverAdministradora(lista, "pró condomínio")).toMatchObject({ tipo: "existente", administradora: { id: "b" } }));
+  it("prefere a ativa quando o e-mail se repete", () => expect(resolverAdministradora(lista, "contato@ascon.com.br")).toMatchObject({ administradora: { id: "d" } }));
+  it("e-mail novo vira cadastro", () => expect(resolverAdministradora(lista, "Boletos@Nova.com.br")).toEqual({ tipo: "nova", email: "boletos@nova.com.br" }));
+  it("texto que não é e-mail nem nome é inválido", () => expect(resolverAdministradora(lista, "fulano")).toEqual({ tipo: "invalida" }));
+  it("rótulo mostra o e-mail ou o nome", () => {
+    expect(rotuloAdministradora(lista[0])).toBe("atendimento@ascon.com.br");
+    expect(rotuloAdministradora(lista[1])).toBe("Pró Condomínio");
+    expect(rotuloAdministradora(null)).toBe("");
   });
 });

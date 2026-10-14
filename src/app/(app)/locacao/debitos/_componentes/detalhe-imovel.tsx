@@ -4,7 +4,7 @@ import { BotaoCopiarLink } from "@/components/botao-copiar-link";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { INPUT_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import type { PermissoesDebitos } from "@/lib/debitos/permissoes";
-import { ROTULO_METODO, ROTULO_STATUS, ROTULO_TIPO, rotuloCompetencia, rotuloCompetenciaCurto, type StatusVerificacao, type TipoVerificacao } from "@/lib/debitos/regras";
+import { ROTULO_METODO, ROTULO_STATUS, ROTULO_TIPO, rotuloCompetencia, rotuloAdministradora, rotuloCompetenciaCurto, type StatusVerificacao, type TipoVerificacao } from "@/lib/debitos/regras";
 import { inscricaoParaCopiar } from "@/lib/debitos/tributos";
 import { formatarDataHoraBR } from "@/lib/data-br";
 import type { Tables } from "@/lib/database.types";
@@ -229,17 +229,9 @@ export function DetalheImovel({
                   </select>
                 </label>
                 <label className="block sm:col-span-1 lg:col-span-2">
-                  <span className={ROTULO}>Administradora</span>
-                  <select name="administradora_id" defaultValue={c.administradora_id ?? ""} className={INPUT_CLASS}>
-                    <option value="">— Nenhuma —</option>
-                    {administradoras
-                      .filter((a) => a.ativa || a.id === c.administradora_id)
-                      .map((a) => (
-                        <option key={a.id} value={a.id}>
-                          {a.nome}
-                        </option>
-                      ))}
-                  </select>
+                  <span className={ROTULO}>E-mail da administradora</span>
+                  <input name="administradora" type="text" inputMode="email" autoComplete="off" spellCheck={false} defaultValue={rotuloAdministradora(administradoras.find((a) => a.id === c.administradora_id))} placeholder="ex.: boletos@administradora.com.br" className={INPUT_CLASS} />
+                  <span className="mt-1 block text-xs text-ink-muted">Digite o e-mail. Se ainda não estiver cadastrada, a administradora é criada ao salvar.</span>
                 </label>
                 <label className="block">
                   <span className={ROTULO}>Nome do condomínio</span>

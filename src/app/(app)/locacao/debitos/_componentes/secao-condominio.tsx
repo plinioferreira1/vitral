@@ -3,7 +3,7 @@ import { Building2 } from "lucide-react";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { INPUT_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
-import { ROTULO_METODO, type MetodoConsulta } from "@/lib/debitos/regras";
+import { ROTULO_METODO, rotuloAdministradora, type MetodoConsulta } from "@/lib/debitos/regras";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { salvarVinculoCondominio } from "../actions";
@@ -22,7 +22,7 @@ export async function SecaoCondominio({ contratoId }: { contratoId: string }) {
       .select("possui_condominio, administradora_id, condominio_nome, condominio_unidade, condominio_bloco, condominio_email, condominio_codigo_unidade, condominio_observacoes")
       .eq("id", contratoId)
       .maybeSingle(),
-    supabase.from("condominio_administradoras").select("id, nome, metodo_consulta, ativa").order("nome"),
+    supabase.from("condominio_administradoras").select("id, nome, email_solicitacao, metodo_consulta, ativa").order("nome"),
   ]);
   if (!perms.ver || !c) return null;
   const adm = (administradoras ?? []).find((a) => a.id === c.administradora_id);
@@ -49,17 +49,9 @@ export async function SecaoCondominio({ contratoId }: { contratoId: string }) {
             </select>
           </label>
           <label className="block lg:col-span-2">
-            <span className={ROTULO}>Administradora</span>
-            <select name="administradora_id" defaultValue={c.administradora_id ?? ""} className={INPUT_CLASS}>
-              <option value="">— Nenhuma —</option>
-              {(administradoras ?? [])
-                .filter((a) => a.ativa || a.id === c.administradora_id)
-                .map((a) => (
-                  <option key={a.id} value={a.id}>
-                    {a.nome}
-                  </option>
-                ))}
-            </select>
+            <span className={ROTULO}>E-mail da administradora</span>
+            <input name="administradora" type="text" inputMode="email" autoComplete="off" spellCheck={false} defaultValue={rotuloAdministradora(adm)} placeholder="ex.: boletos@administradora.com.br" className={INPUT_CLASS} />
+            <span className="mt-1 block text-xs text-ink-muted">Digite o e-mail. Se ainda não estiver cadastrada, a administradora é criada ao salvar.</span>
           </label>
           <label className="block">
             <span className={ROTULO}>Nome do condomínio</span>

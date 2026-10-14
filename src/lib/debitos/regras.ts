@@ -204,6 +204,30 @@ export function emailValido(valor: string | null | undefined): boolean {
   return !!valor && EMAIL_VALIDO.test(valor.trim());
 }
 
+/** Texto mostrado no campo "Administradora" do contrato: o e-mail, ou o nome quando não há e-mail. */
+export function rotuloAdministradora(a: { nome: string; email_solicitacao: string | null } | null | undefined): string {
+  if (!a) return "";
+  return a.email_solicitacao?.trim() || a.nome;
+}
+
+/**
+ * Interpreta o que foi digitado no campo "Administradora" do contrato.
+ * Procura uma administradora já cadastrada pelo e-mail ou pelo nome (sem
+ * diferenciar maiúsculas); se não houver e o texto for um e-mail válido,
+ * indica que é preciso cadastrar uma nova. Prefere as ativas.
+ */
+export function resolverAdministradora<T extends { id: string; nome: string; email_solicitacao: string | null; ativa: boolean }>(
+  lista: T[],
+  digitado: string | null | undefined,
+): { tipo: "nenhuma" } | { tipo: "existente"; administradora: T } | { tipo: "nova"; email: string } | { tipo: "invalida" } {
+  const valor = (digitado ?? "").trim().toLowerCase();
+  if (!valor) return { tipo: "nenhuma" };
+  const iguais = lista.filter((a) => a.email_solicitacao?.trim().toLowerCase() === valor || a.nome.trim().toLowerCase() === valor);
+  const achada = iguais.find((a) => a.ativa) ?? iguais[0];
+  if (achada) return { tipo: "existente", administradora: achada };
+  return emailValido(valor) ? { tipo: "nova", email: valor } : { tipo: "invalida" };
+}
+
 export type GrupoSolicitacao = {
   chave: string;
   administradoraId: string;
