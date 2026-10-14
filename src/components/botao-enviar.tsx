@@ -2,7 +2,8 @@
 
 import { useFormStatus } from "react-dom";
 import { Loader2 } from "lucide-react";
-import type { ButtonHTMLAttributes } from "react";
+import { useContext, type ButtonHTMLAttributes } from "react";
+import { EnvioNativoContext } from "./formulario-nativo";
 
 /**
  * Botão de envio de formulário que fica desabilitado e mostra um
@@ -17,16 +18,17 @@ export function BotaoEnviar({
   ...resto
 }: ButtonHTMLAttributes<HTMLButtonElement> & { textoEnviando?: string }) {
   const { pending, data } = useFormStatus();
+  const envioNativo = useContext(EnvioNativoContext);
   // Em formulários com vários botões (ex: com name/value), só o botão
   // clicado mostra o indicador.
   const esteBotao =
-    pending && (!resto.name || data?.get(resto.name) === String(resto.value ?? ""));
+    envioNativo || (pending && (!resto.name || data?.get(resto.name) === String(resto.value ?? "")));
 
   return (
     <button
       type="submit"
       {...resto}
-      disabled={disabled || pending}
+      disabled={disabled || pending || envioNativo}
       aria-busy={esteBotao || undefined}
       className={`${className} disabled:cursor-wait disabled:opacity-70`}
     >
