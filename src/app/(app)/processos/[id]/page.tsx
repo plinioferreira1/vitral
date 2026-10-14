@@ -17,14 +17,10 @@ import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { BotaoSubmit } from "@/components/botao-submit";
 import { apagarProcesso } from "../bulk-actions";
 import {
-  concluirEtapa,
-  reabrirEtapa,
-  alterarDataPrevista,
   alternarChecklistItem,
   alternarEtapaPadrao,
   salvarComissao,
   adicionarComentario,
-  salvarNumeroRegistro,
   salvarDadosProcesso,
 } from "./actions";
 import { EditorLinhaTempo } from "@/components/editor-linha-tempo";
@@ -38,6 +34,7 @@ import {
   AlertTriangle,
   type LucideIcon,
 } from "lucide-react";
+import { FormularioNativo } from "@/components/formulario-nativo";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { ModalEdicaoProcesso } from "@/components/modal-edicao-processo";
 
@@ -642,7 +639,8 @@ export default async function ProcessoDetalhePage({
 
               {(etapa.nome === "Registro" || etapa.nome === "Conclusão do Registro") && (
                 <div className="mt-3 border-t border-border pt-3">
-                  <form action={salvarNumeroRegistro} className="flex flex-wrap items-center gap-2">
+                  <FormularioNativo action={`/processos/${p.id}/etapas`} className="flex flex-wrap items-center gap-2">
+                    <input type="hidden" name="acao" value="registro" />
                     <input type="hidden" name="etapa_id" value={etapa.id} />
                     <input type="hidden" name="processo_id" value={p.id} />
                     <input
@@ -659,13 +657,14 @@ export default async function ProcessoDetalhePage({
                     >
                       Salvar
                     </BotaoEnviar>
-                  </form>
+                  </FormularioNativo>
                 </div>
               )}
 
               <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
                 {etapa.status !== "concluida" ? (
-                  <form action={concluirEtapa} className="flex items-center gap-2">
+                  <FormularioNativo action={`/processos/${p.id}/etapas`} className="flex items-center gap-2">
+                    <input type="hidden" name="acao" value="concluir" />
                     <input type="hidden" name="etapa_id" value={etapa.id} />
                     <input type="hidden" name="processo_id" value={p.id} />
                     <BotaoEnviar
@@ -673,9 +672,10 @@ export default async function ProcessoDetalhePage({
                     >
                       Marcar como concluída
                     </BotaoEnviar>
-                  </form>
+                  </FormularioNativo>
                 ) : (
-                  <form action={reabrirEtapa}>
+                  <FormularioNativo action={`/processos/${p.id}/etapas`}>
+                    <input type="hidden" name="acao" value="reabrir" />
                     <input type="hidden" name="etapa_id" value={etapa.id} />
                     <input type="hidden" name="processo_id" value={p.id} />
                     <BotaoEnviar
@@ -683,10 +683,11 @@ export default async function ProcessoDetalhePage({
                     >
                       Reabrir
                     </BotaoEnviar>
-                  </form>
+                  </FormularioNativo>
                 )}
 
-                <form action={alterarDataPrevista} className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                <FormularioNativo action={`/processos/${p.id}/etapas`} className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+                  <input type="hidden" name="acao" value="prazo" />
                   <input type="hidden" name="etapa_id" value={etapa.id} />
                   <input type="hidden" name="processo_id" value={p.id} />
                   <input
@@ -701,7 +702,7 @@ export default async function ProcessoDetalhePage({
                   >
                     Ajustar prazo
                   </BotaoEnviar>
-                </form>
+                </FormularioNativo>
               </div>
               </div>
             </details>
