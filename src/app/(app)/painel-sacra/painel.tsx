@@ -1,3 +1,4 @@
+import type { mediaCorretagem } from "@/lib/media-corretagem";
 import Link from "next/link";
 import { Flag, House, Target, TrendingUp, Trophy, Wallet } from "lucide-react";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
@@ -8,7 +9,7 @@ import { progressoVgv } from "@/lib/metricas-empresa";
 
 const moeda = (centavos: number) => (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-type DadosVgv = { ano: number; numeroVendas: number; realizadoCentavos: number; metaCentavos: number; cadastradoCentavos: number; historicoCentavos: number; semValor: number; ranking: LinhaRankingVgv[]; semParticipacao: number; vgc: ReturnType<typeof somarVgcEmpresa> };
+type DadosVgv = { corretagem: ReturnType<typeof mediaCorretagem>; ano: number; numeroVendas: number; realizadoCentavos: number; metaCentavos: number; cadastradoCentavos: number; historicoCentavos: number; semValor: number; ranking: LinhaRankingVgv[]; semParticipacao: number; vgc: ReturnType<typeof somarVgcEmpresa> };
 
 export function PainelSacra({ dados }: { dados: DadosVgv }) {
   const progresso = progressoVgv(dados.realizadoCentavos, dados.metaCentavos);
@@ -57,6 +58,10 @@ export function PainelSacra({ dados }: { dados: DadosVgv }) {
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         <CartaoKpi label="VGC apurado" valor={moeda(dados.vgc.apuradoCentavos)} icon={Wallet} tom="marca" rodape={<p className="mt-3 text-sm text-ink-muted">{dados.vgc.vendasConferidas} vendas conferidas. Base revisada em 14/10/2026.</p>} />
         <CartaoKpi label="VGC aguardando confirmação" valor={moeda(dados.vgc.pendenteCentavos)} icon={Flag} tom="info" rodape={<p className="mt-3 text-sm text-ink-muted">{dados.vgc.pendencias.length} vendas com rateios pendentes. Este valor não está somado ao VGC apurado.</p>} />
+      </div>
+      <div className="mt-4">
+        <CartaoKpi label="Média de comissão dos contratos" valor={dados.corretagem.percentual === null ? "Sem dados" : `${dados.corretagem.percentual.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`} icon={TrendingUp} tom="info" rodape={<p className="mt-3 text-sm text-ink-muted">Média simples de {dados.corretagem.quantidade} vendas com dados. Comissão total do contrato, incluindo parceiros, dividida pelo preço de cada venda.</p>} />
+        {dados.corretagem.pendentes.length > 0 && <details className="mt-3 rounded-xl border border-border p-4"><summary className="cursor-pointer font-medium">{dados.corretagem.pendentes.length} vendas sem dados completos para a média</summary><ul className="mt-3 space-y-1 text-sm text-ink-muted">{dados.corretagem.pendentes.map(p => <li key={p.id}>{p.imovel}</li>)}</ul></details>}
       </div>
       <p className="mt-4 text-xs leading-5 text-ink-muted">O VGC usa os valores contratuais conferidos; não é estimado pelo preço do imóvel. Novas vendas e alterações de comissão precisam de nova conferência.</p>
       {dados.vgc.semConferencia > 0 && <p className="mt-3 text-sm text-ink-muted">{dados.vgc.semConferencia} venda(s) cadastrada(s) ainda sem comissão conferida.</p>}

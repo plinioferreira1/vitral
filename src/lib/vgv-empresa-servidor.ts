@@ -1,3 +1,5 @@
+import { mediaCorretagem } from "./media-corretagem";
+import { CORRETAGEM_CONFERIDA } from "@/app/(app)/painel-sacra/corretagem-conferida";
 import "server-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { somarVgcEmpresa, type ComissaoConferidaVgc } from "./vgc-empresa";
@@ -18,5 +20,5 @@ export async function obterVgvEmpresa(supabase: SupabaseClient<Database>, tenant
     vendas.push(...data);
     if (data.length < tamanho) break;
   }
-  return { vgc: somarVgcEmpresa(ano, vendas, comissoes, processosForaDoAno), ...somarVgvEmpresa(ano, vendas, historico, processosForaDoAno), ...rankingVgvEmpresa(ano, vendas, historico, corretores, processosForaDoAno) };
+  return { corretagem: mediaCorretagem(ano, vendas, comissoes, CORRETAGEM_CONFERIDA, processosForaDoAno), vgc: somarVgcEmpresa(ano, vendas, comissoes, processosForaDoAno), ...somarVgvEmpresa(ano, vendas, historico, processosForaDoAno), ...rankingVgvEmpresa(ano, vendas, historico, corretores, processosForaDoAno) };
 }
