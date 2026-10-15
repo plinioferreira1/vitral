@@ -45,7 +45,8 @@ export function paraModelo(linha: Tables<"termo_entrega_config"> | null): Modelo
 }
 
 export async function carregarModelo(supabase: Supabase, tenantId: string): Promise<ModeloTermo> {
-  const { data } = await supabase.from("termo_entrega_config").select("*").eq("tenant_id", tenantId).maybeSingle();
+  const { data, error } = await supabase.from("termo_entrega_config").select("*").eq("tenant_id", tenantId).maybeSingle();
+  if (error) throw new Error("Não foi possível carregar o modelo do termo. Tente novamente.");
   return paraModelo(data);
 }
 
@@ -116,8 +117,8 @@ export type TermoCompleto = {
 
 export async function carregarTermo(supabase: Supabase, id: string, tenantId: string): Promise<TermoCompleto | null> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
-  const [{ data: termo }, { data: partes }, { data: encargos }, { data: anexos }, { data: signatarios }, { data: versoes }, { data: eventos }, modelo] = await Promise.all([
-    supabase.from("termos_entrega").select("*").eq("id", id).maybeSingle(),
+  const [{ data: termo, error: erroTermo }, { data: partes, error: erroPartes }, { data: encargos, error: erroEncargos }, { data: anexos, error: erroAnexos }, { data: signatarios, error: erroSignatarios }, { data: versoes, error: erroVersoes }, { data: eventos, error: erroEventos }, modelo] = await Promise.all([
+    supabase.from("termos_entrega").select("*").eq("id", id).eq("tenant_id", tenantId).maybeSingle(),
     supabase.from("termo_entrega_partes").select("*").eq("termo_id", id),
     supabase.from("termo_entrega_encargos").select("*").eq("termo_id", id),
     supabase.from("termo_entrega_anexos").select("*").eq("termo_id", id).order("criado_em"),
@@ -126,6 +127,9 @@ export async function carregarTermo(supabase: Supabase, id: string, tenantId: st
     supabase.from("termo_entrega_eventos").select("*").eq("termo_id", id).order("criado_em", { ascending: false }).limit(200),
     carregarModelo(supabase, tenantId),
   ]);
+  if (erroTermo || erroPartes || erroEncargos || erroAnexos || erroSignatarios || erroVersoes || erroEventos) {
+    throw new Error("Não foi possível carregar todos os dados do termo. Tente novamente.");
+  }
   if (!termo) return null;
   return {
     termo: termo as TermoCompleto["termo"],

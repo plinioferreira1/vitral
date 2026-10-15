@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { aguardarTermo } from "@/lib/termo-entrega/prazo";
+import { enviarTermo } from "@/lib/termo-entrega/envio";
 import { ArrowDown, ArrowUp, Eye, FileCheck2, Loader2, Paperclip, Plus, Save, Trash2, X } from "lucide-react";
 import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { formatarCpfCnpj } from "@/lib/mascaras";
@@ -50,7 +51,7 @@ import {
   type Servico,
 } from "@/lib/termo-entrega/conteudo";
 import { formatarCentavos, valorPorExtenso } from "@/lib/termo-entrega/extenso";
-import { gerarDocumento, registrarAnexo, removerAnexo, salvarTermo } from "../actions";
+
 
 const ROTULO = "mb-1 block text-xs font-medium text-ink-muted";
 const BOTAO_MINI = "inline-flex items-center gap-1 rounded-md border border-border px-2.5 py-1.5 text-xs font-medium text-ink-muted hover:bg-background hover:text-ink";
@@ -166,14 +167,17 @@ function ResultadoEncargo({ c, e }: { c: EncargoCalculado; e: EncargoEntrada }) 
   );
 }
 
-export function EditorTermo({ termoId, tenantId, codigo, versao, inicial, anexosIniciais }: { termoId: string; tenantId: string; codigo: string; versao: number; inicial: DocumentoTermo; anexosIniciais: AnexoTela[] }) {
-  const router = useRouter();
+export function EditorTermo({ termoId, tenantId, codigo, versao, atualizadoEm, inicial, anexosIniciais }: { termoId: string; tenantId: string; codigo: string; versao: number; atualizadoEm: string; inicial: DocumentoTermo; anexosIniciais: AnexoTela[] }) {
+
   const [doc, setDoc] = useState<DocumentoTermo>(inicial);
   const [sujo, setSujo] = useState(false);
   const [mensagem, setMensagem] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
   const [anexos, setAnexos] = useState<AnexoTela[]>(anexosIniciais);
   const [enviandoAnexo, setEnviandoAnexo] = useState<string | null>(null);
-  const [salvando, iniciar] = useTransition();
+  const [salvando, setSalvando] = useState(false);
+  const [revisao, setRevisao] = useState(atualizadoEm);
+  const ocupado = useRef(false);
+  const navegandoAposSalvar = useRef(false);
 
   const { calculos, acerto } = useMemo(() => calcularDocumento(doc), [doc]);
   const pendencias = useMemo(() => pendenciasParaGerar(doc), [doc]);
@@ -183,7 +187,7 @@ export function EditorTermo({ termoId, tenantId, codigo, versao, inicial, anexos
 
   useEffect(() => {
     if (!sujo) return;
-    const avisar = (e: BeforeUnloadEvent) => e.preventDefault();
+    const avisar = (e: BeforeUnloadEvent) => { if (!navegandoAposSalvar.current) e.preventDefault(); };
     window.addEventListener("beforeunload", avisar);
     return () => window.removeEventListener("beforeunload", avisar);
   }, [sujo]);
@@ -197,50 +201,90 @@ export function EditorTermo({ termoId, tenantId, codigo, versao, inicial, anexos
   const mudarEncargo = (id: string, campos: Partial<EncargoEntrada>) => mudar((d) => ({ ...d, encargos: d.encargos.map((e) => (e.id === id ? { ...e, ...campos } : e)) }));
   const mudarServico = (chave: "energia" | "agua" | "gas", campos: Partial<Servico>) => mudar((d) => ({ ...d, demais: { ...d.demais, [chave]: { ...d.demais[chave], ...campos } } }));
 
-  function salvar(depois?: "previa" | "gerar") {
+  async function salvar(depois?: "previa" | "gerar") {
     if (depois === "gerar" && !window.confirm("Gerar o documento definitivo sem a marca MINUTA? As alterações serão salvas antes de gerar. Ainda é possível voltar a editar enquanto ninguém assinar.")) return;
-    iniciar(async () => {
-      const r = await salvarTermo(termoId, doc);
+    if (ocupado.current) return;
+    ocupado.current = true;
+    setSalvando(true);
+    setMensagem(null);
+    try {
+      const form = new FormData();
+      form.set("acao", "salvar");
+      form.set("id", termoId);
+      form.set("documento", JSON.stringify(doc));
+      form.set("revisao", revisao);
+      if (depois) form.set("depois", depois);
+      const r = await enviarTermo(form);
       if (!r.ok) {
         setMensagem({ tipo: "erro", texto: r.erro ?? "Não foi possível salvar." });
         return;
       }
       setSujo(false);
-      if (depois === "gerar") {
-        const form = new FormData();
-        form.set("id", termoId);
-        await gerarDocumento(form);
-        router.refresh();
+      if (r.atualizadoEm) setRevisao(r.atualizadoEm);
+      setAnexos((lista) => lista.filter((a) => !a.encargoId || doc.encargos.some((e) => e.id === a.encargoId)));
+      if (r.destino) {
+        navegandoAposSalvar.current = true;
+        window.location.assign(r.destino);
         return;
       }
       setMensagem({ tipo: "ok", texto: "Rascunho salvo." });
-      if (depois === "previa") router.push(`/vendas/termos-entrega/${termoId}?previa=1`);
-      else router.refresh();
-    });
+      if (depois === "previa") {
+        navegandoAposSalvar.current = true;
+        window.location.assign(`/vendas/termos-entrega/${termoId}?previa=1`);
+      }
+    } catch (e) {
+      setMensagem({ tipo: "erro", texto: e instanceof Error ? e.message : "Não foi possível salvar. Suas alterações continuam nesta tela." });
+    } finally {
+      ocupado.current = false;
+      setSalvando(false);
+    }
   }
 
   async function anexar(encargoId: string, arquivo: File | undefined) {
-    if (!arquivo) return;
+    if (!arquivo || ocupado.current) return;
     if (arquivo.size > 10 * 1024 * 1024) return setMensagem({ tipo: "erro", texto: "Arquivo maior que 10 MB." });
     if (!["application/pdf", "image/jpeg", "image/png", "image/webp"].includes(arquivo.type)) return setMensagem({ tipo: "erro", texto: "Envie PDF ou imagem (JPG, PNG)." });
+    ocupado.current = true;
     setEnviandoAnexo(encargoId);
+    try {
     const extensao = arquivo.name.split(".").pop()?.toLowerCase().replace(/[^a-z0-9]/g, "") || "pdf";
     const caminho = `${tenantId}/${termoId}/${crypto.randomUUID()}.${extensao}`;
-    const { error } = await createClient().storage.from("termos-entrega").upload(caminho, arquivo, { contentType: arquivo.type, upsert: false });
+    const { error } = await aguardarTermo(createClient().storage.from("termos-entrega").upload(caminho, arquivo, { contentType: arquivo.type, upsert: false }));
     if (error) {
       setEnviandoAnexo(null);
       return setMensagem({ tipo: "erro", texto: `Não foi possível enviar o anexo: ${error.message}` });
     }
-    const r = await registrarAnexo(termoId, encargoId, caminho, arquivo.name, arquivo.size);
+    const form = new FormData();
+    form.set("acao", "registrarAnexo"); form.set("id", termoId); form.set("encargo_id", encargoId);
+    form.set("caminho", caminho); form.set("nome", arquivo.name); form.set("tamanho", String(arquivo.size));
+    const r = await enviarTermo(form);
     setEnviandoAnexo(null);
     if (!r.ok || !r.id) return setMensagem({ tipo: "erro", texto: r.erro ?? "Não foi possível registrar o anexo." });
     setAnexos((a) => [...a, { id: r.id!, encargoId, nome: arquivo.name }]);
+    } catch {
+      setMensagem({ tipo: "erro", texto: "Não foi possível confirmar o envio do anexo. Confira sua conexão." });
+    } finally {
+      ocupado.current = false;
+      setEnviandoAnexo(null);
+    }
   }
 
   async function tirarAnexo(id: string) {
-    const r = await removerAnexo(id);
+    if (ocupado.current) return;
+    ocupado.current = true;
+    setEnviandoAnexo(id);
+    try {
+    const form = new FormData();
+    form.set("acao", "removerAnexo"); form.set("id", termoId); form.set("anexo_id", id);
+    const r = await enviarTermo(form);
     if (!r.ok) return setMensagem({ tipo: "erro", texto: r.erro ?? "Não foi possível remover o anexo." });
     setAnexos((a) => a.filter((x) => x.id !== id));
+    } catch {
+      setMensagem({ tipo: "erro", texto: "Não foi possível confirmar a remoção do anexo. Confira sua conexão." });
+    } finally {
+      ocupado.current = false;
+      setEnviandoAnexo(null);
+    }
   }
 
   function blocoPartes(papel: PapelParte, titulo: string) {
@@ -342,13 +386,13 @@ export function EditorTermo({ termoId, tenantId, codigo, versao, inicial, anexos
 
   const botoes = (
     <div className="flex flex-wrap gap-2">
-      <button type="button" disabled={salvando} onClick={() => salvar()} className={`${SECONDARY_BUTTON_CLASS} flex-1 disabled:opacity-60`}>
+      <button type="button" disabled={salvando || !!enviandoAnexo} onClick={() => salvar()} className={`${SECONDARY_BUTTON_CLASS} flex-1 disabled:opacity-60`}>
         {salvando ? <Loader2 size={15} className="animate-spin" /> : <Save size={15} />} Salvar rascunho
       </button>
-      <button type="button" disabled={salvando || pendencias.length > 0} onClick={() => salvar("gerar")} title={pendencias.length ? pendencias.join(" ") : "Salvar as alterações e gerar o PDF sem a marca MINUTA"} className={`${PRIMARY_BUTTON_CLASS} flex-1 disabled:opacity-60`}>
+      <button type="button" disabled={salvando || !!enviandoAnexo || pendencias.length > 0} onClick={() => salvar("gerar")} title={pendencias.length ? pendencias.join(" ") : "Salvar as alterações e gerar o PDF sem a marca MINUTA"} className={`${PRIMARY_BUTTON_CLASS} flex-1 disabled:opacity-60`}>
         {salvando ? <Loader2 size={15} className="animate-spin" /> : <FileCheck2 size={15} />} Gerar documento
       </button>
-      <button type="button" disabled={salvando} onClick={() => salvar("previa")} className={`${SECONDARY_BUTTON_CLASS} flex-1 disabled:opacity-60`}>
+      <button type="button" disabled={salvando || !!enviandoAnexo} onClick={() => salvar("previa")} className={`${SECONDARY_BUTTON_CLASS} flex-1 disabled:opacity-60`}>
         <Eye size={15} /> Pré-visualizar
       </button>
       {pendencias.length > 0 && <p className="w-full text-xs text-amber-800">Para gerar: {pendencias[0]}{pendencias.length > 1 ? ` (+${pendencias.length - 1} pendência(s))` : ""}</p>}
@@ -357,7 +401,7 @@ export function EditorTermo({ termoId, tenantId, codigo, versao, inicial, anexos
 
   return (
     <div className="grid gap-6 pb-28 lg:grid-cols-[minmax(0,1fr)_320px] lg:pb-0">
-      <div className="min-w-0 space-y-5">
+      <fieldset disabled={salvando || !!enviandoAnexo} className="min-w-0 space-y-5">
         <nav className="-mx-1 flex gap-1 overflow-x-auto px-1 text-xs">
           {[
             ["negocio", "1. Dados do negócio"],
@@ -754,7 +798,7 @@ export function EditorTermo({ termoId, tenantId, codigo, versao, inicial, anexos
             {renderizarClausula(doc)}
           </div>
         </Secao>
-      </div>
+      </fieldset>
 
       {/* lateral (computador) */}
       <aside className="hidden lg:block">

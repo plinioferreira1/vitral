@@ -10,7 +10,7 @@ import { dataValida } from "@/lib/termo-entrega/calculo";
 import { FILTROS_STATUS, STATUS_DO_FILTRO, type FiltroStatus, type StatusTermo } from "@/lib/termo-entrega/conteudo";
 import { formatarCentavos } from "@/lib/termo-entrega/extenso";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
-import { cancelarTermo, duplicarTermo } from "./actions";
+import { FormularioAcaoTermo } from "./formulario-acao";
 import { carregarPermissoes } from "./dados";
 import { ROTULO, SeloStatusTermo, dataCurta } from "./ui";
 
@@ -82,20 +82,20 @@ export default async function TermosEntregaPage({ searchParams }: { searchParams
             Ver histórico
           </Link>
           {perms.operar && (
-            <form action={duplicarTermo}>
+            <FormularioAcaoTermo acao="duplicarTermo">
               <input type="hidden" name="id" value={t.id} />
               <BotaoEnviar className={ITEM_MENU} textoEnviando="Duplicando…">
                 Duplicar
               </BotaoEnviar>
-            </form>
+            </FormularioAcaoTermo>
           )}
           {perms.operar && status !== "cancelado" && (
-            <form action={cancelarTermo}>
+            <FormularioAcaoTermo acao="cancelarTermo">
               <input type="hidden" name="id" value={t.id} />
               <BotaoComConfirmacao className={`${ITEM_MENU} !text-rose-700`} textoEnviando="Cancelando…" mensagem={`Cancelar o termo ${t.codigo}? O histórico continua guardado, mas não dá para desfazer.`}>
                 Cancelar
               </BotaoComConfirmacao>
-            </form>
+            </FormularioAcaoTermo>
           )}
         </div>
       </details>

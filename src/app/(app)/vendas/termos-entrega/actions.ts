@@ -37,7 +37,7 @@ const BASE = "/vendas/termos-entrega";
 async function contexto(exigir: "operar" | "configurar" = "operar") {
   const sessao = await exigirUsuario();
   if (!sessao) return null;
-  const supabase = await createClient();
+  const supabase = await createClient({ timeoutMs: 15_000 });
   const perms = await carregarPermissoes(supabase, sessao.userId, sessao.nivel);
   if (!perms[exigir]) {
     await avisar("erro", exigir === "configurar" ? "Só diretor ou gerente alteram o modelo do termo." : "Você não tem permissão para alterar termos de entrega.");
@@ -150,52 +150,49 @@ function linhasEncargos(doc: DocumentoTermo, termoId: string, tenantId: string) 
   });
 }
 
-async function inserirTermo(ctx: Contexto, doc: DocumentoTermo, extra: { duplicadoDe?: string | null } = {}): Promise<string | null> {
-  for (let tentativa = 0; tentativa < 3; tentativa++) {
-    const { data: codigo } = await ctx.supabase.rpc("termo_entrega_proximo_codigo");
-    if (!codigo) break;
-    const { data, error } = await ctx.supabase
-      .from("termos_entrega")
-      .insert({
-        ...colunasDoTermo(doc),
-        tenant_id: ctx.tenantId,
-        codigo,
-        status: "rascunho",
-        versao: 1,
-        responsavel_id: ctx.autor.id,
-        criado_por: ctx.autor.id,
-        criado_por_nome: ctx.autor.nome,
-        atualizado_por: ctx.autor.id,
-        duplicado_de: extra.duplicadoDe ?? null,
-      })
-      .select("id")
-      .single();
-    if (data) {
-      if (doc.partes.length) await ctx.supabase.from("termo_entrega_partes").insert(linhasPartes(doc, data.id, ctx.tenantId));
-      if (doc.encargos.length) {
-        await ctx.supabase
-          .from("termo_entrega_encargos")
-          .insert(linhasEncargos(doc, data.id, ctx.tenantId).map((l) => ({ ...l, criado_por: ctx.autor.id, criado_por_nome: ctx.autor.nome })));
-      }
-      return data.id;
-    }
-    // código repetido (duas pessoas criando ao mesmo tempo): tenta o próximo
-    if (error?.code !== "23505") {
-      await avisar("erro", `Não foi possível criar o termo: ${error?.message ?? "erro desconhecido"}`);
-      return null;
-    }
+async function gravarDocumento(ctx: Contexto, id: string, doc: DocumentoTermo, alteracoes: Alteracao[], opcoes: { novo: boolean; atualizadoEm?: string; duplicadoDe?: string | null }) {
+  const resposta = await ctx.supabase.rpc("termo_entrega_gravar", {
+    p_id: id, p_novo: opcoes.novo,
+    p_termo: colunasDoTermo(doc) as Json,
+    p_partes: linhasPartes(doc, id, ctx.tenantId) as unknown as Json,
+    p_encargos: linhasEncargos(doc, id, ctx.tenantId) as unknown as Json,
+    p_eventos: alteracoes as unknown as Json,
+    p_atualizado_em: opcoes.atualizadoEm,
+    p_duplicado_de: opcoes.duplicadoDe ?? undefined,
+  });
+  if (!(await checar(Promise.resolve(resposta), "salvar o termo completo"))) {
+    return { ok: false as const, erro: resposta.error?.code === "40001" ? "Este termo foi alterado em outra janela. Recarregue a página antes de salvar." : "Não foi possível confirmar o salvamento. Confira sua conexão e tente novamente." };
   }
-  await avisar("erro", "Não foi possível gerar o código do termo. Tente novamente.");
-  return null;
+  const resultado = resposta.data as { id: string; atualizado_em: string; anexos_removidos: string[] } | null;
+  if (!resultado?.id || !resultado.atualizado_em) return { ok: false as const, erro: "O servidor não confirmou o salvamento." };
+  // A transação já confirmou. Falha na limpeza física não desfaz nem mascara o salvamento.
+  if (resultado.anexos_removidos.length) {
+    try {
+      await checar(ctx.supabase.storage.from(BUCKET_TERMOS).remove(resultado.anexos_removidos), "limpar arquivos de encargos removidos");
+    } catch { /* Metadados já removidos; arquivos continuam privados. */ }
+  }
+  atualizar(id);
+  return { ok: true as const, atualizadoEm: resultado.atualizado_em };
+}
+
+async function inserirTermo(ctx: Contexto, doc: DocumentoTermo, extra: { id?: string; duplicadoDe?: string | null; descricao?: string } = {}): Promise<string | null> {
+  const id = extra.id ?? randomUUID();
+  const r = await gravarDocumento(ctx, id, doc, [{ acao: "criado", descricao: extra.descricao ?? "Termo criado em branco.", novo: { processo_id: doc.processoId, duplicado_de: extra.duplicadoDe ?? null } }], { novo: true, duplicadoDe: extra.duplicadoDe });
+  return r.ok ? id : null;
 }
 
 // ---------------------------------------------------------------
 // criar (em branco ou a partir de uma venda)
 // ---------------------------------------------------------------
 
-export async function criarTermo(formData: FormData) {
+async function prepararTermo(formData: FormData) {
   const ctx = await contexto();
   if (!ctx) return;
+  const solicitacaoId = String(formData.get("solicitacao_id") ?? "");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(solicitacaoId)) {
+    await avisar("erro", "Atualize a página antes de criar o termo.");
+    return;
+  }
   const modelo = await carregarModelo(ctx.supabase, ctx.tenantId);
   const doc = documentoVazio(modelo);
   const processoId = String(formData.get("processo_id") ?? "").trim();
@@ -210,6 +207,8 @@ export async function criarTermo(formData: FormData) {
          vendedor:clientes!processos_vendedor_id_fkey ( id, nome, cpf_cnpj, rg, email )`
       )
       .eq("id", processoId)
+      .eq("tenant_id", ctx.tenantId)
+      .eq("categoria", "venda")
       .maybeSingle();
     type Cliente = { id: string; nome: string; cpf_cnpj: string | null; rg: string | null; email: string | null } | null;
     const processo = processoRaw as unknown as {
@@ -235,7 +234,7 @@ export async function criarTermo(formData: FormData) {
       doc.imovel.inscricaoIptu = processo.imoveis.inscricao_iptu ?? "";
     }
     // data prevista: etapa de entrega de chaves da venda, se existir
-    const { data: etapa } = await ctx.supabase
+    const { data: etapa, error: erroEtapa } = await ctx.supabase
       .from("etapas")
       .select("data_prevista, data_realizada")
       .eq("processo_id", processo.id)
@@ -243,21 +242,30 @@ export async function criarTermo(formData: FormData) {
       .order("ordem")
       .limit(1)
       .maybeSingle();
+    if (erroEtapa) throw new Error("Não foi possível consultar a data de entrega.");
     doc.dataEntrega = etapa?.data_realizada ?? etapa?.data_prevista ?? null;
   }
 
-  const id = await inserirTermo(ctx, normalizarDocumento(doc, modelo));
-  if (!id) return;
-  await registrar(ctx, id, 1, [{ acao: "criado", descricao: processoId ? "Termo criado a partir de uma venda." : "Termo criado em branco.", novo: { processo_id: processoId || null } }]);
-  atualizar();
-  redirect(`${BASE}/${id}`);
+  return inserirTermo(ctx, normalizarDocumento(doc, modelo), { id: solicitacaoId, descricao: processoId ? "Termo criado a partir de uma venda." : "Termo criado em branco." });
+}
+
+export async function criarTermo(formData: FormData) {
+  let id: string | null | undefined;
+  try {
+    id = await prepararTermo(formData);
+  } catch {
+    await avisar("erro", "Não foi possível confirmar a criação. Confira sua conexão e tente novamente nesta tela.");
+    return;
+  }
+  if (id) redirect(`${BASE}/${id}`);
 }
 
 // ---------------------------------------------------------------
 // salvar rascunho (chamado pelo editor)
 // ---------------------------------------------------------------
 
-export async function salvarTermo(id: string, bruto: unknown): Promise<{ ok: boolean; erro?: string }> {
+export async function salvarTermo(id: string, bruto: unknown, atualizadoEm: string): Promise<{ ok: boolean; erro?: string; atualizadoEm?: string }> {
+  try {
   const ctx = await contexto();
   if (!ctx) return { ok: false, erro: "Sem permissão para alterar termos de entrega." };
   const atual = await carregarTermo(ctx.supabase, id, ctx.tenantId);
@@ -268,48 +276,10 @@ export async function salvarTermo(id: string, bruto: unknown): Promise<{ ok: boo
   // a venda vinculada não muda pela tela de edição
   doc.processoId = atual.documento.processoId;
 
-  // ids vindos da tela não podem pertencer a outro termo
-  const idsPartes = doc.partes.map((p) => p.id);
-  const idsEncargos = doc.encargos.map((e) => e.id);
-  const [{ data: partesAlheias }, { data: encargosAlheios }] = await Promise.all([
-    idsPartes.length ? ctx.supabase.from("termo_entrega_partes").select("id").in("id", idsPartes).neq("termo_id", id) : Promise.resolve({ data: [] as { id: string }[] }),
-    idsEncargos.length ? ctx.supabase.from("termo_entrega_encargos").select("id").in("id", idsEncargos).neq("termo_id", id) : Promise.resolve({ data: [] as { id: string }[] }),
-  ]);
-  if ((partesAlheias ?? []).length || (encargosAlheios ?? []).length) return { ok: false, erro: "Dados inconsistentes. Recarregue a página e tente de novo." };
-
-  const { error: erroTermo } = await ctx.supabase
-    .from("termos_entrega")
-    .update({ ...colunasDoTermo(doc), atualizado_por: ctx.autor.id })
-    .eq("id", id);
-  if (erroTermo) return { ok: false, erro: `Não foi possível salvar: ${erroTermo.message}` };
-
-  // partes: remove as que saíram, grava as demais
-  const removerPartes = ctx.supabase.from("termo_entrega_partes").delete().eq("termo_id", id);
-  const { error: e1 } = await (idsPartes.length ? removerPartes.not("id", "in", `(${idsPartes.join(",")})`) : removerPartes);
-  const { error: e2 } = idsPartes.length ? await ctx.supabase.from("termo_entrega_partes").upsert(linhasPartes(doc, id, ctx.tenantId)) : { error: null };
-
-  // encargos: os novos ganham "quem adicionou"; os existentes só são atualizados
-  const existentes = new Set(atual.documento.encargos.map((e) => e.id));
-  const linhas = linhasEncargos(doc, id, ctx.tenantId);
-  const removerEncargos = ctx.supabase.from("termo_entrega_encargos").delete().eq("termo_id", id);
-  const { error: e3 } = await (idsEncargos.length ? removerEncargos.not("id", "in", `(${idsEncargos.join(",")})`) : removerEncargos);
-  const novos = linhas.filter((l) => !existentes.has(l.id)).map((l) => ({ ...l, criado_por: ctx.autor.id, criado_por_nome: ctx.autor.nome }));
-  const antigos = linhas.filter((l) => existentes.has(l.id));
-  const { error: e4 } = novos.length ? await ctx.supabase.from("termo_entrega_encargos").insert(novos) : { error: null };
-  const { error: e5 } = antigos.length ? await ctx.supabase.from("termo_entrega_encargos").upsert(antigos) : { error: null };
-  const erro = e1 ?? e2 ?? e3 ?? e4 ?? e5;
-  if (erro) return { ok: false, erro: `Não foi possível salvar partes/encargos: ${erro.message}` };
-
-  // anexos de encargos que deixaram de existir
-  const orfaos = atual.anexos.filter((a) => a.encargo_id && !idsEncargos.includes(a.encargo_id));
-  if (orfaos.length) {
-    await ctx.supabase.storage.from(BUCKET_TERMOS).remove(orfaos.map((a) => a.caminho));
-    await ctx.supabase.from("termo_entrega_anexos").delete().in("id", orfaos.map((a) => a.id));
+  return await gravarDocumento(ctx, id, doc, descreverAlteracoes(atual.documento, doc), { novo: false, atualizadoEm });
+  } catch {
+    return { ok: false, erro: "Não foi possível confirmar o salvamento. Suas alterações continuam nesta tela; confira sua conexão e tente novamente." };
   }
-
-  await registrar(ctx, id, atual.termo.versao, descreverAlteracoes(atual.documento, doc));
-  atualizar(id);
-  return { ok: true };
 }
 
 // ---------------------------------------------------------------
@@ -501,9 +471,8 @@ export async function duplicarTermo(formData: FormData) {
   copia.encargos = copia.encargos.map((e) => ({ ...e, id: randomUUID() }));
   copia.ressarcimento.beneficiario = copia.ressarcimento.beneficiario === "outro" ? "outro" : (mapa.get(copia.ressarcimento.beneficiario) ?? "");
   copia.dataDocumento = null;
-  const novoId = await inserirTermo(ctx, normalizarDocumento(copia, origem.modelo), { duplicadoDe: id });
+  const novoId = await inserirTermo(ctx, normalizarDocumento(copia, origem.modelo), { duplicadoDe: id, descricao: `Termo criado como cópia de ${origem.termo.codigo}.` });
   if (!novoId) return;
-  await registrar(ctx, novoId, 1, [{ acao: "criado", descricao: `Termo criado como cópia de ${origem.termo.codigo}.`, novo: { duplicado_de: id } }]);
   atualizar();
   redirect(`${BASE}/${novoId}`);
 }

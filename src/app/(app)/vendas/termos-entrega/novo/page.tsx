@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { FilePlus2, Search } from "lucide-react";
@@ -7,7 +8,7 @@ import { VoltarLink } from "@/components/voltar-link";
 import { createClient } from "@/lib/supabase/server";
 import { ROTULO_STATUS, type StatusTermo } from "@/lib/termo-entrega/conteudo";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
-import { criarTermo } from "../actions";
+import { FormularioCriarTermo } from "./formulario";
 import { carregarPermissoes } from "../dados";
 
 const BASE = "/vendas/termos-entrega";
@@ -112,12 +113,11 @@ export default async function NovoTermoPage({ searchParams }: { searchParams: Pr
                   </p>
                 )}
               </div>
-              <form action={criarTermo}>
-                <input type="hidden" name="processo_id" value={v.id} />
+              <FormularioCriarTermo solicitacaoId={randomUUID()} processoId={v.id}>
                 <BotaoEnviar className={termos.length ? SECONDARY_BUTTON_CLASS : PRIMARY_BUTTON_CLASS} textoEnviando="Criando…">
                   <FilePlus2 size={15} /> {termos.length ? "Criar outro termo" : "Criar termo"}
                 </BotaoEnviar>
-              </form>
+              </FormularioCriarTermo>
             </li>
           );
         })}
@@ -127,11 +127,11 @@ export default async function NovoTermoPage({ searchParams }: { searchParams: Pr
 
       <div className={`${CARD_CLASS} flex flex-wrap items-center justify-between gap-3 p-4`}>
         <p className="text-sm text-ink-muted">A venda não está cadastrada no Vitral? Comece em branco e preencha os dados à mão.</p>
-        <form action={criarTermo}>
+        <FormularioCriarTermo solicitacaoId={randomUUID()}>
           <BotaoEnviar className={SECONDARY_BUTTON_CLASS} textoEnviando="Criando…">
             Começar em branco
           </BotaoEnviar>
-        </form>
+        </FormularioCriarTermo>
       </div>
     </div>
   );

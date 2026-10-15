@@ -20,7 +20,7 @@ import {
 } from "@/lib/termo-entrega/conteudo";
 import { formatarCentavos } from "@/lib/termo-entrega/extenso";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
-import { cancelarTermo, criarNovaVersao, duplicarTermo, enviarLinkPorEmail, enviarParaAssinatura, gerarDocumento, salvarResponsavel, voltarParaEdicao } from "../actions";
+import { FormularioAcaoTermo } from "../formulario-acao";
 import { carregarPermissoes, carregarTermo } from "../dados";
 import { BOTAO_MINI, ROTULO, SeloStatusTermo } from "../ui";
 import { EditorTermo } from "./editor";
@@ -94,12 +94,12 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
                 </Link>
               )}
               {perms.operar && (
-                <form action={duplicarTermo}>
+                <FormularioAcaoTermo acao="duplicarTermo">
                   <input type="hidden" name="id" value={id} />
                   <BotaoEnviar className={BOTAO_MINI} textoEnviando="Duplicando…">
                     <Copy size={13} /> Duplicar
                   </BotaoEnviar>
-                </form>
+                </FormularioAcaoTermo>
               )}
             </div>
           </div>
@@ -108,8 +108,9 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
 
       {editando ? (
         <EditorTermo
-          key={`${termo.versao}-${termo.atualizado_em}`}
+          key={`${id}-${termo.versao}`}
           termoId={id}
+          atualizadoEm={termo.atualizado_em}
           tenantId={usuario.tenant_id}
           codigo={termo.codigo}
           versao={termo.versao}
@@ -155,7 +156,7 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
                     <Link href={`${BASE}/${id}`} className={`${SECONDARY_BUTTON_CLASS} flex-1`}>
                       Voltar e editar
                     </Link>
-                    <form action={gerarDocumento} className="flex-1">
+                    <FormularioAcaoTermo acao="gerarDocumento" className="flex-1">
                       <input type="hidden" name="id" value={id} />
                       <BotaoComConfirmacao
                         className={`${PRIMARY_BUTTON_CLASS} w-full disabled:opacity-50`}
@@ -165,7 +166,7 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
                       >
                         Gerar documento
                       </BotaoComConfirmacao>
-                    </form>
+                    </FormularioAcaoTermo>
                   </div>
                 )}
               </Painel>
@@ -175,12 +176,12 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
               <Painel titulo="Próximo passo" icone={<Send size={15} className="text-brand" />}>
                 <p className="text-xs text-ink-muted">Documento gerado. Envie para assinatura: cada vendedor e comprador recebe um link próprio.</p>
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <form action={enviarParaAssinatura} className="flex-1">
+                  <FormularioAcaoTermo acao="enviarParaAssinatura" className="flex-1">
                     <input type="hidden" name="id" value={id} />
                     <BotaoEnviar className={`${PRIMARY_BUTTON_CLASS} w-full`} textoEnviando="Criando links…">
                       <FileSignature size={15} /> Enviar para assinatura
                     </BotaoEnviar>
-                  </form>
+                  </FormularioAcaoTermo>
                 </div>
               </Painel>
             )}
@@ -218,12 +219,13 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
                           <div className="mt-2 flex flex-wrap items-center gap-2">
                             <BotaoCopiarLink url={`${site}/assinar-termo/${s.token}`} rotulo="Copiar link" />
                             {s.email && (
-                              <form action={enviarLinkPorEmail}>
+                              <FormularioAcaoTermo acao="enviarLinkPorEmail">
+                                <input type="hidden" name="id" value={id} />
                                 <input type="hidden" name="signatario_id" value={s.id} />
                                 <BotaoComConfirmacao className="inline-flex items-center gap-1 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:bg-background" textoEnviando="Enviando…" mensagem={`Enviar o link de assinatura por e-mail para ${s.nome_esperado} (${s.email})?`}>
                                   <Mail size={13} /> {s.email_enviado_em ? "Reenviar e-mail" : "Enviar por e-mail"}
                                 </BotaoComConfirmacao>
-                              </form>
+                              </FormularioAcaoTermo>
                             )}
                             {s.email_enviado_em && <span className="text-[11px] text-ink-muted">E-mail enviado em {formatarDataHoraBR(s.email_enviado_em)}</span>}
                           </div>
@@ -257,7 +259,7 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
             {perms.operar && status !== "cancelado" && (
               <Painel titulo="Ações">
                 <div className="space-y-3">
-                  <form action={salvarResponsavel} className="flex items-end gap-2">
+                  <FormularioAcaoTermo acao="salvarResponsavel" className="flex items-end gap-2">
                     <input type="hidden" name="id" value={id} />
                     <label className="block min-w-0 flex-1">
                       <span className={ROTULO}>Responsável pelo termo</span>
@@ -273,9 +275,9 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
                     <BotaoEnviar className={SECONDARY_BUTTON_CLASS} textoEnviando="…">
                       Salvar
                     </BotaoEnviar>
-                  </form>
+                  </FormularioAcaoTermo>
                   {podeVoltarParaEdicao(status) && (
-                    <form action={voltarParaEdicao}>
+                    <FormularioAcaoTermo acao="voltarParaEdicao">
                       <input type="hidden" name="id" value={id} />
                       <BotaoComConfirmacao
                         className={`${SECONDARY_BUTTON_CLASS} w-full`}
@@ -284,10 +286,10 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
                       >
                         <PencilLine size={15} /> Voltar para edição
                       </BotaoComConfirmacao>
-                    </form>
+                    </FormularioAcaoTermo>
                   )}
                   {podeCriarNovaVersao(status) && (
-                    <form action={criarNovaVersao}>
+                    <FormularioAcaoTermo acao="criarNovaVersao">
                       <input type="hidden" name="id" value={id} />
                       <BotaoComConfirmacao
                         className={`${SECONDARY_BUTTON_CLASS} w-full`}
@@ -296,17 +298,17 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
                       >
                         Criar nova versão
                       </BotaoComConfirmacao>
-                    </form>
+                    </FormularioAcaoTermo>
                   )}
                   <details className="rounded-lg border border-border/60 px-3 py-2">
                     <summary className="cursor-pointer text-xs font-semibold text-rose-700">Cancelar termo</summary>
-                    <form action={cancelarTermo} className="mt-3 space-y-2">
+                    <FormularioAcaoTermo acao="cancelarTermo" className="mt-3 space-y-2">
                       <input type="hidden" name="id" value={id} />
                       <input name="motivo" placeholder="Motivo do cancelamento (opcional)" className={INPUT_CLASS} />
                       <BotaoComConfirmacao className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-100" textoEnviando="Cancelando…" mensagem="Cancelar este termo? Ele deixa de valer, mas o histórico e os documentos continuam guardados. Não dá para desfazer.">
                         Confirmar cancelamento
                       </BotaoComConfirmacao>
-                    </form>
+                    </FormularioAcaoTermo>
                   </details>
                 </div>
               </Painel>

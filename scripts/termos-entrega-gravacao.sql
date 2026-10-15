@@ -12,6 +12,9 @@ declare
   partes jsonb;
   r jsonb;
   stamp timestamptz;
+  encargo uuid := gen_random_uuid();
+  encargos jsonb;
+  autor text := current_setting('request.jwt.claim.sub');
 begin
   partes := jsonb_build_array(jsonb_build_object('id',parte,'papel','comprador','nome','TESTE FICTÍCIO','ordem',0));
   -- Falha de encargo depois de inserir cabeçalho e partes desfaz tudo.
@@ -28,13 +31,17 @@ begin
   -- Repetir o mesmo envio não duplica termo nem auditoria.
   perform public.termo_entrega_gravar(t,true,doc,partes,'[]','[{"acao":"criado","descricao":"Teste fictício"}]');
   if (select count(*) from public.termo_entrega_eventos where termo_id=t) <> 1 then raise exception 'TESTE: criação duplicada'; end if;
+  encargos := jsonb_build_array(jsonb_build_object('id',encargo,'ordem',0,'categoria','condominio','descricao','Encargo fictício','valor_total_centavos',10000,'pago_por','vendedor','responsavel','comprador','tipo_calculo','integral','manual_vendedor_centavos',0,'manual_comprador_centavos',0,'parte_vendedor_centavos',0,'parte_comprador_centavos',10000,'ressarcimento_centavos',10000,'ressarcimento_de','comprador'));
+  perform public.termo_entrega_gravar(t,false,doc,partes,encargos,'[]',stamp);
+  perform public.termo_entrega_gravar(t,false,doc,partes,jsonb_set(encargos,'{0,descricao}','"Encargo atualizado"'),'[]',stamp);
+  if not exists(select 1 from public.termo_entrega_encargos where id=encargo and descricao='Encargo atualizado' and criado_por=autor::uuid) then raise exception 'TESTE: encargo não atualizado'; end if;
   -- Falha de auditoria reverte também alteração/remoção de partes.
   begin
     perform public.termo_entrega_gravar(t,false,doc || '{"imovel_endereco":"ALTERADO"}','[]','[]','[{}]',stamp);
     raise exception 'TESTE: deveria falhar';
   exception when not_null_violation then null;
   end;
-  if not exists(select 1 from public.termo_entrega_partes where id=parte) or exists(select 1 from public.termos_entrega where id=t and imovel_endereco='ALTERADO') then
+  if not exists(select 1 from public.termo_entrega_partes where id=parte) or not exists(select 1 from public.termo_entrega_encargos where id=encargo) or exists(select 1 from public.termos_entrega where id=t and imovel_endereco='ALTERADO') then
     raise exception 'TESTE: edição parcial';
   end if;
   -- Não permite tomar uma parte de outro termo.
@@ -62,6 +69,13 @@ begin
     if sqlerrm <> 'Este termo não está em rascunho.' then raise; end if;
   end;
   if has_function_privilege('anon','public.termo_entrega_gravar(uuid,boolean,jsonb,jsonb,jsonb,jsonb,timestamptz,uuid)','execute') then raise exception 'TESTE: acesso anônimo'; end if;
+  perform set_config('request.jwt.claim.sub',gen_random_uuid()::text,true);
+  begin
+    perform public.termo_entrega_gravar(gen_random_uuid(),true,doc,'[]','[]','[]');
+    raise exception 'TESTE: deveria bloquear usuário sem acesso';
+  exception when insufficient_privilege then null;
+  end;
+  perform set_config('request.jwt.claim.sub',autor,true);
 end;
 $$;
 rollback;

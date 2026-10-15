@@ -6166,6 +6166,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      termo_entrega_gravar: {
+        Args: {
+          p_atualizado_em?: string
+          p_duplicado_de?: string
+          p_encargos: Json
+          p_eventos: Json
+          p_id: string
+          p_novo: boolean
+          p_partes: Json
+          p_termo: Json
+        }
+        Returns: Json
+      }
       termo_entrega_pode_operar: { Args: never; Returns: boolean }
       termo_entrega_pode_ver: { Args: never; Returns: boolean }
       termo_entrega_proximo_codigo: { Args: never; Returns: string }
