@@ -55,7 +55,7 @@ export function PainelSacra({ dados }: { dados: DadosVgv }) {
       <h2 id="vgc-titulo" className="flex items-center gap-2 font-semibold"><Wallet size={20} className="text-brand" aria-hidden="true" />VGC — comissões geradas</h2>
       <p className="mt-2 text-sm leading-6 text-ink-muted">Comissões destinadas à Sacra e aos corretores que faziam parte da equipe na venda. Parcelas de parceiros externos ficam fora. Valores gerados, sem indicar que já foram recebidos.</p>
       <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <CartaoKpi label="VGC apurado" valor={moeda(dados.vgc.apuradoCentavos)} icon={Wallet} tom="marca" rodape={<p className="mt-3 text-sm text-ink-muted">{dados.vgc.vendasConferidas} vendas conferidas. Base revisada em 10/10/2026.</p>} />
+        <CartaoKpi label="VGC apurado" valor={moeda(dados.vgc.apuradoCentavos)} icon={Wallet} tom="marca" rodape={<p className="mt-3 text-sm text-ink-muted">{dados.vgc.vendasConferidas} vendas conferidas. Base revisada em 14/10/2026.</p>} />
         <CartaoKpi label="VGC aguardando confirmação" valor={moeda(dados.vgc.pendenteCentavos)} icon={Flag} tom="info" rodape={<p className="mt-3 text-sm text-ink-muted">{dados.vgc.pendencias.length} vendas com rateios pendentes. Este valor não está somado ao VGC apurado.</p>} />
       </div>
       <p className="mt-4 text-xs leading-5 text-ink-muted">O VGC usa os valores contratuais conferidos; não é estimado pelo preço do imóvel. Novas vendas e alterações de comissão precisam de nova conferência.</p>

@@ -1,7 +1,10 @@
 import "server-only";
 import type { ComissaoConferidaVgc } from "@/lib/vgc-empresa";
 
-// Retrato da auditoria de 10/10/2026: Sacra + equipe da época, sem parceiros.
+// Retrato da auditoria de 10/10/2026, revisado pelo usuário em 14/10/2026.
+// Conferência: Adobe Scan 14 out. 2026.pdf, 59 contratos, Sacra + equipe, sem parceiros.
+// Correções: nº 22 = R$ 9.500; nº 36 = R$ 42.000; nº 46 = R$ 52.350.
+// Demais valores confirmados com OK. Total da base: R$ 1.314.073,97.
 // Sem inferir comissão a partir do VGV; parcelas/gestão internas já incluídas não se repetem.
 // Noroeste, Waldivino e Real Park 219: valores integrais confirmados pelo usuário.
 // Valores gerados, sem afirmar recebimento. Pendências ficam fora do subtotal apurado.
@@ -165,7 +168,7 @@ export const COMISSOES_CONFERIDAS: readonly ComissaoConferidaVgc[] = [
     "id": "contrato-2026-22",
     "ano": 2026,
     "imovel": "CLSW 504 BL B",
-    "valorCentavos": 712500,
+    "valorCentavos": 950000,
     "fonte": "https://drive.google.com/file/d/1B3PVSLVNFSFb1TwdseaMAN1Y5p02PCXX/view?usp=drivesdk",
     "processoId": "cd556dae-08d4-477e-a574-435083b63d44"
   },
@@ -273,7 +276,7 @@ export const COMISSOES_CONFERIDAS: readonly ComissaoConferidaVgc[] = [
     "id": "contrato-2026-36",
     "ano": 2026,
     "imovel": "Casa Park Way",
-    "valorCentavos": 4208000,
+    "valorCentavos": 4200000,
     "fonte": "https://drive.google.com/file/d/1m5O6Ak3-mcnT96nJOCtd6-H6kJijZL_L/view?usp=drivesdk",
     "processoId": "06af65b0-2e72-4e5b-a8f9-b00240ad0385"
   },
@@ -353,7 +356,7 @@ export const COMISSOES_CONFERIDAS: readonly ComissaoConferidaVgc[] = [
     "id": "contrato-2026-46",
     "ano": 2026,
     "imovel": "Villa Jardins",
-    "valorCentavos": 4083300,
+    "valorCentavos": 5235000,
     "fonte": "https://drive.google.com/file/d/1og3EdtsMdbfqrKzfI8Zcq8Ulu994vTjO/view?usp=drivesdk",
     "processoId": "eb42234c-40bf-4f2a-9f69-977aa092e39d"
   },
