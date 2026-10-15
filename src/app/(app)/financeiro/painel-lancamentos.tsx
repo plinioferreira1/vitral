@@ -122,7 +122,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const inicioMesAnterior = `${anoAnterior}-${String(mesAnterior).padStart(2, "0")}-01`;
   const fimMesAnterior = new Date(anoAnterior, mesAnterior, 0).toISOString().slice(0, 10);
   const f = searchParams ?? {};
-  const referencia = normalizarReferencia(f.referencia);
+  const referencia = normalizarReferencia(f.referencia ?? (f.status === "vencido" ? "todos" : undefined));
   const fim7Dias = somarDias(hoje, 6);
 
   // Consultas independentes em uma rodada, preservando a otimização da branch principal.
@@ -273,7 +273,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const abasSituacao: [string, string, number][] = [
     ["", "Todos", todosNaReferencia.filter((l) => l.status !== "cancelado").length],
     ["em_aberto", "Em aberto", todosNaReferencia.filter((l) => l.status === "pendente" || l.status === "pago_parcial").length],
-    ["vencido", "Vencidos", todosNaReferencia.filter((l) => estadoExibicao(l, hoje) === "vencido").length],
+    ["vencido", "Vencidos", vencidos.length],
     ["recorrente", "Recorrentes", todosNaReferencia.filter((l) => estadoExibicao(l, hoje) === "recorrente").length],
     ["pago", tipo === "receita" ? "Recebidos" : "Pagos", todosNaReferencia.filter((l) => l.status === "pago").length],
     ["cancelado", "Cancelados", todosNaReferencia.filter((l) => l.status === "cancelado").length],
@@ -319,7 +319,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           {abasSituacao.map(([valor, label, contagem]) => (
             <Link
               key={valor || "todos"}
-              href={construirUrl(rota, { ...f, status: valor || undefined, pagina: undefined })}
+              href={construirUrl(rota, { ...f, status: valor || undefined, referencia: valor === "vencido" ? "todos" : referencia, pagina: undefined })}
               className={`-mb-px inline-flex min-h-11 shrink-0 items-center gap-1 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium ${
                 (f.status ?? "") === valor
                   ? "border-brand text-brand"
