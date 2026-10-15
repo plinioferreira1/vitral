@@ -30,6 +30,7 @@ export function BotaoEnviar({
       {...resto}
       disabled={disabled || pending || envioNativo}
       aria-busy={esteBotao || undefined}
+      data-aguardando-gravacao={(pending && esteBotao) || undefined}
       className={`${className} disabled:cursor-wait disabled:opacity-70`}
     >
       {esteBotao ? (

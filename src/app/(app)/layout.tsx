@@ -8,6 +8,7 @@ import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { cookies } from "next/headers";
 import { COOKIE_AVISO, lerAviso } from "@/lib/aviso";
 import { AvisoTela } from "@/components/aviso-tela";
+import { VigiaAcoes } from "@/components/vigia-acoes";
 import { TopBar, type NotificacaoTopBar } from "@/components/topbar";
 import { hojeISO } from "@/lib/data-br";
 import { addDays, differenceInCalendarDays, format, parseISO } from "date-fns";
@@ -15,12 +16,18 @@ import { ptBR } from "date-fns/locale";
 import { limparTodasNotificacoes } from "./notificacoes/actions";
 import { liberadoParaNivel } from "@/lib/em-finalizacao";
 import { Suspense } from "react";
+import { comPrazo } from "@/lib/com-prazo";
+
+const PRAZO_NOTIFICACOES_MS = 4000;
 
 async function TopBarComDados({ hoje, nivelAcesso }: { hoje: string; nivelAcesso: string }) {
   const supabase = await createClient();
   const limiteNotificacoes = format(addDays(parseISO(hoje), 7), "yyyy-MM-dd");
-  const [{ data: etapasNotificacao }, { data: avisosFerias }, { data: notificacoesDispensadas }] =
-    await Promise.all([
+  // As notificações são acessórias: se o banco demorar, o cabeçalho aparece sem
+  // elas em vez de segurar a tela. Sem esse prazo, depois de qualquer gravação a
+  // página ficava "Salvando…" esperando este trecho ser recalculado.
+  const { valor: [etapasNotificacao, avisosFerias, notificacoesDispensadas], noPrazo } = await comPrazo(
+    Promise.all([
       supabase
         .from("etapas")
         .select(
@@ -48,7 +55,11 @@ async function TopBarComDados({ hoje, nivelAcesso }: { hoje: string; nivelAcesso
             }[],
           }),
       supabase.from("notificacoes_dispensadas").select("etapa_id, data_prevista"),
-    ]);
+    ]).then(([etapas, ferias, dispensadas]) => [etapas.data, ferias.data, dispensadas.data] as const),
+    PRAZO_NOTIFICACOES_MS,
+    [null, null, null] as const,
+  );
+  if (!noPrazo) console.error(`cabecalho: notificações passaram de ${PRAZO_NOTIFICACOES_MS} ms e foram omitidas`);
 
   const chavesDispensadas = new Set(
     (notificacoesDispensadas ?? []).map(
@@ -168,6 +179,7 @@ export default async function AppLayout({
       />
 
       <AvisoTela aviso={aviso} />
+      <VigiaAcoes />
 
       <main className="min-w-0 flex-1">
         <div className="app-content mx-auto w-full min-w-0 px-4 py-5 sm:px-8 sm:py-8">

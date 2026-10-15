@@ -179,7 +179,7 @@ export function KanbanProcessos({
 
   return (
     <div>
-      <div className={`md:hidden ${pendente ? "opacity-60" : ""}`}>
+      <div data-aguardando-gravacao={pendente || undefined} className={`md:hidden ${pendente ? "opacity-60" : ""}`}>
         <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-ink-muted" htmlFor="etapa-kanban-mobile">
           Etapa
         </label>
