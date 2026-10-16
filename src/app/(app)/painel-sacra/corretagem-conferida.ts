@@ -283,7 +283,7 @@ export const CORRETAGEM_CONFERIDA = [
   {
     "id": "contrato-2026-56",
     "vendaCentavos": 43500000,
-    "comissaoCentavos": 1522500
+    "comissaoCentavos": 1740000
   },
   {
     "id": "contrato-2026-57",
