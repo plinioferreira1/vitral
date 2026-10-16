@@ -443,13 +443,28 @@ export async function alternarEtapaPadrao(formData: FormData) {
     await removerEventosDeEtapas(supabase, [etapaId]);
     await checar(supabase.from("etapas").delete().eq("id", etapaId), "excluir");
   } else if (!aplicada) {
+    const especial = formData.get("especial") !== "false";
+    if (!especial) {
+      // Etapa da sequência ligada depois (ex.: Pagamento de Intermediária): abre espaço
+      // na ordem deste processo para ela entrar no lugar certo da linha do tempo.
+      const { data: seguintes } = await supabase
+        .from("etapas")
+        .select("id, ordem")
+        .eq("processo_id", processoId)
+        .eq("especial", false)
+        .gte("ordem", ordemCatalogo)
+        .order("ordem", { ascending: false });
+      for (const e of seguintes ?? []) {
+        await checar(supabase.from("etapas").update({ ordem: e.ordem + 1 }).eq("id", e.id), "reordenar");
+      }
+    }
     await checar(supabase.from("etapas").insert({
       processo_id: processoId,
       nome,
       responsavel_id: user?.id ?? null,
       status: "pendente",
       ordem: ordemCatalogo,
-      especial: true,
+      especial,
     }), "salvar");
   }
 

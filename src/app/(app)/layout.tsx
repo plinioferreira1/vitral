@@ -26,7 +26,7 @@ async function TopBarComDados({ hoje, nivelAcesso }: { hoje: string; nivelAcesso
   // As notificações são acessórias: se o banco demorar, o cabeçalho aparece sem
   // elas em vez de segurar a tela. Sem esse prazo, depois de qualquer gravação a
   // página ficava "Salvando…" esperando este trecho ser recalculado.
-  const { valor: [etapasNotificacao, avisosFerias, notificacoesDispensadas], noPrazo } = await comPrazo(
+  const { valor: [etapasNotificacao, avisosFerias, notificacoesDispensadas, lembretesVendas], noPrazo } = await comPrazo(
     Promise.all([
       supabase
         .from("etapas")
@@ -55,9 +55,16 @@ async function TopBarComDados({ hoje, nivelAcesso }: { hoje: string; nivelAcesso
             }[],
           }),
       supabase.from("notificacoes_dispensadas").select("etapa_id, data_prevista"),
-    ]).then(([etapas, ferias, dispensadas]) => [etapas.data, ferias.data, dispensadas.data] as const),
+      // lembretes de vendas (intermediária próxima, fim de contrato) gerados pela rotina diária
+      supabase
+        .from("vendas_lembretes")
+        .select("id, processo_id, tipo, marco, titulo, mensagem, criado_em, etapas ( status ), processos ( status )")
+        .is("lida_em", null)
+        .order("criado_em", { ascending: false })
+        .limit(20),
+    ]).then(([etapas, ferias, dispensadas, lembretes]) => [etapas.data, ferias.data, dispensadas.data, lembretes.data] as const),
     PRAZO_NOTIFICACOES_MS,
-    [null, null, null] as const,
+    [null, null, null, null] as const,
   );
   if (!noPrazo) console.error(`cabecalho: notificações passaram de ${PRAZO_NOTIFICACOES_MS} ms e foram omitidas`);
 
@@ -105,6 +112,25 @@ async function TopBarComDados({ hoje, nivelAcesso }: { hoje: string; nivelAcesso
       prazo: `Férias · ${format(new Date(aviso.criado_em), "dd/MM/yyyy")}`,
       tipo: "proxima",
       href: aviso.solicitacao_id ? `/ferias/${aviso.solicitacao_id}` : "/ferias",
+    });
+  }
+
+  // Lembretes de vendas ficam no topo; somem sozinhos quando a etapa é concluída ou a venda encerra.
+  const lembretesAbertos = (lembretesVendas ?? []).filter((l) => {
+    const etapa = l.etapas as unknown as { status: string } | null;
+    const processo = l.processos as unknown as { status: string } | null;
+    if (etapa?.status === "concluida") return false;
+    return !processo || !["concluido", "cancelado", "arquivado"].includes(processo.status);
+  });
+  for (const l of [...lembretesAbertos].reverse()) {
+    notificacoes.unshift({
+      id: l.id,
+      processoId: l.processo_id,
+      etapa: l.titulo,
+      contexto: l.mensagem,
+      prazo: l.tipo === "intermediaria" ? "Lembrete · intermediária" : "Lembrete · fim do contrato",
+      tipo: l.tipo === "intermediaria" || l.marco <= 7 ? "hoje" : "proxima",
+      href: `/processos/${l.processo_id}`,
     });
   }
 

@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { FormularioNativo } from "@/components/formulario-nativo";
 import { BotaoEnviar } from "@/components/botao-enviar";
+import { mesmaEtapa } from "@/lib/vendas/lembretes";
 import { ModalEdicaoProcesso } from "@/components/modal-edicao-processo";
 
 export default async function ProcessoDetalhePage({
@@ -835,7 +836,7 @@ export default async function ProcessoDetalhePage({
               </p>
               <div className="flex flex-wrap gap-1.5">
                 {etapasPadraoSequencial.map((ep) => {
-                  const etapaExistente = etapas.find((e) => e.nome === ep.nome && !e.especial);
+                  const etapaExistente = etapas.find((e) => mesmaEtapa(ep.nome, e.nome) && !e.especial);
                   const aplicada = Boolean(etapaExistente);
                   return (
                     <form key={ep.id} action={alternarEtapaPadrao}>
@@ -843,6 +844,7 @@ export default async function ProcessoDetalhePage({
                       <input type="hidden" name="nome" value={ep.nome} />
                       <input type="hidden" name="ordem" value={ep.ordem} />
                       <input type="hidden" name="aplicada" value={String(aplicada)} />
+                      <input type="hidden" name="especial" value="false" />
                       {etapaExistente && (
                         <input type="hidden" name="etapa_id" value={etapaExistente.id} />
                       )}

@@ -6,12 +6,15 @@ import { hojeISO } from "@/lib/data-br";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { marcarNotificacoesFeriasLidas } from "../ferias/actions";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export async function limparTodasNotificacoes(): Promise<void> {
   const supabase = await createClient();
   const { user } = await getUsuarioAtual();
   if (!user) return;
   await marcarNotificacoesFeriasLidas();
+  // lembretes de vendas: só leitura pelo usuário; marca como lidos com a chave do servidor, apenas os dele
+  await createAdminClient().from("vendas_lembretes").update({ lida_em: new Date().toISOString() }).eq("usuario_id", user.id).is("lida_em", null);
 
   const hoje = hojeISO();
   const limite = format(addDays(parseISO(hoje), 7), "yyyy-MM-dd");

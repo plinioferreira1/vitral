@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { hojeISO } from "@/lib/data-br";
 import { rotinaDiariaDebitos } from "@/lib/debitos/rotina";
 import { rotinaDiariaFerias } from "@/lib/ferias/rotina";
+import { rotinaDiariaLembretesVendas } from "@/lib/vendas/lembretes-rotina";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
@@ -28,5 +29,13 @@ export async function GET(request: Request) {
   } catch (erro) {
     ferias = { erro: erro instanceof Error ? erro.message : String(erro) };
   }
-  return NextResponse.json({ ok: true, resultados, ferias });
+  // e os lembretes de vendas (intermediária próxima e fim de contrato)
+  let lembretesVendas: Awaited<ReturnType<typeof rotinaDiariaLembretesVendas>> | { erro: string };
+  try {
+    lembretesVendas = await rotinaDiariaLembretesVendas(admin, hojeISO());
+  } catch (erro) {
+    lembretesVendas = { erro: erro instanceof Error ? erro.message : String(erro) };
+    console.error("lembretes de vendas:", lembretesVendas.erro);
+  }
+  return NextResponse.json({ ok: true, resultados, ferias, lembretesVendas });
 }

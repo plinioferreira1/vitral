@@ -6033,6 +6033,83 @@ export type Database = {
           },
         ]
       }
+      vendas_lembretes: {
+        Row: {
+          criado_em: string
+          data_referencia: string
+          email_enviado_em: string | null
+          etapa_id: string | null
+          id: string
+          lida_em: string | null
+          marco: number
+          mensagem: string
+          processo_id: string
+          tenant_id: string
+          tipo: string
+          titulo: string
+          usuario_id: string
+        }
+        Insert: {
+          criado_em?: string
+          data_referencia: string
+          email_enviado_em?: string | null
+          etapa_id?: string | null
+          id?: string
+          lida_em?: string | null
+          marco: number
+          mensagem: string
+          processo_id: string
+          tenant_id: string
+          tipo: string
+          titulo: string
+          usuario_id: string
+        }
+        Update: {
+          criado_em?: string
+          data_referencia?: string
+          email_enviado_em?: string | null
+          etapa_id?: string | null
+          id?: string
+          lida_em?: string | null
+          marco?: number
+          mensagem?: string
+          processo_id?: string
+          tenant_id?: string
+          tipo?: string
+          titulo?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_lembretes_etapa_id_fkey"
+            columns: ["etapa_id"]
+            isOneToOne: false
+            referencedRelation: "etapas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_lembretes_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_lembretes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_lembretes_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
