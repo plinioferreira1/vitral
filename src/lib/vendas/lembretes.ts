@@ -60,7 +60,7 @@ export type ProcessoLembrete = {
   data_final_contrato: string | null;
 };
 
-export type EtapaLembrete = { id: string; nome: string; status: string; data_prevista: string | null; processo: ProcessoLembrete };
+export type EtapaLembrete = { id: string; nome: string; status: string; data_prevista: string | null; valor_centavos?: number | null; processo: ProcessoLembrete };
 
 export type LembreteNovo = {
   tenant_id: string;
@@ -73,6 +73,24 @@ export type LembreteNovo = {
   titulo: string;
   mensagem: string;
 };
+
+export function moedaBR(centavos: number): string {
+  return (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+/**
+ * Valor vindo do campo com máscara ("50000.00") ou digitado ("50.000,00") → centavos.
+ * Vazio/zero = null (sem valor); inválido = undefined.
+ */
+export function valorEmCentavos(bruto: unknown): number | null | undefined {
+  const texto = String(bruto ?? "").trim();
+  if (!texto) return null;
+  const normalizado = /,\d{1,2}$/.test(texto) ? texto.replace(/\./g, "").replace(",", ".") : texto.replace(/,/g, "");
+  if (!/^\d+(\.\d{1,2})?$/.test(normalizado)) return undefined;
+  const centavos = Math.round(Number(normalizado) * 100);
+  if (!Number.isSafeInteger(centavos)) return undefined;
+  return centavos === 0 ? null : centavos;
+}
 
 export function dataBR(iso: string): string {
   const [a, m, d] = iso.split("-");
@@ -103,8 +121,9 @@ export function gerarLembretes(
     const dias = diasAte(hoje, e.data_prevista);
     const marco = marcoVigente(dias, MARCOS_INTERMEDIARIA, true);
     if (marco === null) continue;
-    const titulo = `Intermediária ${quando(dias)} · ${dataBR(e.data_prevista)}`;
-    const mensagem = `${identificacao(e.processo)} — "${e.nome}" prevista para ${dataBR(e.data_prevista)}. Avise o cliente sobre o pagamento.`;
+    const titulo = `Intermediária ${quando(dias)} · ${dataBR(e.data_prevista)}${e.valor_centavos ? ` · ${moedaBR(Number(e.valor_centavos))}` : ""}`;
+    const valor = e.valor_centavos ? ` de ${moedaBR(Number(e.valor_centavos))}` : "";
+    const mensagem = `${identificacao(e.processo)} — "${e.nome}"${valor} prevista para ${dataBR(e.data_prevista)}. Avise o cliente sobre o pagamento.`;
     for (const usuario_id of destinatarios(e.processo, gestoresPorEmpresa)) {
       novos.push({ tenant_id: e.processo.tenant_id, usuario_id, processo_id: e.processo.id, etapa_id: e.id, tipo: "intermediaria", data_referencia: e.data_prevista, marco, titulo, mensagem });
     }

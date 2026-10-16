@@ -26,7 +26,7 @@ export async function rotinaDiariaLembretesVendas(admin: Admin, hoje: string): P
   const [{ data: etapas }, { data: processos }, { data: gestores }] = await Promise.all([
     admin
       .from("etapas")
-      .select(`id, nome, status, data_prevista, processos!inner ( ${CAMPOS_PROCESSO} )`)
+      .select(`id, nome, status, data_prevista, valor_centavos, processos!inner ( ${CAMPOS_PROCESSO} )`)
       .ilike("nome", "%intermedi%")
       .neq("status", "concluida")
       .gte("data_prevista", hoje)
@@ -51,6 +51,7 @@ export async function rotinaDiariaLembretesVendas(admin: Admin, hoje: string): P
     nome: e.nome,
     status: e.status,
     data_prevista: e.data_prevista,
+    valor_centavos: e.valor_centavos,
     processo: paraProcesso(e.processos as unknown as LinhaProcesso),
   }));
   const novos = gerarLembretes(hoje, listaEtapas, ((processos ?? []) as unknown as LinhaProcesso[]).map(paraProcesso), gestoresPorEmpresa);

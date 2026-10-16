@@ -2822,6 +2822,7 @@ export type Database = {
           processo_id: string
           responsavel_id: string | null
           status: string
+          valor_centavos: number | null
         }
         Insert: {
           data_prevista?: string | null
@@ -2837,6 +2838,7 @@ export type Database = {
           processo_id: string
           responsavel_id?: string | null
           status?: string
+          valor_centavos?: number | null
         }
         Update: {
           data_prevista?: string | null
@@ -2852,6 +2854,7 @@ export type Database = {
           processo_id?: string
           responsavel_id?: string | null
           status?: string
+          valor_centavos?: number | null
         }
         Relationships: [
           {

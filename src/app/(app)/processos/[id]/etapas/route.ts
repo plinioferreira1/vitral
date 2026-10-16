@@ -2,13 +2,14 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { exigirUsuario } from "@/lib/usuario-atual";
 import { avisar } from "@/lib/aviso";
-import { concluirEtapa, reabrirEtapa, alterarDataPrevista, salvarNumeroRegistro } from "../actions";
+import { concluirEtapa, reabrirEtapa, alterarDataPrevista, salvarNumeroRegistro, salvarValorEtapa } from "../actions";
 
 const acoes = {
   concluir: concluirEtapa,
   reabrir: reabrirEtapa,
   prazo: alterarDataPrevista,
   registro: salvarNumeroRegistro,
+  valor: salvarValorEtapa,
 };
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {

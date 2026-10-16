@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { diasAte, ehEtapaIntermediaria, gerarLembretes, marcoVigente, mesmaEtapa, montarEmailLembretes, type ProcessoLembrete } from "./lembretes";
+import { valorEmCentavos, diasAte, ehEtapaIntermediaria, gerarLembretes, marcoVigente, mesmaEtapa, montarEmailLembretes, type ProcessoLembrete } from "./lembretes";
 
 const proc = (x: Partial<ProcessoLembrete> = {}): ProcessoLembrete => ({
   id: "p1", tenant_id: "t1", categoria: "venda", status: "ativo", responsavel_id: "resp", numero_processo: "V-001", endereco: "SQN 312 Bloco K apto 504", data_final_contrato: null, ...x,
@@ -79,5 +79,22 @@ describe("montarEmailLembretes", () => {
     expect(html).toContain("A &lt;b&gt;");
     expect(html).toContain("https://vitral.exemplo/processos/p1");
     expect(texto).toContain("Olá, Amanda Martins.");
+  });
+});
+
+describe("valor da intermediária", () => {
+  it("converte o valor do campo com máscara e o digitado", () => {
+    expect(valorEmCentavos("50000.00")).toBe(5_000_000);
+    expect(valorEmCentavos("50.000,00")).toBe(5_000_000);
+    expect(valorEmCentavos("1234,5")).toBe(123_450);
+    expect(valorEmCentavos("")).toBeNull();
+    expect(valorEmCentavos("0.00")).toBeNull();
+    expect(valorEmCentavos("abc")).toBeUndefined();
+    expect(valorEmCentavos("-10")).toBeUndefined();
+  });
+  it("mostra o valor no título e na mensagem do lembrete", () => {
+    const [l] = gerarLembretes(HOJE, [{ id: "e1", nome: "Pagamento de Intermediária", status: "pendente", data_prevista: "2026-10-17", valor_centavos: 5_000_000, processo: proc() }], [], gestores);
+    expect(l.titulo).toBe("Intermediária em 2 dias · 17/10/2026 · R$\u00a050.000,00");
+    expect(l.mensagem).toContain("de R$\u00a050.000,00 prevista para 17/10/2026");
   });
 });

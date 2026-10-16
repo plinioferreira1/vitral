@@ -2,14 +2,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   sessao: vi.fn(), cliente: vi.fn(), aviso: vi.fn(), consulta: vi.fn(), filtro: vi.fn(),
-  concluir: vi.fn(), reabrir: vi.fn(), prazo: vi.fn(), registro: vi.fn(),
+  concluir: vi.fn(), reabrir: vi.fn(), prazo: vi.fn(), registro: vi.fn(), valor: vi.fn(),
 }));
 vi.mock("@/lib/usuario-atual", () => ({ exigirUsuario: mocks.sessao }));
 vi.mock("@/lib/supabase/server", () => ({ createClient: mocks.cliente }));
 vi.mock("@/lib/aviso", () => ({ avisar: mocks.aviso }));
 vi.mock("../actions", () => ({
   concluirEtapa: mocks.concluir, reabrirEtapa: mocks.reabrir,
-  alterarDataPrevista: mocks.prazo, salvarNumeroRegistro: mocks.registro,
+  alterarDataPrevista: mocks.prazo, salvarNumeroRegistro: mocks.registro, salvarValorEtapa: mocks.valor,
 }));
 import { POST } from "./route";
 
@@ -78,7 +78,7 @@ describe("POST nativo das etapas", () => {
 
   it.each([
     ["concluir", mocks.concluir], ["reabrir", mocks.reabrir],
-    ["prazo", mocks.prazo], ["registro", mocks.registro],
+    ["prazo", mocks.prazo], ["registro", mocks.registro], ["valor", mocks.valor],
   ] as const)("executa %s uma vez e retorna por GET à seção de etapas", async (acao, executar) => {
     const resposta = await enviar(acao);
     expect(executar).toHaveBeenCalledTimes(1);

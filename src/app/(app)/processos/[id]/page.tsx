@@ -38,7 +38,7 @@ import {
 } from "lucide-react";
 import { FormularioNativo } from "@/components/formulario-nativo";
 import { BotaoEnviar } from "@/components/botao-enviar";
-import { ETAPAS_OPCIONAIS, mesmaEtapa } from "@/lib/vendas/lembretes";
+import { ETAPAS_OPCIONAIS, ehEtapaIntermediaria, mesmaEtapa } from "@/lib/vendas/lembretes";
 import { ModalEdicaoProcesso } from "@/components/modal-edicao-processo";
 
 export default async function ProcessoDetalhePage({
@@ -686,6 +686,30 @@ export default async function ProcessoDetalhePage({
                       Salvar
                     </BotaoEnviar>
                   </FormularioNativo>
+                </div>
+              )}
+
+              {ehEtapaIntermediaria(etapa.nome) && (
+                <div className="mt-3 border-t border-border pt-3">
+                  <FormularioNativo action={`/processos/${p.id}/etapas`} className="flex flex-wrap items-end gap-2">
+                    <input type="hidden" name="acao" value="valor" />
+                    <input type="hidden" name="etapa_id" value={etapa.id} />
+                    <input type="hidden" name="processo_id" value={p.id} />
+                    <label className="block min-w-0">
+                      <span className="mb-1 block text-xs font-medium text-ink-muted">Valor da intermediária</span>
+                      <span className="flex w-48 max-w-full rounded-md border border-border bg-surface px-2 py-1.5 focus-within:border-brand">
+                        <CampoMoeda
+                          name="valor"
+                          defaultValue={(etapa as unknown as { valor_centavos: number | null }).valor_centavos != null ? Number((etapa as unknown as { valor_centavos: number }).valor_centavos) / 100 : null}
+                          className="w-full min-w-0 bg-transparent text-sm outline-none"
+                        />
+                      </span>
+                    </label>
+                    <BotaoEnviar className="shrink-0 rounded-md border border-border px-3 py-1.5 text-xs text-ink-muted hover:bg-background">
+                      Salvar valor
+                    </BotaoEnviar>
+                  </FormularioNativo>
+                  <p className="mt-1 text-[11px] text-ink-muted">Aparece no lembrete enviado 2 dias antes e na véspera.</p>
                 </div>
               )}
 

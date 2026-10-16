@@ -3,7 +3,7 @@
 import { validarCorretores } from "@/lib/corretores-servidor";
 import { HISTORICO_VGV } from "../../painel-sacra/dados";
 import { exigirUsuario } from "@/lib/usuario-atual";
-import { ETAPAS_OPCIONAIS } from "@/lib/vendas/lembretes";
+import { ETAPAS_OPCIONAIS, valorEmCentavos } from "@/lib/vendas/lembretes";
 
 import { checar, avisar } from "@/lib/aviso";
 
@@ -244,6 +244,23 @@ export async function salvarNumeroRegistro(formData: FormData) {
 
   await checar(supabase.from("etapas").update({ numero_registro: numeroRegistro }).eq("id", etapaId), "atualizar");
 
+  revalidatePath(`/processos/${processoId}`);
+}
+
+/** Valor da etapa (ex.: Pagamento de Intermediária). O campo com máscara envia "50000.00". */
+export async function salvarValorEtapa(formData: FormData) {
+  if (!(await exigirUsuario())) return;
+  const supabase = await createClient();
+  const etapaId = String(formData.get("etapa_id") ?? "");
+  const processoId = String(formData.get("processo_id") ?? "");
+  const centavos = valorEmCentavos(formData.get("valor"));
+  if (centavos === undefined) {
+    await avisar("erro", "Valor inválido. Digite só números (ex.: 50.000,00).");
+    return;
+  }
+  if (await checar(supabase.from("etapas").update({ valor_centavos: centavos }).eq("id", etapaId), "salvar o valor")) {
+    await avisar("sucesso", centavos === null ? "Valor removido." : "Valor da intermediária salvo.");
+  }
   revalidatePath(`/processos/${processoId}`);
 }
 
