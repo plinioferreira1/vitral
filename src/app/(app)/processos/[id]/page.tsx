@@ -414,22 +414,35 @@ export default async function ProcessoDetalhePage({
         </div>
       </div>
 
-      {/* Situação especial ativa (se houver) */}
-      {etapasEspeciaisAtivas.length > 0 && (
+      {/* Situação especial ativa (se houver). Uma situação especial em aberto impede
+          que o processo seja concluído sozinho, então ela precisa de um "Concluir". */}
+      {etapasEspeciaisAtivas.some((e) => e.status !== "concluida") && (
         <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
           <p className="text-xs font-semibold uppercase tracking-wide text-amber-800">
-            ⚠ Situação especial
+            ⚠ Situação especial em aberto
           </p>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            {etapasEspeciaisAtivas.map((e) => (
-              <span
-                key={e.id}
-                className="rounded-full border border-amber-300 bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-900"
-              >
-                {e.nome}
-              </span>
+          {etapasSequenciais.length > 0 && etapasSequenciais.every((e) => e.status === "concluida") && p.status !== "concluido" && (
+            <p className="mt-1 text-sm text-amber-900">
+              Todas as etapas da linha do tempo foram concluídas. Conclua a situação especial abaixo para o processo ser encerrado.
+            </p>
+          )}
+          <ul className="mt-2 space-y-2">
+            {etapasEspeciaisAtivas.filter((e) => e.status !== "concluida").map((e) => (
+              <li key={e.id} className="flex flex-wrap items-center gap-2">
+                <span className="rounded-full border border-amber-300 bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-900">
+                  {e.nome}
+                </span>
+                <FormularioNativo action={`/processos/${p.id}/etapas`} className="flex items-center gap-2">
+                  <input type="hidden" name="acao" value="concluir" />
+                  <input type="hidden" name="etapa_id" value={e.id} />
+                  <input type="hidden" name="processo_id" value={p.id} />
+                  <BotaoEnviar textoEnviando="Concluindo…" className="min-h-9 rounded-md border border-amber-300 bg-surface px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100">
+                    Concluir
+                  </BotaoEnviar>
+                </FormularioNativo>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       )}
 
