@@ -17,6 +17,9 @@ export const MARCOS_CONTRATO = [30, 15, 7] as const;
 const STATUS_ENCERRADOS = new Set(["concluido", "cancelado", "arquivado"]);
 const ETAPA_ABERTA = new Set(["pendente", "em_andamento", "bloqueada"]);
 
+/** Etapas da sequência que só entram quando a venda tem (não vão na linha do tempo padrão). */
+export const ETAPAS_OPCIONAIS: readonly string[] = ["Pagamento de Intermediária"];
+
 /** Nomes antigos de etapa que equivalem aos atuais do catálogo. */
 export const NOMES_EQUIVALENTES: Record<string, string[]> = {
   Escritura: ["Escritura + Intermediária"],

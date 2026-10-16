@@ -70,7 +70,7 @@ export function ListaFinanciamentos({ rows, acompanhamento, atrasos, finalizados
           </label>
           {selecionadosVisiveis.length > 0 && <form action={apagarProcessosSelecionados}>
             {selecionadosVisiveis.map(id => <input key={id} type="hidden" name="ids" value={id} />)}
-            <BotaoComConfirmacao mensagem={`Apagar ${selecionadosVisiveis.length} processos selecionados? Essa ação não pode ser desfeita.`} className="rounded-lg border border-rose-200 bg-surface px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50">Apagar selecionados ({selecionadosVisiveis.length})</BotaoComConfirmacao>
+            <BotaoComConfirmacao mensagem={`Excluir ${selecionadosVisiveis.length === 1 ? "o processo selecionado" : `os ${selecionadosVisiveis.length} processos selecionados`}? Etapas, comentários, histórico e comissões também serão apagados. Essa ação não pode ser desfeita.`} textoEnviando="Excluindo…" className="rounded-lg border border-rose-200 bg-surface px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50">Excluir selecionados ({selecionadosVisiveis.length})</BotaoComConfirmacao>
           </form>}
         </div>
         {filtradas.length === 0 ? <div className="p-8 text-center">

@@ -2,7 +2,7 @@
 
 import { exigirUsuario } from "@/lib/usuario-atual";
 
-import { checar } from "@/lib/aviso";
+import { avisar, checar, traduzirErro } from "@/lib/aviso";
 
 import { after } from "next/server";
 
@@ -85,49 +85,50 @@ export async function moverProcessoParaEtapa(processoId: string, etapaNomeAlvo: 
   revalidatePath("/");
 }
 
-export async function apagarProcessosSelecionados(formData: FormData) {
-  if (!(await exigirUsuario())) return;
-  const ids = formData.getAll("ids") as string[];
-  if (ids.length === 0) return;
-
+/**
+ * Exclui processos e devolve quantos realmente saíram. A RLS pode barrar sem
+ * erro (zero linhas), por isso conferimos o retorno e avisamos a pessoa.
+ * Etapas, comentários, histórico, comissões e lembretes saem junto (cascata);
+ * termos de entrega ficam guardados, apenas sem o vínculo.
+ */
+async function excluirProcessos(ids: string[]): Promise<number> {
   const supabase = await createClient();
   const { data: etapas } = await supabase.from("etapas").select("id").in("processo_id", ids);
-  await removerEventosDeEtapas(
-    supabase,
-    (etapas ?? []).map((e) => e.id)
-  );
+  await removerEventosDeEtapas(supabase, (etapas ?? []).map((e) => e.id));
   await removerAlertasContratoDeProcessos(supabase, ids);
-
-  await checar(supabase.from("processos").delete().in("id", ids), "excluir");
-
+  const { data: excluidos, error } = await supabase.from("processos").delete().in("id", ids).select("id");
+  if (error) {
+    await avisar("erro", `Não foi possível excluir: ${traduzirErro(error)}`);
+    return 0;
+  }
+  const n = excluidos?.length ?? 0;
+  if (n === 0) await avisar("erro", "Nenhum processo foi excluído. Seu acesso não permite excluir estes processos.");
+  else if (n < ids.length) await avisar("erro", `${n} de ${ids.length} processos excluídos. Os demais não puderam ser excluídos com seu acesso.`);
+  else await avisar("sucesso", n === 1 ? "Processo excluído." : `${n} processos excluídos.`);
   revalidatePath("/vendas");
   revalidatePath("/painel-sacra");
   revalidatePath("/financiamentos");
+  revalidatePath("/");
+  return n;
+}
+
+export async function apagarProcessosSelecionados(formData: FormData) {
+  if (!(await exigirUsuario())) return;
+  const ids = [...new Set((formData.getAll("ids") as string[]).filter(Boolean))];
+  if (ids.length === 0) return;
+  await excluirProcessos(ids);
 }
 
 export async function apagarProcesso(formData: FormData) {
   if (!(await exigirUsuario())) return;
   const id = String(formData.get("id") ?? "");
   if (!id) return;
-
   const supabase = await createClient();
-  const { data: processo } = await supabase
-    .from("processos")
-    .select("categoria")
-    .eq("id", id)
-    .single();
-
-  const { data: etapas } = await supabase.from("etapas").select("id").eq("processo_id", id);
-  await removerEventosDeEtapas(
-    supabase,
-    (etapas ?? []).map((e) => e.id)
-  );
-  await removerAlertasContratoDeProcessos(supabase, [id]);
-
-  await checar(supabase.from("processos").delete().eq("id", id), "excluir");
-
-  revalidatePath("/vendas");
-  revalidatePath("/painel-sacra");
-  revalidatePath("/financiamentos");
+  const { data: processo } = await supabase.from("processos").select("categoria").eq("id", id).maybeSingle();
+  const n = await excluirProcessos([id]);
+  if (n === 0) {
+    revalidatePath(`/processos/${id}`);
+    return;
+  }
   redirect(processo?.categoria === "financiamento" ? "/financiamentos?aba=andamento" : "/vendas?aba=andamento");
 }

@@ -22,6 +22,7 @@ import {
   salvarComissao,
   adicionarComentario,
   salvarDadosProcesso,
+  criarLinhaTempoPadrao,
 } from "./actions";
 import { EditorLinhaTempo } from "@/components/editor-linha-tempo";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
@@ -33,10 +34,11 @@ import {
   Clock3,
   AlertTriangle,
   type LucideIcon,
+  Trash2,
 } from "lucide-react";
 import { FormularioNativo } from "@/components/formulario-nativo";
 import { BotaoEnviar } from "@/components/botao-enviar";
-import { mesmaEtapa } from "@/lib/vendas/lembretes";
+import { ETAPAS_OPCIONAIS, mesmaEtapa } from "@/lib/vendas/lembretes";
 import { ModalEdicaoProcesso } from "@/components/modal-edicao-processo";
 
 export default async function ProcessoDetalhePage({
@@ -203,6 +205,17 @@ export default async function ProcessoDetalhePage({
           </div>
 
           {!ehFinanciamento && p.categoria === "venda" && <AtalhoTermoEntrega processoId={p.id} />}
+
+          <form action={apagarProcesso}>
+            <input type="hidden" name="id" value={p.id} />
+            <BotaoComConfirmacao
+              mensagem="Excluir este processo? Etapas, comentários, histórico e comissões dele também serão apagados. Essa ação não pode ser desfeita."
+              textoEnviando="Excluindo…"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-rose-200 bg-surface px-3 py-2 text-sm font-medium text-rose-700 transition hover:bg-rose-50"
+            >
+              <Trash2 size={15} aria-hidden="true" /> Excluir
+            </BotaoComConfirmacao>
+          </form>
 
           <ModalEdicaoProcesso
             key={`editar-${p.id}-${p.comprador?.nome}-${p.vendedor?.nome}-${p.imoveis?.endereco}-${p.bancos?.nome}-${p.corretores?.nome}-${p.usuarios?.nome}-${p.codigo_san}-${p.numero_proposta_contrato}-${p.valor_total}-${p.valor_financiado}-${p.origem}-${p.indicacao?.nome}-${p.data_assinatura}-${p.data_final_contrato}`}
@@ -426,7 +439,7 @@ export default async function ProcessoDetalhePage({
           <div>
             <h2 className="text-lg font-semibold text-ink">Linha do tempo</h2>
             <p className="mt-0.5 text-xs text-ink-muted">
-              {etapaAtual ? `Etapa atual: ${etapaAtual.nome}` : "Todas as etapas foram concluídas"}
+              {etapaAtual ? `Etapa atual: ${etapaAtual.nome}` : etapasSequenciais.length ? "Todas as etapas foram concluídas" : "Ainda sem etapas"}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -452,6 +465,20 @@ export default async function ProcessoDetalhePage({
             />
           </div>
         </div>
+        {etapasSequenciais.length === 0 && (
+          <div className="rounded-xl border border-dashed border-border-strong bg-background p-5 text-center">
+            <p className="text-sm font-semibold text-ink">Este processo ainda não tem linha do tempo</p>
+            <p className="mx-auto mt-1 max-w-md text-sm text-ink-muted">
+              Crie com as etapas padrão ({etapasPadraoSequencial.filter((ep) => !ETAPAS_OPCIONAIS.includes(ep.nome)).map((ep) => ep.nome).join(", ")}). Depois é só ajustar os prazos e, se houver intermediária, ligá-la em Personalização de etapas.
+            </p>
+            <form action={criarLinhaTempoPadrao} className="mt-3">
+              <input type="hidden" name="processo_id" value={p.id} />
+              <BotaoEnviar textoEnviando="Criando…" className="inline-flex min-h-10 items-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90">
+                Criar linha do tempo
+              </BotaoEnviar>
+            </form>
+          </div>
+        )}
         <div className="overflow-x-auto pb-1">
           <div
             className="grid"
@@ -934,15 +961,6 @@ export default async function ProcessoDetalhePage({
         </div>
       </details>
 
-      <form action={apagarProcesso}>
-        <input type="hidden" name="id" value={p.id} />
-        <BotaoComConfirmacao
-          mensagem="Apagar este processo? Essa ação não pode ser desfeita."
-          className="text-xs font-medium text-ink-muted hover:text-rose-600"
-        >
-          Apagar processo
-        </BotaoComConfirmacao>
-      </form>
     </div>
   );
 }

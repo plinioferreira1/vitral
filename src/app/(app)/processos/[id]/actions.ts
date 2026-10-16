@@ -3,6 +3,7 @@
 import { validarCorretores } from "@/lib/corretores-servidor";
 import { HISTORICO_VGV } from "../../painel-sacra/dados";
 import { exigirUsuario } from "@/lib/usuario-atual";
+import { ETAPAS_OPCIONAIS } from "@/lib/vendas/lembretes";
 
 import { checar, avisar } from "@/lib/aviso";
 
@@ -538,4 +539,50 @@ export async function adicionarComentario(formData: FormData) {
   }), "salvar");
 
   revalidatePath(`/processos/${processoId}`);
+}
+
+/**
+ * Cria a linha do tempo padrão (etapas da sequência do catálogo) num processo
+ * que ainda não tem nenhuma — ex.: vendas pré-cadastradas. Etapas opcionais,
+ * como "Pagamento de Intermediária", ficam de fora: são ligadas uma a uma em
+ * "Personalização de etapas".
+ */
+export async function criarLinhaTempoPadrao(formData: FormData) {
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const supabase = await createClient();
+  const processoId = String(formData.get("processo_id") ?? "");
+  const { data: processo } = await supabase.from("processos").select("id, categoria, responsavel_id").eq("id", processoId).maybeSingle();
+  if (!processo) {
+    await avisar("erro", "Processo não encontrado ou sem acesso.");
+    return;
+  }
+  const { count } = await supabase.from("etapas").select("id", { count: "exact", head: true }).eq("processo_id", processoId).eq("especial", false);
+  if ((count ?? 0) > 0) {
+    await avisar("erro", "Este processo já tem linha do tempo. Use Personalização de etapas para ajustar.");
+    revalidatePath(`/processos/${processoId}`);
+    return;
+  }
+  const { data: catalogo } = await supabase
+    .from("etapas_padrao")
+    .select("nome, ordem")
+    .eq("categoria", processo.categoria)
+    .eq("tipo", "sequencial")
+    .order("ordem");
+  const etapas = (catalogo ?? []).filter((ep) => !ETAPAS_OPCIONAIS.includes(ep.nome));
+  if (!etapas.length) {
+    await avisar("erro", "Não há etapas padrão cadastradas para esta categoria (Configurações › Etapas padrão).");
+    return;
+  }
+  const ok = await checar(
+    supabase.from("etapas").insert(
+      etapas.map((ep) => ({ processo_id: processoId, nome: ep.nome, ordem: ep.ordem, status: "pendente", especial: false, responsavel_id: processo.responsavel_id ?? sessao.userId })),
+    ),
+    "criar a linha do tempo",
+  );
+  if (ok) await avisar("sucesso", `Linha do tempo criada com ${etapas.length} etapas. Ajuste os prazos em cada etapa.`);
+  after(() => reconciliarAgendaProcesso(supabase, processoId));
+  revalidatePath(`/processos/${processoId}`);
+  revalidatePath("/vendas");
+  revalidatePath("/");
 }
