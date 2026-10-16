@@ -4,6 +4,7 @@ import { validarCorretores } from "@/lib/corretores-servidor";
 import { HISTORICO_VGV } from "../../painel-sacra/dados";
 import { exigirUsuario } from "@/lib/usuario-atual";
 import { ETAPAS_OPCIONAIS, valorEmCentavos } from "@/lib/vendas/lembretes";
+import { novoPrazoAoMudarAssinatura, prazoPadraoEtapa } from "@/lib/vendas/prazos";
 
 import { checar, avisar } from "@/lib/aviso";
 
@@ -45,6 +46,16 @@ async function resolverOuCriar(
     .single();
 
   return criado?.id ?? null;
+}
+
+/** Quando a assinatura muda, recalcula prazos padrão (ex.: Trâmites Bancários = +30 dias) das etapas pendentes. */
+async function sincronizarPrazosPorAssinatura(supabase: SupabaseClient, processoId: string, anterior: string | null, nova: string | null) {
+  if (anterior === nova) return;
+  const { data: etapas } = await supabase.from("etapas").select("id, nome, data_prevista").eq("processo_id", processoId).neq("status", "concluida");
+  for (const e of etapas ?? []) {
+    const novo = novoPrazoAoMudarAssinatura(e.nome, e.data_prevista, anterior, nova);
+    if (novo !== undefined) await checar(supabase.from("etapas").update({ data_prevista: novo }).eq("id", e.id), "atualizar o prazo");
+  }
 }
 
 export async function salvarOrdemEtapas(processoId: string, etapaIdsEmOrdem: string[]) {
@@ -202,6 +213,7 @@ export async function salvarDatasContrato(formData: FormData) {
   const processoId = String(formData.get("processo_id") ?? "");
   const dataAssinatura = String(formData.get("data_assinatura") ?? "");
   const dataFinalContrato = String(formData.get("data_final_contrato") ?? "");
+  const { data: anterior } = await supabase.from("processos").select("data_assinatura").eq("id", processoId).maybeSingle();
 
   await checar(supabase
     .from("processos")
@@ -210,8 +222,10 @@ export async function salvarDatasContrato(formData: FormData) {
       data_final_contrato: dataFinalContrato || null,
     })
     .eq("id", processoId), "atualizar");
+  await sincronizarPrazosPorAssinatura(supabase, processoId, anterior?.data_assinatura ?? null, dataAssinatura || null);
 
   after(() => reconciliarAlertaContratoFinal(supabase, processoId));
+  after(() => reconciliarAgendaProcesso(supabase, processoId));
 
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/vendas");
@@ -323,7 +337,7 @@ export async function salvarDadosProcesso(formData: FormData) {
 
   const { data: existente } = await supabase
     .from("processos")
-    .select("tenant_id, categoria, comprador_id, vendedor_id, imovel_id, corretor_id, captador_id, participacao_vgv_revisada")
+    .select("tenant_id, categoria, comprador_id, vendedor_id, imovel_id, corretor_id, captador_id, participacao_vgv_revisada, data_assinatura")
     .eq("id", processoId)
     .single();
 
@@ -409,6 +423,7 @@ export async function salvarDadosProcesso(formData: FormData) {
   }
 
   await checar(supabase.from("processos").update(dadosProcesso).eq("id", processoId), "atualizar");
+  await sincronizarPrazosPorAssinatura(supabase, processoId, existente.data_assinatura ?? null, dadosProcesso.data_assinatura ?? null);
 
   after(() => reconciliarAgendaProcesso(supabase, processoId));
   after(() => reconciliarAlertaContratoFinal(supabase, processoId));
@@ -476,6 +491,7 @@ export async function alternarEtapaPadrao(formData: FormData) {
         await checar(supabase.from("etapas").update({ ordem: e.ordem + 1 }).eq("id", e.id), "reordenar");
       }
     }
+    const { data: proc } = await supabase.from("processos").select("data_assinatura").eq("id", processoId).maybeSingle();
     await checar(supabase.from("etapas").insert({
       processo_id: processoId,
       nome,
@@ -483,6 +499,7 @@ export async function alternarEtapaPadrao(formData: FormData) {
       status: "pendente",
       ordem: ordemCatalogo,
       especial,
+      data_prevista: prazoPadraoEtapa(nome, proc?.data_assinatura),
     }), "salvar");
   }
 
@@ -569,7 +586,7 @@ export async function criarLinhaTempoPadrao(formData: FormData) {
   if (!sessao) return;
   const supabase = await createClient();
   const processoId = String(formData.get("processo_id") ?? "");
-  const { data: processo } = await supabase.from("processos").select("id, categoria, responsavel_id").eq("id", processoId).maybeSingle();
+  const { data: processo } = await supabase.from("processos").select("id, categoria, responsavel_id, data_assinatura").eq("id", processoId).maybeSingle();
   if (!processo) {
     await avisar("erro", "Processo não encontrado ou sem acesso.");
     return;
@@ -593,7 +610,7 @@ export async function criarLinhaTempoPadrao(formData: FormData) {
   }
   const ok = await checar(
     supabase.from("etapas").insert(
-      etapas.map((ep) => ({ processo_id: processoId, nome: ep.nome, ordem: ep.ordem, status: "pendente", especial: false, responsavel_id: processo.responsavel_id ?? sessao.userId })),
+      etapas.map((ep) => ({ processo_id: processoId, nome: ep.nome, ordem: ep.ordem, status: "pendente", especial: false, responsavel_id: processo.responsavel_id ?? sessao.userId, data_prevista: prazoPadraoEtapa(ep.nome, processo.data_assinatura) })),
     ),
     "criar a linha do tempo",
   );
