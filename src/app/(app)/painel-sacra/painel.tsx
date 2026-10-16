@@ -1,5 +1,4 @@
 import type { mediaCorretagem } from "@/lib/media-corretagem";
-import Link from "next/link";
 import { Flag, House, Target, TrendingUp, Trophy, Wallet } from "lucide-react";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { CartaoKpi } from "@/components/cartao-kpi";
@@ -52,32 +51,17 @@ export function PainelSacra({ dados }: { dados: DadosVgv }) {
       <CartaoKpi label={progresso.restanteCentavos > 0 ? "Falta para a meta" : "Meta alcançada"} valor={moeda(progresso.restanteCentavos)} icon={Flag} tom="sucesso" rodape={<p className="mt-3 text-sm text-ink-muted">{progresso.restanteCentavos > 0 ? "Volume de vendas necessário para atingir o objetivo." : "O VGV realizado atingiu o objetivo anual."}</p>} />
     </div>
 
-    <section className="rounded-2xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="vgc-titulo">
-      <h2 id="vgc-titulo" className="flex items-center gap-2 font-semibold"><Wallet size={20} className="text-brand" aria-hidden="true" />VGC — comissões geradas</h2>
-      <p className="mt-2 text-sm leading-6 text-ink-muted">Comissões destinadas à Sacra e aos corretores que faziam parte da equipe na venda. Parcelas de parceiros externos ficam fora. Valores gerados, sem indicar que já foram recebidos.</p>
-      <div className="mt-5 grid gap-4 md:grid-cols-2">
-        <CartaoKpi label="VGC apurado" valor={moeda(dados.vgc.apuradoCentavos)} icon={Wallet} tom="marca" rodape={<p className="mt-3 text-sm text-ink-muted">{dados.vgc.vendasConferidas} vendas conferidas. Base revisada em 14/10/2026.</p>} />
-        <CartaoKpi label="VGC aguardando confirmação" valor={moeda(dados.vgc.pendenteCentavos)} icon={Flag} tom="info" rodape={<p className="mt-3 text-sm text-ink-muted">{dados.vgc.pendencias.length} vendas com rateios pendentes. Este valor não está somado ao VGC apurado.</p>} />
+    <section aria-label="Comissões">
+      <div className="grid gap-4 md:grid-cols-2">
+        <CartaoKpi label="VGC total" valor={moeda(dados.vgc.apuradoCentavos)} icon={Wallet} tom="marca" rodape={<p className="mt-3 text-xs text-ink-muted">Sacra + equipe · comissões geradas</p>} />
+        <CartaoKpi label="Média de comissão" valor={dados.corretagem.percentual === null ? "Sem dados" : `${dados.corretagem.percentual.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`} icon={TrendingUp} tom="info" rodape={<p className="mt-3 text-xs text-ink-muted">Comissão total dos contratos · {dados.corretagem.quantidade} vendas</p>} />
       </div>
-      <div className="mt-4">
-        <CartaoKpi label="Média de comissão dos contratos" valor={dados.corretagem.percentual === null ? "Sem dados" : `${dados.corretagem.percentual.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`} icon={TrendingUp} tom="info" rodape={<p className="mt-3 text-sm text-ink-muted">Média simples de {dados.corretagem.quantidade} vendas com dados. Comissão total do contrato, incluindo parceiros, dividida pelo preço de cada venda.</p>} />
-        {dados.corretagem.pendentes.length > 0 && <details className="mt-3 rounded-xl border border-border p-4"><summary className="cursor-pointer font-medium">{dados.corretagem.pendentes.length} vendas sem dados completos para a média</summary><ul className="mt-3 space-y-1 text-sm text-ink-muted">{dados.corretagem.pendentes.map(p => <li key={p.id}>{p.imovel}</li>)}</ul></details>}
-      </div>
-      <p className="mt-4 text-xs leading-5 text-ink-muted">O VGC usa os valores contratuais conferidos; não é estimado pelo preço do imóvel. Novas vendas e alterações de comissão precisam de nova conferência.</p>
-      {dados.vgc.semConferencia > 0 && <p className="mt-3 text-sm text-ink-muted">{dados.vgc.semConferencia} venda(s) cadastrada(s) ainda sem comissão conferida.</p>}
-      {dados.vgc.pendencias.length > 0 && <details className="mt-5 rounded-xl border border-border p-4">
-        <summary className="cursor-pointer font-medium">Ver pendências do VGC</summary>
-        <ul className="mt-4 space-y-4">{dados.vgc.pendencias.map(p => <li key={p.id} className="text-sm leading-6">
-          <div className="flex flex-wrap items-baseline justify-between gap-2"><span className="font-semibold">{p.imovel}</span><span className="tabular-nums">{moeda(p.valorCentavos)}</span></div>
-          <p className="text-ink-muted">{p.pendencia}</p>
-          <div className="mt-1 flex flex-wrap gap-4"><a className="text-brand underline underline-offset-4" href={p.fonte} target="_blank" rel="noreferrer">Ver contrato</a>{p.processoId && <Link className="text-brand underline underline-offset-4" href={`/processos/${p.processoId}`}>Abrir venda</Link>}</div>
-        </li>)}</ul>
-      </details>}
+      {dados.corretagem.pendentes.length > 0 && <details className="mt-3 rounded-xl border border-border p-4"><summary className="cursor-pointer text-sm">{dados.corretagem.pendentes.length} vendas fora da média por falta de dados</summary><ul className="mt-3 space-y-1 text-sm text-ink-muted">{dados.corretagem.pendentes.map(p => <li key={p.id}>{p.imovel}</li>)}</ul></details>}
     </section>
 
     <section className="rounded-2xl border border-border bg-surface p-5 sm:p-6" aria-labelledby="ranking-titulo">
       <h2 id="ranking-titulo" className="flex items-center gap-2 font-semibold"><Trophy size={20} className="text-brand" aria-hidden="true" />Ranking de corretores por VGV</h2>
-      <p className="mt-2 text-sm leading-6 text-ink-muted">Cada corretor da Sacra recebe o VGV integral das vendas em que participa como captador ou vendedor. Uma venda compartilhada conta para os dois; no total da empresa, conta uma única vez.</p>
+      <p className="mt-2 text-sm leading-6 text-ink-muted">VGV das vendas em que cada corretor participa, como captador ou vendedor.</p>
       {dados.ranking.length > 0 ? <ol className="mt-5 divide-y divide-border">
         {dados.ranking.map(linha => <li key={linha.id} className="grid min-w-0 grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-4 gap-y-2 py-4 sm:grid-cols-[2.5rem_minmax(0,1fr)_auto]">
           <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-bold ${linha.posicao === 1 ? "bg-brand text-white" : "bg-brand-soft text-brand"}`}>{linha.posicao}º</span>
@@ -85,7 +69,6 @@ export function PainelSacra({ dados }: { dados: DadosVgv }) {
           <p className="col-start-2 break-words text-lg font-bold tabular-nums text-brand sm:col-start-3">{moeda(linha.valorCentavos)}</p>
         </li>)}
       </ol> : <p className="mt-5 rounded-xl bg-background p-4 text-sm text-ink-muted">Ainda não há vendas com participação da equipe identificada.</p>}
-      <p className="mt-4 text-xs leading-5 text-ink-muted">O ranking considera Amanda, Camila, Michele, Plínio e Ricardo. A soma dos resultados individuais pode superar o VGV geral por causa das vendas compartilhadas.</p>
       {dados.semParticipacao > 0 && <p className="mt-2 text-sm text-ink-muted">{dados.semParticipacao} venda(s) ainda sem participação informada: entram no VGV geral e aguardam identificação para o ranking.</p>}
     </section>
 
