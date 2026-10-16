@@ -9,7 +9,7 @@ export type ItemMenu = LinkMenu | { label: string; children: SubItemMenu[] };
 export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   const operacional = !p.ehCorretor && !p.ehSocialMedia;
   // telas em finalização só aparecem para a gestão (diretor/gerente)
-  const verAvaliacoes = !EM_FINALIZACAO.avaliacoes || p.podeConfigurar;
+  const verAvaliacoes = !EM_FINALIZACAO.avaliacoes || p.podeConfigurar || p.ehCorretor;
   // Controle de Débitos já liberado também ao supervisor (nível operacional sem acesso total)
   const ehSupervisor = operacional && !p.nivelComAcessoTotal;
   const verDebitos = !EM_FINALIZACAO.debitos || p.podeConfigurar || ehSupervisor;

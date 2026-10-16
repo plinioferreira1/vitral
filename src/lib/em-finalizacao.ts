@@ -22,6 +22,8 @@ export type ModuloEmFinalizacao = keyof typeof EM_FINALIZACAO;
  */
 export const LIBERADO_ANTES: Partial<Record<ModuloEmFinalizacao, readonly string[]>> = {
   debitos: ["supervisor", "gerente_locacao"],
+  // corretor já cria seus estudos (vê só os que criou; aprovar/emitir segue com a gestão e a responsável técnica)
+  avaliacoes: ["corretor"],
 };
 
 export function liberadoParaNivel(modulo: ModuloEmFinalizacao, nivel: string, emFinalizacao: boolean = EM_FINALIZACAO[modulo]): boolean {

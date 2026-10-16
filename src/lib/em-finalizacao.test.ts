@@ -5,7 +5,12 @@ import { montarMenu } from "./menu";
 describe("telas em finalização", () => {
   it("em finalização, só diretor e gerente entram", () => {
     for (const nivel of ["diretor", "gerente"]) expect(liberadoParaNivel("debitos", nivel, true)).toBe(true);
-    for (const nivel of ["supervisor", "auxiliar", "corretor", "gerente_locacao", "social_media"]) expect(liberadoParaNivel("avaliacoes", nivel, true)).toBe(false);
+    for (const nivel of ["supervisor", "auxiliar", "gerente_locacao", "social_media"]) expect(liberadoParaNivel("avaliacoes", nivel, true)).toBe(false);
+  });
+  it("Avaliações já entram para o corretor, no menu e no acesso", () => {
+    expect(liberadoParaNivel("avaliacoes", "corretor", true)).toBe(true);
+    const corretor = { ehCorretor: true, ehSocialMedia: false, nivelComAcessoTotal: false, podeConfigurar: false, temVenda: false, temFinanciamento: false, temLocacao: false };
+    expect(JSON.stringify(montarMenu(corretor))).toContain('"/avaliacoes"');
   });
   it("liberado, vale a permissão normal do módulo", () => {
     expect(liberadoParaNivel("debitos", "supervisor", false)).toBe(true);
