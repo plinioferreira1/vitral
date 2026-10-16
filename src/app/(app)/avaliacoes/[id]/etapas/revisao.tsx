@@ -169,7 +169,7 @@ export function EtapaRevisao({
           <p className="text-ink-muted">
             {ptam
               ? `O PTAM é aprovado, assinado e emitido pessoalmente por ${responsavel}. A aprovação vale para o conteúdo exato; qualquer alteração depois dela exige nova revisão.`
-              : `O estudo comercial é aprovado por diretor ou gerente (ou por ${responsavel}). A assinatura da avaliadora só aparece se ela mesma aprovar e emitir.`}
+              : `Qualquer pessoa da equipe pode aprovar e emitir o estudo comercial. O documento sai assinado por ${responsavel}.`}
           </p>
 
           {a.status === "rascunho" && (
@@ -218,7 +218,7 @@ export function EtapaRevisao({
                 </form>
               </div>
             ) : (
-              <Aviso tom="info">Aguardando a revisão de {ptam ? responsavel : "um diretor ou gerente"}.</Aviso>
+              <Aviso tom="info">Aguardando a revisão de {ptam ? responsavel : "alguém da equipe"}.</Aviso>
             ))}
 
           {a.status === "aprovado" &&

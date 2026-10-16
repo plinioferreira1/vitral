@@ -158,7 +158,7 @@ export function LaudoComercial({ c, papel, validacao }: { c: AvaliacaoCompleta; 
           <BotaoEnviar className={PRIMARY_BUTTON_CLASS} name="acao" value={aprova ? "emitir" : "revisao"} disabled={validacao.bloqueios.some(b => b.etapa === "dados" || b.etapa === "comparaveis") || (!aprova && a.status !== "rascunho")} textoEnviando={aprova ? "Emitindo…" : "Enviando…"}>{aprova ? "Salvar e emitir laudo" : a.status === "rascunho" ? "Salvar e enviar para emissão" : "Aguardando emissão"}</BotaoEnviar>
         </div>}
       </div>
-      {!aprova && <p className="mt-3 text-xs text-ink-muted">A emissão é feita por um diretor, gerente ou responsável configurado.</p>}
+      {!aprova && <p className="mt-3 text-xs text-ink-muted">Seu perfil não emite estudos comerciais.</p>}
     </Cartao>
     </form>
   </div>;
