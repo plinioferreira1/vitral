@@ -27,11 +27,12 @@ export function podeVerAvaliacao(papel: PapelAvaliacao, criadoPor: string): bool
 
 /**
  * PTAM: só a responsável técnica aprova e emite.
- * Estudo comercial: diretor, gerente ou a responsável técnica.
+ * Estudo comercial: qualquer pessoa da equipe com acesso ao módulo; o
+ * documento sai sempre assinado pela responsável técnica configurada.
  */
 export function podeAprovar(papel: PapelAvaliacao, modalidade: Modalidade): boolean {
   if (papel.ehResponsavelTecnica) return true;
-  return modalidade === "estudo_comercial" && (papel.nivel === "diretor" || papel.nivel === "gerente");
+  return modalidade === "estudo_comercial" && papel.nivel !== "social_media";
 }
 
 export function podeConfigurar(papel: PapelAvaliacao): boolean {

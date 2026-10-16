@@ -9,6 +9,7 @@ import { parseCsvComparaveis } from "@/lib/avaliacao/csv";
 import { gerarPdfAvaliacao } from "@/lib/avaliacao/pdf";
 import type { Imagem } from "@/lib/avaliacao/pdf-base";
 import { podeAcessarModulo, podeAprovar, podeConfigurar } from "@/lib/avaliacao/permissoes";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   CHECKLIST_VISTORIA,
   FINALIDADES,
@@ -1069,10 +1070,17 @@ export async function emitirVersao(formData: FormData) {
   }
 
   const aprovadoPorResponsavel = !!ctx.config.responsavel.usuario_id && ctx.linha.aprovado_por === ctx.config.responsavel.usuario_id;
-  // A assinatura só entra quando a própria avaliadora aprovou E é ela quem emite.
+  // PTAM: a assinatura só entra quando a própria avaliadora aprovou E é ela quem emite.
+  // Estudo comercial: qualquer pessoa da equipe emite, mas o documento sai sempre
+  // assinado pela responsável técnica configurada (assinatura lida pelo servidor).
   let assinatura: Imagem | null = null;
-  if (aprovadoPorResponsavel && ctx.papel.ehResponsavelTecnica) {
-    const { data } = await ctx.supabase.from("avaliacao_assinaturas").select("imagem").eq("usuario_id", ctx.sessao.userId).maybeSingle();
+  const assinaComoResponsavel = ptam ? aprovadoPorResponsavel : !!ctx.config.responsavel.usuario_id;
+  if (ptam ? aprovadoPorResponsavel && ctx.papel.ehResponsavelTecnica : assinaComoResponsavel) {
+    const { data } = await createAdminClient()
+      .from("avaliacao_assinaturas")
+      .select("imagem")
+      .eq("usuario_id", ctx.config.responsavel.usuario_id!)
+      .maybeSingle();
     const base64 = data?.imagem?.split(",")[1];
     if (base64) assinatura = { bytes: Uint8Array.from(Buffer.from(base64, "base64")), mime: "image/png" };
   }
@@ -1098,7 +1106,7 @@ export async function emitirVersao(formData: FormData) {
     nome: aprovador?.nome ?? "—",
     cargo: aprovador?.cargo ?? null,
     em: ctx.linha.aprovado_em ?? emitidoEm,
-    ehResponsavelTecnica: aprovadoPorResponsavel,
+    ehResponsavelTecnica: assinaComoResponsavel,
   };
   let pdf: Uint8Array;
   try {

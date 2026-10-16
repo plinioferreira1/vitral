@@ -338,7 +338,9 @@ describe("permissões", () => {
     expect(podeAprovar(amanda, "ptam")).toBe(true);
     expect(podeAprovar(gerente, "ptam")).toBe(false);
     expect(podeAprovar(gerente, "estudo_comercial")).toBe(true);
-    expect(podeAprovar(corretor, "estudo_comercial")).toBe(false);
+    expect(podeAprovar(corretor, "estudo_comercial")).toBe(true);
+    expect(podeAprovar(corretor, "ptam")).toBe(false);
+    expect(podeAprovar({ ...corretor, nivel: "social_media" }, "estudo_comercial")).toBe(false);
   });
 
   it("corretor só vê o que criou", () => {
