@@ -60,7 +60,7 @@ export default async function ChecklistsFinanciamentoPage() {
       <ContextoConfiguracao />
       <CabecalhoPagina titulo="Modelos de checklist de financiamento" descricao={<> Crie quantos checklists quiser (ex: Conformidade, Assinatura E-notariado). Cada um pode
           ter várias seções, e cada seção seus próprios itens. Aparece na aba Checklists de
-          Financiamentos.
+          Financiamentos e, para marcar, dentro de cada processo de financiamento.
          </>} />
 
       <form

@@ -4761,6 +4761,59 @@ export type Database = {
           },
         ]
       }
+      processo_checklist_marcas: {
+        Row: {
+          item_id: string
+          marcado_em: string
+          marcado_por: string | null
+          processo_id: string
+          tenant_id: string
+        }
+        Insert: {
+          item_id: string
+          marcado_em?: string
+          marcado_por?: string | null
+          processo_id: string
+          tenant_id: string
+        }
+        Update: {
+          item_id?: string
+          marcado_em?: string
+          marcado_por?: string | null
+          processo_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processo_checklist_marcas_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_grupo_itens"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processo_checklist_marcas_marcado_por_fkey"
+            columns: ["marcado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processo_checklist_marcas_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processo_checklist_marcas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processos: {
         Row: {
           banco_id: string | null

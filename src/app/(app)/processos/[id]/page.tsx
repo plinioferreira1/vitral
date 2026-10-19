@@ -41,6 +41,7 @@ import { BotaoEnviar } from "@/components/botao-enviar";
 import { ETAPAS_OPCIONAIS, ehEtapaIntermediaria, mesmaEtapa } from "@/lib/vendas/lembretes";
 import { ModalEdicaoProcesso } from "@/components/modal-edicao-processo";
 import { CertidoesProcesso } from "./certidoes";
+import { ChecklistProcesso } from "./checklist-processo";
 
 export default async function ProcessoDetalhePage({
   params,
@@ -165,6 +166,7 @@ export default async function ProcessoDetalhePage({
       <NavegacaoSecoes secoes={[
         { id: "resumo-processo", label: "Resumo" }, { id: "dados-processo", label: "Dados e responsáveis" },
         { id: "prazos-processo", label: "Prazos" }, { id: "etapas-processo", label: "Etapas e checklist" },
+        ...(ehFinanciamento ? [{ id: "checklist-processo", label: "Checklist de conformidade" }] : []),
         ...(!ehFinanciamento && p.categoria === "venda" ? [{ id: "certidoes-processo", label: "Certidões" }] : []),
         { id: "comissao-processo", label: "Comissão" },
         ...(!ehFinanciamento && p.categoria === "venda" ? [{ id: "atualizacoes-corretor", label: "Atualizações ao corretor" }] : []),
@@ -779,6 +781,8 @@ export default async function ProcessoDetalhePage({
           );
         })}
       </section>
+
+      {ehFinanciamento && <ChecklistProcesso processoId={p.id} />}
 
       {!ehFinanciamento && p.categoria === "venda" && <CertidoesProcesso processoId={p.id} aberto={abrirCertidoes} />}
 
