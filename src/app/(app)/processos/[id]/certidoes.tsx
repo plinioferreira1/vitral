@@ -27,7 +27,7 @@ function hojeSP() {
 
 type Pessoa = { nome: string; cpf_cnpj: string | null } | null;
 
-export async function CertidoesProcesso({ processoId }: { processoId: string }) {
+export async function CertidoesProcesso({ processoId, aberto = false }: { processoId: string; aberto?: boolean }) {
   const supabase = await createClient();
   const [{ data: processo }, { data: registros }] = await Promise.all([
     supabase.from("processos").select(
@@ -42,7 +42,7 @@ export async function CertidoesProcesso({ processoId }: { processoId: string }) 
   const atencao = PARTES.reduce((n, p) => n + resumos[p].vencida + resumos[p].vence_em_breve + resumos[p].positiva, 0);
 
   return (
-    <details id="certidoes-processo" className="scroll-mt-20 group rounded-xl border border-border/70 bg-surface shadow-sm">
+    <details id="certidoes-processo" open={aberto} className="scroll-mt-20 group rounded-xl border border-border/70 bg-surface shadow-sm">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-4 sm:p-5">
         <div className="min-w-0">
           <h2 className="flex items-center gap-2 text-sm font-semibold text-ink"><FileCheck2 className="h-4 w-4 text-brand" aria-hidden /> Certidões</h2>

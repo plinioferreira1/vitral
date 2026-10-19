@@ -54,3 +54,22 @@ describe("validação", () => {
     expect(documentoSoNumeros(null)).toBe("");
   });
 });
+
+describe("painel geral", () => {
+  it("põe primeiro as vendas que pedem atenção e conta pendências", async () => {
+    const { resumoProcessos } = await import("./catalogo");
+    const r = resumoProcessos(
+      [{ id: "a", titulo: "Apto A" }, { id: "b", titulo: "Casa B" }],
+      [
+        { processo_id: "b", parte: "vendedor", tipo: "cndt", valida_ate: "2026-10-01", resultado: "nada_consta" },
+        { processo_id: "b", parte: "comprador", tipo: "trt10", valida_ate: "2026-11-30", resultado: "nada_consta" },
+        { processo_id: "a", parte: "vendedor", tipo: "cndt", valida_ate: "2027-03-01", resultado: "nada_consta" },
+      ],
+      HOJE,
+    );
+    expect(r.map((x) => x.id)).toEqual(["b", "a"]);
+    expect(r[0]).toMatchObject({ atencao: 1, pendentes: 14, proximoVencimento: "2026-11-30" });
+    expect(r[1]).toMatchObject({ atencao: 0, pendentes: 15 });
+    expect(r[1].vendedor.emDia).toBe(1);
+  });
+});

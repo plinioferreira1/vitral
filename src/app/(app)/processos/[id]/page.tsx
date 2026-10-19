@@ -44,10 +44,13 @@ import { CertidoesProcesso } from "./certidoes";
 
 export default async function ProcessoDetalhePage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ certidoes?: string }>;
 }) {
   const { id } = await params;
+  const abrirCertidoes = (await searchParams).certidoes === "1";
   const supabase = await createClient();
 
   // 1ª rodada: tudo que só depende do id do processo, em paralelo
@@ -777,7 +780,7 @@ export default async function ProcessoDetalhePage({
         })}
       </section>
 
-      {!ehFinanciamento && p.categoria === "venda" && <CertidoesProcesso processoId={p.id} />}
+      {!ehFinanciamento && p.categoria === "venda" && <CertidoesProcesso processoId={p.id} aberto={abrirCertidoes} />}
 
       {/* Comissão */}
       <details id="comissao-processo" className="scroll-mt-20 group rounded-xl border border-border/70 bg-surface shadow-sm">

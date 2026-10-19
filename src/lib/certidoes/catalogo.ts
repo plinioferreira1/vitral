@@ -99,3 +99,38 @@ export function validarCertidao(e: { tipo: string; parte: string; emitida_em: st
 export function documentoSoNumeros(doc: string | null | undefined): string {
   return (doc ?? "").replace(/\D/g, "");
 }
+
+export type ResumoProcessoCertidoes = {
+  id: string;
+  titulo: string;
+  vendedor: ReturnType<typeof resumoParte>;
+  comprador: ReturnType<typeof resumoParte>;
+  /** vencidas + vencendo + positivas, somando as duas partes */
+  atencao: number;
+  pendentes: number;
+  proximoVencimento: string | null;
+};
+
+/** Painel geral: uma linha por venda, com quem pede atenção primeiro. */
+export function resumoProcessos(
+  processos: { id: string; titulo: string }[],
+  certidoes: { processo_id: string; parte: string; tipo: string; valida_ate: string; resultado: string }[],
+  hoje: string,
+): ResumoProcessoCertidoes[] {
+  const linhas = processos.map((p) => {
+    const doProcesso = certidoes.filter((c) => c.processo_id === p.id);
+    const vendedor = resumoParte(doProcesso.filter((c) => c.parte === "vendedor"), hoje);
+    const comprador = resumoParte(doProcesso.filter((c) => c.parte === "comprador"), hoje);
+    const futuras = doProcesso.map((c) => c.valida_ate).filter((d) => d >= hoje).sort();
+    return {
+      id: p.id,
+      titulo: p.titulo,
+      vendedor,
+      comprador,
+      atencao: [vendedor, comprador].reduce((n, r) => n + r.vencida + r.vence_em_breve + r.positiva, 0),
+      pendentes: vendedor.pendente + comprador.pendente,
+      proximoVencimento: futuras[0] ?? null,
+    };
+  });
+  return linhas.sort((a, b) => b.atencao - a.atencao || a.pendentes - b.pendentes || a.titulo.localeCompare(b.titulo, "pt-BR"));
+}
