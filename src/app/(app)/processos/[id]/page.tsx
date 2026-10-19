@@ -40,6 +40,7 @@ import { FormularioNativo } from "@/components/formulario-nativo";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { ETAPAS_OPCIONAIS, ehEtapaIntermediaria, mesmaEtapa } from "@/lib/vendas/lembretes";
 import { ModalEdicaoProcesso } from "@/components/modal-edicao-processo";
+import { CertidoesProcesso } from "./certidoes";
 
 export default async function ProcessoDetalhePage({
   params,
@@ -161,6 +162,7 @@ export default async function ProcessoDetalhePage({
       <NavegacaoSecoes secoes={[
         { id: "resumo-processo", label: "Resumo" }, { id: "dados-processo", label: "Dados e responsáveis" },
         { id: "prazos-processo", label: "Prazos" }, { id: "etapas-processo", label: "Etapas e checklist" },
+        ...(!ehFinanciamento && p.categoria === "venda" ? [{ id: "certidoes-processo", label: "Certidões" }] : []),
         { id: "comissao-processo", label: "Comissão" },
         ...(!ehFinanciamento && p.categoria === "venda" ? [{ id: "atualizacoes-corretor", label: "Atualizações ao corretor" }] : []),
         { id: "comunicacao-processo", label: "Comentários internos" },
@@ -774,6 +776,8 @@ export default async function ProcessoDetalhePage({
           );
         })}
       </section>
+
+      {!ehFinanciamento && p.categoria === "venda" && <CertidoesProcesso processoId={p.id} />}
 
       {/* Comissão */}
       <details id="comissao-processo" className="scroll-mt-20 group rounded-xl border border-border/70 bg-surface shadow-sm">

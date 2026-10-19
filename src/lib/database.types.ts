@@ -4678,6 +4678,89 @@ export type Database = {
           },
         ]
       }
+      processo_certidoes: {
+        Row: {
+          caminho: string
+          cliente_id: string | null
+          criado_em: string
+          criado_por: string | null
+          emitida_em: string
+          id: string
+          mime: string
+          nome_arquivo: string
+          parte: string
+          processo_id: string
+          resultado: string
+          tamanho: number
+          tenant_id: string
+          tipo: string
+          valida_ate: string
+        }
+        Insert: {
+          caminho: string
+          cliente_id?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          emitida_em: string
+          id?: string
+          mime: string
+          nome_arquivo: string
+          parte: string
+          processo_id: string
+          resultado?: string
+          tamanho: number
+          tenant_id: string
+          tipo: string
+          valida_ate: string
+        }
+        Update: {
+          caminho?: string
+          cliente_id?: string | null
+          criado_em?: string
+          criado_por?: string | null
+          emitida_em?: string
+          id?: string
+          mime?: string
+          nome_arquivo?: string
+          parte?: string
+          processo_id?: string
+          resultado?: string
+          tamanho?: number
+          tenant_id?: string
+          tipo?: string
+          valida_ate?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processo_certidoes_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processo_certidoes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processo_certidoes_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processo_certidoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       processos: {
         Row: {
           banco_id: string | null
@@ -6183,6 +6266,7 @@ export type Database = {
         Args: { p_modalidade: string }
         Returns: boolean
       }
+      avaliacao_pode_configurar: { Args: never; Returns: boolean }
       avaliacao_pode_criar: { Args: never; Returns: boolean }
       avaliacao_proximo_codigo: { Args: never; Returns: string }
       bootstrap_tenant: { Args: { p_nome_empresa: string }; Returns: string }
