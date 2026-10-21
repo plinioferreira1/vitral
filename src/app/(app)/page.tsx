@@ -1,4 +1,7 @@
 import { obterPrioridadesFinanceiras } from "@/lib/prioridades-inicio";
+import { Suspense } from "react";
+import { ResumoNegociacoes } from "./vendas/negociacoes/resumo";
+import { podeEditarNegociacoes } from "@/lib/negociacoes/regras";
 import { ResumoMinhasVendas } from "./minhas-vendas/resumo";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -804,6 +807,9 @@ export default async function DashboardPage() {
 
       {ehOperacional && (
         <>
+          {temVenda && usuario.tenant_id && <Suspense fallback={<Painel className="p-5"><p className="text-sm text-ink-muted">Carregando negociações…</p></Painel>}>
+            <ResumoNegociacoes tenantId={usuario.tenant_id} podeEditar={podeEditarNegociacoes(usuario.nivel_acesso, temVenda)} />
+          </Suspense>}
           {quadrosKanban.length > 0 && (
             <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
               <Painel className="min-w-0 self-start p-5">

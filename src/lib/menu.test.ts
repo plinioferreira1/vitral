@@ -66,6 +66,7 @@ describe("destino ativo", () => {
   const menu = montarMenu(gestor);
   it.each([
     ["/vendas", "", "/vendas?aba=resumo"],
+    ["/vendas/negociacoes/123", "", "/vendas/negociacoes"],
     ["/financiamentos", "", "/financiamentos?aba=resumo"],
     ["/locacao", "", "/locacao?aba=resumo"],
     ["/financiamentos", "aba=custas", "/financiamentos?aba=custas"],

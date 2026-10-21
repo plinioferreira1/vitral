@@ -6249,6 +6249,166 @@ export type Database = {
           },
         ]
       }
+      vendas_negociacao_eventos: {
+        Row: {
+          acao: string
+          criado_em: string
+          dados: Json
+          id: string
+          negociacao_id: string
+          tenant_id: string
+          usuario_id: string
+        }
+        Insert: {
+          acao: string
+          criado_em?: string
+          dados: Json
+          id?: string
+          negociacao_id: string
+          tenant_id: string
+          usuario_id: string
+        }
+        Update: {
+          acao?: string
+          criado_em?: string
+          dados?: Json
+          id?: string
+          negociacao_id?: string
+          tenant_id?: string
+          usuario_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_negociacao_eventos_negociacao_id_fkey"
+            columns: ["negociacao_id"]
+            isOneToOne: false
+            referencedRelation: "vendas_negociacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_negociacao_eventos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_negociacao_eventos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendas_negociacoes: {
+        Row: {
+          atualizado_em: string
+          cliente_nome: string
+          corretor_id: string | null
+          criado_em: string
+          criado_por: string
+          data_abertura: string
+          data_acompanhamento: string | null
+          encerrada_em: string | null
+          id: string
+          imovel_endereco: string
+          motivo_perda: string | null
+          observacoes: string
+          previsao_fechamento: string | null
+          processo_id: string | null
+          proxima_acao: string
+          responsavel_id: string
+          situacao: Database["public"]["Enums"]["situacao_negociacao"]
+          telefone: string
+          tenant_id: string
+          valor: number
+          vendedor_nome: string
+        }
+        Insert: {
+          atualizado_em?: string
+          cliente_nome: string
+          corretor_id?: string | null
+          criado_em?: string
+          criado_por: string
+          data_abertura?: string
+          data_acompanhamento?: string | null
+          encerrada_em?: string | null
+          id?: string
+          imovel_endereco: string
+          motivo_perda?: string | null
+          observacoes?: string
+          previsao_fechamento?: string | null
+          processo_id?: string | null
+          proxima_acao?: string
+          responsavel_id: string
+          situacao?: Database["public"]["Enums"]["situacao_negociacao"]
+          telefone?: string
+          tenant_id: string
+          valor?: number
+          vendedor_nome?: string
+        }
+        Update: {
+          atualizado_em?: string
+          cliente_nome?: string
+          corretor_id?: string | null
+          criado_em?: string
+          criado_por?: string
+          data_abertura?: string
+          data_acompanhamento?: string | null
+          encerrada_em?: string | null
+          id?: string
+          imovel_endereco?: string
+          motivo_perda?: string | null
+          observacoes?: string
+          previsao_fechamento?: string | null
+          processo_id?: string | null
+          proxima_acao?: string
+          responsavel_id?: string
+          situacao?: Database["public"]["Enums"]["situacao_negociacao"]
+          telefone?: string
+          tenant_id?: string
+          valor?: number
+          vendedor_nome?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_negociacoes_corretor_id_fkey"
+            columns: ["corretor_id"]
+            isOneToOne: false
+            referencedRelation: "corretores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_negociacoes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_negociacoes_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: true
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_negociacoes_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vendas_negociacoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -6448,6 +6608,28 @@ export type Database = {
         Args: { p_categoria: Database["public"]["Enums"]["categoria_processo"] }
         Returns: boolean
       }
+      vendas_negociacao_encerrar: {
+        Args: {
+          p_id: string
+          p_modelo_id?: string
+          p_motivo?: string
+          p_situacao: Database["public"]["Enums"]["situacao_negociacao"]
+          p_tenant_id: string
+          p_usuario_id: string
+          p_versao?: string
+        }
+        Returns: string
+      }
+      vendas_negociacao_salvar: {
+        Args: {
+          p_dados: Json
+          p_id: string
+          p_tenant_id: string
+          p_usuario_id: string
+          p_versao?: string
+        }
+        Returns: string
+      }
     }
     Enums: {
       categoria_processo: "venda" | "financiamento" | "locacao" | "marketing"
@@ -6480,6 +6662,7 @@ export type Database = {
         | "correspondente"
         | "financeiro"
       responsavel_pagamento_locacao: "locador" | "locatario" | "imobiliaria"
+      situacao_negociacao: "em_andamento" | "convertida" | "perdida"
       status_conta_locacao: "pago" | "pendente" | "nao_aplicavel"
       tipo_conta_locacao: "iptu" | "condominio" | "agua" | "luz" | "gas"
       tipo_etapa_padrao: "sequencial" | "especial"
@@ -6650,6 +6833,7 @@ export const Constants = {
         "financeiro",
       ],
       responsavel_pagamento_locacao: ["locador", "locatario", "imobiliaria"],
+      situacao_negociacao: ["em_andamento", "convertida", "perdida"],
       status_conta_locacao: ["pago", "pendente", "nao_aplicavel"],
       tipo_conta_locacao: ["iptu", "condominio", "agua", "luz", "gas"],
       tipo_etapa_padrao: ["sequencial", "especial"],

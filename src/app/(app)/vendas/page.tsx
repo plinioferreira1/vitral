@@ -1,3 +1,4 @@
+import { NavegacaoContexto } from "@/components/navegacao-contexto";
 import { PainelResumoProcessos } from "@/components/painel-resumo-processos";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
@@ -163,6 +164,7 @@ export default async function VendasPage({
           <Plus size={17} aria-hidden="true" /> Novo processo
         </Link>
       </div>
+      <NavegacaoContexto nome="Vendas" links={[{href:"/vendas",label:"Processos de venda"},{href:"/vendas/negociacoes",label:"Negociações"}]} />
       {aba === "resumo" ? (
         <div className="space-y-6">
           <PainelResumoProcessos categoria="venda" ativos={emAndamento.length} encerrados={concluidos.length} atrasados={processosAtrasados.size} proximos={new Set([...processosVencemHoje, ...processosVencemEmBreve]).size} hoje={processosVencemHoje.size} volume={volumeFormatado} prioridades={prioridades} />
