@@ -42,6 +42,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       children: [
         { href: "/vendas?aba=resumo", label: "Visão geral" },
         { href: "/vendas?aba=andamento", label: "Processos de venda" },
+        { href: "/vendas/negociacoes", label: "Negociações" },
         { href: "/certidoes", label: "Certidões" },
         ...(verTermosEntrega ? [{ href: "/vendas/termos-entrega", label: "Termos de entrega de chaves" }] : []),
       ],
