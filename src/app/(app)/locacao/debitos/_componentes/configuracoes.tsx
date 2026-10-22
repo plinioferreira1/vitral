@@ -70,8 +70,8 @@ export function Configuracoes({ config, eventos, perms }: { config: ConfigDebito
                 <input name="dias_alerta_sem_resposta" type="number" min={1} max={60} defaultValue={config.dias_alerta_sem_resposta} className={INPUT_CLASS} />
               </label>
               <label className="block">
-                <span className={ROTULO}>Responder para (e-mail)</span>
-                <input name="email_responder_para" type="email" defaultValue={config.email_responder_para ?? ""} placeholder="locacao@…" className={INPUT_CLASS} />
+                <span className={ROTULO}>Remetente e endereço para respostas</span>
+                <input type="email" readOnly value="locacao@sacraimoveis.com.br" className={INPUT_CLASS} />
               </label>
               <label className="block sm:col-span-3">
                 <span className={ROTULO}>Enviar cópia para (separe por vírgula)</span>
