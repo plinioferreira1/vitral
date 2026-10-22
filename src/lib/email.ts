@@ -14,6 +14,7 @@ export async function enviarEmail({
   responderPara,
   copia,
   nomeRemetente,
+  remetenteEmail,
 }: {
   destinatarios: string[];
   assunto: string;
@@ -25,6 +26,8 @@ export async function enviarEmail({
   copia?: string[];
   /** nome exibido no remetente; padrão "Vitral — Sacra Netimóveis" */
   nomeRemetente?: string;
+  /** endereço exibido no campo From; mantém o usuário SMTP como fallback */
+  remetenteEmail?: string;
 }) {
   const usuario = process.env.ZOHO_EMAIL_USER;
   const senha = process.env.ZOHO_EMAIL_APP_PASSWORD;
@@ -51,7 +54,7 @@ export async function enviarEmail({
   });
 
   await transportador.sendMail({
-    from: `${nomeRemetente ?? "Vitral — Sacra Netimóveis"} <${usuario}>`,
+    from: `${nomeRemetente ?? "Vitral — Sacra Netimóveis"} <${remetenteEmail || usuario}>`,
     to: destinatarios.join(", "),
     cc: copia && copia.length > 0 ? copia.join(", ") : undefined,
     replyTo: responderPara || undefined,
