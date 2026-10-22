@@ -135,6 +135,7 @@ export async function gerarCompetencia(
 // ---------------------------------------------------------------
 
 const MAX_TENTATIVAS_AUTOMATICAS = 3;
+const EMAIL_LOCACAO = "locacao@sacraimoveis.com.br";
 
 type VerificacaoComContrato = {
   id: string;
@@ -244,7 +245,7 @@ export async function enviarSolicitacoes(
   resultado.semEnvio = semEnvio.map((s) => ({ imovel: s.unidade.imovel, motivo: s.motivo }));
 
   const copia = listaDeEmails(config.email_copia);
-  const responderPara = emailValido(config.email_responder_para) ? config.email_responder_para!.trim() : null;
+
 
   for (const grupo of grupos) {
     const { assunto, texto } = montarMensagem(config.email_modelo, config.email_assunto, {
@@ -261,6 +262,8 @@ export async function enviarSolicitacoes(
           html: textoParaHtml(`(Teste do Vitral — esta mensagem iria para ${grupo.destinatario}.)\n\n${texto}`),
           texto: `(Teste do Vitral — esta mensagem iria para ${grupo.destinatario}.)\n\n${texto}`,
           nomeRemetente: "Sacra Imóveis",
+          remetenteEmail: EMAIL_LOCACAO,
+          responderPara: EMAIL_LOCACAO,
         });
         resultado.enviadas.push({ administradora: grupo.administradoraNome, destinatario: opcoes.destinatarioTeste, unidades: grupo.unidades.length });
       } catch (erro) {
@@ -290,7 +293,8 @@ export async function enviarSolicitacoes(
       await enviarEmail({
         destinatarios: [grupo.destinatario],
         copia,
-        responderPara,
+        responderPara: EMAIL_LOCACAO,
+        remetenteEmail: EMAIL_LOCACAO,
         assunto,
         html: textoParaHtml(texto),
         texto,
