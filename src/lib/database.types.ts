@@ -3486,6 +3486,7 @@ export type Database = {
           criado_em: string
           criado_por: string | null
           data: string
+          extrato_linha_id: string | null
           forma_pagamento: string | null
           gerar_recibo: boolean
           id: string
@@ -3501,6 +3502,7 @@ export type Database = {
           criado_em?: string
           criado_por?: string | null
           data: string
+          extrato_linha_id?: string | null
           forma_pagamento?: string | null
           gerar_recibo?: boolean
           id?: string
@@ -3516,6 +3518,7 @@ export type Database = {
           criado_em?: string
           criado_por?: string | null
           data?: string
+          extrato_linha_id?: string | null
           forma_pagamento?: string | null
           gerar_recibo?: boolean
           id?: string
@@ -3539,6 +3542,13 @@ export type Database = {
             columns: ["criado_por"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_baixas_extrato_linha_id_fkey"
+            columns: ["extrato_linha_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_extrato_linhas"
             referencedColumns: ["id"]
           },
           {
@@ -3794,6 +3804,163 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_extrato_importacoes: {
+        Row: {
+          arquivo_nome: string | null
+          conta_bancaria_id: string
+          criado_em: string
+          criado_por: string | null
+          id: string
+          linhas_novas: number
+          linhas_repetidas: number
+          origem: string
+          periodo_fim: string | null
+          periodo_inicio: string | null
+          saldo_data: string | null
+          saldo_final: number | null
+          tenant_id: string
+        }
+        Insert: {
+          arquivo_nome?: string | null
+          conta_bancaria_id: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          linhas_novas?: number
+          linhas_repetidas?: number
+          origem: string
+          periodo_fim?: string | null
+          periodo_inicio?: string | null
+          saldo_data?: string | null
+          saldo_final?: number | null
+          tenant_id: string
+        }
+        Update: {
+          arquivo_nome?: string | null
+          conta_bancaria_id?: string
+          criado_em?: string
+          criado_por?: string | null
+          id?: string
+          linhas_novas?: number
+          linhas_repetidas?: number
+          origem?: string
+          periodo_fim?: string | null
+          periodo_inicio?: string | null
+          saldo_data?: string | null
+          saldo_final?: number | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_extrato_importacoes_conta_bancaria_id_fkey"
+            columns: ["conta_bancaria_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_extrato_importacoes_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_extrato_importacoes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financeiro_extrato_linhas: {
+        Row: {
+          chave: string
+          conta_bancaria_id: string
+          criado_em: string
+          data: string
+          descricao: string
+          id: string
+          importacao_id: string | null
+          lancamento_criado_id: string | null
+          nota: string | null
+          status: string
+          tenant_id: string
+          tratado_em: string | null
+          tratado_por: string | null
+          valor: number
+        }
+        Insert: {
+          chave: string
+          conta_bancaria_id: string
+          criado_em?: string
+          data: string
+          descricao?: string
+          id?: string
+          importacao_id?: string | null
+          lancamento_criado_id?: string | null
+          nota?: string | null
+          status?: string
+          tenant_id: string
+          tratado_em?: string | null
+          tratado_por?: string | null
+          valor: number
+        }
+        Update: {
+          chave?: string
+          conta_bancaria_id?: string
+          criado_em?: string
+          data?: string
+          descricao?: string
+          id?: string
+          importacao_id?: string | null
+          lancamento_criado_id?: string | null
+          nota?: string | null
+          status?: string
+          tenant_id?: string
+          tratado_em?: string | null
+          tratado_por?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_extrato_linhas_conta_bancaria_id_fkey"
+            columns: ["conta_bancaria_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_contas_bancarias"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_extrato_linhas_importacao_id_fkey"
+            columns: ["importacao_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_extrato_importacoes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_extrato_linhas_lancamento_criado_id_fkey"
+            columns: ["lancamento_criado_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_lancamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_extrato_linhas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_extrato_linhas_tratado_por_fkey"
+            columns: ["tratado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
             referencedColumns: ["id"]
           },
         ]
@@ -4208,6 +4375,7 @@ export type Database = {
           criado_por: string | null
           data: string
           descricao: string | null
+          extrato_linha_id: string | null
           id: string
           tenant_id: string
           valor: number
@@ -4219,6 +4387,7 @@ export type Database = {
           criado_por?: string | null
           data: string
           descricao?: string | null
+          extrato_linha_id?: string | null
           id?: string
           tenant_id: string
           valor: number
@@ -4230,6 +4399,7 @@ export type Database = {
           criado_por?: string | null
           data?: string
           descricao?: string | null
+          extrato_linha_id?: string | null
           id?: string
           tenant_id?: string
           valor?: number
@@ -4254,6 +4424,13 @@ export type Database = {
             columns: ["criado_por"]
             isOneToOne: false
             referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_transferencias_extrato_linha_id_fkey"
+            columns: ["extrato_linha_id"]
+            isOneToOne: false
+            referencedRelation: "financeiro_extrato_linhas"
             referencedColumns: ["id"]
           },
           {
@@ -4971,6 +5148,105 @@ export type Database = {
             columns: ["vendedor_id"]
             isOneToOne: false
             referencedRelation: "clientes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      radar_clientes: {
+        Row: {
+          atualizado_em: string
+          criado_em: string
+          email: string
+          id: string
+          interesse: string
+          nome: string
+          proxima_acao: string
+          proximo_contato: string
+          responsavel_id: string
+          situacao: Database["public"]["Enums"]["radar_situacao"]
+          telefone: string
+          tenant_id: string
+        }
+        Insert: {
+          atualizado_em?: string
+          criado_em?: string
+          email?: string
+          id?: string
+          interesse?: string
+          nome: string
+          proxima_acao: string
+          proximo_contato: string
+          responsavel_id: string
+          situacao?: Database["public"]["Enums"]["radar_situacao"]
+          telefone?: string
+          tenant_id: string
+        }
+        Update: {
+          atualizado_em?: string
+          criado_em?: string
+          email?: string
+          id?: string
+          interesse?: string
+          nome?: string
+          proxima_acao?: string
+          proximo_contato?: string
+          responsavel_id?: string
+          situacao?: Database["public"]["Enums"]["radar_situacao"]
+          telefone?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radar_clientes_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "radar_clientes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      radar_contatos: {
+        Row: {
+          autor_id: string
+          cliente_id: string
+          criado_em: string
+          id: string
+          resumo: string
+        }
+        Insert: {
+          autor_id?: string
+          cliente_id: string
+          criado_em?: string
+          id?: string
+          resumo: string
+        }
+        Update: {
+          autor_id?: string
+          cliente_id?: string
+          criado_em?: string
+          id?: string
+          resumo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "radar_contatos_autor_id_fkey"
+            columns: ["autor_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "radar_contatos_cliente_id_fkey"
+            columns: ["cliente_id"]
+            isOneToOne: false
+            referencedRelation: "radar_clientes"
             referencedColumns: ["id"]
           },
         ]
@@ -6528,6 +6804,16 @@ export type Database = {
         Returns: boolean
       }
       minhas_vendas: { Args: { p_id?: string }; Returns: Json }
+      radar_registrar_contato: {
+        Args: {
+          p_acao: string
+          p_cliente: string
+          p_data: string
+          p_resumo: string
+          p_versao: string
+        }
+        Returns: undefined
+      }
       seed_etapas_padrao: { Args: { p_tenant_id: string }; Returns: undefined }
       seed_modelos_padrao: { Args: { p_tenant_id: string }; Returns: undefined }
       termo_entrega_assinatura_buscar: {
@@ -6661,6 +6947,7 @@ export type Database = {
         | "corretor"
         | "correspondente"
         | "financeiro"
+      radar_situacao: "ativo" | "pausado" | "convertido" | "arquivado"
       responsavel_pagamento_locacao: "locador" | "locatario" | "imobiliaria"
       situacao_negociacao: "em_andamento" | "convertida" | "perdida"
       status_conta_locacao: "pago" | "pendente" | "nao_aplicavel"
@@ -6832,6 +7119,7 @@ export const Constants = {
         "correspondente",
         "financeiro",
       ],
+      radar_situacao: ["ativo", "pausado", "convertido", "arquivado"],
       responsavel_pagamento_locacao: ["locador", "locatario", "imobiliaria"],
       situacao_negociacao: ["em_andamento", "convertida", "perdida"],
       status_conta_locacao: ["pago", "pendente", "nao_aplicavel"],

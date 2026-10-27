@@ -8,6 +8,7 @@ const links = [
   { href: "/financeiro", label: "Visão geral" },
   { href: "/financeiro/contas-a-pagar", label: "A pagar" },
   { href: "/financeiro/contas-a-receber", label: "A receber" },
+  { href: "/financeiro/extratos", label: "Extratos" },
   { href: "/financeiro/transferencias", label: "Transferências" },
   { href: "/financeiro/cartao-corporativo", label: "Cartões e faturas" },
   { href: "/financeiro/contas-bancarias", label: "Contas bancárias" },

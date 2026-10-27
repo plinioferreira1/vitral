@@ -76,6 +76,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       { href: "/financeiro", label: "Visão geral" },
       { href: "/financeiro/contas-a-pagar", label: "Contas a pagar" },
       { href: "/financeiro/contas-a-receber", label: "Contas a receber" },
+      { href: "/financeiro/extratos", label: "Extratos e conciliação" },
       { href: "/financeiro/transferencias", label: "Transferências" },
       { href: "/financeiro/cartao-corporativo", label: "Cartões e faturas" },
       {
