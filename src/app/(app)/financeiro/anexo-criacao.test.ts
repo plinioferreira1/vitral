@@ -17,7 +17,7 @@ import { criarLancamento } from "./lancamentos-actions";
 const arquivo = new File(["%PDF-1.7"], "boleto.pdf", { type: "application/pdf" });
 function formulario(recorrente = false) {
   const f = new FormData();
-  f.set("tipo", "despesa"); f.set("descricao", "Boleto teste"); f.set("valor", "100,00"); f.set("vencimento", "2026-10-07");
+  f.set("tipo", "despesa"); f.set("descricao", "Boleto teste"); f.set("valor", "100,00"); f.set("vencimento", "2026-10-07"); f.set("unidade_id", "u1");
   if (recorrente) { f.set("recorrente", "on"); f.set("numero_ocorrencias", "3"); f.set("frequencia", "mensal"); }
   return f;
 }

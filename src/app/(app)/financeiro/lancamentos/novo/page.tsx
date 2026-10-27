@@ -23,6 +23,7 @@ type LancamentoClone = {
   pessoa_id: string | null;
   categoria_id: string | null;
   centro_custo_id: string | null;
+  unidade_id: string | null;
   conta_bancaria_id: string | null;
   forma_pagamento: string | null;
   numero_documento: string | null;
@@ -41,7 +42,7 @@ export default async function NovoLancamentoFinanceiroPage({
     ? await supabase
         .from("financeiro_lancamentos")
         .select(
-          "tipo, descricao, valor, vencimento, competencia, pessoa_id, categoria_id, centro_custo_id, conta_bancaria_id, forma_pagamento, numero_documento, observacoes"
+          "tipo, descricao, valor, vencimento, competencia, pessoa_id, categoria_id, centro_custo_id, unidade_id, conta_bancaria_id, forma_pagamento, numero_documento, observacoes"
         )
         .eq("id", clonar)
         .single()
@@ -49,11 +50,12 @@ export default async function NovoLancamentoFinanceiroPage({
   const clone = cloneRaw as LancamentoClone | null;
   const tipo = clone ? clone.tipo : tipoParam === "receita" ? "receita" : "despesa";
 
-  const [{ data: pessoas }, { data: categorias }, { data: centros }, { data: contas }] = await Promise.all([
+  const [{ data: pessoas }, { data: categorias }, { data: centros }, { data: contas }, { data: unidades }] = await Promise.all([
     supabase.from("financeiro_pessoas").select("id, nome").order("nome"),
     supabase.from("financeiro_categorias").select("id, nome").eq("tipo", tipo).order("nome"),
     supabase.from("financeiro_centros_custo").select("id, nome").order("nome"),
     supabase.from("financeiro_contas_bancarias").select("id, nome").eq("ativa", true).order("nome"),
+    supabase.from("financeiro_unidades").select("id, nome").order("nome"),
   ]);
 
   const titulo = clone
@@ -166,7 +168,14 @@ export default async function NovoLancamentoFinanceiroPage({
           </details>
         )}
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1.4fr_1fr]">
+        <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.4fr_1.4fr_1fr]">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Empresa *</label>
+            <select name="unidade_id" required defaultValue={clone?.unidade_id ?? ""} className={campoClasse}>
+              <option value="" disabled>Escolha a empresa</option>
+              {(unidades ?? []).map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+            </select>
+          </div>
           <BuscaOpcaoFinanceira name="categoria_id" label="Categoria" options={categorias ?? []} initialId={clone?.categoria_id ?? ""} />
           <BuscaOpcaoFinanceira name="centro_custo_id" label="Centro de resultado" options={centros ?? []} initialId={clone?.centro_custo_id ?? ""} />
           <div>

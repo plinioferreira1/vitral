@@ -65,13 +65,14 @@ export default async function EditarLancamentoFinanceiroPage({
   if (!lancamentoRaw) notFound();
   const lancamento = lancamentoRaw as Lancamento;
 
-  const [{ data: pessoas }, { data: categorias }, { data: centros }, { data: contas }, { data: baixas }] =
+  const [{ data: pessoas }, { data: categorias }, { data: centros }, { data: contas }, { data: baixas }, { data: unidades }] =
     await Promise.all([
       supabase.from("financeiro_pessoas").select("id, nome").order("nome"),
       supabase.from("financeiro_categorias").select("id, nome").eq("tipo", lancamento.tipo).order("nome"),
       supabase.from("financeiro_centros_custo").select("id, nome").order("nome"),
       supabase.from("financeiro_contas_bancarias").select("id, nome").eq("ativa", true).order("nome"),
       supabase.from("financeiro_baixas").select("valor").eq("lancamento_id", id),
+      supabase.from("financeiro_unidades").select("id, nome").order("nome"),
     ]);
 
   const { data: ocorrenciasRaw } = lancamento.recorrencia_id
@@ -165,7 +166,14 @@ export default async function EditarLancamentoFinanceiroPage({
           </div>
         </div>
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1.4fr_1.4fr_1fr_150px]">
+        <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.4fr_1.4fr_1fr_150px]">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-ink-muted">Empresa *</label>
+            <select name="unidade_id" required defaultValue={lancamento.unidade_id ?? ""} className={campoClasse}>
+              <option value="" disabled>Escolha a empresa</option>
+              {(unidades ?? []).map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
+            </select>
+          </div>
           <BuscaOpcaoFinanceira
             name="categoria_id"
             label="Categoria"

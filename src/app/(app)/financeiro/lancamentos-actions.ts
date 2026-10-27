@@ -6,6 +6,7 @@ import { avisar, checar } from "@/lib/aviso";
 import type { TablesInsert } from "@/lib/database.types";
 import { formatarCpfCnpj, formatarTelefone } from "@/lib/mascaras";
 import { moedaParaNumero } from "@/lib/moeda";
+import { baixaCabeNoSaldo, saldoEmAberto } from "@/lib/financeiro/baixa";
 import { hojeISO } from "@/lib/data-br";
 import { proximoDiaUtilFinanceiro } from "@/lib/calendario-financeiro";
 import { escopoExclusaoValido, idsParaExcluir, type EscopoExclusao } from "@/lib/exclusao-lancamentos";
@@ -50,6 +51,10 @@ export async function criarLancamento(formData: FormData) {
   let idAnexo: string | null = null;
 
   const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
+  if (!campo("unidade_id")) {
+    await avisar("erro", "Escolha a empresa do lançamento (Sacra Netimóveis ou Sacra Cred).");
+    return;
+  }
   let pessoaId = campo("pessoa_id");
   let criouPessoaInline = false;
 
@@ -275,6 +280,26 @@ export async function registrarBaixa(formData: FormData) {
   if (!lancamentoId || !valor || !data) return;
   const gerarRecibo = formData.get("gerar_recibo") === "on";
 
+  const [{ data: alvo }, { data: baixasAnteriores }] = await Promise.all([
+    supabase.from("financeiro_lancamentos").select("valor, status").eq("id", lancamentoId).eq("tenant_id", tenantId).maybeSingle(),
+    supabase.from("financeiro_baixas").select("valor").eq("lancamento_id", lancamentoId),
+  ]);
+  if (!alvo) {
+    await avisar("erro", "Lançamento não encontrado.");
+    return;
+  }
+  if (alvo.status === "cancelado") {
+    await avisar("erro", "Este lançamento está cancelado: reative antes de registrar pagamento.");
+    return;
+  }
+  const saldo = saldoEmAberto(Number(alvo.valor), baixasAnteriores ?? []);
+  if (!baixaCabeNoSaldo(valor, saldo)) {
+    await avisar("erro", saldo > 0
+      ? `O valor passa do saldo em aberto (${saldo.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}). Nada foi registrado.`
+      : "Este lançamento já está quitado. Nada foi registrado.");
+    return;
+  }
+
   const dadosBaixa: TablesInsert<"financeiro_baixas"> = {
     tenant_id: tenantId,
     lancamento_id: lancamentoId,
@@ -300,7 +325,9 @@ export async function registrarBaixa(formData: FormData) {
 
   if (erroBaixa) {
     console.error("Falha ao salvar baixa:", erroBaixa);
-    await avisar("erro", "Não foi possível salvar a baixa. Confira os dados e tente de novo.");
+    await avisar("erro", erroBaixa.message?.includes("saldo em aberto") || erroBaixa.message?.includes("cancelado")
+      ? erroBaixa.message
+      : "Não foi possível salvar a baixa. Confira os dados e tente de novo.");
     return;
   }
 
@@ -466,6 +493,10 @@ export async function editarLancamento(formData: FormData) {
 
   const campo = (nome: string) => String(formData.get(nome) ?? "").trim() || null;
   const escopo = String(formData.get("escopo") ?? "um");
+  if (!campo("unidade_id")) {
+    await avisar("erro", "Escolha a empresa do lançamento (Sacra Netimóveis ou Sacra Cred).");
+    return;
+  }
 
   const dadosCadastrais = {
     descricao,
