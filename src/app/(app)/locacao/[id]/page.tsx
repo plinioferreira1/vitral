@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { NavegacaoSecoes } from "@/components/navegacao-secoes";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -191,6 +192,11 @@ export default async function ContratoLocacaoPage({
             >
               {c.ativo ? "Ativo" : `Encerrado${c.data_encerramento ? " em " + new Date(c.data_encerramento + "T00:00:00").toLocaleDateString("pt-BR") : ""}`}
             </span>
+            {c.ativo && (
+              <Link href={`/locacao/multa-juros?contrato=${c.id}`} className="inline-flex min-h-9 items-center rounded-lg border border-border px-3 text-xs font-medium text-brand hover:bg-background">
+                Multa e juros por atraso
+              </Link>
+            )}
           </div>
         } />
 

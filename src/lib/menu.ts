@@ -64,6 +64,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
         { href: "/locacao?aba=inadimplencias", label: "Contas da locação" },
         ...(verDebitos ? [{ href: "/locacao/debitos", label: "Controle de débitos" }] : []),
         { href: "/locacao/ficha-cadastral", label: "Fichas cadastrais" },
+        { href: "/locacao/multa-juros", label: "Multa e juros por atraso" },
         { href: "/locacao?aba=multa", label: "Cálculo de multa rescisória" },
       ],
     });

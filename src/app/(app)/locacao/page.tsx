@@ -172,9 +172,14 @@ export default async function LocacaoPage({
         )}
       </div>
 
-      <Link href="/locacao?aba=multa" className="inline-flex text-sm font-medium text-brand hover:underline">
-        Cálculo de multa rescisória
-      </Link>
+      <div className="flex flex-wrap gap-x-6 gap-y-2">
+        <Link href="/locacao/multa-juros" className="inline-flex text-sm font-medium text-brand hover:underline">
+          Multa e juros por atraso
+        </Link>
+        <Link href="/locacao?aba=multa" className="inline-flex text-sm font-medium text-brand hover:underline">
+          Cálculo de multa rescisória
+        </Link>
+      </div>
 
       {aba === "contratos" ? (
         <div className="space-y-6">
