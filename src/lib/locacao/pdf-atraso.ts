@@ -240,7 +240,7 @@ export async function gerarPdfMemoriaAtraso(m: MemoriaAtraso, id: IdentificacaoA
   const paginas = f.doc.getPages();
   paginas.forEach((p, i) => {
     const s = f.t(`Página ${i + 1} de ${paginas.length}`);
-    p.drawText(s, { x: MX + LARGURA - f.normal.widthOfTextAtSize(s, 7.5), y: BASE - 22, size: 7.5, font: f.normal, color: COR.claro });
+    p.drawText(s, { x: MX + LARGURA - f.normal.widthOfTextAtSize(s, 7.5), y: BASE - 12, size: 7.5, font: f.normal, color: COR.claro });
   });
   return f.doc.save();
 }
