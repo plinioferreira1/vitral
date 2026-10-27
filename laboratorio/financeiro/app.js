@@ -374,8 +374,8 @@ function cartoes() {
       <div class="painel-cab"><div><h2>${esc(cartao.nome)} · ${F.nomeMes(f.competencia)}</h2><p>Vence em ${F.dataBR(f.vencimento)} · ${compras.length} compras · ${esc(empresaCurta(cartao.empresa))}</p></div>
         <div style="display:flex;gap:10px;align-items:center"><span class="num" style="font:500 24px var(--display)">${M(total)}</span>${f.status === "aberta" ? `<span class="pill alerta">Aberta</span>` : `<span class="pill ok">Fechada</span>`}</div></div>
       <div class="painel-corpo"><div class="aviso neutro">As compras já contam como despesa, cada uma na sua categoria. Ao fechar, nasce uma única conta a pagar da fatura, que só quita o cartão e não soma de novo no resultado.</div></div>
-      <div class="tabela-wrap"><table><thead><tr><th>Data</th><th>Estabelecimento</th><th>Parcela</th><th>Categoria</th><th class="valor">Valor</th></tr></thead><tbody>
-        ${compras.map((c) => `<tr><td>${F.dataBR(c.data)}</td><td><b>${esc(c.loja)}</b></td><td>${c.parcelas > 1 ? `${c.parcela}/${c.parcelas}` : "—"}</td><td>${f.status === "aberta"
+      <div class="tabela-wrap"><table class="compras"><thead><tr><th>Data</th><th>Estabelecimento</th><th>Parcela</th><th>Categoria</th><th class="valor">Valor</th></tr></thead><tbody>
+        ${compras.map((c) => `<tr><td class="p-data">${F.dataBR(c.data)}</td><td class="p-loja"><b>${esc(c.loja)}</b></td><td class="p-parc">${c.parcelas > 1 ? `${c.parcela}/${c.parcelas}` : "—"}</td><td class="p-cat">${f.status === "aberta"
           ? `<select class="cat-select ${c.categoria ? "" : "vazio"}" data-cat-compra="${c.id}" aria-label="Categoria de ${esc(c.loja)}"><option value="">Classificar…</option>${E.categorias.filter((x) => x.tipo === "despesa").map((x) => `<option value="${x.id}" ${x.id === c.categoria ? "selected" : ""}>${esc(x.nome)}</option>`).join("")}</select>`
           : esc(cat(c.categoria)?.nome ?? "—")}</td><td class="valor">${M(c.valor)}</td></tr>`).join("")}
       </tbody></table></div>

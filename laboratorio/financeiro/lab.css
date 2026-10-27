@@ -259,6 +259,14 @@ details.mais[open]{padding-bottom:14px}
   table.cartoes td.valor{grid-column:3;grid-row:1}
   table.cartoes td.c-sit{grid-column:3;grid-row:2;justify-self:end}
   table.cartoes td.c-esconde{display:none}
+  table.compras thead{display:none}
+  table.compras tr{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;padding:12px 14px;border-top:1px solid var(--line-soft)}
+  table.compras td{border:0;padding:0}
+  table.compras .p-loja{grid-column:1;grid-row:1}
+  table.compras .p-data{grid-column:1;grid-row:2;font-size:12px;color:var(--muted)}
+  table.compras .p-parc{grid-column:2;grid-row:2;font-size:12px;color:var(--muted);text-align:right}
+  table.compras .p-cat{grid-column:1/-1;grid-row:3}
+  table.compras td.valor{grid-column:2;grid-row:1}
   .barra-movel{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:35;background:var(--surface);border-top:1px solid var(--line);justify-content:space-around;padding:6px 4px max(6px,env(safe-area-inset-bottom))}
   .barra-movel button{display:grid;justify-items:center;gap:3px;font-size:10px;color:var(--muted);padding:4px 6px;min-width:58px;min-height:48px}
   .barra-movel button[aria-current=page]{color:var(--brand);font-weight:650}
