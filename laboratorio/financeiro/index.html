@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Vitral — Financeiro (laboratório)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,450;9..144,500&display=swap">
+<link rel="stylesheet" href="lab.css">
+<script type="module" src="app.js"></script>
+</head>
+<body data-tema="atual">
+<div class="labbar" role="region" aria-label="Laboratório">
+  <span><span class="labdot"></span><b>Vitral Lab</b> · Financeiro</span>
+  <span class="esconde-movel muted" style="color:inherit;opacity:.75">Dados fictícios · nada aqui chega à produção</span>
+  <span class="grow"></span>
+  <span class="tema" role="group" aria-label="Paleta">
+    <button type="button" data-tema="atual" aria-pressed="true">Atual</button>
+    <button type="button" data-tema="sacra" aria-pressed="false">Sacra</button>
+  </span>
+  <button type="button" data-acao="restaurar" title="Volta aos dados de demonstração">Restaurar demo</button>
+</div>
+<div class="app">
+  <aside class="sidebar" id="menu" aria-label="Menu do Financeiro"></aside>
+  <div class="corpo">
+    <header class="topo" id="topo"></header>
+    <main id="principal" tabindex="-1"></main>
+  </div>
+</div>
+<nav class="barra-movel" id="barra-movel" aria-label="Áreas do Financeiro"></nav>
+<dialog id="dlg" aria-labelledby="dlg-titulo"></dialog>
+<dialog id="gaveta" class="gaveta" aria-labelledby="gaveta-titulo"></dialog>
+<div id="toast" role="status" aria-live="polite"></div>
+<noscript>Ative o JavaScript para usar o laboratório. Todos os dados são fictícios.</noscript>
+</body>
+</html>
