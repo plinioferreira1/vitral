@@ -1,4 +1,5 @@
 import { calcularMetodo, ROTULO_METODO } from "./metodos";
+import { fontesEMetodologia } from "./fontes-metodologia";
 import type { ConteudoAvaliacao } from "./conteudo";
 import { COR, Diagramador, LARGURA_UTIL, MARGEM } from "./pdf-base";
 import type { OpcoesPdf } from "./pdf";
@@ -110,13 +111,24 @@ export async function gerarPdfComercial(c: ConteudoAvaliacao, o: OpcoesPdf): Pro
     g.subtitulo("Observações finais");
     g.paragrafo(d.limitacoes_texto);
   }
-  g.subtitulo("Sobre esta avaliação");
-  g.paragrafo("Este relatório apresenta uma estimativa comercial para divulgação e negociação do imóvel, com base nas informações disponíveis na data de referência. O valor indicado não garante o preço de fechamento.", { tamanho: 8, cor: COR.cinza });
-  if (d.vistoria_status === "realizada") {
-    g.paragrafo(`Vistoria registrada em ${data(d.vistoria_data ?? null)}${d.vistoria_responsavel ? ` por ${d.vistoria_responsavel}` : ""}.`, { tamanho: 8, cor: COR.cinza });
-  } else {
-    g.paragrafo("A análise utiliza informações fornecidas sobre o imóvel, sem vistoria presencial registrada.", { tamanho: 8, cor: COR.cinza });
-  }
+  const bloco = fontesEMetodologia({
+    comparaveis: c.comparaveis,
+    finalidade: c.finalidade,
+    metodo: d.metodologia?.metodo,
+    vistoriaRealizada: d.vistoria_status === "realizada",
+    dataBase: c.data_base,
+  });
+  const topicos = (titulo: string, itens: string[]) => {
+    g.paragrafo(titulo, { fonte: g.sansNegrito, tamanho: 8.5, depois: 3 });
+    for (const item of itens) g.paragrafo(`•  ${item}`, { tamanho: 8, cor: COR.cinza, depois: 2 });
+    g.espaco(6);
+  };
+  g.subtitulo("Fontes, metodologia e limitações", { reservar: 150 });
+  topicos("Fontes de dados", bloco.fontes);
+  topicos("Metodologia", bloco.metodologia);
+  if (bloco.amostra) topicos("Amostra", [bloco.amostra]);
+  const vistoria = `A análise considera a vistoria registrada em ${data(d.vistoria_data ?? null)}${d.vistoria_responsavel ? ` por ${d.vistoria_responsavel}` : ""}.`;
+  topicos("Limitações", bloco.limitacoes.map((l) => (d.vistoria_status === "realizada" && l.startsWith("A análise considera a vistoria") ? vistoria : l)));
   const assinante = o.aprovacao?.ehResponsavelTecnica ? c.responsavel.nome : o.aprovacao?.nome;
   g.subtitulo(o.rascunho ? "Elaboração" : "Responsável pela emissão", { reservar: !o.rascunho && o.assinatura ? 100 : 55 });
   if (!o.rascunho && o.assinatura) {
