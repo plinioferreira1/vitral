@@ -22,7 +22,9 @@ const COR = {
   claro: rgb(0.55, 0.52, 0.48),
   borda: rgb(0.62, 0.6, 0.57),
   faixa: rgb(0.86, 0.85, 0.83),
-  rotulo: rgb(0.93, 0.92, 0.9),
+  // padrão de tabela dos documentos da Sacra: rótulo em cinza claro, linhas finas rosadas, título vinho com filete
+  rotulo: rgb(0.949, 0.949, 0.949),
+  separador: rgb(0.91, 0.84, 0.84),
   dourado: rgb(0.82, 0.55, 0.17),
   vinho: rgb(0.45, 0.08, 0.08),
 };
@@ -37,6 +39,7 @@ export type OpcoesPdfTermo = {
 };
 
 type Celula = { linhas: { texto: string; negrito?: boolean; cor?: RGB }[]; fundo?: RGB; alinhar?: "esquerda" | "centro" };
+const ESPACO_TITULO = 1.6;
 
 class Folha {
   doc!: PDFDocument;
@@ -156,18 +159,27 @@ class Folha {
     this.y -= o.depois ?? 8;
   }
 
-  /** Faixa cinza de título de bloco (como no modelo da Sacra). */
+  /** Texto com espaçamento entre letras (títulos de bloco). */
+  espacado(texto: string, x: number, y: number, fonte: PDFFont, tamanho: number, espaco: number, cor: RGB) {
+    let px = x;
+    for (const ch of this.t(texto)) {
+      this.pagina.drawText(ch, { x: px, y, size: tamanho, font: fonte, color: cor });
+      px += fonte.widthOfTextAtSize(ch, tamanho) + espaco;
+    }
+  }
+
+  /** Título de bloco no padrão dos documentos da Sacra: vinho, espaçado, com filete vinho abaixo. */
   faixa(titulo: string, reservar = 40) {
-    this.garantir(18 + reservar);
-    this.pagina.drawRectangle({ x: MARGEM_X, y: this.y - 18, width: LARGURA, height: 18, color: COR.faixa, borderColor: COR.borda, borderWidth: 0.6 });
-    this.escrever(titulo, MARGEM_X + LARGURA / 2, this.y - 12.5, { fonte: this.negrito, tamanho: 8.5, alinhar: "centro" });
-    this.y -= 18;
+    this.garantir(24 + reservar);
+    this.espacado(titulo, MARGEM_X, this.y - 10, this.negrito, 8, ESPACO_TITULO, COR.vinho);
+    this.y -= 17;
+    this.pagina.drawLine({ start: { x: MARGEM_X, y: this.y }, end: { x: MARGEM_X + LARGURA, y: this.y }, thickness: 1.3, color: COR.vinho });
   }
 
   /** Linha de tabela com células de larguras livres; a altura acompanha a célula mais alta. */
   linha(celulas: Celula[], larguras: number[], o: { tamanho?: number; minimo?: number; padding?: number; aoQuebrar?: () => void } = {}): void {
     const tamanho = o.tamanho ?? 8.2;
-    const pad = o.padding ?? 5;
+    const pad = o.padding ?? 6.5;
     const entrelinha = tamanho * 1.38;
     const preparadas = celulas.map((c, i) => {
       const linhas: { texto: string; negrito?: boolean; cor?: RGB }[] = [];
@@ -186,7 +198,8 @@ class Folha {
     let x = MARGEM_X;
     preparadas.forEach((linhas, i) => {
       const c = celulas[i];
-      this.pagina.drawRectangle({ x, y: this.y - altura, width: larguras[i], height: altura, color: c.fundo, borderColor: COR.borda, borderWidth: 0.6 });
+      // deixa à mostra o filete do título ou a linha de cima
+      if (c.fundo) this.pagina.drawRectangle({ x, y: this.y - altura, width: larguras[i], height: altura - 0.8, color: c.fundo });
       // centraliza o bloco de texto na vertical
       let ty = this.y - (altura - linhas.length * entrelinha) / 2 - tamanho;
       for (const l of linhas) {
@@ -200,21 +213,22 @@ class Folha {
       }
       x += larguras[i];
     });
+    this.pagina.drawLine({ start: { x: MARGEM_X, y: this.y - altura }, end: { x: MARGEM_X + LARGURA, y: this.y - altura }, thickness: 0.5, color: COR.separador });
     this.y -= altura;
   }
 }
 
-const rot = (texto: string): Celula => ({ linhas: [{ texto, negrito: true }], fundo: COR.rotulo });
+const rot = (texto: string): Celula => ({ linhas: [{ texto: texto.replace(/:$/, "") + ":", cor: COR.cinza }], fundo: COR.rotulo });
 const val = (texto: string, negrito = false): Celula => ({ linhas: [{ texto: texto || "—", negrito }] });
 
 function blocoPartes(f: Folha, titulo: string, partes: ParteTermo[]) {
   f.faixa(titulo);
-  const L = [70, LARGURA - 70];
-  const L4 = [70, (LARGURA - 140) / 2, 70, (LARGURA - 140) / 2];
+  const L = [100, LARGURA - 100];
+  const L4 = [100, (LARGURA - 200) / 2, 90, (LARGURA - 190) / 2];
   for (const p of partes) {
     f.linha([rot("Nome"), val(p.nome.toUpperCase(), true)], L);
     const digitos = p.cpfCnpj.replace(/\D/g, "");
-    const rotuloDoc = digitos.length > 11 ? "CNPJ:" : "CPF:";
+    const rotuloDoc = digitos.length > 11 ? "CNPJ" : "CPF";
     if (p.rg) f.linha([rot(rotuloDoc), val(p.cpfCnpj), rot("RG:"), val(p.rg)], L4);
     else f.linha([rot(rotuloDoc), val(p.cpfCnpj)], L);
     if (p.email) f.linha([rot("E-mail:"), val(p.email)], L);
@@ -336,8 +350,8 @@ export async function gerarPdfTermo(r: RetratoTermo, o: OpcoesPdfTermo): Promise
   blocoPartes(f, nC > 1 ? "COMPRADORES" : "COMPRADOR", compradores(doc));
 
   f.faixa("IMÓVEL OBJETO DO CONTRATO");
-  const L = [80, LARGURA - 80];
-  const L4 = [80, (LARGURA - 190) / 2, 110, (LARGURA - 190) / 2];
+  const L = [100, LARGURA - 100];
+  const L4 = [100, (LARGURA - 210) / 2, 110, (LARGURA - 210) / 2];
   f.linha([rot("Endereço:"), val(doc.imovel.endereco.toUpperCase())], L);
   if (doc.imovel.areaPrivativa || doc.imovel.inscricaoIptu) f.linha([rot("Área privativa:"), val(doc.imovel.areaPrivativa), rot("Inscrição de IPTU:"), val(doc.imovel.inscricaoIptu)], L4);
   if (doc.imovel.matricula || doc.imovel.cartorio) f.linha([rot("Matrícula:"), val([doc.imovel.matricula, doc.imovel.cartorio].filter(Boolean).join(" – "))], L);
@@ -377,7 +391,7 @@ export async function gerarPdfTermo(r: RetratoTermo, o: OpcoesPdfTermo): Promise
   f.garantir(74);
   f.linha(
     [
-      rot("RESUMO TOTAL:"),
+      rot("Resumo total"),
       {
         linhas: [
           { texto: `${nC > 1 ? "Compradores devem" : "Comprador deve"} ${nV > 1 ? "aos vendedores" : "ao vendedor"}: ${formatarCentavos(a.compradorDeveCentavos)}` },
@@ -395,10 +409,10 @@ export async function gerarPdfTermo(r: RetratoTermo, o: OpcoesPdfTermo): Promise
 
   // demais encargos
   f.faixa("DEMAIS ENCARGOS", 60);
-  const LD = [90, LARGURA - 90];
-  f.linha([rot("ENERGIA:"), val(textoServico(doc.demais.energia))], LD);
-  f.linha([rot("ÁGUA:"), val(textoServico(doc.demais.agua))], LD);
-  f.linha([rot("GÁS:"), val(textoServico(doc.demais.gas))], LD);
+  const LD = [100, LARGURA - 100];
+  f.linha([rot("Energia"), val(textoServico(doc.demais.energia))], LD);
+  f.linha([rot("Água"), val(textoServico(doc.demais.agua))], LD);
+  f.linha([rot("Gás"), val(textoServico(doc.demais.gas))], LD);
   f.y -= 12;
 
   // cláusula e textos complementares
