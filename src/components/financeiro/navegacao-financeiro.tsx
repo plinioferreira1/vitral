@@ -14,6 +14,7 @@ const links = [
   { href: "/financeiro/contas-bancarias", label: "Contas bancárias" },
   { href: "/financeiro/pessoas", label: "Pessoas e empresas" },
   { href: "/financeiro/relatorios", label: "Relatórios" },
+  { href: "/financeiro/demonstrativo-colaboradores", label: "Ganhos da equipe" },
 ];
 
 export function NavegacaoFinanceiro() {
