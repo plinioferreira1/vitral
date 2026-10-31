@@ -123,7 +123,7 @@ export async function criarTermoVisita(formData: FormData) {
       assinatura_imagem: assinaturaImagem,
       ip_assinatura: ipAssinatura,
       assinado_em: new Date().toISOString(),
-    })
+    } as never)
     .select("id")
     .single();
 
