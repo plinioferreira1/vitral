@@ -69,12 +69,8 @@ export async function criarTermoVisita(formData: FormData) {
     await checar(supabase.from("clientes").update(dadosCliente).eq("id", clienteId), "atualizar");
   }
 
-  let corretorId: string | null = null;
-  const corretorNome = campo("corretor_nome");
-  if (corretorNome) {
-    corretorId = await resolverOuCriar(supabase, "corretores", "nome", tenantId, corretorNome);
-  }
-
+  const corretorNome = usuario.nome?.trim() ?? "";
+  const corretorId = corretorNome ? await resolverOuCriar(supabase, "corretores", "nome", tenantId, corretorNome) : null;
   const valorImovel = formData.get("valor_imovel");
   const codigoImovel = campo("codigo_imovel");
   const multaPercentual = formData.get("multa_percentual");
@@ -109,9 +105,9 @@ export async function criarTermoVisita(formData: FormData) {
       hora_visita: campo("hora_visita"),
       cliente_cpf_informado: campo("cliente_cpf_informado"),
       cliente_rg_informado: campo("cliente_rg_informado"),
-      corretor_creci: campo("corretor_creci"),
-      corretor_creci_j: campo("corretor_creci_j"),
-      imobiliaria_parceira: campo("imobiliaria_parceira"),
+      corretor_creci: null,
+      corretor_creci_j: null,
+      imobiliaria_parceira: "Sacra Netimóveis",
       nota: notaRaw !== null ? Number(notaRaw) : null,
       feedback: feedback && feedbackValidos.includes(feedback) ? feedback : null,
       observacoes: campo("observacoes"),
