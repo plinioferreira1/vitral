@@ -78,6 +78,14 @@ export async function criarTermoVisita(formData: FormData) {
   const codigoImovel = campo("codigo_imovel");
   const multaPercentual = formData.get("multa_percentual");
   const dataVisita = campo("data_visita");
+  const imoveisVisitados = Array.from({ length: 7 }, (_, i) => ({
+    descricao: i === 0 ? campo("imovel") : campo("imovel_" + i),
+    codigo: i === 0 ? codigoImovel : campo("codigo_imovel_" + i),
+    valor: Number(formData.get(i === 0 ? "valor_imovel" : "valor_imovel_" + i) || 0) || null,
+  })).filter((imovel) => imovel.descricao);
+  const notaRaw = campo("nota");
+  const feedback = campo("feedback");
+  const feedbackValidos = ["vai_fazer_proposta", "vai_voltar", "vai_manter_consideracao", "nao_gostou_quer_outras"];
 
   const { data: termo, error } = await supabase
     .from("termos_visita")
@@ -90,6 +98,16 @@ export async function criarTermoVisita(formData: FormData) {
       codigo_imovel: codigoImovel,
       multa_percentual: multaPercentual ? Number(multaPercentual) : 6,
       data_visita: dataVisita ?? hojeISO(),
+      imoveis_visitados: imoveisVisitados,
+      hora_visita: campo("hora_visita"),
+      cliente_cpf_informado: campo("cliente_cpf_informado"),
+      cliente_rg_informado: campo("cliente_rg_informado"),
+      corretor_creci: campo("corretor_creci"),
+      corretor_creci_j: campo("corretor_creci_j"),
+      imobiliaria_parceira: campo("imobiliaria_parceira"),
+      nota: notaRaw !== null ? Number(notaRaw) : null,
+      feedback: feedback && feedbackValidos.includes(feedback) ? feedback : null,
+      observacoes: campo("observacoes"),
       criado_por: user?.id ?? null,
     })
     .select("id")
