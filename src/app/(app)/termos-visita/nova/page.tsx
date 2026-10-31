@@ -5,6 +5,7 @@ import { CampoMoeda } from "@/components/campo-moeda";
 import { BotaoSubmit } from "@/components/botao-submit";
 import { hojeISO } from "@/lib/data-br";
 import { criarTermoVisita } from "../actions";
+import { AssinaturaFicha } from "./assinatura-ficha";
 
 const field = INPUT_CLASS + " min-h-11 w-full text-base sm:text-sm";
 
@@ -42,7 +43,8 @@ export default function NovoTermoVisitaPage() {
         <section><h2 className="mb-2 text-base font-semibold text-brand">Observações</h2><textarea name="observacoes" rows={4} className={field} placeholder="Observações sobre as visitas e preferências do cliente"/></section>
         <section className="space-y-3"><h2 className="border-b border-border pb-2 text-base font-semibold text-brand">Corretor | Parceiro</h2><label className="block text-sm">Nome<input name="corretor_nome" className={field}/></label><div className="grid gap-3 sm:grid-cols-2"><label className="block text-sm">CRECI<input name="corretor_creci" className={field}/></label><label className="block text-sm">CRECI J.<input name="corretor_creci_j" className={field}/></label></div><label className="block text-sm">Imobiliária<input name="imobiliaria_parceira" className={field} defaultValue="Sacra Netimóveis"/></label><p className="text-xs text-ink-muted">Assinatura do corretor parceiro: espaço reservado na impressão. A assinatura eletrônica do corretor requer fluxo próprio de signatários.</p></section>
 
-        <BotaoSubmit className={PRIMARY_BUTTON_CLASS+" min-h-11 w-full"}>Salvar termo</BotaoSubmit>
+        <AssinaturaFicha />
+        <BotaoSubmit className={PRIMARY_BUTTON_CLASS+" min-h-11 w-full"}>Salvar termo assinado</BotaoSubmit>
       </form>
     </div>
   );
