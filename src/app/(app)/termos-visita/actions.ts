@@ -10,6 +10,7 @@ import { revalidatePath } from "next/cache";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { objetoParcial, objetoVazio } from "@/lib/objeto-parcial";
 import { hojeISO } from "@/lib/data-br";
+import { headers } from "next/headers";
 
 async function resolverOuCriar(
   supabase: SupabaseClient,
@@ -77,6 +78,12 @@ export async function criarTermoVisita(formData: FormData) {
   const valorImovel = formData.get("valor_imovel");
   const codigoImovel = campo("codigo_imovel");
   const multaPercentual = formData.get("multa_percentual");
+  const assinaturaImagem = campo("assinatura_imagem");
+  if (!assinaturaImagem?.startsWith("data:image/png;base64,") || assinaturaImagem.length > 550000) {
+    throw new Error("É necessário assinar na ficha antes de salvar.");
+  }
+  const cabecalhos = await headers();
+  const ipAssinatura = cabecalhos.get("x-forwarded-for")?.split(",")[0]?.trim() || cabecalhos.get("x-real-ip") || "desconhecido";
   const dataVisita = campo("data_visita");
   const imoveisVisitados = Array.from({ length: 7 }, (_, i) => ({
     descricao: i === 0 ? campo("imovel") : campo("imovel_" + i),
@@ -109,6 +116,13 @@ export async function criarTermoVisita(formData: FormData) {
       feedback: feedback && feedbackValidos.includes(feedback) ? feedback : null,
       observacoes: campo("observacoes"),
       criado_por: user?.id ?? null,
+      status: "assinado",
+      nome_digitado: campo("cliente_nome"),
+      cliente_cpf: campo("cliente_cpf_informado"),
+      cliente_rg: campo("cliente_rg_informado"),
+      assinatura_imagem: assinaturaImagem,
+      ip_assinatura: ipAssinatura,
+      assinado_em: new Date().toISOString(),
     })
     .select("id")
     .single();
