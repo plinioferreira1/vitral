@@ -41,7 +41,7 @@ export default function NovoTermoVisitaPage() {
           ].map(([value,label])=><label key={value} className="flex items-start gap-3"><input type="radio" name="feedback" value={value} className="mt-1"/><span>{label}</span></label>)}</div>
         </section>
         <section><h2 className="mb-2 text-base font-semibold text-brand">Observações</h2><textarea name="observacoes" rows={4} className={field} placeholder="Observações sobre as visitas e preferências do cliente"/></section>
-        <section className="space-y-3"><h2 className="border-b border-border pb-2 text-base font-semibold text-brand">Corretor | Parceiro</h2><label className="block text-sm">Nome<input name="corretor_nome" className={field}/></label><div className="grid gap-3 sm:grid-cols-2"><label className="block text-sm">CRECI<input name="corretor_creci" className={field}/></label><label className="block text-sm">CRECI J.<input name="corretor_creci_j" className={field}/></label></div><label className="block text-sm">Imobiliária<input name="imobiliaria_parceira" className={field} defaultValue="Sacra Netimóveis"/></label><p className="text-xs text-ink-muted">Assinatura do corretor parceiro: espaço reservado na impressão. A assinatura eletrônica do corretor requer fluxo próprio de signatários.</p></section>
+
 
         <AssinaturaFicha />
         <BotaoSubmit className={PRIMARY_BUTTON_CLASS+" min-h-11 w-full"}>Salvar termo assinado</BotaoSubmit>
