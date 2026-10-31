@@ -42,7 +42,7 @@ export default async function VisitarPage({
 }) {
   const { token } = await params;
   const supabase = await createClient();
-  const { data: dataRaw } = await supabase.rpc("termo_visita_buscar_ficha", { p_token: token }).maybeSingle();
+  const { data: dataRaw } = await supabase.rpc("termo_visita_buscar_ficha" as "termo_visita_buscar", { p_token: token }).maybeSingle();
   const data = dataRaw as DadosVisita | null;
 
   return (
