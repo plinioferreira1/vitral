@@ -26,7 +26,7 @@ export default function NovoTermoVisitaPage() {
           <div className="grid gap-3 sm:grid-cols-2"><label className="block text-sm">CPF<input name="cliente_cpf_informado" className={field}/></label><label className="block text-sm">RG<input name="cliente_rg_informado" className={field}/></label></div>
           <div className="grid gap-3 sm:grid-cols-2"><label className="block text-sm">Telefone(s)<input name="cliente_telefone" type="tel" className={field}/></label><label className="block text-sm">E-mail<input name="cliente_email" type="email" className={field}/></label></div>
           <div className="grid gap-3 sm:grid-cols-2"><label className="block text-sm">Data<input name="data_visita" type="date" defaultValue={hoje} className={field}/></label><label className="block text-sm">Hora<input name="hora_visita" type="time" className={field}/></label></div>
-          <p className="rounded-lg bg-background p-3 text-xs text-ink-muted">Assinatura do cliente: coletada eletronicamente pelo link gerado após a criação do termo.</p>
+
         </section>
         <section className="space-y-3">
           <h2 className="border-b border-border pb-2 text-base font-semibold text-brand">Feedback da visita</h2>
@@ -41,8 +41,8 @@ export default function NovoTermoVisitaPage() {
         </section>
         <section><h2 className="mb-2 text-base font-semibold text-brand">Observações</h2><textarea name="observacoes" rows={4} className={field} placeholder="Observações sobre as visitas e preferências do cliente"/></section>
         <section className="space-y-3"><h2 className="border-b border-border pb-2 text-base font-semibold text-brand">Corretor | Parceiro</h2><label className="block text-sm">Nome<input name="corretor_nome" className={field}/></label><div className="grid gap-3 sm:grid-cols-2"><label className="block text-sm">CRECI<input name="corretor_creci" className={field}/></label><label className="block text-sm">CRECI J.<input name="corretor_creci_j" className={field}/></label></div><label className="block text-sm">Imobiliária<input name="imobiliaria_parceira" className={field} defaultValue="Sacra Netimóveis"/></label><p className="text-xs text-ink-muted">Assinatura do corretor parceiro: espaço reservado na impressão. A assinatura eletrônica do corretor requer fluxo próprio de signatários.</p></section>
-        <details className="rounded-lg border border-border p-3"><summary className="cursor-pointer text-sm font-medium">Condições jurídicas do termo existente</summary><p className="mt-2 text-xs text-ink-muted">A declaração de intermediação, multa e ciência de tratamento de dados continuam disponíveis na página de assinatura digital. Não foram removidas.</p><label className="mt-3 block text-xs">Multa por descumprimento (%)<input className={field} name="multa_percentual" type="number" step=".01" defaultValue={6}/></label></details>
-        <BotaoSubmit className={PRIMARY_BUTTON_CLASS+" min-h-11 w-full"}>Criar termo e gerar link de assinatura</BotaoSubmit>
+
+        <BotaoSubmit className={PRIMARY_BUTTON_CLASS+" min-h-11 w-full"}>Salvar termo</BotaoSubmit>
       </form>
     </div>
   );
