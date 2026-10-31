@@ -56,6 +56,13 @@ export default async function TermoVisitaDetalhePage({
     status: string;
     valor_imovel: number | null;
     codigo_imovel: string | null;
+    imoveis_visitados: { descricao: string; codigo: string | null; valor: number | null }[] | null;
+    hora_visita: string | null;
+    cliente_cpf_informado: string | null;
+    cliente_rg_informado: string | null;
+    corretor_creci: string | null;
+    corretor_creci_j: string | null;
+    imobiliaria_parceira: string | null;
     data_visita: string;
     multa_percentual: number;
     nota: number | null;
@@ -100,6 +107,25 @@ export default async function TermoVisitaDetalhePage({
             />
           </div>
         )}
+      </div>
+
+      <div className={`${CARD_CLASS} space-y-5 p-5 sm:p-6`}>
+        <h2 className="text-lg font-semibold text-ink">Ficha da visita · Sacra Netimóveis</h2>
+        <div className="overflow-x-auto"><table className="w-full text-sm">
+          <thead><tr className="border-b border-border text-left text-ink-muted"><th className="py-2">Imóvel visitado</th><th>Código</th><th>Valor</th></tr></thead>
+          <tbody>{(t.imoveis_visitados?.length ? t.imoveis_visitados : [{ descricao: t.imoveis?.endereco ?? "—", codigo: t.codigo_imovel, valor: t.valor_imovel }]).map((item, i) => (
+            <tr key={i} className="border-b border-border/60"><td className="py-2">{String.fromCharCode(97+i)}. {item.descricao}</td><td>{item.codigo ?? "—"}</td><td>{brl(item.valor)}</td></tr>
+          ))}</tbody>
+        </table></div>
+        <div className="grid gap-3 text-sm sm:grid-cols-2">
+          <p><b>Cliente:</b> {t.clientes?.nome ?? "—"}</p><p><b>CPF:</b> {t.cliente_cpf_informado ?? t.cliente_cpf ?? "—"}</p>
+          <p><b>RG:</b> {t.cliente_rg_informado ?? "—"}</p><p><b>Telefone:</b> {t.clientes?.telefone ?? "—"}</p>
+          <p><b>E-mail:</b> {t.clientes?.email ?? "—"}</p><p><b>Hora:</b> {t.hora_visita ?? "—"}</p>
+          <p><b>Corretor:</b> {t.corretores?.nome ?? "—"}</p><p><b>CRECI:</b> {t.corretor_creci ?? "—"}</p>
+          <p><b>CRECI J.:</b> {t.corretor_creci_j ?? "—"}</p><p><b>Imobiliária:</b> {t.imobiliaria_parceira ?? "—"}</p>
+        </div>
+        <div className="border-t border-border pt-3 text-sm"><b>Feedback:</b> {t.feedback ? FEEDBACK_LABEL[t.feedback] : "Não informado"} · <b>Nota:</b> {t.nota ?? "—"}/10</div>
+        <p className="text-sm"><b>Observações:</b> {t.observacoes || "—"}</p>
       </div>
 
       <div className={`${CARD_CLASS} grid gap-5 p-5 sm:grid-cols-3 sm:p-6`}>
