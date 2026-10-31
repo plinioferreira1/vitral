@@ -28,6 +28,11 @@ interface DadosVisita {
   multa_percentual: number;
   data_visita: string;
   status_termo: string;
+  imoveis_visitados: { descricao: string; codigo: string | null; valor: number | null }[] | null;
+  hora_visita: string | null;
+  nota: number | null;
+  feedback: string | null;
+  observacoes: string | null;
 }
 
 export default async function VisitarPage({
@@ -37,7 +42,7 @@ export default async function VisitarPage({
 }) {
   const { token } = await params;
   const supabase = await createClient();
-  const { data: dataRaw } = await supabase.rpc("termo_visita_buscar", { p_token: token }).maybeSingle();
+  const { data: dataRaw } = await supabase.rpc("termo_visita_buscar_ficha", { p_token: token }).maybeSingle();
   const data = dataRaw as DadosVisita | null;
 
   return (
@@ -72,7 +77,7 @@ export default async function VisitarPage({
 
             <div>
               <p className="font-semibold">Imóvel visitado</p>
-              <p>{data.imovel_endereco}</p>
+              <div className="space-y-1">{(data.imoveis_visitados?.length ? data.imoveis_visitados : [{ descricao: data.imovel_endereco, codigo: data.codigo_imovel, valor: data.valor_imovel }]).map((imovel, i) => <p key={i}>{String.fromCharCode(97 + i)}. {imovel.descricao} — {imovel.codigo ?? "sem código"} — {brl(imovel.valor)}</p>)}</div>
               <p className="text-ink-muted">
                 {data.codigo_imovel && <>Código: {data.codigo_imovel} · </>}
                 Valor: {brl(data.valor_imovel)}
@@ -85,6 +90,12 @@ export default async function VisitarPage({
               {data.cliente_telefone && <p className="text-ink-muted">Telefone: {data.cliente_telefone}</p>}
             </div>
 
+            <div className="rounded-xl border border-border bg-background p-4">
+              <p className="font-semibold">Feedback da visita</p>
+              <p>Nota: {data.nota ?? "—"} / 10</p>
+              <p>Impressão: {data.feedback === "vai_fazer_proposta" ? "Gostou e vai fazer proposta" : data.feedback === "vai_voltar" ? "Gostou e quer voltar" : data.feedback === "vai_manter_consideracao" ? "Manterá o imóvel em consideração" : data.feedback === "nao_gostou_quer_outras" ? "Quer ver outras opções" : "Não informado"}</p>
+              <p>Observações: {data.observacoes ?? "—"}</p>
+            </div>
             <p>
               Declaro que, nesta data, conheci, visitei e obtive as informações necessárias à
               aquisição do imóvel acima descrito, por intermédio d
