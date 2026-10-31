@@ -96,50 +96,9 @@ export default async function VisitarPage({
               <p>Impressão: {data.feedback === "vai_fazer_proposta" ? "Gostou e vai fazer proposta" : data.feedback === "vai_voltar" ? "Gostou e quer voltar" : data.feedback === "vai_manter_consideracao" ? "Manterá o imóvel em consideração" : data.feedback === "nao_gostou_quer_outras" ? "Quer ver outras opções" : "Não informado"}</p>
               <p>Observações: {data.observacoes ?? "—"}</p>
             </div>
-            <p>
-              Declaro que, nesta data, conheci, visitei e obtive as informações necessárias à
-              aquisição do imóvel acima descrito, por intermédio d
-              {data.corretor_nome ? `o(a) corretor(a) ${data.corretor_nome}` : "e corretor(a)"}
-              , ligado(a) à <strong>Sacra Netimóveis</strong>, o(a) qual, de maneira clara e
-              diligente, prestou-me toda a consultoria sobre a viabilidade da negociação por
-              mim pretendida.
-            </p>
-
-            <p>
-              Tendo em vista a assessoria prestada, comprometo-me a não efetivar a aquisição do
-              imóvel acima relacionado através de outro intermediário ou diretamente do(a)
-              proprietário(a); sob pena de, assim o fazendo, obrigar-me a pagar pela assessoria
-              que me foi prestada o valor de <strong>{data.multa_percentual}%</strong> (a
-              título de multa), calculado sobre o valor do imóvel acima citado, pelo
-              descumprimento desta obrigação de fazer.
-            </p>
-
-            <p>
-              Caso o negócio seja viabilizado por intermédio da Sacra Netimóveis, nada além do
-              já pactuado será devido por mim.
-            </p>
-
-            <p>
-              Concedo e aceito, declaro-me ciente e concordo, de forma inequívoca, que meus
-              dados pessoais aqui fornecidos sejam coletados com a finalidade de gerenciar os
-              imóveis visitados e traçar o perfil de interesse, sendo armazenados, utilizados e
-              descartados de acordo com os Termos de Uso e a Política de Privacidade da Sacra
-              Netimóveis, respeitando as normas de segurança da informação e as disposições da
-              Lei 13.709/2018 (LGPD).
-            </p>
-
-            <p>
-              A presente declaração, sendo assinada eletronicamente por meio de assinatura
-              eletrônica simples (identificação por nome declarado, assinatura manuscrita
-              digitalizada, data, hora e endereço IP de acesso registrados no momento da
-              assinatura), possui validade jurídica nos termos do art. 10, §2º, da MP
-              2.200-2/2001.
-            </p>
-
             <p className="text-ink-muted">{dataExtenso(data.data_visita)}.</p>
+            <div className="border-t border-border pt-4"><h2 className="mb-2 font-semibold text-brand">Assinatura do cliente</h2><AssinaturaVisitaForm token={token} /></div>
           </div>
-
-          <AssinaturaVisitaForm token={token} />
         </>
       )}
     </div>
