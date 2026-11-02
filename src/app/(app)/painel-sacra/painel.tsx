@@ -8,7 +8,7 @@ import { progressoVgv } from "@/lib/metricas-empresa";
 
 const moeda = (centavos: number) => (centavos / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
-type DadosVgv = { corretagem: ReturnType<typeof mediaCorretagem>; ano: number; numeroVendas: number; realizadoCentavos: number; metaCentavos: number; cadastradoCentavos: number; historicoCentavos: number; semValor: number; ranking: LinhaRankingVgv[]; semParticipacao: number; vgc: ReturnType<typeof somarVgcEmpresa> };
+type DadosVgv = { rateioProcessos: { valorCentavos: number; registros: number }; corretagem: ReturnType<typeof mediaCorretagem>; ano: number; numeroVendas: number; realizadoCentavos: number; metaCentavos: number; cadastradoCentavos: number; historicoCentavos: number; semValor: number; ranking: LinhaRankingVgv[]; semParticipacao: number; vgc: ReturnType<typeof somarVgcEmpresa> };
 
 export function PainelSacra({ dados }: { dados: DadosVgv }) {
   const progresso = progressoVgv(dados.realizadoCentavos, dados.metaCentavos);
@@ -55,6 +55,11 @@ export function PainelSacra({ dados }: { dados: DadosVgv }) {
       <div className="grid gap-4 md:grid-cols-2">
         <CartaoKpi label="VGC total" valor={moeda(dados.vgc.apuradoCentavos)} icon={Wallet} tom="marca" rodape={<p className="mt-3 text-xs text-ink-muted">Sacra + equipe · comissões geradas</p>} />
         <CartaoKpi label="Média de comissão" valor={dados.corretagem.percentual === null ? "Sem dados" : `${dados.corretagem.percentual.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`} icon={TrendingUp} tom="info" rodape={<p className="mt-3 text-xs text-ink-muted">Comissão total dos contratos · {dados.corretagem.quantidade} vendas</p>} />
+      </div>
+      <div className="mt-4 rounded-xl border border-border bg-surface p-5">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Comissões cadastradas nos processos</p>
+        <p className="mt-2 text-2xl font-bold tabular-nums text-brand">{moeda(dados.rateioProcessos.valorCentavos)}</p>
+        <p className="mt-1 text-xs text-ink-muted">{dados.rateioProcessos.registros} parcela(s) de rateio registrada(s), incluindo valores ainda não pagos. Indicador separado do VGC contratual conferido para evitar contagem dupla.</p>
       </div>
       {dados.corretagem.pendentes.length > 0 && <details className="mt-3 rounded-xl border border-border p-4"><summary className="cursor-pointer text-sm">{dados.corretagem.pendentes.length} vendas fora da média por falta de dados</summary><ul className="mt-3 space-y-1 text-sm text-ink-muted">{dados.corretagem.pendentes.map(p => <li key={p.id}>{p.imovel}</li>)}</ul></details>}
     </section>
