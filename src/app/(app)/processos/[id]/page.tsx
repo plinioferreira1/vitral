@@ -811,7 +811,7 @@ export default async function ProcessoDetalhePage({
               <p className="text-xs text-ink-muted">Total previsto distribuído · {(comissoes ?? []).filter(c => c.status !== "cancelada").length} beneficiário(s)</p>
               {(comissoes ?? []).filter(c => c.status !== "cancelada").map(c => (
                 <div key={c.id} className="mt-2 flex justify-between gap-3 border-t border-border/70 pt-2 text-sm">
-                  <span>{c.corretores?.nome ?? "Beneficiário não informado"}</span>
+                  <span>{c.tipo_beneficiario === "sacra" ? "SACRA" : c.tipo_beneficiario === "parceria" ? "PARCERIA" : c.corretores?.nome ?? "Beneficiário não informado"}</span>
                   <span className="font-semibold tabular-nums">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(c.valor_previsto ?? 0))}</span>
                 </div>
               ))}
@@ -1099,6 +1099,7 @@ function ComissaoForm({
     | {
         id: string;
         beneficiario_id: string | null;
+        tipo_beneficiario?: string;
         valor_previsto: number | null;
         status: string;
         data_prevista: string | null;
@@ -1115,7 +1116,15 @@ function ComissaoForm({
       <input type="hidden" name="processo_id" value={processoId} />
       {comissao && <input type="hidden" name="comissao_id" value={comissao.id} />}
 
-      <SeletorCorretor id={`beneficiario-${comissao?.id ?? "nova"}`} nome="beneficiario_id" rotulo="Corretor" corretores={corretores} atual={comissao?.beneficiario_id} />
+      <div>
+        <label className="mb-1 block text-xs font-medium text-ink-muted">Beneficiário do rateio</label>
+        <select name="destinatario_rateio" defaultValue={comissao?.tipo_beneficiario === "sacra" ? "sacra" : comissao?.tipo_beneficiario === "parceria" ? "parceria" : comissao?.beneficiario_id ?? ""} required className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm">
+          <option value="">Selecione</option>
+          <option value="sacra">SACRA</option>
+          <option value="parceria">PARCERIA</option>
+          {corretores.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+        </select>
+      </div>
 
       <div>
         <label className="mb-1 block text-xs font-medium text-ink-muted">Valor previsto (R$)</label>
