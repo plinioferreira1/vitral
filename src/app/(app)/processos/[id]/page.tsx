@@ -811,7 +811,7 @@ export default async function ProcessoDetalhePage({
               <p className="text-xs text-ink-muted">Total previsto distribuído · {(comissoes ?? []).filter(c => c.status !== "cancelada").length} beneficiário(s)</p>
               {(comissoes ?? []).filter(c => c.status !== "cancelada").map(c => (
                 <div key={c.id} className="mt-2 flex justify-between gap-3 border-t border-border/70 pt-2 text-sm">
-                  <span>{c.tipo_beneficiario === "sacra" ? "SACRA" : c.tipo_beneficiario === "parceria" ? "PARCERIA" : c.corretores?.nome ?? "Beneficiário não informado"}</span>
+                  <span>{(c as typeof c & { tipo_beneficiario?: string }).tipo_beneficiario === "sacra" ? "SACRA" : (c as typeof c & { tipo_beneficiario?: string }).tipo_beneficiario === "parceria" ? "PARCERIA" : c.corretores?.nome ?? "Beneficiário não informado"}</span>
                   <span className="font-semibold tabular-nums">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(c.valor_previsto ?? 0))}</span>
                 </div>
               ))}
