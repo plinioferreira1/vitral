@@ -516,13 +516,15 @@ export async function salvarComissao(formData: FormData) {
   const supabase = await createClient();
   const processoId = String(formData.get("processo_id") ?? "");
   const comissaoId = String(formData.get("comissao_id") ?? "") || null;
-  const beneficiarioId = String(formData.get("beneficiario_id") ?? "") || null;
+  const destinatario = String(formData.get("destinatario_rateio") ?? "");
+  const tipoBeneficiario = destinatario === "sacra" || destinatario === "parceria" ? destinatario : "corretor";
+  const beneficiarioId = tipoBeneficiario === "corretor" ? destinatario || null : null;
   const valorPrevisto = String(formData.get("valor_previsto") ?? "");
   const status = String(formData.get("status") ?? "0% pago");
   const dataPrevista = String(formData.get("data_prevista") ?? "") || null;
   const observacoes = String(formData.get("observacoes") ?? "").trim() || null;
 
-  if (!beneficiarioId) {
+  if (!destinatario) {
     await avisar("erro", "Selecione quem receberá esta parte da comissão.");
     return;
   }
@@ -535,12 +537,13 @@ export async function salvarComissao(formData: FormData) {
   if (!processo) { await avisar("erro", "Venda não encontrada."); return; }
   const anterior = comissaoId ? await supabase.from("comissoes").select("beneficiario_id").eq("id", comissaoId).eq("processo_id", processoId).maybeSingle() : null;
   if (comissaoId && !anterior?.data) { await avisar("erro", "Comissão não encontrada nesta venda."); return; }
-  const erroCorretor = await validarCorretores(supabase, tenantId, [{ id: beneficiarioId, atual: anterior?.data?.beneficiario_id }]);
+  const erroCorretor = tipoBeneficiario === "corretor" ? await validarCorretores(supabase, tenantId, [{ id: beneficiarioId, atual: anterior?.data?.beneficiario_id }]) : null;
   if (erroCorretor) { await avisar("erro", erroCorretor); return; }
   const pago100 = status === "100% pago";
 
   const campos = {
     beneficiario_id: beneficiarioId,
+    tipo_beneficiario: tipoBeneficiario,
     valor_previsto: valorPrevisto ? Number(valorPrevisto) : null,
     status,
     data_prevista: dataPrevista,
@@ -551,9 +554,9 @@ export async function salvarComissao(formData: FormData) {
   };
 
   if (comissaoId) {
-    await checar(supabase.from("comissoes").update(campos).eq("id", comissaoId).eq("processo_id", processoId), "atualizar");
+    await checar(supabase.from("comissoes").update(campos as never).eq("id", comissaoId).eq("processo_id", processoId), "atualizar");
   } else {
-    await checar(supabase.from("comissoes").insert({ processo_id: processoId, ...campos }), "salvar");
+    await checar(supabase.from("comissoes").insert({ processo_id: processoId, ...campos } as never), "salvar");
   }
 
   revalidatePath(`/processos/${processoId}`);
