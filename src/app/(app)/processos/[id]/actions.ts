@@ -522,6 +522,14 @@ export async function salvarComissao(formData: FormData) {
   const dataPrevista = String(formData.get("data_prevista") ?? "") || null;
   const observacoes = String(formData.get("observacoes") ?? "").trim() || null;
 
+  if (!beneficiarioId) {
+    await avisar("erro", "Selecione quem receberá esta parte da comissão.");
+    return;
+  }
+  if (!valorPrevisto || !Number.isFinite(Number(valorPrevisto)) || Number(valorPrevisto) <= 0) {
+    await avisar("erro", "Informe um valor válido e maior que zero para o rateio.");
+    return;
+  }
   const tenantId = sessao.usuario.tenant_id;
   const { data: processo } = await supabase.from("processos").select("id").eq("id", processoId).eq("tenant_id", tenantId).maybeSingle();
   if (!processo) { await avisar("erro", "Venda não encontrada."); return; }
@@ -549,6 +557,7 @@ export async function salvarComissao(formData: FormData) {
   }
 
   revalidatePath(`/processos/${processoId}`);
+  revalidatePath("/painel-sacra");
   revalidatePath("/minhas-vendas");
   revalidatePath(`/minhas-vendas/${processoId}`);
 }
