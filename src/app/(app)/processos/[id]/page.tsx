@@ -801,20 +801,29 @@ export default async function ProcessoDetalhePage({
           <span className="hidden text-xs font-semibold text-brand group-open:inline">Fechar</span>
         </summary>
         <div className="border-t border-border/70 p-4 sm:p-5">
-          {(comissoes ?? []).length === 0 ? (
-            <ComissaoForm processoId={p.id} comissao={null} corretores={corretoresLista ?? []} />
-          ) : (
-            <div className="space-y-3">
-              {(comissoes ?? []).map((c) => (
-                <ComissaoForm
-                  key={c.id}
-                  processoId={p.id}
-                  comissao={c}
-                  corretores={corretoresLista ?? []}
-                />
+          <div className="space-y-4">
+            <div className="rounded-xl border border-border bg-background p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Rateio da comissão</p>
+              <p className="mt-1 text-xs text-ink-muted">Cadastre um valor para cada pessoa. A soma é apenas demonstrativa e não cria um segundo lançamento no financeiro.</p>
+              <p className="mt-3 text-2xl font-bold tabular-nums text-brand">
+                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format((comissoes ?? []).filter(c => c.status !== "cancelada").reduce((total, c) => total + Number(c.valor_previsto ?? 0), 0))}
+              </p>
+              <p className="text-xs text-ink-muted">Total previsto distribuído · {(comissoes ?? []).filter(c => c.status !== "cancelada").length} beneficiário(s)</p>
+              {(comissoes ?? []).filter(c => c.status !== "cancelada").map(c => (
+                <div key={c.id} className="mt-2 flex justify-between gap-3 border-t border-border/70 pt-2 text-sm">
+                  <span>{c.corretores?.nome ?? "Beneficiário não informado"}</span>
+                  <span className="font-semibold tabular-nums">{new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(Number(c.valor_previsto ?? 0))}</span>
+                </div>
               ))}
             </div>
-          )}
+            {(comissoes ?? []).map(c => (
+              <ComissaoForm key={c.id} processoId={p.id} comissao={c} corretores={corretoresLista ?? []} />
+            ))}
+            <details className="rounded-xl border border-brand/30 bg-brand-soft/30 p-4" open={(comissoes ?? []).length === 0}>
+              <summary className="cursor-pointer text-sm font-semibold text-brand">+ Adicionar pessoa ao rateio</summary>
+              <div className="mt-4"><ComissaoForm processoId={p.id} comissao={null} corretores={corretoresLista ?? []} /></div>
+            </details>
+          </div>
         </div>
       </details>
 
