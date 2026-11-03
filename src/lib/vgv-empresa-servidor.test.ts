@@ -5,11 +5,11 @@ vi.mock("server-only", () => ({}));
 import { obterVgvEmpresa } from "./vgv-empresa-servidor";
 
 function cliente(paginas: unknown[]) {
-  const range = vi.fn();
+  const range = vi.fn().mockResolvedValue({ data: [], error: null });
   for (const pagina of paginas) range.mockResolvedValueOnce(pagina);
   const eq = vi.fn();
-  const query = { select: vi.fn(), eq, gte: vi.fn(), lt: vi.fn(), order: vi.fn(), range };
-  for (const metodo of [query.select, eq, query.gte, query.lt, query.order]) metodo.mockReturnValue(query);
+  const query = { select: vi.fn(), eq, neq: vi.fn(), gte: vi.fn(), lt: vi.fn(), order: vi.fn(), range };
+  for (const metodo of [query.select, eq, query.neq, query.gte, query.lt, query.order]) metodo.mockReturnValue(query);
   return { supabase: { from: vi.fn().mockReturnValue(query) } as unknown as SupabaseClient<Database>, query };
 }
 describe("consulta do VGV", () => {
@@ -21,7 +21,7 @@ describe("consulta do VGV", () => {
     expect(query.eq).toHaveBeenCalledWith("categoria", "venda");
     expect(query.gte).toHaveBeenCalledWith("data_criacao", "2026-01-01");
     expect(query.lt).toHaveBeenCalledWith("data_criacao", "2027-01-01");
-    expect(query.range.mock.calls).toEqual([[0, 499], [500, 999]]);
+    expect(query.range.mock.calls).toEqual([[0, 499], [500, 999], [0, 499]]);
   });
   it("não apresenta um total parcial quando a segunda página falha", async () => {
     const { supabase } = cliente([{ data: Array.from({ length: 500 }, (_, i) => ({ id: `${i}` })), error: null }, { data: null, error: { message: "falha" } }]);

@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { CartaoKpi } from "@/components/cartao-kpi";
 import { apagarLancamentos, prepararBaixaEmLote } from "./lancamentos-actions";
+import { lerTodasPaginas, resumoLista } from "@/lib/financeiro/resumo-lista";
 import { hojeISO } from "@/lib/data-br";
 import { somarDias } from "@/lib/recorrencia";
 import { SelectAutoSubmit } from "@/components/select-auto-submit";
@@ -140,14 +141,14 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     supabase.from("financeiro_centros_custo").select("id, nome").order("nome"),
     supabase.from("financeiro_unidades").select("id, nome").order("nome"),
     supabase.from("financeiro_contas_bancarias").select("id, nome").eq("ativa", true).order("nome"),
-    supabase
+    lerTodasPaginas((inicio, fim) => supabase
       .from("financeiro_lancamentos")
       .select(
         "id, descricao, valor, vencimento, competencia, status, recorrencia_id, pessoa_id, categoria_id, centro_custo_id, unidade_id, conta_bancaria_id, forma_pagamento, numero_documento, observacoes, financeiro_anexos ( nome ), financeiro_pessoas ( nome ), financeiro_categorias ( nome ), financeiro_unidades ( nome ), financeiro_contas_bancarias ( nome )"
       )
       .eq("tipo", tipo)
-      .order("vencimento"),
-    supabase.from("financeiro_baixas").select("lancamento_id, valor, data"),
+      .order("vencimento").order("id").range(inicio, fim)),
+    lerTodasPaginas((inicio, fim) => supabase.from("financeiro_baixas").select("lancamento_id, valor, data").order("id").range(inicio, fim)),
   ]);
 
   const todos = (lancamentosTodos ?? []) as unknown as LancamentoLinha[];
@@ -155,9 +156,9 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   // KPIs do mês corrente, calculados sobre a lista completa (não filtrada).
   const noMes = todos.filter((l) => l.vencimento >= inicioMes && l.vencimento <= fim);
   const pendentesNoMes = noMes.filter((l) => l.status === "pendente" || l.status === "pago_parcial");
-  const totalNoMes = pendentesNoMes.reduce((s, l) => s + Number(l.valor), 0);
+  const totalNoMes = resumoLista(pendentesNoMes, baixasRaw).aberto;
   const vencidos = todos.filter((l) => (l.status === "pendente" || l.status === "pago_parcial") && l.vencimento < hoje);
-  const totalVencidos = vencidos.reduce((s, l) => s + Number(l.valor), 0);
+  const totalVencidos = resumoLista(vencidos, baixasRaw).aberto;
   const recorrentes = todos.filter((l) => l.recorrencia_id && (l.status === "pendente" || l.status === "pago_parcial"));
   const baixasNoMes = (baixasRaw ?? []).filter((b) => b.data >= inicioMes && b.data <= fim);
   const totalBaixadoNoMes = baixasNoMes
@@ -185,16 +186,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     return l.vencimento >= inicioMes && l.vencimento <= fim;
   });
 
-  let lancamentos = todosNaReferencia.filter((l) => {
-    if (f.status === "sem_categoria") {
-      if (l.categoria_id !== null || (l.status !== "pago" && l.status !== "pago_parcial")) return false;
-    } else if (f.status === "em_aberto") {
-      if (l.status !== "pendente" && l.status !== "pago_parcial") return false;
-    } else if (f.status && estadoExibicao(l, hoje) !== f.status) {
-      return false;
-    } else if (!f.status && l.status === "cancelado") {
-      return false;
-    }
+  const todosNosFiltros = todos.filter((l) => {
     if (f.categoria && l.categoria_id !== f.categoria) return false;
     if (f.pessoa && l.pessoa_id !== f.pessoa) return false;
     if (f.conta_bancaria && l.conta_bancaria_id !== f.conta_bancaria) return false;
@@ -207,6 +199,25 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     }
     return true;
   });
+
+  const naReferencia = new Set(todosNaReferencia.map((l) => l.id));
+  const baseReferencia = todosNosFiltros.filter((l) => naReferencia.has(l.id));
+  let lancamentos = baseReferencia.filter((l) => {
+    if (f.status === "sem_categoria") {
+      if (l.categoria_id !== null || (l.status !== "pago" && l.status !== "pago_parcial")) return false;
+    } else if (f.status === "em_aberto") {
+      if (l.status !== "pendente" && l.status !== "pago_parcial") return false;
+    } else if (f.status === "recorrente") {
+      if (!l.recorrencia_id || (l.status !== "pendente" && l.status !== "pago_parcial")) return false;
+    } else if (f.status && (f.status === "vencido" ? estadoExibicao(l, hoje) !== "vencido" : l.status !== f.status)) {
+      return false;
+    } else if (!f.status && l.status === "cancelado") {
+      return false;
+    }
+    return true;
+  });
+
+  const resumo = resumoLista(lancamentos, baixasRaw);
 
   // Ordenação.
   const ordenar = ((["descricao", "pessoa", "categoria", "vencimento", "valor", "status"] as string[]).includes(
@@ -271,18 +282,18 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     referencia !== "hoje"
   );
   const abasSituacao: [string, string, number][] = [
-    ["", "Todos", todosNaReferencia.filter((l) => l.status !== "cancelado").length],
-    ["em_aberto", "Em aberto", todosNaReferencia.filter((l) => l.status === "pendente" || l.status === "pago_parcial").length],
-    ["vencido", "Vencidos", vencidos.length],
-    ["recorrente", "Recorrentes", todosNaReferencia.filter((l) => estadoExibicao(l, hoje) === "recorrente").length],
-    ["pago", tipo === "receita" ? "Recebidos" : "Pagos", todosNaReferencia.filter((l) => l.status === "pago").length],
-    ["cancelado", "Cancelados", todosNaReferencia.filter((l) => l.status === "cancelado").length],
+    ["", "Todos", baseReferencia.filter((l) => l.status !== "cancelado").length],
+    ["em_aberto", "Em aberto", baseReferencia.filter((l) => l.status === "pendente" || l.status === "pago_parcial").length],
+    ["vencido", "Vencidos", todosNosFiltros.filter((l) => estadoExibicao(l, hoje) === "vencido").length],
+    ["recorrente", "Recorrentes", baseReferencia.filter((l) => l.recorrencia_id && (l.status === "pendente" || l.status === "pago_parcial")).length],
+    ["pago", tipo === "receita" ? "Recebidos" : "Pagos", baseReferencia.filter((l) => l.status === "pago").length],
+    ["cancelado", "Cancelados", baseReferencia.filter((l) => l.status === "cancelado").length],
   ];
   if (tipo === "receita") {
     abasSituacao.splice(5, 0, [
       "sem_categoria",
       "Sem categoria",
-      todosNaReferencia.filter((l) => l.categoria_id === null && (l.status === "pago" || l.status === "pago_parcial")).length,
+      baseReferencia.filter((l) => l.categoria_id === null && (l.status === "pago" || l.status === "pago_parcial")).length,
     ]);
   }
 
@@ -507,6 +518,19 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           </div>
         </form>
       )}
+
+      <section aria-label="Resumo dos lançamentos filtrados" className="rounded-2xl border border-brand/20 bg-surface p-4 sm:p-5">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 className="text-base font-semibold text-ink">{REFERENCIAS.find((r) => r.value === referencia)?.label}</h2>
+          <p className="text-sm text-ink-muted">{totalItens} lançamento{totalItens === 1 ? "" : "s"} nos filtros</p>
+        </div>
+        <dl className="mt-4 grid gap-4 sm:grid-cols-3">
+          <div><dt className="text-sm font-medium text-brand">{tipo === "receita" ? "Ainda a receber" : "Ainda a pagar"}</dt><dd className="mt-1 text-2xl font-bold tabular-nums text-brand">{brl(resumo.aberto)}</dd></div>
+          <div><dt className="text-sm text-ink-muted">{tipo === "receita" ? "Já recebido" : "Já pago"}</dt><dd className="mt-1 text-xl font-semibold tabular-nums text-ink">{brl(resumo.baixado)}</dd></div>
+          <div><dt className="text-sm text-ink-muted">Valor total dos lançamentos</dt><dd className="mt-1 text-xl font-semibold tabular-nums text-ink">{brl(resumo.nominal)}</dd></div>
+        </dl>
+        <p className="mt-3 text-xs text-ink-muted">Todos os resultados dos filtros, em todas as páginas. O saldo desconta as baixas parciais; cancelados não compõem os valores. Pagamentos são das ocorrências listadas, independentemente da data da baixa.</p>
+      </section>
 
       <div id="lista" className="financeiro-lista scroll-mt-4 rounded-2xl border border-border/70 bg-surface shadow-sm">
         {lancamentos.length === 0 ? (
