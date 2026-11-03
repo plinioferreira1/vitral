@@ -519,7 +519,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         </form>
       )}
 
-      <section aria-label="Resumo dos lançamentos filtrados" className="rounded-2xl border border-brand/20 bg-surface p-4 sm:p-5">
+      <section id="lista" aria-label="Resumo dos lançamentos filtrados" className="scroll-mt-4 rounded-2xl border border-brand/20 bg-surface p-4 sm:p-5">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
           <h2 className="text-base font-semibold text-ink">{REFERENCIAS.find((r) => r.value === referencia)?.label}</h2>
           <p className="text-sm text-ink-muted">{totalItens} lançamento{totalItens === 1 ? "" : "s"} nos filtros</p>
@@ -532,7 +532,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         <p className="mt-3 text-xs text-ink-muted">Todos os resultados dos filtros, em todas as páginas. O saldo desconta as baixas parciais; cancelados não compõem os valores. Pagamentos são das ocorrências listadas, independentemente da data da baixa.</p>
       </section>
 
-      <div id="lista" className="financeiro-lista scroll-mt-4 rounded-2xl border border-border/70 bg-surface shadow-sm">
+      <div className="financeiro-lista rounded-2xl border border-border/70 bg-surface shadow-sm">
         {lancamentos.length === 0 ? (
           <p className="p-8 text-center text-sm text-ink-muted">
             {temFiltro ? "Nenhum lançamento encontrado com esses filtros." : "Nenhum lançamento ainda."}
