@@ -37,13 +37,8 @@ export default async function DetalheFichaPage({ params }: { params: Promise<{ i
   const tipo = tipoLocatario(ficha.tipo_locatario);
   const principalId: string = ficha.ficha_principal_id ?? ficha.id;
   // Todas as pessoas da mesma proposta: o titular e quem está ligado a ele.
-  const [{ data: grupo }, linksDocumentos] = await Promise.all([
-    supabase.from("fichas_cadastrais_locacao").select("id, proponente_nome, tipo_locatario, status, garantia:dados->>garantia").or(`id.eq.${principalId},ficha_principal_id.eq.${principalId}`).order("criado_em"),
-    Promise.all((documentos ?? []).map(async (d) => {
-      const { data } = await supabase.storage.from("fichas-locacao").createSignedUrl(d.caminho_storage, 900);
-      return { ...d, url: data?.signedUrl };
-    })),
-  ]);
+  const { data: grupo } = await supabase.from("fichas_cadastrais_locacao").select("id, proponente_nome, tipo_locatario, status, garantia:dados->>garantia").or(`id.eq.${principalId},ficha_principal_id.eq.${principalId}`).order("criado_em");
+  const linksDocumentos = (documentos ?? []).map((d) => ({ ...d, url: `/locacao/ficha-cadastral/${id}/documentos/${d.id}` }));
   const pessoas = (grupo ?? []) as Vinculada[];
   const basePublica = process.env.NEXT_PUBLIC_CADASTRO_URL?.replace(/\/$/, "") || `${siteUrl}/cadastro`;
   const link = `${basePublica}/locacao/${ficha.token}`;
