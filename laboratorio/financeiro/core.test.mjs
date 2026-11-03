@@ -178,3 +178,14 @@ test("moeda e conversões", () => {
   assert.equal(F.moeda(-123456), "−R$ 1.234,56");
   assert.equal(F.somarMeses("2026-01-31", 1), "2026-02-28");
 });
+
+test("resumo da seleção separa pagamentos e ignora cancelados", () => {
+  const e = base();
+  const lista = e.titulos.filter(t => t.vencimento === HOJE && t.empresa === "net");
+  const r = F.resumoLista(e, lista);
+  for (const tipo of ["receita", "despesa"]) {
+    assert.equal(r[tipo === "receita" ? "receber" : "pagar"], lista.filter(t => t.tipo === tipo && t.status !== "cancelado").reduce((s,t) => s + F.saldoTitulo(e,t),0));
+  }
+  assert.deepEqual(F.resumoLista(e, [{ id: "cancelado", status: "cancelado", tipo: "despesa", valor: 999999 }]), { receber: 0, pagar: 0, baixado: 0 });
+  assert.deepEqual(F.resumoLista(e, []), { receber: 0, pagar: 0, baixado: 0 });
+});

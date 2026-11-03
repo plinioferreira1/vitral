@@ -273,3 +273,19 @@ details.mais[open]{padding-bottom:14px}
   dialog.gaveta{border-radius:0;width:100vw}
   #toast{bottom:84px}
 }
+
+/* Resumo fica antes da lista para consulta rápida no computador e celular. */
+.resumo-lista{margin:0 18px 18px;padding:18px;border:1px solid var(--line);border-radius:12px;background:var(--brand-soft)}
+.resumo-lista-cab{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.resumo-lista h2{font:600 15px var(--sans)}
+.resumo-lista dl{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:16px 0}
+.resumo-lista dt{font-size:12px;color:var(--muted)}
+.resumo-lista dd{margin:3px 0 0;font-size:24px;font-weight:650;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+@media(max-width:760px){
+  input,select,textarea{font-size:16px}
+  .btn,.filtro,.segmented button{min-height:44px}
+  .resumo-lista{margin:0 12px 14px;padding:14px}
+  .resumo-lista dl{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .resumo-lista dl>div:last-child{grid-column:1/-1;border-top:1px solid var(--line);padding-top:10px}
+  .resumo-lista dd{font-size:22px}
+}

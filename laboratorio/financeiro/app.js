@@ -28,7 +28,7 @@ const ui = {
   sel: new Set(),
   extratoFiltro: "pendente",
   periodo: 6,
-  tema: (() => { try { return localStorage.getItem(`${CHAVE}-tema`) || "atual"; } catch { return "atual"; } })(),
+  tema: (() => { try { return localStorage.getItem(`${CHAVE}-tema`) || "sacra"; } catch { return "sacra"; } })(),
 };
 
 // ---------------------------------------------------------------- utilidades de tela
@@ -240,8 +240,8 @@ function listaHistorico(eventos) {
 const FILTROS = [
   ["abertos", "Em aberto", (t, s) => ["aberto", "parcial", "vencido"].includes(s)],
   ["vencidos", "Vencidos", (t, s) => s === "vencido"],
-  ["hoje", "Hoje", (t, s) => s !== "pago" && s !== "cancelado" && t.vencimento === HOJE()],
-  ["semana", "Próximos 7 dias", (t, s) => s !== "pago" && s !== "cancelado" && t.vencimento >= HOJE() && F.diasEntre(HOJE(), t.vencimento) <= 7],
+  ["hoje", "Vencem hoje", (t, s) => s !== "pago" && s !== "cancelado" && t.vencimento === HOJE()],
+  ["semana", "Próximos 7 dias", (t, s) => s !== "pago" && s !== "cancelado" && t.vencimento >= HOJE() && F.diasEntre(HOJE(), t.vencimento) <= 6],
   ["pagos", "Quitados", (t, s) => s === "pago"],
   ["semcat", "Sem categoria", (t, s) => !t.categoria && t.natureza !== "fatura" && s !== "cancelado"],
   ["cancelados", "Cancelados", (t, s) => s === "cancelado"],
@@ -271,8 +271,9 @@ function contas() {
   const contagem = Object.fromEntries(FILTROS.map(([id]) => [id, titulosVisiveis(id).length]));
   const selecionados = lista.filter((t) => ui.sel.has(t.id));
   const totalSel = selecionados.reduce((s, t) => s + F.saldoTitulo(E, t), 0);
-  const aReceber = lista.filter((t) => t.tipo === "receita").reduce((s, t) => s + F.saldoTitulo(E, t), 0);
-  const aPagar = lista.filter((t) => t.tipo === "despesa").reduce((s, t) => s + F.saldoTitulo(E, t), 0);
+  const resumo = F.resumoLista(E, lista);
+  const aReceber = resumo.receber;
+  const aPagar = resumo.pagar;
   const mostrarEmpresa = ui.empresa === "todas";
   const linhas = lista.map((t) => {
     const s = F.situacao(E, t, HOJE());
@@ -296,6 +297,11 @@ function contas() {
         <div class="filtros" role="group" aria-label="Situação">${FILTROS.map(([id, nome]) => `<button class="filtro" data-filtro="${id}" aria-pressed="${ui.filtro === id}">${nome}<b>${contagem[id]}</b></button>`).join("")}</div>
         <span class="grow"></span>
         <button class="btn sec peq" data-acao="csv-titulos">Exportar CSV</button>
+      </div>
+      <div class="resumo-lista" aria-label="Resumo dos lançamentos filtrados">
+        <div class="resumo-lista-cab"><h2>${ui.filtro === "hoje" ? "Vencem hoje" : "Resumo da seleção"}</h2><span class="muted small">${lista.length} lançamento${lista.length === 1 ? "" : "s"} · ${esc(nomeEmpresaAtual())}</span></div>
+        <dl><div><dt>A pagar</dt><dd class="out">${M(aPagar)}</dd></div><div><dt>A receber</dt><dd class="in">${M(aReceber)}</dd></div><div><dt>Já pago / recebido</dt><dd>${M(resumo.baixado)}</dd></div></dl>
+        <p class="muted small">Saldos em aberto, descontando pagamentos parciais. Valores seguem empresa, busca e filtros. Cancelados não compõem os valores.</p>
       </div>
       ${selecionados.length ? `<div class="lote" role="region" aria-label="Ações em lote"><b>${selecionados.length} selecionado${selecionados.length > 1 ? "s" : ""}</b><span>Saldo somado ${M(totalSel)}</span><span class="grow"></span><button class="btn peq" data-acao="lote">Quitar selecionados</button><button class="btn ghost peq" data-acao="limpar-sel">Limpar</button></div>` : ""}
       ${lista.length ? `<div class="tabela-wrap"><table class="cartoes">

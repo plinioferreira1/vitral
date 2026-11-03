@@ -545,3 +545,16 @@ export function exportarCSV(linhas) {
   const esc = (v) => `"${String(v ?? "").replaceAll('"', '""')}"`;
   return "﻿" + linhas.map((l) => l.map(esc).join(";")).join("\r\n");
 }
+
+/** Totais da seleção visível, em centavos. Cada ocorrência entra uma vez; cancelados não entram. */
+export function resumoLista(estado, lista) {
+  return lista.reduce((r, t) => {
+    if (t.status === "cancelado") return r;
+    const pago = pagoDe(estado, t.id);
+    const saldo = saldoTitulo(estado, t);
+    if (t.tipo === "receita") r.receber += saldo;
+    else r.pagar += saldo;
+    r.baixado += pago;
+    return r;
+  }, { receber: 0, pagar: 0, baixado: 0 });
+}
