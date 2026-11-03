@@ -6,7 +6,7 @@
   --green:#285e4d;--green-soft:#e4eee6;--amber:#79551b;--amber-soft:#fbf0d6;--rose:#a02f3c;--rose-soft:#f9e8e8;
   --chart-in:#285e4d;--chart-out:#b8858f;--chart-line:#6b2537;--chart-grid:#e6e6de;
   --labbar:#252d28;--labbar-ink:#f6f5f0;
-  --radius:16px;--control:9px;--display:Fraunces,Georgia,serif;--sans:"DM Sans",system-ui,sans-serif;--motion:180ms;
+  --radius:16px;--control:9px;--display:Fraunces,Georgia,serif;--sans:Inter,system-ui,sans-serif;--motion:180ms;
   --shadow:0 12px 40px #23291c0f;
 }
 body[data-tema=sacra]{
