@@ -289,3 +289,18 @@ details.mais[open]{padding-bottom:14px}
   .resumo-lista dl>div:last-child{grid-column:1/-1;border-top:1px solid var(--line);padding-top:10px}
   .resumo-lista dd{font-size:22px}
 }
+
+/* Seis indicadores no Painel, com vencimentos do dia sempre à vista. */
+.statstrip-painel{grid-template-columns:repeat(3,minmax(0,1fr))}
+.statstrip-painel .stat:nth-child(3n+1){border-left:0}
+.statstrip-painel .stat:nth-child(n+4){border-top:1px solid var(--line)}
+.stat-atalho{text-align:left;background:var(--brand-soft)}
+.stat-atalho:hover{background:var(--paper)}
+.stat-atalho:focus-visible{outline-offset:-4px}
+@media(max-width:1180px){
+  .statstrip-painel{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .statstrip-painel .stat{border-left:1px solid var(--line)}
+  .statstrip-painel .stat:nth-child(odd){border-left:0}
+  .statstrip-painel .stat:nth-child(n+3){border-top:1px solid var(--line)}
+}
+@media(max-width:440px){.statstrip-painel .val{font-size:20px;white-space:normal;overflow-wrap:anywhere}}

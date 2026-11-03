@@ -168,6 +168,7 @@ function painel() {
   const d = F.dre(E, { empresa: ui.empresa, meses: [mes] });
   const proj = F.projecao(E, { empresa: ui.empresa, hoje, dias: 90 });
   const saldoHoje = F.saldoEmpresas(E, ui.empresa, hoje);
+  const vencemHoje = F.resumoLista(E, p.hoje);
 
   const linhaPend = (n, cor, tituloTxt, texto, acao, rotulo) => `<div class="pend"><span class="marca-pend ${cor}">${n}</span><div><h3>${tituloTxt}</h3><p>${texto}</p></div><button class="btn sec peq" ${acao}>${rotulo}</button></div>`;
   const soma = (l) => M(l.reduce((s, t) => s + F.saldoTitulo(E, t), 0));
@@ -196,11 +197,15 @@ function painel() {
 
   return `
     <div class="cabeca"><div><h1>Painel</h1><p>${esc(nomeEmpresaAtual())} · ${F.dataBR(hoje)}</p></div></div>
-    <div class="statstrip">
+    <div class="statstrip statstrip-painel">
       <div class="stat"><div class="rot">Saldo nas contas</div><div class="val">${M(saldoHoje)}</div><small>${nContas} conta${nContas === 1 ? "" : "s"} bancária${nContas === 1 ? "" : "s"}</small></div>
       <div class="stat"><div class="rot">A receber · 30 dias</div><div class="val in">${M(em30("receita"))}</div><small>inclui vencidos</small></div>
       <div class="stat"><div class="rot">A pagar · 30 dias</div><div class="val out">${M(em30("despesa"))}</div><small>inclui vencidos</small></div>
       <div class="stat"><div class="rot">Resultado de ${F.nomeMes(mes)}</div><div class="val ${d.resultado[mes] < 0 ? "out" : ""}">${M(d.resultado[mes])}</div><small>por competência</small></div>
+      ${[["despesa", "A pagar", vencemHoje.pagar, "out"], ["receita", "A receber", vencemHoje.receber, "in"]].map(([tipo, rotulo, valor, cor]) => {
+        const quantidade = p.hoje.filter((t) => t.tipo === tipo).length;
+        return `<button class="stat stat-atalho" data-ir="contas" data-filtro="hoje" data-tipo="${tipo}" aria-label="Vencem hoje: ${rotulo}, ${M(valor)}. Ver lançamentos"><div class="rot">Vencem hoje · ${rotulo}</div><div class="val ${cor}">${M(valor)}</div><small>${quantidade} lançamento${quantidade === 1 ? "" : "s"} em aberto · Ver contas →</small></button>`;
+      }).join("")}
     </div>
     <div class="grade">
       <section class="painel">
@@ -759,7 +764,7 @@ document.addEventListener("click", (ev) => {
   if (!alvo) return;
   const d = alvo.dataset;
   if (alvo.closest("[data-fechar]") || d.fechar !== undefined) { alvo.closest("dialog")?.close(); return; }
-  if (d.ir) { ev.preventDefault(); ir(d.ir, { filtro: d.filtro, secao: d.secao }); return; }
+  if (d.ir) { ev.preventDefault(); if (d.tipo) { ui.tipo = d.tipo; ui.busca = ""; } ir(d.ir, { filtro: d.filtro, secao: d.secao }); return; }
   if (d.tema) { ui.tema = d.tema; try { localStorage.setItem(`${CHAVE}-tema`, ui.tema); } catch { /* sem armazenamento */ } render(); return; }
   if (d.empresa) { ui.empresa = d.empresa; ui.sel.clear(); render(); return; }
   if (d.tipo) { ui.tipo = d.tipo; render(); return; }
