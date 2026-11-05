@@ -105,6 +105,20 @@ export function competenciaNaPeriodicidade(competencia: string, periodicidadeMes
   return (mes - 1) % n === 0;
 }
 
+/** Meses (1–12) em que há cobrança de IPTU/TLP; no DF, de janeiro a outubro. */
+export const MESES_IPTU_PADRAO = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+/** O IPTU/TLP só é conferido nos meses com cobrança. */
+export function competenciaComIptu(competencia: string, meses: readonly number[] | null | undefined = MESES_IPTU_PADRAO): boolean {
+  const mes = Number(competencia.split("-")[1]);
+  return (meses ?? MESES_IPTU_PADRAO).includes(mes);
+}
+
+/** Lê os meses marcados num formulário, sem repetir e só de 1 a 12. */
+export function lerMesesIptu(valores: unknown[]): number[] {
+  return [...new Set(valores.map(Number).filter((m) => Number.isInteger(m) && m >= 1 && m <= 12))].sort((a, b) => a - b);
+}
+
 // ---------------------------------------------------------------
 // geração mensal sem duplicidade
 // ---------------------------------------------------------------
@@ -136,12 +150,13 @@ export function planejarGeracao(
   contratosAtivos: ContratoParaGeracao[],
   competencia: string,
   existentes: Set<string>,
-  opcoes: { periodicidadeCondominio: number; periodicidadeIptu: number; ignorarPeriodicidade?: boolean }
+  opcoes: { periodicidadeCondominio: number; periodicidadeIptu: number; ignorarPeriodicidade?: boolean; mesesIptu?: readonly number[] }
 ): VerificacaoNova[] {
   const novas: VerificacaoNova[] = [];
   const gerar: Record<TipoVerificacao, boolean> = {
     condominio: opcoes.ignorarPeriodicidade || competenciaNaPeriodicidade(competencia, opcoes.periodicidadeCondominio),
-    iptu_tlp: opcoes.ignorarPeriodicidade || competenciaNaPeriodicidade(competencia, opcoes.periodicidadeIptu),
+    // fora dos meses de cobrança não há IPTU/TLP a conferir, nem na geração manual
+    iptu_tlp: competenciaComIptu(competencia, opcoes.mesesIptu) && (opcoes.ignorarPeriodicidade || competenciaNaPeriodicidade(competencia, opcoes.periodicidadeIptu)),
   };
   const vistos = new Set<string>();
   for (const c of contratosAtivos) {

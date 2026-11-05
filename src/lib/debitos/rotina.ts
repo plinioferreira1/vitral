@@ -33,6 +33,7 @@ const CONFIG_PADRAO = {
   dia_geracao: 1,
   periodicidade_condominio_meses: 1,
   periodicidade_iptu_meses: 1,
+  meses_iptu: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
   envio_automatico: false,
   dia_envio: 5,
   email_assunto: null,
@@ -103,6 +104,7 @@ export async function gerarCompetencia(
     {
       periodicidadeCondominio: config.periodicidade_condominio_meses,
       periodicidadeIptu: config.periodicidade_iptu_meses,
+      mesesIptu: config.meses_iptu,
       ignorarPeriodicidade: opcoes.ignorarPeriodicidade,
     }
   );

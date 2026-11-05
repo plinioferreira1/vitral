@@ -1240,6 +1240,7 @@ export type Database = {
           observacoes: string | null
           processo_id: string
           status: string
+          tipo_beneficiario: string
           valor_previsto: number | null
           valor_recebido: number | null
         }
@@ -1252,6 +1253,7 @@ export type Database = {
           observacoes?: string | null
           processo_id: string
           status?: string
+          tipo_beneficiario?: string
           valor_previsto?: number | null
           valor_recebido?: number | null
         }
@@ -1264,6 +1266,7 @@ export type Database = {
           observacoes?: string | null
           processo_id?: string
           status?: string
+          tipo_beneficiario?: string
           valor_previsto?: number | null
           valor_recebido?: number | null
         }
@@ -1696,6 +1699,7 @@ export type Database = {
           email_responder_para: string | null
           envio_automatico: boolean
           geracao_automatica: boolean
+          meses_iptu: number[]
           periodicidade_condominio_meses: number
           periodicidade_iptu_meses: number
           tenant_id: string
@@ -1713,6 +1717,7 @@ export type Database = {
           email_responder_para?: string | null
           envio_automatico?: boolean
           geracao_automatica?: boolean
+          meses_iptu?: number[]
           periodicidade_condominio_meses?: number
           periodicidade_iptu_meses?: number
           tenant_id: string
@@ -1730,6 +1735,7 @@ export type Database = {
           email_responder_para?: string | null
           envio_automatico?: boolean
           geracao_automatica?: boolean
+          meses_iptu?: number[]
           periodicidade_condominio_meses?: number
           periodicidade_iptu_meses?: number
           tenant_id?: string
@@ -3341,6 +3347,7 @@ export type Database = {
         Row: {
           assinatura_imagem: string | null
           atualizado_em: string
+          codigo_proposta: string
           concluido_em: string | null
           consentimento_lgpd: boolean
           criado_em: string
@@ -3351,6 +3358,9 @@ export type Database = {
           id: string
           imovel_referencia: string | null
           ip_conclusao: string | null
+          ip_criacao_hash: string | null
+          nome_titular_informado: string | null
+          numero_fiador: number | null
           proponente_email: string | null
           proponente_nome: string | null
           status: string
@@ -3362,6 +3372,7 @@ export type Database = {
         Insert: {
           assinatura_imagem?: string | null
           atualizado_em?: string
+          codigo_proposta?: string
           concluido_em?: string | null
           consentimento_lgpd?: boolean
           criado_em?: string
@@ -3372,6 +3383,9 @@ export type Database = {
           id?: string
           imovel_referencia?: string | null
           ip_conclusao?: string | null
+          ip_criacao_hash?: string | null
+          nome_titular_informado?: string | null
+          numero_fiador?: number | null
           proponente_email?: string | null
           proponente_nome?: string | null
           status?: string
@@ -3383,6 +3397,7 @@ export type Database = {
         Update: {
           assinatura_imagem?: string | null
           atualizado_em?: string
+          codigo_proposta?: string
           concluido_em?: string | null
           consentimento_lgpd?: boolean
           criado_em?: string
@@ -3393,6 +3408,9 @@ export type Database = {
           id?: string
           imovel_referencia?: string | null
           ip_conclusao?: string | null
+          ip_criacao_hash?: string | null
+          nome_titular_informado?: string | null
+          numero_fiador?: number | null
           proponente_email?: string | null
           proponente_nome?: string | null
           status?: string
@@ -6215,15 +6233,22 @@ export type Database = {
           assinado_em: string | null
           assinatura_imagem: string | null
           cliente_cpf: string | null
+          cliente_cpf_informado: string | null
           cliente_id: string
           cliente_rg: string | null
+          cliente_rg_informado: string | null
           codigo_imovel: string | null
+          corretor_creci: string | null
+          corretor_creci_j: string | null
           corretor_id: string | null
           criado_em: string
           criado_por: string | null
           data_visita: string
           feedback: string | null
+          hora_visita: string | null
           id: string
+          imobiliaria_parceira: string | null
+          imoveis_visitados: Json
           imovel_id: string
           ip_assinatura: string | null
           multa_percentual: number
@@ -6240,15 +6265,22 @@ export type Database = {
           assinado_em?: string | null
           assinatura_imagem?: string | null
           cliente_cpf?: string | null
+          cliente_cpf_informado?: string | null
           cliente_id: string
           cliente_rg?: string | null
+          cliente_rg_informado?: string | null
           codigo_imovel?: string | null
+          corretor_creci?: string | null
+          corretor_creci_j?: string | null
           corretor_id?: string | null
           criado_em?: string
           criado_por?: string | null
           data_visita?: string
           feedback?: string | null
+          hora_visita?: string | null
           id?: string
+          imobiliaria_parceira?: string | null
+          imoveis_visitados?: Json
           imovel_id: string
           ip_assinatura?: string | null
           multa_percentual?: number
@@ -6265,15 +6297,22 @@ export type Database = {
           assinado_em?: string | null
           assinatura_imagem?: string | null
           cliente_cpf?: string | null
+          cliente_cpf_informado?: string | null
           cliente_id?: string
           cliente_rg?: string | null
+          cliente_rg_informado?: string | null
           codigo_imovel?: string | null
+          corretor_creci?: string | null
+          corretor_creci_j?: string | null
           corretor_id?: string | null
           criado_em?: string
           criado_por?: string | null
           data_visita?: string
           feedback?: string | null
+          hora_visita?: string | null
           id?: string
+          imobiliaria_parceira?: string | null
+          imoveis_visitados?: Json
           imovel_id?: string
           ip_assinatura?: string | null
           multa_percentual?: number
@@ -6857,6 +6896,33 @@ export type Database = {
           imovel_endereco: string
           ja_assinado: boolean
           multa_percentual: number
+          status_termo: string
+          termo_id: string
+          valor_imovel: number
+        }[]
+      }
+      termo_visita_buscar_ficha: {
+        Args: { p_token: string }
+        Returns: {
+          cliente_cpf_informado: string
+          cliente_email: string
+          cliente_nome: string
+          cliente_rg_informado: string
+          cliente_telefone: string
+          codigo_imovel: string
+          corretor_creci: string
+          corretor_creci_j: string
+          corretor_nome: string
+          data_visita: string
+          feedback: string
+          hora_visita: string
+          imobiliaria_parceira: string
+          imoveis_visitados: Json
+          imovel_endereco: string
+          ja_assinado: boolean
+          multa_percentual: number
+          nota: number
+          observacoes: string
           status_termo: string
           termo_id: string
           valor_imovel: number

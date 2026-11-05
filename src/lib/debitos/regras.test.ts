@@ -7,6 +7,7 @@ import {
   chaveVerificacao,
   competenciaDe,
   competenciaNaPeriodicidade,
+  lerMesesIptu,
   descreverUnidade,
   filtrarLinhas,
   montarAvisosDebitos,
@@ -77,18 +78,28 @@ describe("geração mensal sem duplicidade", () => {
     const comNovo = [...contratos, { id: "c4", imovel_id: "i4", possui_condominio: true, administradora_id: "a1" }];
     expect(planejarGeracao(comNovo, "2026-10-01", existentes, opcoes).map((n) => n.contrato_id)).toEqual(["c4", "c4"]);
     // outra competência é outro conjunto: o histórico anterior não é tocado
-    expect(planejarGeracao(contratos, "2026-11-01", existentes, opcoes)).toHaveLength(6);
+    expect(planejarGeracao(contratos, "2026-09-01", existentes, opcoes)).toHaveLength(6);
   });
 
   it("contrato repetido na entrada não duplica", () => {
     expect(planejarGeracao([contratos[0], contratos[0]], "2026-10-01", new Set(), opcoes)).toHaveLength(2);
   });
 
+  it("IPTU/TLP só nos meses com cobrança, inclusive na geração manual", () => {
+    const op = { periodicidadeCondominio: 1, periodicidadeIptu: 1 };
+    const nov = planejarGeracao(contratos, "2026-11-01", new Set(), { ...op, ignorarPeriodicidade: true });
+    expect(nov.some((v) => v.tipo === "iptu_tlp")).toBe(false);
+    expect(nov.some((v) => v.tipo === "condominio")).toBe(true);
+    expect(planejarGeracao(contratos, "2026-10-01", new Set(), op).some((v) => v.tipo === "iptu_tlp")).toBe(true);
+    expect(planejarGeracao(contratos, "2026-11-01", new Set(), { ...op, mesesIptu: [11] }).some((v) => v.tipo === "iptu_tlp")).toBe(true);
+    expect(lerMesesIptu(["3", "1", "1", "13", "x"])).toEqual([1, 3]);
+  });
+
   it("respeita a periodicidade de cada tipo, salvo geração manual", () => {
     const tri = { periodicidadeCondominio: 1, periodicidadeIptu: 3 };
-    expect(planejarGeracao(contratos, "2026-11-01", new Set(), tri).every((n) => n.tipo === "condominio")).toBe(true);
+    expect(planejarGeracao(contratos, "2026-09-01", new Set(), tri).every((n) => n.tipo === "condominio")).toBe(true);
     expect(planejarGeracao(contratos, "2026-10-01", new Set(), tri)).toHaveLength(6);
-    expect(planejarGeracao(contratos, "2026-11-01", new Set(), { ...tri, ignorarPeriodicidade: true })).toHaveLength(6);
+    expect(planejarGeracao(contratos, "2026-09-01", new Set(), { ...tri, ignorarPeriodicidade: true })).toHaveLength(6);
   });
 });
 

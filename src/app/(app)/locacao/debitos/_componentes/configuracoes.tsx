@@ -1,7 +1,7 @@
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
 import type { PermissoesDebitos } from "@/lib/debitos/permissoes";
-import { ASSUNTO_PADRAO, MODELO_PADRAO, PERIODICIDADES, ROTULO_PERIODICIDADE, VARIAVEIS_MODELO } from "@/lib/debitos/regras";
+import { ASSUNTO_PADRAO, MESES_IPTU_PADRAO, MODELO_PADRAO, PERIODICIDADES, ROTULO_PERIODICIDADE, VARIAVEIS_MODELO } from "@/lib/debitos/regras";
 import type { ConfigDebitos } from "@/lib/debitos/rotina";
 import { URL_CONSULTA_IPTU_DF } from "@/lib/debitos/tributos";
 import { formatarDataHoraBR } from "@/lib/data-br";
@@ -49,6 +49,18 @@ export function Configuracoes({ config, eventos, perms }: { config: ConfigDebito
                 </select>
               </label>
             </div>
+            <fieldset className="space-y-2">
+              <legend className={ROTULO}>Meses com cobrança de IPTU/TLP</legend>
+              <p className="text-xs text-ink-muted">Nos meses desmarcados o IPTU/TLP não é conferido (nem gerado manualmente). Ajuste quando sair o calendário de cobrança do ano.</p>
+              <div className="flex flex-wrap gap-2">
+                {["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"].map((nome, i) => (
+                  <label key={nome} className="inline-flex min-h-11 items-center gap-2 rounded-lg border border-border px-3 text-sm text-ink">
+                    <input type="checkbox" name="meses_iptu" value={i + 1} defaultChecked={(config.meses_iptu ?? MESES_IPTU_PADRAO).includes(i + 1)} />
+                    {nome}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
           </section>
 
           <section className="space-y-3 border-t border-border pt-5">
