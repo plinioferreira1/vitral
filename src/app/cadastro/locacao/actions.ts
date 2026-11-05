@@ -37,7 +37,7 @@ export async function iniciarFichaPublica(formData: FormData) {
       .neq("status", "cancelada").order("criado_em", { ascending: false }).limit(1000);
     if (erroBusca) redirect("/cadastro/locacao?erro=salvar");
     const encontrados = (candidatos ?? []).filter(p =>
-      normalizar(String(p.proponente_nome || p.dados?.nome_completo || "")) === normalizar(nomeTitular));
+      (() => { const nome = normalizar(String(p.proponente_nome || p.dados?.nome_completo || "")); const partes = nome.split(" ").filter(Boolean); const informado = normalizar(nomeTitular); return nome === informado || (partes.length >= 2 && `${partes[0]} ${partes[partes.length - 1]}` === informado); })());
     if (encontrados.length === 1) {
       principalId = encontrados[0].id;
       if (numero) {
