@@ -17,5 +17,6 @@ export function checklistDocumentos(tipo: TipoLocatario, garantia: string, dados
 }
 
 export function documentosPendentes(tipo: TipoLocatario, garantia: string, dados: DadosFicha, documentos: DocumentoFicha[]) {
+  if (documentos.some((d) => d.tipo === "Documentos enviados")) return [];
   return checklistDocumentos(tipo, garantia, dados, documentos).filter((item) => item.situacao === "pendente").map((item) => item.tipo);
 }
