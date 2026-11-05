@@ -143,3 +143,28 @@ export async function adicionarPessoaFicha(formData: FormData) {
   revalidatePath("/locacao/ficha-cadastral");
   revalidatePath(`/locacao/ficha-cadastral/${principal.id}`);
 }
+
+export async function vincularFichaAoTitular(formData: FormData) {
+  const sessao = await exigirUsuario(["diretor", "gerente"]);
+  if (!sessao?.usuario.tenant_id) return;
+  const supabase = await createClient() as unknown as SupabaseClient;
+  const id = String(formData.get("ficha_id") ?? "");
+  const pai = String(formData.get("titular_id") ?? "");
+  const tenant = sessao.usuario.tenant_id;
+  const { data: ficha } = await supabase.from("fichas_cadastrais_locacao").select("id,tipo_locatario,ficha_principal_id,numero_fiador").eq("id",id).eq("tenant_id",tenant).maybeSingle();
+  const { data: titular } = await supabase.from("fichas_cadastrais_locacao").select("id,status").eq("id",pai).eq("tenant_id",tenant).eq("tipo_locatario","titular").maybeSingle();
+  if (!ficha || ficha.tipo_locatario === "titular" || ficha.ficha_principal_id || !titular || titular.status === "cancelada") {
+    await avisar("erro","Confirme o titular correto antes de vincular.");
+    return;
+  }
+  if (ficha.numero_fiador) {
+    const { data: repetido } = await supabase.from("fichas_cadastrais_locacao").select("id").eq("ficha_principal_id",pai).eq("numero_fiador",ficha.numero_fiador).neq("status","cancelada").maybeSingle();
+    if (repetido) { await avisar("erro","Já existe esse número de fiador na proposta."); return; }
+  }
+  const ok = await checar(supabase.from("fichas_cadastrais_locacao").update({ficha_principal_id:pai}).eq("id",id).eq("tenant_id",tenant).is("ficha_principal_id",null),"vincular a ficha");
+  if (ok) {
+    revalidatePath("/locacao/ficha-cadastral");
+    revalidatePath("/locacao/ficha-cadastral/"+id);
+    revalidatePath("/locacao/ficha-cadastral/"+pai);
+  }
+}
