@@ -1,0 +1,1 @@
+alter table public.fichas_cadastrais_locacao add column if not exists ip_criacao_hash text; create index if not exists fichas_locacao_limite_publico_idx on public.fichas_cadastrais_locacao(ip_criacao_hash, criado_em desc) where ip_criacao_hash is not null;
