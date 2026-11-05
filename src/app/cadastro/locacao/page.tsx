@@ -4,7 +4,8 @@ import { InicioFicha } from "./inicio-formulario";
 const ERROS: Record<string,string> = {
  codigo: "Código da proposta não encontrado. Peça o código ao locatário e confira os 12 caracteres.",
  existente: "Já existe uma ficha deste fiador para essa proposta. Solicite à Sacra o link para continuar a ficha existente.",
- salvar: "Não foi possível abrir sua ficha neste momento. Tente novamente."
+ salvar: "Não foi possível abrir sua ficha neste momento. Tente novamente.",
+ limite: "Muitas fichas foram abertas recentemente nesta conexão. Tente novamente mais tarde ou fale com a SACRA."
 };
 
 export default async function CadastroLocacaoPublico({searchParams}:{searchParams:Promise<{erro?:string}>}) {
