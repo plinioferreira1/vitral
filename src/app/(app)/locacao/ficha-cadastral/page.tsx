@@ -11,7 +11,7 @@ export default async function FichasCadastraisLocacaoPage() {
   const siteUrl = await obterSiteUrl();
   const [{ data, error }, { usuario }] = await Promise.all([
     supabase.from("fichas_cadastrais_locacao")
-      .select("id, proponente_nome, proponente_email, imovel_referencia, status, criado_em, tipo_locatario, ficha_principal_id")
+      .select("id, proponente_nome, proponente_email, imovel_referencia, status, criado_em, tipo_locatario, numero_fiador, ficha_principal_id")
       .order("criado_em", { ascending: false }),
     getUsuarioAtual(),
   ]);
