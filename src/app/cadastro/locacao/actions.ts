@@ -4,11 +4,12 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { createHash } from "node:crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { tipoLocatario } from "@/lib/ficha-locacao/campos";
 
 // A rota pública apenas cria uma ficha isolada. Nunca retorna dados do titular.
 export async function iniciarFichaPublica(formData: FormData) {
-  const admin = createAdminClient();
+  const admin = createAdminClient() as unknown as SupabaseClient;
   const opcao = String(formData.get("papel") ?? "titular");
   const tipo = tipoLocatario(opcao === "fiador_1" || opcao === "fiador_2" ? "fiador" : opcao);
   const numero = opcao === "fiador_1" ? 1 : opcao === "fiador_2" ? 2 : null;
