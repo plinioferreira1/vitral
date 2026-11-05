@@ -11,7 +11,7 @@ import { excluirFichasLocacao } from "./actions";
 export type FichaLista = {
   id: string; proponente_nome: string | null; proponente_email: string | null;
   imovel_referencia: string | null; status: string; criado_em: string;
-  tipo_locatario: string; ficha_principal_id: string | null;
+  tipo_locatario: string; numero_fiador?: number | null; ficha_principal_id: string | null;
 };
 
 const STATUS: Record<string, { label: string; classe: string }> = {
@@ -48,7 +48,7 @@ function ConteudoFichas({ fichas, podeExcluir, selecionadas, marcadas, setMarcad
   setMarcadas: React.Dispatch<React.SetStateAction<string[]>>; vinculadas: number;
 }) {
   const { pending } = useFormStatus();
-  if (!fichas.length) return <div className="flex flex-col items-center px-6 py-16 text-center"><UserRoundCheck className="h-10 w-10 text-gold" /><h2 className="mt-4 font-semibold">Nenhuma ficha criada</h2><p className="mt-1 max-w-md text-sm text-ink-muted">Crie a primeira solicitação para gerar o link que será enviado ao proponente.</p></div>;
+  if (!fichas.length) return <div className="flex flex-col items-center px-6 py-16 text-center"><UserRoundCheck className="h-10 w-10 text-gold" /><h2 className="mt-4 font-semibold">Nenhuma ficha criada</h2><p className="mt-1 max-w-md text-sm text-ink-muted">Compartilhe o link público da ficha cadastral para que o cliente comece seu cadastro.</p></div>;
   return <>
     {podeExcluir && <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-background/50 px-4 py-3 sm:px-5">
       <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-medium text-ink">
@@ -71,7 +71,7 @@ function ConteudoFichas({ fichas, podeExcluir, selecionadas, marcadas, setMarcad
         <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <Link href={`/locacao/ficha-cadastral/${f.id}`} className="flex min-h-11 min-w-0 flex-1 items-start gap-3 rounded-lg focus-visible:outline-brand">
             <div className="hidden rounded-lg bg-brand-soft p-2 text-brand sm:block"><FileText size={20} /></div>
-            <div className="min-w-0"><p className="break-words font-semibold text-ink">{f.proponente_nome || "Aguardando dados do cliente"}</p><p className="mt-0.5 text-xs font-medium text-brand">{ROTULO_TIPO[tipoLocatario(f.tipo_locatario)]}</p><p className="mt-1 break-words text-sm text-ink-muted">{f.imovel_referencia}</p><p className="mt-1 break-all text-xs text-ink-muted">{f.proponente_email}</p></div>
+            <div className="min-w-0"><p className="break-words font-semibold text-ink">{f.proponente_nome || "Aguardando dados do cliente"}</p><p className="mt-0.5 text-xs font-medium text-brand">{f.tipo_locatario === "fiador" && f.numero_fiador ? `Fiador ${f.numero_fiador}` : ROTULO_TIPO[tipoLocatario(f.tipo_locatario)]}</p><p className="mt-1 break-words text-sm text-ink-muted">{f.imovel_referencia}</p><p className="mt-1 break-all text-xs text-ink-muted">{f.proponente_email}</p></div>
           </Link>
           <div className="flex flex-wrap items-center gap-3 sm:justify-end">
             <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${status.classe}`}>{status.label}</span>
