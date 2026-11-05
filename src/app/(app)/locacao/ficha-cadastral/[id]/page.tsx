@@ -11,7 +11,8 @@ import { ROTULO_TIPO, pendencias, secoesVisiveis, tipoLocatario, valorExibido, t
 import { checklistDocumentos } from "@/lib/ficha-locacao/documentos";
 import { createClient } from "@/lib/supabase/server";
 import { obterSiteUrl } from "@/lib/site-url";
-import { cancelarFichaLocacao } from "../actions";
+import { cancelarFichaLocacao, vincularFichaAoTitular } from "../actions";
+import { getUsuarioAtual, GESTORES } from "@/lib/usuario-atual";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 const STATUS: Record<string, { label: string; classe: string }> = {
@@ -32,12 +33,18 @@ export default async function DetalheFichaPage({ params }: { params: Promise<{ i
     obterSiteUrl(),
   ]);
   if (!ficha) notFound();
+  const { usuario } = await getUsuarioAtual();
+  const podeVincular = !!usuario && GESTORES.includes(usuario.nivel_acesso);
   const tipo = tipoLocatario(ficha.tipo_locatario);
   const principalId: string = ficha.ficha_principal_id ?? ficha.id;
   // Todas as pessoas da mesma proposta: o titular e quem está ligado a ele.
   const { data: grupo } = await supabase.from("fichas_cadastrais_locacao").select("id, proponente_nome, tipo_locatario, numero_fiador, status, garantia:dados->>garantia").or(`id.eq.${principalId},ficha_principal_id.eq.${principalId}`).order("criado_em");
   const linksDocumentos = (documentos ?? []).map((d) => ({ ...d, url: `/locacao/ficha-cadastral/${id}/documentos/${d.id}` }));
   const pessoas = (grupo ?? []) as Vinculada[];
+  const { data: titulares } = ficha.tipo_locatario !== "titular" && !ficha.ficha_principal_id && podeVincular
+    ? await supabase.from("fichas_cadastrais_locacao").select("id, proponente_nome")
+      .eq("tipo_locatario", "titular").neq("status", "cancelada").order("criado_em", { ascending: false }).limit(300)
+    : { data: [] as { id: string; proponente_nome: string | null }[] };
   const basePublica = process.env.NEXT_PUBLIC_CADASTRO_URL?.replace(/\/$/, "") || `${siteUrl}/cadastro`;
   const link = `${basePublica}/locacao/${ficha.token}`;
   const dados = (ficha.dados ?? {}) as DadosFicha;
@@ -54,6 +61,20 @@ export default async function DetalheFichaPage({ params }: { params: Promise<{ i
       <div className={`${CARD_CLASS} p-4`}><Files size={18} className="text-brand" /><p className="mt-2 text-xl font-bold">{documentos?.length ?? 0}</p><p className="text-xs text-ink-muted">Documentos anexados</p></div>
       <div className={`${CARD_CLASS} col-span-2 p-4 sm:col-span-1`}><ClipboardCheck size={18} className="text-brand" /><p className="mt-2 text-xl font-bold">{new Date(ficha.expira_em).toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo" })}</p><p className="text-xs text-ink-muted">Validade do link</p></div>
     </div>
+    {ficha.tipo_locatario !== "titular" && !ficha.ficha_principal_id && podeVincular && <section className="rounded-xl border border-amber-300 bg-amber-50 p-5">
+      <h2 className="font-semibold text-amber-950">Vínculo pendente de conferência</h2>
+      <p className="mt-1 text-sm text-amber-900">Nome informado: <strong>{ficha.nome_titular_informado ?? "Não informado"}</strong>. Confirme a identidade antes de associar.</p>
+      <form action={vincularFichaAoTitular} className="mt-3 flex flex-wrap items-end gap-3">
+        <input type="hidden" name="ficha_id" value={ficha.id} />
+        <label className="min-w-0 flex-1 text-xs font-semibold text-amber-950">Titular
+          <select name="titular_id" required defaultValue="" className="mt-1 min-h-11 w-full rounded-lg border border-amber-300 bg-white p-2 text-sm">
+            <option value="">Selecione após conferir</option>
+            {(titulares ?? []).map(t => <option key={t.id} value={t.id}>{t.proponente_nome || "Titular sem nome"} · {t.id.slice(0,8)}</option>)}
+          </select>
+        </label>
+        <button className="min-h-11 rounded-lg bg-brand px-4 text-sm font-semibold text-white">Confirmar vínculo</button>
+      </form>
+    </section>}
     <NavegacaoSecoes secoes={[{ id: "pessoas", label: "Pessoas da proposta" }, { id: "dados", label: "Dados informados" }, { id: "documentos", label: "Documentos" }, { id: "controle", label: "Controle" }]} />
 
     {ficha.status !== "concluida" && ficha.status !== "cancelada" && <section className={`${CARD_CLASS} p-5 sm:p-6`}><h2 className="flex items-center gap-2 font-semibold"><Link2 size={18} className="text-brand" /> Link {tipo === "titular" ? "do cliente" : `do ${ROTULO_TIPO[tipo].toLowerCase()}`}</h2><p className="mt-1 text-sm text-ink-muted">Envie este endereço a {ficha.proponente_nome || "esta pessoa"}. O link é só dela; ela poderá salvar e continuar depois.{faltando > 0 ? ` Ainda faltam ${faltando} campo${faltando === 1 ? "" : "s"} obrigatório${faltando === 1 ? "" : "s"}.` : ""}</p><div className="mt-4 flex flex-col gap-2 sm:flex-row"><code className="min-w-0 flex-1 truncate rounded-lg bg-background px-3 py-2.5 text-xs">{link}</code><BotaoCopiarLink url={link} rotulo="Copiar link" /><a href={link} target="_blank" rel="noreferrer" className={`${SECONDARY_BUTTON_CLASS} min-h-11`}>Abrir ficha</a></div></section>}
@@ -65,8 +86,7 @@ export default async function DetalheFichaPage({ params }: { params: Promise<{ i
 
       {tipo === "titular" && ficha.status !== "cancelada" && <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm">
         <p className="font-semibold text-amber-950">Fiador 1, fiador 2 e corresponsável</p>
-        <p className="mt-1 text-amber-900">Todos preenchem suas próprias fichas pelo link público: <strong>{siteUrl}/cadastro/locacao</strong>. Cada pessoa informa o código da proposta do titular.</p>
-        <p className="mt-2 text-base font-bold tracking-widest text-amber-950">Código: {ficha.codigo_proposta}</p>
+        <p className="mt-1 text-amber-900">Todos preenchem suas próprias fichas pelo link público: <strong>{siteUrl}/cadastro/locacao</strong>. Cada pessoa informa o nome completo do titular.</p>
         <div className="mt-2"><BotaoCopiarLink texto={`${siteUrl}/cadastro/locacao`} rotulo="Copiar link público" /></div>
       </div>}
     </section>
