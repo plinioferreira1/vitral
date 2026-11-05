@@ -43,7 +43,7 @@ export const GARANTIAS = [
   { nome: "Seguro Fiança", itens: ["É necessário possuir um cartão de crédito com limite mínimo de 3 vezes o valor do aluguel.", "Taxa de adesão de R$ 150,00, podendo ser parcelada em 2 ou 3 vezes.", "O valor da garantia é a partir de 11% do pacote mensal de locação (aluguel + condomínio + demais encargos aplicáveis), multiplicado por 12 meses.", "A garantia deve ser renovada anualmente, enquanto durar o contrato.", "Não há reembolso ao locatário ao final da locação."], obs: "A taxa de 11% é a mínima. O cliente passa por análise interna da seguradora, que pode oferecer apenas taxas maiores, conforme o risco avaliado — esse processo é interno e não temos como interferir." },
   { nome: "Título de Capitalização", itens: ["Contratação de um título de capitalização com valor entre 6 e 10 vezes o pacote mensal de locação, a depender da análise da seguradora.", "O valor aplicado rende pela TR e pode ser resgatado a qualquer momento, podendo haver deságio caso o resgate ocorra antes de 12 meses.", "Pagamento à vista ou parcelado em até 18 vezes, com juros. Os juros do parcelamento não são reembolsáveis ao final da locação.", "Ao final da locação, o cliente pode resgatar integralmente o valor aplicado, acrescido dos rendimentos."] },
   { nome: "Garantia Investe", itens: ["Investimento de um valor entre 6 e 10 vezes o pacote mensal de locação numa corretora de investimento, a Warren, a depender da análise da seguradora.", "O valor aplicado rende pela SELIC e pode ser resgatado a qualquer momento, podendo haver deságio caso o resgate seja feito antes de 12 meses.", "Ao final da locação, o cliente pode resgatar integralmente o valor aplicado, acrescido dos rendimentos, ou manter o valor aplicado, com total autonomia da sua conta de investimentos."] },
-  { nome: "Fiador", itens: ["O fiador preenche e assina a própria ficha cadastral, por um link que a SACRA envia.", "Deve comprovar renda suficiente e apresentar documentação pessoal e financeira.", "Para fiador com imóvel quitado: escritura do imóvel acompanhada da certidão de ônus com até 30 dias de emissão."], obs: "O fiador também passa por análise cadastral. A indicação não garante aprovação." },
+  { nome: "Fiador", itens: ["O fiador 1 e o fiador 2 acessam o mesmo link público da ficha cadastral e informam o código da proposta fornecido pelo titular. Cada um preenche e assina sua própria ficha.", "Deve comprovar renda suficiente e apresentar documentação pessoal e financeira.", "Para fiador com imóvel quitado: escritura do imóvel acompanhada da certidão de ônus com até 30 dias de emissão."], obs: "O fiador também passa por análise cadastral. A indicação não garante aprovação." },
 ] as const;
 
 const OPCOES_GARANTIA = [...GARANTIAS.map((g) => g.nome), "A definir"];
@@ -58,7 +58,6 @@ const temImovel: Regra = (d) => texto(d, "imovel_proprio").startsWith("Sim");
 const imovelFinanciado: Regra = (d) => texto(d, "imovel_proprio") === "Sim — financiado";
 const temVeiculo: Regra = (d) => texto(d, "veiculo") !== "";
 const veiculoFinanciado: Regra = (d) => temVeiculo(d, "titular") && texto(d, "veiculo_financiado") === "Sim";
-const garantiaFiador: Regra = (d, tipo) => tipo === "titular" && texto(d, "garantia") === "Fiador";
 const comCorresponsavel: Regra = (d, tipo) => tipo === "titular" && texto(d, "tem_corresponsavel") === "Sim";
 const moradiaPaga: Regra = (d) => ["Alugado", "Próprio financiado"].includes(texto(d, "moradia_tipo"));
 
@@ -73,15 +72,6 @@ export const SECOES: Secao[] = [
       { chave: "data_pretendida", rotulo: "Data pretendida para início", formato: "data" },
       { chave: "moradores", rotulo: "Quantas pessoas ocuparão o imóvel?" },
       { chave: "possui_pet", rotulo: "Possui animais?", formato: "lista", opcoes: ["Não", "Sim — pequeno porte", "Sim — médio/grande porte"] },
-    ],
-  },
-  {
-    id: "fiador_indicado", titulo: "Fiador indicado", etapa: 0, visivel: garantiaFiador,
-    descricao: "Informe apenas o contato. O fiador receberá um link para preencher e assinar a própria ficha.",
-    campos: [
-      { chave: "fiador_nome", rotulo: "Nome completo do fiador", obrigatorio: true, larga: true },
-      { chave: "fiador_telefone", rotulo: "Telefone / WhatsApp do fiador", formato: "telefone", obrigatorio: true },
-      { chave: "fiador_email", rotulo: "E-mail do fiador", formato: "email" },
     ],
   },
   {
