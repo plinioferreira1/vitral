@@ -2,7 +2,7 @@ import Image from "next/image";
 import { InicioFicha } from "./inicio-formulario";
 
 const ERROS: Record<string,string> = {
- codigo: "Código da proposta não encontrado. Peça o código ao locatário e confira os 12 caracteres.",
+ nome: "Informe o nome completo do locatário, com nome e sobrenome.",
  existente: "Já existe uma ficha deste fiador para essa proposta. Solicite à Sacra o link para continuar a ficha existente.",
  salvar: "Não foi possível abrir sua ficha neste momento. Tente novamente.",
  limite: "Muitas fichas foram abertas recentemente nesta conexão. Tente novamente mais tarde ou fale com a SACRA."
