@@ -16,6 +16,8 @@ export type EntradaPdfFicha = {
   assinatura: string | null;
   concluidoEm: string;
   ip: string | null;
+  /** logo horizontal da Sacra (PNG); sem ela, o cabeçalho sai só com texto */
+  logo?: Uint8Array | null;
 };
 
 /** PDF da ficha concluída: dados informados, documentos, declaração e assinatura. */
@@ -52,9 +54,21 @@ export async function gerarPdfFicha(entrada: EntradaPdfFicha): Promise<Uint8Arra
   }
 
   page.drawRectangle({ x: 0, y: H - 9, width: W, height: 9, color: vinho });
-  page.drawText("SACRA", { x: M, y, size: 21, font: bold, color: vinho });
-  page.drawText("NETIMÓVEIS", { x: M, y: y - 13, size: 7.5, font: bold, color: dourado });
-  page.drawText("FICHA CADASTRAL DE LOCAÇÃO", { x: W - M - 205, y: y - 2, size: 11, font: bold, color: vinho });
+  let comLogo = false;
+  if (entrada.logo) {
+    try {
+      const img = await pdf.embedPng(entrada.logo);
+      const h = 42, w = (img.width / img.height) * h;
+      page.drawImage(img, { x: M, y: y - h + 14, width: w, height: h });
+      comLogo = true;
+    } catch { /* logo inválida: segue com o cabeçalho em texto */ }
+  }
+  if (!comLogo) {
+    page.drawText("SACRA", { x: M, y, size: 21, font: bold, color: vinho });
+    page.drawText("NETIMÓVEIS", { x: M, y: y - 13, size: 7.5, font: bold, color: dourado });
+  }
+  const tituloPdf = "FICHA CADASTRAL DE LOCAÇÃO";
+  page.drawText(tituloPdf, { x: W - M - bold.widthOfTextAtSize(tituloPdf, 11), y: y - 8, size: 11, font: bold, color: vinho });
   y -= 48;
   const tipo = entrada.tipo;
   const dados = entrada.dados;

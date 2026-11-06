@@ -3,7 +3,21 @@ import { tipoLocatario, type DadosFicha } from "@/lib/ficha-locacao/campos";
 import { gerarPdfFicha } from "@/lib/ficha-locacao/pdf";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-export async function GET(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+let logoEmCache: Uint8Array | null = null;
+async function carregarLogo(origem: string): Promise<Uint8Array | null> {
+  if (logoEmCache) return logoEmCache;
+  try {
+    const r = await fetch(new URL("/brand/sacra-logo-horizontal-bordo.png", origem), { signal: AbortSignal.timeout(5000) });
+    if (!r.ok) throw new Error(String(r.status));
+    logoEmCache = new Uint8Array(await r.arrayBuffer());
+    return logoEmCache;
+  } catch (erro) {
+    console.error("ficha-locacao: logo indisponível", erro);
+    return null;
+  }
+}
+
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient() as unknown as SupabaseClient;
   const [{ data: ficha }, { data: documentos }] = await Promise.all([
@@ -21,6 +35,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     dados: (ficha.dados ?? {}) as DadosFicha,
     titular: principal ? { nome: String(dadosPrincipal.nome_completo ?? principal.proponente_nome ?? ""), garantia: String(dadosPrincipal.garantia ?? "") } : null,
     documentos: documentos ?? [], assinatura: ficha.assinatura_imagem, concluidoEm: ficha.concluido_em, ip: ficha.ip_conclusao,
+    logo: await carregarLogo(req.url),
   });
   return new Response(new Uint8Array(bytes), { headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="ficha-locacao-${id}.pdf"`, "Cache-Control": "private, no-store" } });
 }
