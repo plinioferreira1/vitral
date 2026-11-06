@@ -14,6 +14,7 @@ export function InicioFicha() {
        <option value="fiador_2">Fiador(a) 2</option>
      </select>
    </label>
+   <p role="note" className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm font-medium leading-6 text-amber-900">Se você estiver preenchendo como fiador, marque a opção <strong>Fiador(a) 1</strong> ou <strong>Fiador(a) 2</strong>.</p>
    {precisaNome && <label className="block text-sm font-semibold text-stone-800">Nome completo do locatário titular
       <input name="nome_titular" required maxLength={200} minLength={5} autoComplete="off" placeholder="Nome e sobrenome do locatário" className="mt-2 min-h-12 w-full rounded-lg border border-stone-300 px-3 text-base" />
       <span className="mt-2 block text-xs font-normal leading-5 text-stone-600">Informe o nome completo de quem está solicitando a locação. Se houver pessoas com o mesmo nome, a Sacra confirmará o vínculo internamente.</span>

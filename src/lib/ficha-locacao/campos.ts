@@ -105,6 +105,8 @@ export const SECOES: Secao[] = [
     campos: [
       { chave: "conjuge_nome", rotulo: "Nome completo do cônjuge", obrigatorio: true },
       { chave: "conjuge_cpf", rotulo: "CPF do cônjuge", formato: "cpf", obrigatorio: true },
+      { chave: "conjuge_profissao", rotulo: "Profissão do cônjuge", obrigatorio: true },
+      { chave: "conjuge_email", rotulo: "E-mail do cônjuge", formato: "email", obrigatorio: true },
     ],
   },
   {

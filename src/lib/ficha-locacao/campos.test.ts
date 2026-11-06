@@ -39,7 +39,7 @@ describe("ficha cadastral de locação", () => {
   });
 
   it("exige dados do cônjuge só para casado ou união estável", () => {
-    expect(pendencias({ ...completa, estado_civil: "Casado(a)" }, "titular").map((p) => p.chave)).toEqual(["conjuge_nome", "conjuge_cpf"]);
+    expect(pendencias({ ...completa, estado_civil: "Casado(a)" }, "titular").map((p) => p.chave)).toEqual(["conjuge_nome", "conjuge_cpf", "conjuge_profissao", "conjuge_email"]);
     expect(pendencias({ ...completa, estado_civil: "Viúvo(a)" }, "titular")).toEqual([]);
   });
 
@@ -49,10 +49,10 @@ describe("ficha cadastral de locação", () => {
     expect(pendencias({ ...semEmpresa, tipo_renda: "Aposentado(a)" }, "titular")).toEqual([]);
   });
 
-  it("garantia Fiador pede só o contato do fiador ao titular", () => {
+  it("garantia Fiador não pede dados do fiador ao titular: cada fiador preenche a própria ficha pelo link", () => {
     const d = { ...completa, garantia: "Fiador" };
-    expect(pendencias(d, "titular").map((p) => p.chave)).toEqual(["fiador_nome", "fiador_telefone"]);
-    expect(secoesVisiveis(d, "titular", 0).map((s) => s.id)).toEqual(["proposta", "fiador_indicado", "corresponsavel_indicado"]);
+    expect(pendencias(d, "titular")).toEqual([]);
+    expect(secoesVisiveis(d, "titular", 0).map((s) => s.id)).toEqual(["proposta", "corresponsavel_indicado"]);
   });
 
   it("corresponsável só é pedido quando o titular diz que haverá", () => {
