@@ -302,6 +302,28 @@ export const DOCUMENTACAO_POR_OCUPACAO = [
   ["Fiador com imóvel quitado", "escritura do imóvel acompanhada da certidão de ônus com até 30 dias de emissão"],
 ] as const;
 
+export const GARANTIAS_INICIO = ["Seguro Fiança", "Título de Capitalização", "Garantia Investe", "Fiador", "A definir"] as const;
+
+/**
+ * Lista de documentos para separar antes de começar a ficha, conforme quem
+ * preenche e a garantia escolhida. Mesmas regras de `anexosDe`.
+ */
+export function documentosParaSeparar(tipo: TipoLocatario, garantia: string): { lista: string[]; conformeRenda: (readonly [string, string])[] } {
+  const lista = [
+    "CPF e RG (se casado ou em união estável, também do cônjuge)",
+    "Certidão de nascimento, casamento ou averbação de divórcio, conforme o caso",
+    "Comprovante de residência atualizado (água, luz, telefone ou cartão de crédito)",
+  ];
+  const investimento = ["Título de Capitalização", "Garantia Investe"].includes(garantia);
+  if (tipo === "fiador" || !investimento) lista.push("3 últimos comprovantes de renda (contracheque ou extrato bancário)");
+  lista.push("Imposto de renda e recibo de declaração");
+  if (tipo !== "fiador" && garantia === "Seguro Fiança") lista.push("Última fatura do cartão de crédito comprovando limite de pelo menos 3 vezes o valor do aluguel");
+  if (tipo !== "fiador" && investimento) lista.push("6 últimos contracheques", "6 últimas movimentações bancárias");
+  if (tipo === "fiador") lista.push("Se tiver imóvel quitado: escritura do imóvel e certidão de ônus com até 30 dias de emissão");
+  const conformeRenda = DOCUMENTACAO_POR_OCUPACAO.filter(([quem]) => quem !== "Fiador com imóvel quitado");
+  return { lista, conformeRenda };
+}
+
 /** Tipos de anexo oferecidos, conforme a pessoa, a garantia e a renda. */
 export function anexosDe(tipo: TipoLocatario, garantia: string, d: DadosFicha): string[] {
   const lista = ["Documento de identidade (CPF e RG)", "Certidão de estado civil", "Comprovante de residência", "Comprovantes de renda — 3 últimos", "Imposto de renda e recibo"];

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { SECOES, anexosDe, cpfValido, limparDados, pendencias, secoesVisiveis, textoPendencias, tipoLocatario, type DadosFicha } from "./campos";
+import { SECOES, anexosDe, documentosParaSeparar, cpfValido, limparDados, pendencias, secoesVisiveis, textoPendencias, tipoLocatario, type DadosFicha } from "./campos";
 
 const completa: DadosFicha = {
   imovel_interesse: "SQN 208 Bloco E, apto. 502", valor_proposta: "R$ 3.500,00", finalidade: "Residencial", garantia: "Seguro Fiança",
@@ -109,5 +109,20 @@ describe("complementos da revisão", () => {
   it("exige a origem da renda complementar e preserva a justificativa documental", () => {
     expect(pendencias({ ...completa, outros_rendimentos: "R$ 1.000,00" }, "titular").map((p) => p.chave)).toEqual(["outros_rendimentos_origem"]);
     expect(limparDados({ ...completa, ir_nao_aplicavel: "Não declaro imposto de renda." }, "titular").ir_nao_aplicavel).toBe("Não declaro imposto de renda.");
+  });
+});
+
+describe("documentos para separar antes de começar", () => {
+  it("muda conforme a garantia e quem preenche", () => {
+    const seguro = documentosParaSeparar("titular", "Seguro Fiança").lista.join(" | ");
+    expect(seguro).toMatch(/fatura do cartão/);
+    expect(seguro).toMatch(/3 últimos comprovantes/);
+    const titulo = documentosParaSeparar("corresponsavel", "Título de Capitalização").lista.join(" | ");
+    expect(titulo).toMatch(/6 últimos contracheques/);
+    expect(titulo).not.toMatch(/3 últimos comprovantes|fatura/);
+    const fiador = documentosParaSeparar("fiador", "Seguro Fiança").lista.join(" | ");
+    expect(fiador).toMatch(/escritura/);
+    expect(fiador).not.toMatch(/fatura|6 últimos/);
+    expect(documentosParaSeparar("titular", "Fiador").conformeRenda.map(([q]) => q)).toEqual(["Empresário", "Pensionista", "Aposentado"]);
   });
 });
