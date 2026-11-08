@@ -123,7 +123,7 @@ export function extratoInterPDF(linhas) {
     const saldo=l.match(/(?:Saldo total|Saldo dispon[ií]vel)\s*:?\s*R\$\s*([\d.]+,\d{2})/i);
     if (saldo && saldoCabecalho===null) saldoCabecalho=centavosInter("R$ "+saldo[1]);
     if (!dia) continue;
-    const m=/^(.+?)\s+(-?R\$\s*[\d.]+,\d{2})\s+(R\$\s*[\d.]+,\d{2})\s*$/.exec(l);
+    const m=/^(.+?)\s+(-?R\$\s*[\d.]+,\d{2})\s+(-?R\$\s*[\d.]+,\d{2})\s*$/.exec(l);
     if (!m) continue;
     if (!/^(Pix |Pagamento |Transfer[eê]ncia |DARF |Tarifa |Cr[eé]dito |D[eé]bito )/i.test(m[1])) continue;
     const valor=centavosInter(m[2]), saldoApos=centavosInter(m[3]);
@@ -135,7 +135,14 @@ export function extratoInterPDF(linhas) {
   }
   if (!transacoes.length) throw new Error("Não foram encontradas movimentações nesse extrato do Inter.");
   const ultimo=transacoes.at(-1);
-  return {transacoes,ignoradas,conta:"Banco Inter (PDF)",inicio:transacoes[0].data,fim:ultimo.data,
+  const inconsistencias=[];
+  for (let i=1;i<transacoes.length;i++) {
+    const anterior=transacoes[i-1],atual=transacoes[i];
+    if(anterior.saldoApos+atual.valor!==atual.saldoApos)
+      inconsistencias.push({data:atual.data,memo:atual.memo,diferenca:atual.saldoApos-anterior.saldoApos-atual.valor});
+  }
+  if(saldoCabecalho===null)saldoCabecalho=ultimo.saldoApos;
+  return {inconsistencias,transacoes,ignoradas,conta:"Banco Inter (PDF)",inicio:transacoes[0].data,fim:ultimo.data,
     saldo:saldoCabecalho===null?null:{data:ultimo.data,valor:saldoCabecalho},formato:"PDF Banco Inter"};
 }
 export function faturaInterPDF(linhas) {
