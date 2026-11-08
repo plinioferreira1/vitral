@@ -348,7 +348,7 @@ function bancos() {
     const sug = F.sugestoes(E, l, HOJE());
     const htmlSug = sug.length ? sug.map((s) => `<div class="sug ${s.exato ? "exata" : ""}"><label style="display:flex;gap:8px;align-items:center;min-width:0"><input type="checkbox" class="check" data-sug="${l.id}" value="${s.titulo.id}" ${s.exato && sug.filter((x) => x.exato).length === 1 ? "checked" : ""}><span style="min-width:0"><b class="small">${esc(s.titulo.descricao)}</b><span class="muted small" style="display:block">vence ${F.dataBR(s.titulo.vencimento)} · saldo ${M(s.saldo)}</span></span></label>${s.exato ? `<span class="pill ok">Valor exato</span>` : ""}</div>`).join("")
       : `<p class="small muted">Nenhum lançamento em aberto parecido. Crie um a partir desta linha.</p>`;
-    return `<div class="conc">${esquerda}<div>${htmlSug}<div class="acoes">${sug.length ? `<button class="btn peq" data-conciliar="${l.id}">Conciliar marcados</button>` : ""}<button class="btn sec peq" data-criar-extrato="${l.id}">Criar lançamento</button><button class="btn ghost peq" data-ignorar="${l.id}">Ignorar</button></div></div></div>`;
+    return `<div class="conc">${esquerda}<div>${htmlSug}<div class="acoes">${sug.length ? `<button class="btn peq" data-conciliar="${l.id}">Conciliar marcados</button>` : ""}${l.pagamentoFatura ? `<span class="pill alerta">Pagamento de fatura: apenas conciliar</span>` : `<button class="btn sec peq" data-criar-extrato="${l.id}">Criar lançamento</button>`}<button class="btn ghost peq" data-ignorar="${l.id}">Ignorar</button></div></div></div>`;
   };
 
   return `
