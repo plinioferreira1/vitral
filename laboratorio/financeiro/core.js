@@ -343,6 +343,7 @@ export function conciliar(estado, { linha: linhaId, titulos }) {
 export function criarDoExtrato(estado, { linha: linhaId, descricao, categoria, contato = "" }) {
   const linha = porId(estado.extrato, linhaId) ?? falha("Linha do extrato não encontrada.");
   if (linha.status !== "pendente") falha("Esta linha já foi tratada.");
+  if (linha.pagamentoFatura) falha("Pagamento de fatura deve ser conciliado com a obrigação do cartão, sem criar despesa duplicada.");
   const conta = porId(estado.contas, linha.conta);
   const { estado: comTitulo, ids } = criarTitulo(estado, {
     tipo: linha.valor > 0 ? "receita" : "despesa", descricao: descricao || linha.memo, contato, empresa: conta.empresa,
