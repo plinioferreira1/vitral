@@ -50,8 +50,8 @@ export async function importarDocumentoFinanceiroPDF(fd:FormData):Promise<Result
     : await supabase.from("financeiro_cartoes").select("id").eq("id",idAlvo).eq("tenant_id",sessao.tenantId).eq("ativo",true).maybeSingle();
   if(!alvo)return falha("Conta ou cartão não pertence à empresa ou está desativado.");
 
-  let movimentos:Movimento[]=[];
-  let compras:Compra[]=[];
+  const movimentos:Movimento[]=[];
+  const compras:Compra[]=[];
   let competencia="",vencimento="",valorFatura=0;
   if(tipo==="extrato"){
     if(Number(dados.divergencias)!==0)return falha("O PDF possui divergências de saldo e não pode ser importado.");
