@@ -728,37 +728,65 @@ function dialogoPDFExtrato() {
 }
 
 function dialogoPDFFatura() {
-  let resultado=null,nome="";
+  let original=null,resultado=null,arquivo=null;
   const cartoes=E.cartoes.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join("");
-  const form=dialogo("Importar fatura PDF — Inter",
-    '<p class="small muted">O PDF é lido localmente. Confirme valor e compras. O original não é armazenado no laboratório.</p>'+
-    '<label class="campo"><span>Cartão da empresa</span><select name="cartao">'+cartoes+'</select></label>'+
+  const form=dialogo("Importar fatura PDF — Banco Inter",
+    '<p class="small muted">Leitura local. O arquivo original ficará anexado neste navegador, sem atualizar o Financeiro real.</p>'+
+    '<label class="campo"><span>Cartão corporativo</span><select name="cartao">'+cartoes+'</select></label>'+
     '<label class="campo"><span>Arquivo PDF</span><input name="arquivo" type="file" accept=".pdf,application/pdf" required></label>'+
-    '<div id="pdf-previa-fatura"></div>'+ '<details class="pdf-revisao"><summary>Editar despesas antes de confirmar</summary><p class="small muted">Uma compra por linha: AAAA-MM-DD; estabelecimento; valor; parcela (ex.: 2/8). A soma deve corresponder à fatura.</p><textarea id="pdf-editor-fatura" rows="12" spellcheck="false" style="width:100%;font-family:monospace;font-size:12px"></textarea><div id="pdf-editor-alerta-fatura" class="small muted"></div></details>'+
-    '<label class="campo"><span><input type="checkbox" name="confirmado" value="sim" style="width:auto"> Conferi valores, parcelas e período.</span></label>',
-    '<button class="btn" id="pdf-confirmar-fatura" type="submit" disabled>Importar fatura conferida</button>',
+    '<div id="pdf-previa-fatura"></div>'+
+    '<details class="pdf-revisao"><summary>Revisar e corrigir compras e parcelas</summary>'+
+    '<p class="small muted">Uma linha por compra: AAAA-MM-DD; estabelecimento; valor; parcela (ex.: 2/8). A soma precisa coincidir com a fatura original.</p>'+
+    '<textarea id="pdf-editor-fatura" rows="12" spellcheck="false" style="width:100%;font:12px/1.5 monospace"></textarea>'+
+    '<div id="pdf-erro-fatura" class="small muted" role="status"></div></details>'+
+    '<label class="campo"><span><input type="checkbox" name="confirmado" value="sim" style="width:auto"> Conferi o valor, o cartão, a categoria futura e todas as parcelas.</span></label>',
+    '<button class="btn" id="pdf-confirmar-fatura" type="submit" disabled>Importar fatura revisada</button>',
     dados=>{
-      if(!resultado?.confere||dados.get("confirmado")!=="sim")return false;
+      if(!arquivo||!resultado?.confere||dados.get("confirmado")!=="sim")return false;
       const cartao=String(dados.get("cartao"));
-      const ok=agir(()=>{
-        const novo=F.importarFatura(E,{cartao,competencia:resultado.competencia,vencimento:resultado.vencimento,compras:resultado.compras});
-        return {...novo,documentosPDF:[...(novo.documentosPDF||[]),{tipo:"fatura",nome,cartao,linhas:resultado.compras.length,nota:"Apenas referência; PDF original não armazenado"}]};
-      },"Fatura PDF importada no laboratório. Revise as categorias.");
-      if(ok){ui.area="cartoes";render();}
+      const ok=agir(()=>F.importarFatura(E,{
+        cartao,competencia:resultado.competencia,vencimento:resultado.vencimento,compras:resultado.compras
+      }),"Fatura importada no laboratório. Confira as categorias antes do fechamento.");
+      if(ok){
+        guardarPDF(arquivo,"fatura",cartao).then(id=>{
+          E={...E,documentosPDF:[...(E.documentosPDF||[]),{id,tipo:"fatura",nome:arquivo.name,cartao,linhas:resultado.compras.length,data:HOJE(),competencia:resultado.competencia}]};
+          salvar();render();toast("Fatura original anexada neste navegador.");
+        }).catch(()=>toast("Fatura importada, mas não foi possível armazenar o PDF original neste navegador.",true));
+        ui.area="cartoes";render();
+      }
       return ok;
     },{largo:true});
   const previa=$("#pdf-previa-fatura",form),btn=$("#pdf-confirmar-fatura",form);
+  const editor=$("#pdf-editor-fatura",form),erro=$("#pdf-erro-fatura",form);
+  function atualizar(){
+    btn.disabled=true;if(!original)return;
+    const parse=F.lerFaturaCSV(editor.value);
+    const soma=parse.compras.reduce((n,c)=>n+c.valor,0);
+    const problemas=[...parse.erros];
+    if(parse.compras.length!==original.compras.length)problemas.push("A quantidade mudou: "+original.compras.length+" no PDF, "+parse.compras.length+" na revisão.");
+    if(!original.total)problemas.push("Total da fatura não identificado no documento.");
+    else if(soma!==original.total)problemas.push("Total das compras "+M(soma)+" difere da fatura "+M(original.total)+".");
+    if(!original.vencimento)problemas.push("Vencimento da fatura não identificado.");
+    erro.textContent=problemas.slice(0,8).join(" · ") || "Soma conferida. Pronto para importar.";
+    erro.className=problemas.length?"aviso perigo":"small muted";
+    resultado=problemas.length?null:{...original,compras:parse.compras,soma,confere:true};
+    const amostra=parse.compras.slice(0,15).map(c=>'<tr><td>'+esc(F.dataBR(c.data))+'</td><td>'+esc(c.loja)+'</td><td class="valor">'+M(c.valor)+'</td></tr>').join("");
+    previa.innerHTML='<div class="aviso '+(problemas.length?"alerta":"neutro")+'"><b>'+parse.compras.length+' compras identificadas</b> · Cartões no PDF: '+esc(original.cartoes.join(", "))+
+      '<br>Vencimento: '+esc(F.dataBR(original.vencimento))+' · Total da fatura: '+(original.total?M(original.total):"não localizado")+
+      ' · Soma revisada: '+M(soma)+(problemas.length?'<br>Corrija os dados antes de confirmar.':'<br><b>Total conferido.</b>')+'</div>'+
+      '<div class="tabela-wrap"><table><thead><tr><th>Data</th><th>Compra</th><th>Valor</th></tr></thead><tbody>'+amostra+'</tbody></table></div>'+
+      '<p class="small muted">Amostra de 15 despesas. A tabela de edição acima abrange todos os registros.</p>';
+    btn.disabled=!!problemas.length;
+  }
+  editor.addEventListener("input",atualizar);
   form.querySelector('[name="arquivo"]').addEventListener("change",async ev=>{
-    btn.disabled=true;resultado=null;previa.textContent="Lendo o PDF...";
-    const file=ev.target.files?.[0];if(!file)return;
+    btn.disabled=true;original=null;resultado=null;arquivo=ev.target.files?.[0]||null;
+    previa.textContent="Lendo PDF e somando todas as compras...";
+    if(!arquivo)return;
     try{
-      resultado=PDF.faturaInterPDF(await PDF.textoPDF(file));nome=file.name;
-      const amostra=resultado.compras.slice(0,15).map(c=>'<tr><td>'+esc(c.data)+'</td><td>'+esc(c.loja)+'</td><td>'+M(c.valor)+'</td></tr>').join("");
-      previa.innerHTML='<div class="aviso '+(resultado.confere?"neutro":"perigo")+'"><b>'+resultado.compras.length+' compras</b> · cartões '+esc(resultado.cartoes.join(", "))+
-        '<br>Vencimento '+esc(resultado.vencimento)+' · Total informado '+(resultado.total===null?"Não identificado":M(resultado.total))+
-        ' · Soma '+M(resultado.soma)+(resultado.confere?'<br><b>Valores conferem.</b>':'<br><b>A importação foi bloqueada por divergência ou total ausente.</b>')+'</div>'+
-        '<div class="tabela-wrap"><table><thead><tr><th>Data</th><th>Compra</th><th>Valor</th></tr></thead><tbody>'+amostra+'</tbody></table></div>';
-      btn.disabled=!resultado.confere;
+      original=PDF.faturaInterPDF(await PDF.textoPDF(arquivo));
+      editor.value=PDF.csvFaturaEditavel(original.compras.map(c=>({...c,loja:c.loja+" [final "+c.cartao.slice(-4)+"]"})));
+      atualizar();
     }catch(e){previa.innerHTML='<div class="aviso perigo">'+esc(e.message)+'</div>';}
   });
 }
