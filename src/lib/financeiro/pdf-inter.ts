@@ -66,7 +66,6 @@ export async function extrairLinhasPDF(arquivo: File): Promise<string[]> {
   const worker="https://cdn.jsdelivr.net/npm/pdfjs-dist@6.5.438/build/pdf.worker.min.mjs";
   let pdfjs:PDFJs;
   try {
-    // @ts-expect-error: módulo remoto versionado não faz parte das declarações TypeScript.
     pdfjs=await import(/* webpackIgnore: true */ url) as PDFJs;
   }catch{throw new Error("Não foi possível carregar o leitor de PDF. Verifique sua conexão.");}
   pdfjs.GlobalWorkerOptions.workerSrc=worker;
