@@ -98,3 +98,76 @@ export function lerExtratoEditado(texto) {
   });
   return {transacoes,erros,conta:"PDF (conferir)",inicio:transacoes[0]?.data??"",fim:transacoes.at(-1)?.data??"",saldo:null};
 }
+
+
+// Banco Inter: layout efetivamente testado com extrato de ago–nov/2026 e fatura out/2026.
+// Mantém cada ocorrência, inclusive pagamentos de mesmo valor na mesma data.
+const MES_INTER = { janeiro:1, fevereiro:2, marco:3, abril:4, maio:5, junho:6, julho:7, agosto:8, setembro:9, outubro:10, novembro:11, dezembro:12,
+  jan:1, fev:2, mar:3, abr:4, mai:5, jun:6, jul:7, ago:8, set:9, out:10, nov:11, dez:12 };
+const mesInter = (x) => MES_INTER[String(x).normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/\.$/,"")];
+const dataInter = (d,m,a) => {
+  const mes = mesInter(m); return mes ? [a,String(mes).padStart(2,"0"),String(d).padStart(2,"0")].join("-") : "";
+};
+const centavosInter = (v) => {
+  const n = /(-?)\s*R\$\s*([\d.]+,\d{2})/.exec(v);
+  return n ? (n[1]==="-"?-1:1)*Number(n[2].replace(/\./g,"").replace(",","")) : NaN;
+};
+export function extratoInterPDF(linhas) {
+  const cabecalho = linhas.some(l=>/Banco Inter|Saldo por transa[cç][aã]o/i.test(l));
+  if (!cabecalho) throw new Error("PDF de extrato não reconhecido como Banco Inter.");
+  let dia="", saldoCabecalho=null;
+  const transacoes=[], ocor=new Map(), ignoradas=[];
+  for (const l of linhas) {
+    const data=/(\d{1,2}) de ([A-Za-zÀ-ÿ]+) de (20\d{2})\s+Saldo do dia/i.exec(l);
+    if (data) dia=dataInter(data[1],data[2],data[3]);
+    const saldo=l.match(/(?:Saldo total|Saldo dispon[ií]vel)\s*:?\s*R\$\s*([\d.]+,\d{2})/i);
+    if (saldo && saldoCabecalho===null) saldoCabecalho=centavosInter("R$ "+saldo[1]);
+    if (!dia) continue;
+    const m=/^(.+?)\s+(-?R\$\s*[\d.]+,\d{2})\s+(-?R\$\s*[\d.]+,\d{2})\s*$/.exec(l);
+    if (!m) continue;
+    if (!/^(Pix |Pagamento |Transfer[eê]ncia |DARF |Tarifa |Cr[eé]dito |D[eé]bito )/i.test(m[1])) continue;
+    const valor=centavosInter(m[2]), saldoApos=centavosInter(m[3]);
+    if (!Number.isSafeInteger(valor)||!Number.isSafeInteger(saldoApos)) {ignoradas.push(l);continue;}
+    const memo=m[1].trim(), chave=dia+"|"+valor+"|"+saldoApos+"|"+memo;
+    const seq=(ocor.get(chave)||0)+1;ocor.set(chave,seq);
+    transacoes.push({data:dia,valor,memo,fitid:"pdf:inter:"+chave+"|"+seq,saldoApos,
+      pagamentoFatura:/fatura.*cart[aã]o.*inter|debito automatico fatura/i.test(memo)});
+  }
+  if (!transacoes.length) throw new Error("Não foram encontradas movimentações nesse extrato do Inter.");
+  const ultimo=transacoes.at(-1);
+  const inconsistencias=[];
+  for (let i=1;i<transacoes.length;i++) {
+    const anterior=transacoes[i-1],atual=transacoes[i];
+    if(anterior.saldoApos+atual.valor!==atual.saldoApos)
+      inconsistencias.push({data:atual.data,memo:atual.memo,diferenca:atual.saldoApos-anterior.saldoApos-atual.valor});
+  }
+  if(saldoCabecalho===null)saldoCabecalho=ultimo.saldoApos;
+  return {inconsistencias,transacoes,ignoradas,conta:"Banco Inter (PDF)",inicio:transacoes[0].data,fim:ultimo.data,
+    saldo:saldoCabecalho===null?null:{data:ultimo.data,valor:saldoCabecalho},formato:"PDF Banco Inter"};
+}
+export function faturaInterPDF(linhas) {
+  if (!linhas.some(l=>/Despesas da fatura/i.test(l)) || !linhas.some(l=>/CART[AÃ]O\s+\d{4}\*+/i.test(l)))
+    throw new Error("PDF de fatura não reconhecido como Banco Inter.");
+  let cartao="",vencimento="",total=null;
+  const compras=[],ignoradas=[];
+  for(const l of linhas){
+    const c=/^CART[AÃ]O\s+(\d{4}\*{4}\d{4})/i.exec(l);
+    if(c) cartao=c[1];
+    const cab=/\b(\d{2})\/(\d{2})\/(20\d{2})\s+R\$\s*([\d.]+,\d{2})\b/.exec(l);
+    if(cab&&!vencimento){vencimento=cab[3]+"-"+cab[2]+"-"+cab[1];total=centavosInter("R$ "+cab[4]);}
+    const dt=/^(\d{1,2}) de ([a-zçà-ÿ]{3,})\.?\s+(20\d{2})\s+(.+)$/i.exec(l);
+    if(!dt||!cartao)continue;
+    const data=dataInter(dt[1],dt[2],dt[3]);
+    const v=/(?:\+\s*)?R\$\s*([\d.]+,\d{2})\s*$/.exec(dt[4]);
+    if(!v||!data){ignoradas.push(l);continue;}
+    const descricao=dt[4].slice(0,v.index).replace(/\s+-\s*$/,"").trim();
+    if(/^(PAGTO|PAGAMENTO|ESTORNO|CR[EÉ]DITO)/i.test(descricao))continue;
+    const parcela=/\(\s*Parcela\s+(\d+)\s+de\s+(\d+)\s*\)/i.exec(descricao);
+    compras.push({data,loja:descricao,valor:centavosInter("R$ "+v[1]),
+      parcela:parcela?Number(parcela[1]):1,parcelas:parcela?Number(parcela[2]):1,cartao});
+  }
+  if(!compras.length)throw new Error("Nenhuma despesa foi identificada na fatura do Inter.");
+  const soma=compras.reduce((s,c)=>s+c.valor,0);
+  return {compras,ignoradas,vencimento,competencia:vencimento.slice(0,7),total,soma,
+    confere:total!==null&&soma===total,cartoes:[...new Set(compras.map(c=>c.cartao))]};
+}
