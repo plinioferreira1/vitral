@@ -1,6 +1,7 @@
 // Vitral · Laboratório do Financeiro — interface. Regras em core.js; dados fictícios em seed.js.
 import * as F from "./core.js";
 import * as PDF from "./pdf-import.js";
+import { guardarPDF, abrirPDF, limparPDFs } from "./pdf-documentos.js";
 import { gerarDemo, ofxExemplo, faturaExemplo } from "./seed.js";
 
 const CHAVE = "vitral-financeiro-lab-v3";
@@ -658,7 +659,7 @@ function dialogoPDFExtrato() {
     '<p class="small muted">Leitura local. O PDF não é enviado ao servidor nem armazenado no laboratório.</p>'+
     '<label class="campo"><span>Conta bancária</span><select name="conta">'+contas+'</select></label>'+
     '<label class="campo"><span>Arquivo PDF</span><input name="arquivo" type="file" accept=".pdf,application/pdf" required></label>'+
-    '<div id="pdf-previa-extrato"></div>'+
+    '<div id="pdf-previa-extrato"></div>'+ '<details class="pdf-revisao"><summary>Editar lançamentos antes de confirmar</summary><p class="small muted">Uma linha por movimentação: AAAA-MM-DD; descrição; valor (negativo para saída). Conferência matemática obrigatória.</p><textarea id="pdf-editor-extrato" rows="12" spellcheck="false" style="width:100%;font-family:monospace;font-size:12px"></textarea><div id="pdf-editor-alerta-extrato" class="small muted"></div></details>'+
     '<label class="campo"><span><input type="checkbox" name="confirmado" value="sim" style="width:auto"> Conferi o extrato, a conta e as duplicidades.</span></label>',
     '<button class="btn" id="pdf-confirmar-extrato" type="submit" disabled>Adicionar à conciliação</button>',
     dados=>{
@@ -705,7 +706,7 @@ function dialogoPDFFatura() {
     '<p class="small muted">O PDF é lido localmente. Confirme valor e compras. O original não é armazenado no laboratório.</p>'+
     '<label class="campo"><span>Cartão da empresa</span><select name="cartao">'+cartoes+'</select></label>'+
     '<label class="campo"><span>Arquivo PDF</span><input name="arquivo" type="file" accept=".pdf,application/pdf" required></label>'+
-    '<div id="pdf-previa-fatura"></div>'+
+    '<div id="pdf-previa-fatura"></div>'+ '<details class="pdf-revisao"><summary>Editar despesas antes de confirmar</summary><p class="small muted">Uma compra por linha: AAAA-MM-DD; estabelecimento; valor; parcela (ex.: 2/8). A soma deve corresponder à fatura.</p><textarea id="pdf-editor-fatura" rows="12" spellcheck="false" style="width:100%;font-family:monospace;font-size:12px"></textarea><div id="pdf-editor-alerta-fatura" class="small muted"></div></details>'+
     '<label class="campo"><span><input type="checkbox" name="confirmado" value="sim" style="width:auto"> Conferi valores, parcelas e período.</span></label>',
     '<button class="btn" id="pdf-confirmar-fatura" type="submit" disabled>Importar fatura conferida</button>',
     dados=>{
