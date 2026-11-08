@@ -1,7 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { salvarDocumentoPDF } from "./actions";
+import { importarDocumentoFinanceiroPDF } from "../importar-pdf/actions";
 import { extrairLinhasPDF, interpretarExtratoInter, interpretarFaturaInter } from "@/lib/financeiro/pdf-inter";
 import type { ExtratoInter, FaturaInter } from "@/lib/financeiro/pdf-inter";
 
@@ -43,6 +45,10 @@ function interpretarEdicao(texto:string,tipo:Tipo) {
   return {linhas:resultados,erros};
 }
 export function EntradaPDF({contas,cartoes}:{contas:Opcao[];cartoes:Opcao[]}) {
+  const router=useRouter();
+  const formRef=useRef<HTMLFormElement>(null);
+  const [importando,setImportando]=useState(false);
+  const [avisoImportacao,setAvisoImportacao]=useState("");
   const [tipo,setTipo]=useState<Tipo>("extrato");
   const [resultado,setResultado]=useState<Resultado|null>(null);
   const [editor,setEditor]=useState("");
@@ -69,6 +75,36 @@ export function EntradaPDF({contas,cartoes}:{contas:Opcao[];cartoes:Opcao[]}) {
     vencimento:resultado.tipo==="fatura"?resultado.vencimento:null,
     divergencias:resultado.tipo==="extrato"?resultado.divergencias:null
   }):"";
+  async function confirmarImportacao(){
+    if(!valido||!formRef.current||!resultado)return;
+    const form=new FormData(formRef.current);
+    form.set("alvo",String(form.get("referencia")||""));
+    let linhas=revisao.linhas;
+    if(tipo==="fatura"){
+      linhas=revisao.linhas.map((x)=>{
+        const nome=String(x.estabelecimento||"");
+        const final=/\(final\s+(\d{4})\)\s*$/.exec(nome);
+        return {...x,estabelecimento:nome.replace(/\s*\(final\s+\d{4}\)\s*$/,""),finalCartao:final?.[1]||""};
+      });
+    }
+    form.set("dados",JSON.stringify({
+      tipo,linhas,
+      quantidadeOriginal,
+      somaOriginal:totalOriginal,
+      divergencias:resultado.tipo==="extrato"?resultado.divergencias:0,
+      saldoFinalCentavos:resultado.tipo==="extrato"?resultado.saldoFinalCentavos:null,
+      competencia:resultado.tipo==="fatura"?resultado.competencia:null,
+      vencimento:resultado.tipo==="fatura"?resultado.vencimento:null,
+      totalCentavos:resultado.tipo==="fatura"?resultado.totalCentavos:null,
+    }));
+    setImportando(true);setAvisoImportacao("");
+    try{
+      const resposta=await importarDocumentoFinanceiroPDF(form);
+      setAvisoImportacao(resposta.mensagem);
+      if(resposta.ok&&resposta.destino)router.push(resposta.destino);
+    }catch{setAvisoImportacao("Falha ao importar. Nenhuma nova tentativa será feita automaticamente.");}
+    finally{setImportando(false);}
+  }
   async function aoArquivo(f:File|null){
     setResultado(null);setEditor("");setErro("");setConferido(false);
     if(!f)return;
@@ -83,7 +119,7 @@ export function EntradaPDF({contas,cartoes}:{contas:Opcao[];cartoes:Opcao[]}) {
     }catch(e){setErro(e instanceof Error?e.message:"Falha ao ler o documento.");}
     finally{setLendo(false);}
   }
-  return <form action={salvarDocumentoPDF} className="space-y-5 rounded-xl border border-border bg-surface p-4 sm:p-6">
+  return <form ref={formRef} action={salvarDocumentoPDF} className="space-y-5 rounded-xl border border-border bg-surface p-4 sm:p-6">
     <div><h2 className="text-lg font-semibold">Novo PDF para conferência</h2>
       <p className="mt-1 text-sm text-ink-muted">Extraia, corrija e anexe o documento original. Nenhuma baixa ou lançamento é criado nesta etapa.</p></div>
     <div className="grid gap-4 sm:grid-cols-2">
@@ -128,6 +164,16 @@ export function EntradaPDF({contas,cartoes}:{contas:Opcao[];cartoes:Opcao[]}) {
       </label>
       <input type="hidden" name="dados" value={dados}/>
     </div>}
-    <button type="submit" disabled={!valido} className="min-h-11 rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">Salvar PDF e prévia para conferência</button>
+    <div className="flex flex-wrap items-center gap-3">
+      <button type="button" onClick={confirmarImportacao} disabled={!valido||importando}
+        className="min-h-11 rounded-lg bg-brand px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">
+        {importando?"Importando…":tipo==="extrato"?"Enviar movimentos para conciliação":"Importar compras da fatura"}
+      </button>
+      <button type="submit" disabled={!valido||importando}
+        className="min-h-11 rounded-lg border border-border px-5 py-3 text-sm font-semibold text-ink disabled:cursor-not-allowed disabled:opacity-40">
+        Salvar PDF para conferir depois
+      </button>
+    </div>
+    {avisoImportacao&&<p className="rounded-lg border border-border bg-background p-3 text-sm" role="status">{avisoImportacao}</p>}
   </form>;
 }
