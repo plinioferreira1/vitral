@@ -70,7 +70,6 @@ export async function extrairLinhasPDF(arquivo: File): Promise<string[]> {
     pdfjs=await import(/* webpackIgnore: true */ url) as PDFJs;
   }catch{throw new Error("Não foi possível carregar o leitor de PDF. Verifique sua conexão.");}
   pdfjs.GlobalWorkerOptions.workerSrc=worker;
-  let pdf:Awaited<ReturnType<ReturnType<PDFJs["getDocument"]>["promise"]["then"]>> | undefined;
   // A API é dinâmica e a tipagem é normalizada localmente, sem usar Node no cliente.
   const documento=await pdfjs.getDocument({data:new Uint8Array(await arquivo.arrayBuffer())}).promise;
   try {
