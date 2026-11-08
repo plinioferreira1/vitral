@@ -25,14 +25,15 @@ function lerPrevia(fd:FormData,tipo:"extrato"|"fatura") {
   const revisadas:Linha[]=linhas.map((l:unknown,i:number)=>{
     if(!l||typeof l!=="object")throw new Error("Linha "+(i+1)+" inválida.");
     const x=l as Record<string,unknown>;
-    const descricao=String(tipo==="extrato"?x.descricao:x.estabelecimento || "").trim().slice(0,290);
-    if(!diaValido(x.data)||!inteiro(x.valorCentavos)||x.valorCentavos===0||!descricao)
+    const descricao=String((tipo==="extrato"?x.descricao:x.estabelecimento)||"").trim().slice(0,290);
+    const valor=Number(x.valorCentavos);
+    if(!diaValido(x.data)||!inteiro(valor)||valor===0||!descricao)
       throw new Error("Confira data, valor e descrição da linha "+(i+1)+".");
     if(tipo==="fatura"){
-      if(x.valorCentavos<=0)throw new Error("Fatura com valor de compra inválido.");
+      if(valor<=0)throw new Error("Fatura com valor de compra inválido.");
       const atual=Number(x.parcelaAtual||1),total=Number(x.parcelaTotal||1);
       if(!Number.isInteger(atual)||!Number.isInteger(total)||atual<1||total>60||atual>total)throw new Error("Parcela inválida na linha "+(i+1)+".");
-      return {data:x.data as string,estabelecimento:descricao,valorCentavos:x.valorCentavos as number,
+      return {data:x.data as string,estabelecimento:descricao,valorCentavos:valor,
         parcelaAtual:atual,parcelaTotal:total,finalCartao:String(x.finalCartao||"").slice(-4)};
     }
     return {data:x.data as string,descricao,valorCentavos:x.valorCentavos as number};
@@ -61,7 +62,7 @@ export async function salvarDocumentoPDF(fd:FormData){
     const bytes=Buffer.from(await arquivo.arrayBuffer());
     if(bytes.subarray(0,5).toString("ascii")!=="%PDF-")throw new Error("O arquivo não parece ser PDF.");
     const revisao=lerPrevia(fd,tipo);
-    const supabase=await createClient();
+    const supabase=await createClient() as unknown as SupabaseClient;
     const referencia=String(fd.get("referencia")||"");
     const tabela=tipo==="extrato"?"financeiro_contas_bancarias":"financeiro_cartoes";
     const {data:alvo}=await supabase.from(tabela).select("id").eq("id",referencia).eq("tenant_id",sessao.tenantId).maybeSingle();
