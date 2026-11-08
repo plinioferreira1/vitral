@@ -356,6 +356,7 @@ function bancos() {
     <div class="cabeca"><div><h1>Bancos e conciliação</h1><p>Saldos calculados das baixas e transferências. Importe o OFX do banco e confirme cada linha.</p></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" data-acao="transferir">Transferir entre contas</button><button class="btn sec" data-acao="importar-pdf-extrato">Importar PDF</button><button class="btn" data-acao="importar-ofx">Importar OFX</button></div></div>
     <div class="contas">${cards}</div>
+    ${(E.documentosPDF||[]).filter(d=>d.tipo==="extrato"&&ids.has(d.conta)).length ? '<section class="painel"><div class="painel-cab"><div><h2>Extratos PDF anexados</h2><p>Arquivos originais guardados apenas neste navegador.</p></div></div><div class="painel-corpo">'+(E.documentosPDF||[]).filter(d=>d.tipo==="extrato"&&ids.has(d.conta)).map(d=>'<button type="button" class="btn sec peq" data-pdf-abrir="'+esc(d.id)+'">'+esc(d.nome)+' · '+d.linhas+' movimentações</button>').join(" ")+'</div></section>' : ''}
     <section class="painel">
       <div class="painel-cab"><div><h2>Conciliação</h2><p>Sugestões pelo valor, pela data e pelo nome. Receita e despesa nunca se misturam.</p></div>
         <div class="filtros">${[["pendente", "Pendentes"], ["conciliado", "Conciliadas"], ["ignorado", "Ignoradas"]].map(([v, r]) => `<button class="filtro" data-extrato="${v}" aria-pressed="${ui.extratoFiltro === v}">${r}<b>${cont[v]}</b></button>`).join("")}</div></div>
@@ -399,6 +400,7 @@ function cartoes() {
   };
   return `
     <div class="cabeca"><div><h1>Cartões</h1><p>Importe a fatura, confira as categorias (a loja já vem sugerida) e feche. Parcelas futuras ficam previstas.</p></div><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn sec" data-acao="importar-pdf-fatura">Importar PDF</button><button class="btn" data-acao="importar-fatura">Importar CSV</button></div></div>
+    ${(E.documentosPDF||[]).some(d=>d.tipo==="fatura"&&ids.has(d.cartao))?'<section class="painel"><div class="painel-cab"><div><h2>Faturas PDF anexadas</h2><p>Originais guardados apenas neste navegador.</p></div></div><div class="painel-corpo">'+(E.documentosPDF||[]).filter(d=>d.tipo==="fatura"&&ids.has(d.cartao)).map(d=>'<button type="button" class="btn sec peq" data-pdf-abrir="'+esc(d.id)+'">'+esc(d.nome)+' · '+d.linhas+' despesas</button>').join(" ")+'</div></section>':''}
     ${faturas.length ? faturas.map(blocoFatura).join("") : `<section class="painel"><div class="vazio-estado"><h3>Nenhuma fatura</h3><p>Nenhum cartão desta empresa tem fatura importada.</p></div></section>`}`;
 }
 
@@ -907,6 +909,7 @@ document.addEventListener("click", (ev) => {
   if (!alvo) return;
   const d = alvo.dataset;
   if (alvo.closest("[data-fechar]") || d.fechar !== undefined) { alvo.closest("dialog")?.close(); return; }
+  if(d.pdfAbrir){ev.preventDefault();abrirPDF(d.pdfAbrir).catch(e=>toast(e.message||"Não foi possível abrir o PDF.",true));return;}
   if (d.ir) { ev.preventDefault(); if (d.tipo) { ui.tipo = d.tipo; ui.busca = ""; } ir(d.ir, { filtro: d.filtro, secao: d.secao }); return; }
   if (d.tema) { ui.tema = d.tema; try { localStorage.setItem(`${CHAVE}-tema`, ui.tema); } catch { /* sem armazenamento */ } render(); return; }
   if (d.empresa) { ui.empresa = d.empresa; ui.sel.clear(); render(); return; }
@@ -950,7 +953,7 @@ document.addEventListener("click", (ev) => {
     case "importar-fatura": dialogoFatura(); break;
     case "restaurar":
       dialogo("Restaurar a demonstração", "<p>Os dados fictícios voltam ao estado inicial neste navegador. O que você testou aqui será apagado.</p>", `<button class="btn perigo" type="submit">Restaurar</button>`,
-        () => { E = gerarDemo(hojeLocal()); salvar(); ui.sel.clear(); $("#gaveta").close(); render(); toast("Demonstração restaurada."); return true; });
+        () => { E = gerarDemo(hojeLocal()); salvar(); limparPDFs().catch(()=>{}); ui.sel.clear(); $("#gaveta").close(); render(); toast("Demonstração restaurada, inclusive anexos locais."); return true; });
       break;
     case "csv-titulos": baixar("contas-vitral-laboratorio.csv", F.exportarCSV([["Tipo", "Descrição", "Contato", "Empresa", "Categoria", "Vencimento", "Valor", "Pago", "Saldo", "Situação"],
       ...titulosVisiveis().map((t) => [t.tipo, t.descricao, t.contato, F.nomeEmpresa(t.empresa), cat(t.categoria)?.nome ?? "", F.dataBR(t.vencimento), (t.valor / 100).toFixed(2).replace(".", ","), (F.pagoDe(E, t.id) / 100).toFixed(2).replace(".", ","), (F.saldoTitulo(E, t) / 100).toFixed(2).replace(".", ","), F.situacao(E, t, HOJE())])])); break;
