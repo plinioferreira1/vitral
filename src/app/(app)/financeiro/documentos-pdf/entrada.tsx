@@ -121,7 +121,7 @@ export function EntradaPDF({contas,cartoes}:{contas:Opcao[];cartoes:Opcao[]}) {
   }
   return <form ref={formRef} action={salvarDocumentoPDF} className="space-y-5 rounded-xl border border-border bg-surface p-4 sm:p-6">
     <div><h2 className="text-lg font-semibold">Novo PDF para conferência</h2>
-      <p className="mt-1 text-sm text-ink-muted">Extraia, corrija e anexe o documento original. Nenhuma baixa ou lançamento é criado nesta etapa.</p></div>
+      <p className="mt-1 text-sm text-ink-muted">Extraia, corrija e anexe o PDF original. Ao importar um extrato, os movimentos entram pendentes de conciliação; ao importar uma fatura, as compras entram na aba de cartões. Nenhuma baixa é feita automaticamente.</p></div>
     <div className="grid gap-4 sm:grid-cols-2">
       <label className="text-sm font-medium">Documento
         <select name="tipo" value={tipo} onChange={e=>{setTipo(e.target.value as Tipo);setResultado(null);setEditor("");setErro("");setConferido(false);const a=document.getElementById("arquivo-financeiro") as HTMLInputElement|null;if(a)a.value="";}} className="mt-1.5 min-h-11 w-full rounded-lg border border-border bg-background px-3">
@@ -160,7 +160,7 @@ export function EntradaPDF({contas,cartoes}:{contas:Opcao[];cartoes:Opcao[]}) {
         {inconsistencias.slice(0,5).map((x,i)=><p key={i}>{x}</p>)}
       </div>:<p className="text-sm text-emerald-700">Prévia consistente: quantidade e valores conferem com o PDF.</p>}
       <label className="flex items-start gap-3 text-sm"><input type="checkbox" checked={conferido} onChange={e=>setConferido(e.target.checked)} className="mt-1"/>
-        Conferi a conta ou cartão, datas, valores, parcelas e possíveis duplicidades. Quero salvar como documento pendente de conferência.
+        Conferi a conta ou cartão, as datas, os valores, as parcelas e possíveis duplicidades. Autorizo a opção de importação que escolher abaixo.
       </label>
       <input type="hidden" name="dados" value={dados}/>
     </div>}
