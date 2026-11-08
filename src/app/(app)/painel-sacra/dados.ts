@@ -439,10 +439,6 @@ export const CORRETORES_SACRA: readonly CorretorVgv[] = [
     "nome": "Camila"
   },
   {
-    "id": "a3c3886d-224e-41ca-9d28-1039abfa2135",
-    "nome": "Michele"
-  },
-  {
     "id": "84bb35db-05bc-40a1-a930-64da46bde791",
     "nome": "Plínio",
     "aliases": [
