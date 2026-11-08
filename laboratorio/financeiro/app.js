@@ -662,7 +662,7 @@ function dialogoPDFExtrato() {
     '<label class="campo"><span><input type="checkbox" name="confirmado" value="sim" style="width:auto"> Conferi o extrato, a conta e as duplicidades.</span></label>',
     '<button class="btn" id="pdf-confirmar-extrato" type="submit" disabled>Adicionar à conciliação</button>',
     dados=>{
-      if(!resultado||dados.get("confirmado")!=="sim")return false;
+      if(!resultado||resultado.inconsistencias?.length||dados.get("confirmado")!=="sim")return false;
       const contaId=String(dados.get("conta"));
       const previa=F.previaExtrato(E,contaId,resultado);
       const suspeitas=previa.novas.filter(l=>E.extrato.some(x=>x.conta===contaId&&x.data===l.data&&x.valor===l.valor));
@@ -686,7 +686,8 @@ function dialogoPDFExtrato() {
       (duplicatas.length?'<div class="aviso alerta">'+duplicatas.length+' possíveis duplicidades por data e valor. Confira antes de confirmar.</div>':'')+
       (resultado.transacoes.some(l=>l.pagamentoFatura)?'<div class="aviso alerta">Pagamento de fatura detectado. Conciliar não deve duplicar as despesas do cartão.</div>':'')+
       '<div class="tabela-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>'+parcelas+'</tbody></table></div><p class="small muted">Amostra de 12 movimentos. Todos os itens entram pendentes para conferência.</p>';
-    btn.disabled=!p.novas.length;
+    if(resultado.inconsistencias?.length) previa.innerHTML += '<div class="aviso perigo">'+resultado.inconsistencias.length+' divergências na sequência de saldos; importação bloqueada.</div>';
+    btn.disabled=!p.novas.length||!!resultado.inconsistencias?.length;
   };
   form.querySelector('[name="conta"]').addEventListener("change",mostrar);
   form.querySelector('[name="arquivo"]').addEventListener("change",async ev=>{
