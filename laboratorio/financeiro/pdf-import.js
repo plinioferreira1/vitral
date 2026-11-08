@@ -79,3 +79,22 @@ export function linhasExtratoPDF(linhas) {
 export function csvFaturaEditavel(compras) {
   return compras.map(c=>[c.data,c.loja.replace(/[;\t\n]+/g," "), (c.valor/100).toFixed(2).replace(".",","), c.parcelas>1?c.parcela+"/"+c.parcelas:""].join(";")).join("\n");
 }
+
+export function extratoEditavel(transacoes) {
+  return transacoes.map(t=>[t.data,t.memo.replace(/[;\t\n]+/g," "),(t.valor/100).toFixed(2).replace(".",",")].join(";")).join("\n");
+}
+export function lerExtratoEditado(texto) {
+  const linhas=String(texto??"").split(/\r?\n/).filter(Boolean), transacoes=[], erros=[], vistos=new Map();
+  linhas.forEach((linha,indice)=>{
+    const [data,memo,montante,...extras]=linha.split(";");
+    const valor=valorCentavos(montante);
+    if(extras.length||!/\d{4}-\d{2}-\d{2}/.test(data||"")||!memo?.trim()||!Number.isFinite(valor)||valor===0) {
+      erros.push("Linha "+(indice+1)+": use AAAA-MM-DD;descrição;valor (negativo para saída).");
+      return;
+    }
+    const chave=data+"|"+valor+"|"+memo.trim().toLowerCase();
+    const ocorrencia=(vistos.get(chave)||0)+1; vistos.set(chave,ocorrencia);
+    transacoes.push({fitid:"pdf:"+chave+":"+ocorrencia,data,valor,memo:memo.trim()});
+  });
+  return {transacoes,erros,conta:"PDF (conferir)",inicio:transacoes[0]?.data??"",fim:transacoes.at(-1)?.data??"",saldo:null};
+}
