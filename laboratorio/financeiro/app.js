@@ -649,6 +649,90 @@ function dialogoTransferencia() {
   $("#dlg select[name=para]").selectedIndex = 1;
 }
 
+
+function dialogoPDFExtrato() {
+  let resultado=null;
+  let nome="";
+  const contas=E.contas.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join("");
+  const form=dialogo("Importar extrato PDF — Inter",
+    '<p class="small muted">Leitura local. O PDF não é enviado ao servidor nem armazenado no laboratório.</p>'+
+    '<label class="campo"><span>Conta bancária</span><select name="conta">'+contas+'</select></label>'+
+    '<label class="campo"><span>Arquivo PDF</span><input name="arquivo" type="file" accept=".pdf,application/pdf" required></label>'+
+    '<div id="pdf-previa-extrato"></div>'+
+    '<label class="campo"><span><input type="checkbox" name="confirmado" value="sim" style="width:auto"> Conferi o extrato, a conta e as duplicidades.</span></label>',
+    '<button class="btn" id="pdf-confirmar-extrato" type="submit" disabled>Adicionar à conciliação</button>',
+    dados=>{
+      if(!resultado||dados.get("confirmado")!=="sim")return false;
+      const contaId=String(dados.get("conta"));
+      const previa=F.previaExtrato(E,contaId,resultado);
+      const suspeitas=previa.novas.filter(l=>E.extrato.some(x=>x.conta===contaId&&x.data===l.data&&x.valor===l.valor));
+      if(suspeitas.length&&!window.confirm(suspeitas.length+" movimentação(ões) têm a mesma data e valor de registros existentes. Deseja continuar após conferir?"))return false;
+      const ok=agir(()=>{
+        const novo=F.importarExtrato(E,contaId,resultado);
+        return {...novo,documentosPDF:[...(novo.documentosPDF||[]),{tipo:"extrato",nome,conta:contaId,linhas:previa.novas.length,nota:"Apenas referência; PDF original não armazenado"}]};
+      },"Extrato PDF adicionado à conciliação do laboratório.");
+      if(ok){ui.area="bancos";render();}
+      return ok;
+    },{largo:true});
+  const previa=$("#pdf-previa-extrato",form),btn=$("#pdf-confirmar-extrato",form);
+  const mostrar=()=>{
+    if(!resultado)return;
+    const contaId=form.querySelector('[name="conta"]').value;
+    const p=F.previaExtrato(E,contaId,resultado);
+    const duplicatas=p.novas.filter(l=>E.extrato.some(x=>x.conta===contaId&&x.data===l.data&&x.valor===l.valor));
+    const resumo=resultado.transacoes.reduce((a,l)=>{a.e+=Math.max(0,l.valor);a.s+=Math.max(0,-l.valor);return a;},{e:0,s:0});
+    const parcelas=p.novas.slice(0,12).map(l=>'<tr><td>'+esc(l.data)+'</td><td>'+esc(l.memo)+'</td><td>'+M(l.valor,{sinal:true})+'</td></tr>').join("");
+    previa.innerHTML='<div class="aviso neutro"><b>'+resultado.transacoes.length+' lançamentos</b> · '+p.novas.length+' novos · '+p.duplicadas.length+' já importados pelo identificador.<br>Entradas '+M(resumo.e)+' · Saídas '+M(resumo.s)+(resultado.saldo?' · Saldo '+M(resultado.saldo.valor):'')+'</div>'+
+      (duplicatas.length?'<div class="aviso alerta">'+duplicatas.length+' possíveis duplicidades por data e valor. Confira antes de confirmar.</div>':'')+
+      (resultado.transacoes.some(l=>l.pagamentoFatura)?'<div class="aviso alerta">Pagamento de fatura detectado. Conciliar não deve duplicar as despesas do cartão.</div>':'')+
+      '<div class="tabela-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>'+parcelas+'</tbody></table></div><p class="small muted">Amostra de 12 movimentos. Todos os itens entram pendentes para conferência.</p>';
+    btn.disabled=!p.novas.length;
+  };
+  form.querySelector('[name="conta"]').addEventListener("change",mostrar);
+  form.querySelector('[name="arquivo"]').addEventListener("change",async ev=>{
+    btn.disabled=true;resultado=null;previa.textContent="Lendo o PDF...";
+    const file=ev.target.files?.[0];if(!file)return;
+    try {resultado=PDF.extratoInterPDF(await PDF.textoPDF(file));nome=file.name;mostrar();}
+    catch(e){previa.innerHTML='<div class="aviso perigo">'+esc(e.message)+'</div>';}
+  });
+}
+
+function dialogoPDFFatura() {
+  let resultado=null,nome="";
+  const cartoes=E.cartoes.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join("");
+  const form=dialogo("Importar fatura PDF — Inter",
+    '<p class="small muted">O PDF é lido localmente. Confirme valor e compras. O original não é armazenado no laboratório.</p>'+
+    '<label class="campo"><span>Cartão da empresa</span><select name="cartao">'+cartoes+'</select></label>'+
+    '<label class="campo"><span>Arquivo PDF</span><input name="arquivo" type="file" accept=".pdf,application/pdf" required></label>'+
+    '<div id="pdf-previa-fatura"></div>'+
+    '<label class="campo"><span><input type="checkbox" name="confirmado" value="sim" style="width:auto"> Conferi valores, parcelas e período.</span></label>',
+    '<button class="btn" id="pdf-confirmar-fatura" type="submit" disabled>Importar fatura conferida</button>',
+    dados=>{
+      if(!resultado?.confere||dados.get("confirmado")!=="sim")return false;
+      const cartao=String(dados.get("cartao"));
+      const ok=agir(()=>{
+        const novo=F.importarFatura(E,{cartao,competencia:resultado.competencia,vencimento:resultado.vencimento,compras:resultado.compras});
+        return {...novo,documentosPDF:[...(novo.documentosPDF||[]),{tipo:"fatura",nome,cartao,linhas:resultado.compras.length,nota:"Apenas referência; PDF original não armazenado"}]};
+      },"Fatura PDF importada no laboratório. Revise as categorias.");
+      if(ok){ui.area="cartoes";render();}
+      return ok;
+    },{largo:true});
+  const previa=$("#pdf-previa-fatura",form),btn=$("#pdf-confirmar-fatura",form);
+  form.querySelector('[name="arquivo"]').addEventListener("change",async ev=>{
+    btn.disabled=true;resultado=null;previa.textContent="Lendo o PDF...";
+    const file=ev.target.files?.[0];if(!file)return;
+    try{
+      resultado=PDF.faturaInterPDF(await PDF.textoPDF(file));nome=file.name;
+      const amostra=resultado.compras.slice(0,15).map(c=>'<tr><td>'+esc(c.data)+'</td><td>'+esc(c.loja)+'</td><td>'+M(c.valor)+'</td></tr>').join("");
+      previa.innerHTML='<div class="aviso '+(resultado.confere?"neutro":"perigo")+'"><b>'+resultado.compras.length+' compras</b> · cartões '+esc(resultado.cartoes.join(", "))+
+        '<br>Vencimento '+esc(resultado.vencimento)+' · Total informado '+(resultado.total===null?"Não identificado":M(resultado.total))+
+        ' · Soma '+M(resultado.soma)+(resultado.confere?'<br><b>Valores conferem.</b>':'<br><b>A importação foi bloqueada por divergência ou total ausente.</b>')+'</div>'+
+        '<div class="tabela-wrap"><table><thead><tr><th>Data</th><th>Compra</th><th>Valor</th></tr></thead><tbody>'+amostra+'</tbody></table></div>';
+      btn.disabled=!resultado.confere;
+    }catch(e){previa.innerHTML='<div class="aviso perigo">'+esc(e.message)+'</div>';}
+  });
+}
+
 function dialogoOFX(textoInicial = "") {
   let lido = null;
   const form = dialogo("Importar extrato OFX", `
