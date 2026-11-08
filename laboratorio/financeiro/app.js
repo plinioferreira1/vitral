@@ -652,50 +652,78 @@ function dialogoTransferencia() {
 
 
 function dialogoPDFExtrato() {
-  let resultado=null;
-  let nome="";
+  let original=null, resultado=null, arquivo=null;
   const contas=E.contas.map(c=>'<option value="'+esc(c.id)+'">'+esc(c.nome)+'</option>').join("");
-  const form=dialogo("Importar extrato PDF — Inter",
-    '<p class="small muted">Leitura local. O PDF não é enviado ao servidor nem armazenado no laboratório.</p>'+
+  const form=dialogo("Importar extrato PDF — Banco Inter",
+    '<p class="small muted">Leitura local: o laboratório não envia documentos ao servidor. O PDF original será guardado apenas neste navegador após a confirmação.</p>'+
     '<label class="campo"><span>Conta bancária</span><select name="conta">'+contas+'</select></label>'+
     '<label class="campo"><span>Arquivo PDF</span><input name="arquivo" type="file" accept=".pdf,application/pdf" required></label>'+
-    '<div id="pdf-previa-extrato"></div>'+ '<details class="pdf-revisao"><summary>Editar lançamentos antes de confirmar</summary><p class="small muted">Uma linha por movimentação: AAAA-MM-DD; descrição; valor (negativo para saída). Conferência matemática obrigatória.</p><textarea id="pdf-editor-extrato" rows="12" spellcheck="false" style="width:100%;font-family:monospace;font-size:12px"></textarea><div id="pdf-editor-alerta-extrato" class="small muted"></div></details>'+
-    '<label class="campo"><span><input type="checkbox" name="confirmado" value="sim" style="width:auto"> Conferi o extrato, a conta e as duplicidades.</span></label>',
+    '<div id="pdf-previa-extrato"></div>'+
+    '<details class="pdf-revisao"><summary>Revisar e corrigir todos os lançamentos</summary>'+
+    '<p class="small muted">Uma linha por movimento: AAAA-MM-DD; descrição; valor. Utilize sinal negativo para saídas. Não remova linhas sem conferir os totais.</p>'+
+    '<textarea id="pdf-editor-extrato" rows="12" spellcheck="false" style="width:100%;font:12px/1.5 monospace"></textarea>'+
+    '<div id="pdf-erro-extrato" class="small muted" role="status"></div></details>'+
+    '<label class="campo"><span><input type="checkbox" name="confirmado" value="sim" style="width:auto"> Conferi todas as movimentações, a conta selecionada e as duplicidades.</span></label>',
     '<button class="btn" id="pdf-confirmar-extrato" type="submit" disabled>Adicionar à conciliação</button>',
     dados=>{
-      if(!resultado||resultado.inconsistencias?.length||dados.get("confirmado")!=="sim")return false;
+      if(!arquivo||!resultado||dados.get("confirmado")!=="sim") return false;
       const contaId=String(dados.get("conta"));
-      const previa=F.previaExtrato(E,contaId,resultado);
-      const suspeitas=previa.novas.filter(l=>E.extrato.some(x=>x.conta===contaId&&x.data===l.data&&x.valor===l.valor));
-      if(suspeitas.length&&!window.confirm(suspeitas.length+" movimentação(ões) têm a mesma data e valor de registros existentes. Deseja continuar após conferir?"))return false;
-      const ok=agir(()=>{
-        const novo=F.importarExtrato(E,contaId,resultado);
-        return {...novo,documentosPDF:[...(novo.documentosPDF||[]),{tipo:"extrato",nome,conta:contaId,linhas:previa.novas.length,nota:"Apenas referência; PDF original não armazenado"}]};
-      },"Extrato PDF adicionado à conciliação do laboratório.");
-      if(ok){ui.area="bancos";render();}
+      const prev=F.previaExtrato(E,contaId,resultado);
+      const suspeitas=prev.novas.filter(l=>E.extrato.some(x=>x.conta===contaId&&x.data===l.data&&x.valor===l.valor));
+      if(suspeitas.length&&!window.confirm(suspeitas.length+" movimentos têm data e valor iguais aos já importados. Confirma após conferir?"))return false;
+      const ok=agir(()=>F.importarExtrato(E,contaId,resultado),
+        "Extrato adicionado à conciliação, com linhas pendentes (laboratório).");
+      if(ok){
+        guardarPDF(arquivo,"extrato",contaId).then(id=>{
+          E={...E,documentosPDF:[...(E.documentosPDF||[]),{id,tipo:"extrato",nome:arquivo.name,conta:contaId,linhas:prev.novas.length,data:HOJE()}]};
+          salvar(); render(); toast("O PDF original ficou anexado neste navegador.");
+        }).catch(()=>toast("Movimentações importadas, mas não foi possível guardar o PDF original neste navegador.",true));
+        ui.area="bancos";ui.extratoFiltro="pendente";render();
+      }
       return ok;
     },{largo:true});
   const previa=$("#pdf-previa-extrato",form),btn=$("#pdf-confirmar-extrato",form);
-  const mostrar=()=>{
-    if(!resultado)return;
+  const editor=$("#pdf-editor-extrato",form),erro=$("#pdf-erro-extrato",form);
+  function atualizar() {
+    btn.disabled=true;
+    if(!original)return;
+    const parse=PDF.lerExtratoEditado(editor.value);
+    const somaOrig=original.transacoes.reduce((a,l)=>a+l.valor,0);
+    const somaEdit=parse.transacoes.reduce((a,l)=>a+l.valor,0);
+    const problemas=[...parse.erros];
+    if(!parse.transacoes.length)problemas.push("Nenhuma movimentação válida.");
+    if(parse.transacoes.length!==original.transacoes.length)
+      problemas.push("A quantidade de movimentações mudou: "+original.transacoes.length+" no PDF, "+parse.transacoes.length+" na revisão.");
+    if(somaOrig!==somaEdit)problemas.push("Diferença entre os valores do PDF e a revisão: "+M(somaOrig-somaEdit,{sinal:true}));
+    if(original.inconsistencias?.length)problemas.push("O extrato tem "+original.inconsistencias.length+" divergência(s) na sequência dos saldos. Use OFX ou solicite o extrato corrigido.");
+    erro.textContent=problemas.slice(0,8).join(" · ") || "Revisão consistente com o original.";
+    erro.className=problemas.length?"aviso perigo":"small muted";
+    resultado=problemas.length?null:{...original,transacoes:parse.transacoes.map(l=>({...l,
+      pagamentoFatura:/fatura.*cart[aã]o.*inter|d[eé]bito autom[aá]tico fatura/i.test(l.memo)}))};
     const contaId=form.querySelector('[name="conta"]').value;
-    const p=F.previaExtrato(E,contaId,resultado);
-    const duplicatas=p.novas.filter(l=>E.extrato.some(x=>x.conta===contaId&&x.data===l.data&&x.valor===l.valor));
-    const resumo=resultado.transacoes.reduce((a,l)=>{a.e+=Math.max(0,l.valor);a.s+=Math.max(0,-l.valor);return a;},{e:0,s:0});
-    const parcelas=p.novas.slice(0,12).map(l=>'<tr><td>'+esc(l.data)+'</td><td>'+esc(l.memo)+'</td><td>'+M(l.valor,{sinal:true})+'</td></tr>').join("");
-    previa.innerHTML='<div class="aviso neutro"><b>'+resultado.transacoes.length+' lançamentos</b> · '+p.novas.length+' novos · '+p.duplicadas.length+' já importados pelo identificador.<br>Entradas '+M(resumo.e)+' · Saídas '+M(resumo.s)+(resultado.saldo?' · Saldo '+M(resultado.saldo.valor):'')+'</div>'+
-      (duplicatas.length?'<div class="aviso alerta">'+duplicatas.length+' possíveis duplicidades por data e valor. Confira antes de confirmar.</div>':'')+
-      (resultado.transacoes.some(l=>l.pagamentoFatura)?'<div class="aviso alerta">Pagamento de fatura detectado. Conciliar não deve duplicar as despesas do cartão.</div>':'')+
-      '<div class="tabela-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>'+parcelas+'</tbody></table></div><p class="small muted">Amostra de 12 movimentos. Todos os itens entram pendentes para conferência.</p>';
-    if(resultado.inconsistencias?.length) previa.innerHTML += '<div class="aviso perigo">'+resultado.inconsistencias.length+' divergências na sequência de saldos; importação bloqueada.</div>';
-    btn.disabled=!p.novas.length||!!resultado.inconsistencias?.length;
-  };
-  form.querySelector('[name="conta"]').addEventListener("change",mostrar);
+    const p=resultado?F.previaExtrato(E,contaId,resultado):{novas:[],duplicadas:[]};
+    const suspeitas=p.novas.filter(l=>E.extrato.some(x=>x.conta===contaId&&x.data===l.data&&x.valor===l.valor));
+    const linhas=(resultado?.transacoes||parse.transacoes).slice(0,14).map(l=>'<tr><td>'+esc(F.dataBR(l.data))+'</td><td>'+esc(l.memo)+'</td><td class="valor">'+M(l.valor,{sinal:true})+'</td></tr>').join("");
+    const resumo=(resultado?.transacoes||parse.transacoes).reduce((a,l)=>{a.entradas+=Math.max(0,l.valor);a.saidas+=Math.max(0,-l.valor);return a;},{entradas:0,saidas:0});
+    previa.innerHTML='<div class="aviso neutro"><b>'+original.transacoes.length+' movimentos no PDF</b> · '+p.novas.length+' novos · '+p.duplicadas.length+' repetidos pelo identificador.'+
+      '<br>Entradas: '+M(resumo.entradas)+' · Saídas: '+M(resumo.saidas)+(original.saldo?' · Saldo final: '+M(original.saldo.valor):'')+'</div>'+
+      (suspeitas.length?'<div class="aviso alerta">'+suspeitas.length+' possível(is) duplicidade(s) por data e valor em importações anteriores.</div>':'')+
+      ((resultado?.transacoes||[]).some(l=>l.pagamentoFatura)?'<div class="aviso alerta">Pagamento de fatura detectado: a quitação do cartão não deve gerar outra despesa.</div>':'')+
+      '<div class="tabela-wrap"><table><thead><tr><th>Data</th><th>Descrição</th><th>Valor</th></tr></thead><tbody>'+linhas+'</tbody></table></div>'+
+      '<p class="small muted">Amostra de 14 movimentos. A edição acima abrange todas as linhas. A conciliação é posterior à importação.</p>';
+    btn.disabled=!!problemas.length||!p.novas.length;
+  }
+  editor.addEventListener("input",atualizar);
+  form.querySelector('[name="conta"]').addEventListener("change",atualizar);
   form.querySelector('[name="arquivo"]').addEventListener("change",async ev=>{
-    btn.disabled=true;resultado=null;previa.textContent="Lendo o PDF...";
-    const file=ev.target.files?.[0];if(!file)return;
-    try {resultado=PDF.extratoInterPDF(await PDF.textoPDF(file));nome=file.name;mostrar();}
-    catch(e){previa.innerHTML='<div class="aviso perigo">'+esc(e.message)+'</div>';}
+    btn.disabled=true;original=null;resultado=null;arquivo=ev.target.files?.[0]||null;
+    previa.textContent="Lendo as páginas e verificando os saldos do PDF...";
+    if(!arquivo)return;
+    try{
+      original=PDF.extratoInterPDF(await PDF.textoPDF(arquivo));
+      editor.value=PDF.extratoEditavel(original.transacoes);
+      atualizar();
+    }catch(e){previa.innerHTML='<div class="aviso perigo">'+esc(e.message)+'</div>';}
   });
 }
 
