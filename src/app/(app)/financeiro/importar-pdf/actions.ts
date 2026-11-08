@@ -107,6 +107,10 @@ export async function importarDocumentoFinanceiroPDF(fd:FormData):Promise<Result
     arquivo_caminho:caminho,arquivo_sha256:hash,arquivo_tamanho:arquivo.size,
     conta_bancaria_id:tipo==="extrato"?idAlvo:null,cartao_id:tipo==="fatura"?idAlvo:null,
     status:"em_revisao",quantidade_linhas:linhas.length,criado_por:sessao.userId,
+    valor_total_centavos:tipo==="fatura"?valorFatura:movimentos.reduce((n,m)=>n+m.valorCentavos,0),
+    dados_extraidos:{tipo,linhas:tipo==="fatura"?compras:movimentos,
+      competencia:tipo==="fatura"?competencia:null,vencimento:tipo==="fatura"?vencimento:null,
+      conferido:true},
   });
   if(erroDocumento){
     await admin.storage.from(BUCKET).remove([caminho]);
