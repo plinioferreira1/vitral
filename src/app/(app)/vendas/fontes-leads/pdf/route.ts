@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
   txt(p1,"Panorama consolidado dos processos e vendas históricas cadastrados",M,H-111,9,normal,C.cinza);
   const cw=(W-2*M-20)/3;
   card(p1,M,598,cw,"VENDAS REGISTRADAS",String(nVendas),"Somente fechadas/com mês informado");
-  card(p1,M+cw+10,598,cw,"CUSTO CADASTRADO",BRL(custoTotal),"Valores informados por canal");
+  card(p1,M+cw+10,598,cw,"CUSTO CADASTRADO",despesas.length?BRL(custoTotal):"N/I","Valores informados por canal");
   card(p1,M+2*(cw+10),598,cw,"SEM FONTE",String(nSemFonte),"Vendas a classificar");
   txt(p1,"PARTICIPAÇÃO DOS CANAIS NAS VENDAS",M,569,11,bold,C.escuro);
   txt(p1,"Cada barra representa vendas associadas ao canal.",M,553,8,normal,C.cinza);
