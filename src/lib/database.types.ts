@@ -5025,6 +5025,7 @@ export type Database = {
           data_conclusao: string | null
           data_criacao: string
           data_final_contrato: string | null
+          data_venda: string | null
           google_alerta_contrato: Json
           id: string
           imovel_id: string | null
@@ -5033,6 +5034,8 @@ export type Database = {
           numero_processo: string
           numero_proposta_contrato: string | null
           origem: string | null
+          fonte_lead: string | null
+          fonte_lead_observacoes: string | null
           participacao_vgv_revisada: boolean
           responsavel_id: string | null
           status: string
@@ -5054,6 +5057,7 @@ export type Database = {
           data_conclusao?: string | null
           data_criacao?: string
           data_final_contrato?: string | null
+          data_venda?: string | null
           google_alerta_contrato?: Json
           id?: string
           imovel_id?: string | null
@@ -5062,6 +5066,8 @@ export type Database = {
           numero_processo: string
           numero_proposta_contrato?: string | null
           origem?: string | null
+          fonte_lead?: string | null
+          fonte_lead_observacoes?: string | null
           participacao_vgv_revisada?: boolean
           responsavel_id?: string | null
           status?: string
@@ -5083,6 +5089,7 @@ export type Database = {
           data_conclusao?: string | null
           data_criacao?: string
           data_final_contrato?: string | null
+          data_venda?: string | null
           google_alerta_contrato?: Json
           id?: string
           imovel_id?: string | null
@@ -5091,6 +5098,8 @@ export type Database = {
           numero_processo?: string
           numero_proposta_contrato?: string | null
           origem?: string | null
+          fonte_lead?: string | null
+          fonte_lead_observacoes?: string | null
           participacao_vgv_revisada?: boolean
           responsavel_id?: string | null
           status?: string
