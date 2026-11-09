@@ -22,6 +22,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { gerarCompetenciaManual } from "./actions";
 import { carregarDetalhe, carregarPainel, carregarPermissoes } from "./dados";
+import { zohoLocacaoConfigurado } from "@/lib/debitos/zoho-respostas";
 import { Administradoras } from "./_componentes/administradoras";
 import { Configuracoes } from "./_componentes/configuracoes";
 import { DetalheImovel } from "./_componentes/detalhe-imovel";
@@ -105,6 +106,7 @@ export default async function ControleDebitosPage({
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <CabecalhoPagina titulo="Inadimplências" descricao="Conferência mensal de condomínio, IPTU/TLP e acompanhamento das respostas das administradoras." />
+        <Link href="/locacao/debitos/relatorio-administradoras" className="rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-ink-muted hover:text-ink">Exportar contratos, administradoras e telefones (CSV)</Link>
         <div className="flex items-center gap-1 rounded-xl border border-border bg-surface p-1">
           <Link href={mesHref(somarMeses(competencia, -1))} aria-label="Mês anterior" className="rounded-lg p-2 text-ink-muted hover:bg-background">
             <ChevronLeft size={16} />
@@ -148,7 +150,7 @@ export default async function ControleDebitosPage({
       )}
 
       {aba === "painel" && <Painel dados={dados} linhas={linhasFiltradas} competencia={competencia} params={params} filtros={filtros} perms={perms} />}
-      {aba === "solicitacoes" && <Solicitacoes dados={dados} competencia={competencia} params={params} perms={perms} agoraIso={new Date().toISOString()} />}
+      {aba === "solicitacoes" && <Solicitacoes dados={dados} competencia={competencia} params={params} perms={perms} agoraIso={new Date().toISOString()} zohoConfigurado={zohoLocacaoConfigurado()} />}
       {aba === "ajustes" && (
         <div className="space-y-8">
           <section className="space-y-3">
