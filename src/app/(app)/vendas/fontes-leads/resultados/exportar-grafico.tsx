@@ -16,7 +16,7 @@ export function ExportarGrafico({ ranking, periodo, total }: {
       const largura = 1120;
       const margem = 64;
       const linhaAltura = 92;
-      const altura = Math.max(570, 300 + ranking.length * linhaAltura);
+      const altura = Math.max(570, 380 + ranking.length * linhaAltura);
       const canvas = document.createElement("canvas");
       canvas.width = largura * escala;
       canvas.height = altura * escala;
