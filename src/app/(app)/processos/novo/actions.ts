@@ -143,9 +143,14 @@ export async function criarProcesso(formData: FormData) {
       valor_total: valorTotal ? Number(valorTotal) : null,
       valor_financiado: valorFinanciado ? Number(valorFinanciado) : null,
       origem,
+      ...(categoria === "venda" ? {
+        fonte_lead: String(formData.get("fonte_lead") ?? "").trim().slice(0, 100) || null,
+        fonte_lead_observacoes: String(formData.get("fonte_lead_observacoes") ?? "").trim().slice(0, 500) || null,
+        data_venda: /^\\d{4}-\\d{2}-\\d{2}$/.test(String(formData.get("data_venda") ?? "")) ? String(formData.get("data_venda")) : null,
+      } : {}),
       indicacao_id: indicacaoId,
       data_criacao: dataBase,
-    })
+    } as never)
     .select("id")
     .single();
 
