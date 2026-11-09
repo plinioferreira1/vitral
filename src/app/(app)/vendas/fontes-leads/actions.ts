@@ -106,7 +106,7 @@ export async function salvarFonteRapida(tipo: "processo" | "historico", id: stri
 export async function adicionarFonteLead(formData: FormData) {
   const sessao = await exigirUsuario(["diretor", "gerente"]);
   if (!sessao) return;
-  const nome = String(formData.get("nome") ?? "").replace(/\\s+/g, " ").trim();
+  const nome = String(formData.get("nome") ?? "").replace(/\s+/g, " ").trim();
   if (nome.length < 2 || nome.length > 100) {
     await avisar("erro", "Informe um nome de fonte entre 2 e 100 caracteres.");
     return;
