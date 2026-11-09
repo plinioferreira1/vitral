@@ -1,3 +1,4 @@
+import { FONTES_LEADS } from "@/lib/vendas/fontes-leads";
 "use client";
 
 import { SeletorCorretor } from "@/components/seletor-corretor";
@@ -168,7 +169,7 @@ export function NovoProcessoForm({
             <h3 className="text-sm font-semibold text-ink">Fonte do lead</h3>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-xs font-medium text-ink-muted">Canal de origem
-                <input name="fonte_lead" list="fontes-lead-nova-venda" maxLength={100} placeholder="Ex.: DF Imóveis" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
+                <select name="fonte_lead" defaultValue="" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink"><option value="">Selecione a fonte</option>{FONTES_LEADS.map(c => <option key={c} value={c}>{c}</option>)}</select>
               </label>
               <label className="text-xs font-medium text-ink-muted">Mês da venda (quando houver)
                 <input name="mes_venda" type="month" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
@@ -177,7 +178,6 @@ export function NovoProcessoForm({
             <label className="block text-xs font-medium text-ink-muted">Observações
               <input name="fonte_lead_observacoes" maxLength={500} placeholder="Ex.: indicação do porteiro" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
             </label>
-            <datalist id="fontes-lead-nova-venda">{["DF Imóveis","Wimóveis","OLX","Viva Real","Instagram","Tráfego SACRA","Tráfego terceiros","Captação","SAN","Indicação","Site SACRA","WhatsApp","Outros","Indefinido"].map(c => <option key={c} value={c} />)}</datalist>
           </div>
         )}
         {ehFinanciamento && (
