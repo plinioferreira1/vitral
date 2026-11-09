@@ -5,6 +5,7 @@ import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { NavegacaoContexto } from "@/components/navegacao-contexto";
 import { PlanilhaFontes, type LinhaVenda } from "./planilha";
+import { obterFontesLead } from "@/lib/vendas/fontes-leads-server";
 
 type Processo = {
  id: string; numero_processo: string | null; codigo_san: string | null;
@@ -27,6 +28,7 @@ export default async function FontesLeadsPage({ searchParams }: {
  const params = await searchParams;
  const ano = /^20[0-9]{2}$/.test(params.ano ?? "") ? params.ano! : "2026";
  const supabase = await createClient();
+ const fontes = await obterFontesLead(usuario.tenant_id);
  const [processos, historicos] = await Promise.all([
   supabase.from("processos")
    .select("id,numero_processo,codigo_san,status,situacao_comercial,fonte_lead,data_venda,mes_venda,data_conclusao,data_assinatura,data_criacao,imoveis(endereco)")
@@ -77,6 +79,7 @@ export default async function FontesLeadsPage({ searchParams }: {
     <Link className="rounded-lg bg-brand px-4 py-2.5 font-semibold text-white hover:opacity-90" href={`/vendas/fontes-leads/resultados?ano=${ano}`}>Ver gráfico por fonte</Link>
     <Link className="text-brand hover:underline" href={`/vendas/fontes-leads/exportar?ano=${ano}`}>Exportar CSV</Link>
     <Link className="text-brand hover:underline" href="/vendas/fontes-leads/investimentos">Investimentos</Link>
+    <Link className="text-brand hover:underline" href="/vendas/fontes-leads/fontes">Gerenciar fontes</Link>
    </div>
   </div>
   <div className="grid grid-cols-3 gap-2 sm:gap-3">
@@ -89,6 +92,6 @@ export default async function FontesLeadsPage({ searchParams }: {
      <p className="mt-1 text-2xl font-semibold tabular-nums text-ink sm:text-3xl">{valor}</p>
    </div>)}
   </div>
-  <PlanilhaFontes linhas={linhas} ano={ano} />
+  <PlanilhaFontes linhas={linhas} ano={ano} fontes={fontes} />
  </div>;
 }

@@ -14,6 +14,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      vendas_fontes_personalizadas: {
+        Row: {
+          id: string
+          tenant_id: string
+          nome: string
+          ativo: boolean
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          nome: string
+          ativo?: boolean
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          nome?: string
+          ativo?: boolean
+          criado_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_fontes_personalizadas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       autorizacao_signatarios: {
         Row: {
           assinado_em: string | null
