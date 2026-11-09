@@ -5026,6 +5026,7 @@ export type Database = {
           data_criacao: string
           data_final_contrato: string | null
           data_venda: string | null
+          mes_venda: string | null
           google_alerta_contrato: Json
           id: string
           imovel_id: string | null
@@ -5058,6 +5059,7 @@ export type Database = {
           data_criacao?: string
           data_final_contrato?: string | null
           data_venda?: string | null
+          mes_venda?: string | null
           google_alerta_contrato?: Json
           id?: string
           imovel_id?: string | null
@@ -5090,6 +5092,7 @@ export type Database = {
           data_criacao?: string
           data_final_contrato?: string | null
           data_venda?: string | null
+          mes_venda?: string | null
           google_alerta_contrato?: Json
           id?: string
           imovel_id?: string | null
@@ -6492,6 +6495,44 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "usuarios_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendas_fontes_historicas: {
+        Row: {
+          id: string
+          tenant_id: string
+          imovel_nome: string
+          mes_venda: string
+          fonte_lead: string | null
+          fonte_lead_observacoes: string | null
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          imovel_nome: string
+          mes_venda: string
+          fonte_lead?: string | null
+          fonte_lead_observacoes?: string | null
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          imovel_nome?: string
+          mes_venda?: string
+          fonte_lead?: string | null
+          fonte_lead_observacoes?: string | null
+          criado_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_fontes_historicas_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
