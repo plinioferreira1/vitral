@@ -1,0 +1,1 @@
+export const FONTES_LEADS = ["DF Imóveis","Wimóveis","OLX","Viva Real","Instagram","Tráfego SACRA","Tráfego terceiros","Captação","SAN","Indicação","Site SACRA","WhatsApp","Outros","Indefinido"] as const;
