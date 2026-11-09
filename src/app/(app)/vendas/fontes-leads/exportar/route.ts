@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   if (!/^20[0-9]{2}$/.test(ano)) return new NextResponse("Ano inválido.", { status: 400 });
   const canal = request.nextUrl.searchParams.get("canal") || "";
   const busca = (request.nextUrl.searchParams.get("busca") || "").trim().toLocaleLowerCase("pt-BR");
-  const estado = request.nextUrl.searchParams.get("estado") === "todos" ? "todos" : "concluido";
+
   const supabase = await createClient();
   const [processos, historicos] = await Promise.all([
     supabase.from("processos")
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
   if (processos.error || historicos.error) return new NextResponse("Falha ao exportar vendas.", { status: 500 });
   const vendas = ((processos.data ?? []) as unknown as Venda[])
     .filter(v => mesComercial(v).startsWith(ano))
-    .filter(v => estado === "todos" || v.status === "concluido" || !!v.mes_venda || !!v.data_venda)
+    .filter(v => v.status === "concluido" || !!v.mes_venda || !!v.data_venda)
     .filter(v => !canal || (v.fonte_lead || "Não informado") === canal)
     .filter(v => !busca || [v.imoveis?.endereco,v.numero_processo,v.codigo_san].join(" ").toLocaleLowerCase("pt-BR").includes(busca));
   const antigos = (historicos.data ?? [])
