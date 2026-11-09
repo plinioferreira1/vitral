@@ -56,7 +56,11 @@ function CardTutorial({ t }: { t: Tutorial }) {
             />
           </div>
         )}
-        {t.tipo === "video" && t.link && !embed && (
+        {t.tipo === "video" && t.link && !embed && /\.(mp4|webm|mov)(\?|$)/i.test(t.link) && (
+          // vídeos curtos guardados no próprio Vitral (ex.: gravações de tela do celular, em pé)
+          <video src={t.link} controls playsInline preload="metadata" className="max-h-[70vh] w-auto max-w-full rounded-lg bg-background" />
+        )}
+        {t.tipo === "video" && t.link && !embed && !/\.(mp4|webm|mov)(\?|$)/i.test(t.link) && (
           <a
             href={t.link}
             target="_blank"
