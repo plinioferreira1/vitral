@@ -4,6 +4,7 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { salvarFonteRapida } from "./actions";
+import { agruparFontes, type FonteAgrupada } from "@/lib/vendas/fontes-leads";
 
 export type LinhaVenda = {
   id: string;
@@ -15,13 +16,13 @@ export type LinhaVenda = {
   situacao: "concluida" | "andamento";
 };
 
-function Linha({ linha, fontes }: { linha: LinhaVenda; fontes: string[] }) {
+function Linha({ linha, fontes }: { linha: LinhaVenda; fontes: FonteAgrupada[] }) {
   const router = useRouter();
   const [fonte, setFonte] = useState(linha.fonte ?? "");
   const [erro, setErro] = useState("");
   const [pendente, iniciar] = useTransition();
-  const opcoes = fonte && !fontes.some((f) => f === fonte)
-    ? [fonte, ...fontes] : fontes;
+  const opcoes = fonte && !fontes.some((f) => f.nome === fonte)
+    ? [{ nome: fonte, categoria: "outros" as const }, ...fontes] : fontes;
   return <tr className="border-t border-border/70 hover:bg-background/70">
     <td className="px-3 py-3">
       <div className="font-medium text-ink">{linha.imovel}</div>
@@ -51,7 +52,9 @@ function Linha({ linha, fontes }: { linha: LinhaVenda; fontes: string[] }) {
         }}
         className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand disabled:opacity-60">
         <option value="">Selecionar fonte</option>
-        {opcoes.map(op => <option key={op} value={op}>{op}</option>)}
+        {agruparFontes(opcoes).map(grupo => <optgroup key={grupo.id} label={grupo.titulo}>
+          {grupo.fontes.map(op => <option key={op.nome} value={op.nome}>{op.nome}</option>)}
+        </optgroup>)}
       </select>
       {erro ? <p role="alert" className="mt-1 text-xs text-rose-700">{erro}</p> : pendente ? <p className="mt-1 text-xs text-ink-muted">Salvando…</p> : null}
     </td>
@@ -81,7 +84,9 @@ export function PlanilhaFontes({ linhas, ano, fontes }: { linhas: LinhaVenda[]; 
       <select aria-label="Filtrar fonte" value={canal} onChange={e => setCanal(e.target.value)}
         className="rounded-lg border border-border bg-surface px-3 py-2 text-sm">
         <option value="">Todos os canais</option>
-        {fontes.map(op => <option key={op} value={op}>{op}</option>)}
+        {agruparFontes(fontes).map(grupo => <optgroup key={grupo.id} label={grupo.titulo}>
+          {grupo.fontes.map(op => <option key={op.nome} value={op.nome}>{op.nome}</option>)}
+        </optgroup>)}
       </select>
     </div>
     <div className="overflow-x-auto">
