@@ -45,7 +45,7 @@ export default async function FontesLeadsPage({ searchParams }: {
   const ano = /^20[0-9]{2}$/.test(params.ano ?? "") ? params.ano! : "2026";
   const canal = params.canal ?? "";
   const busca = (params.busca ?? "").trim().toLocaleLowerCase("pt-BR");
-  const estado = params.estado === "todos" ? "todos" : "concluido";
+  const estado = "concluido";
   const supabase = await createClient();
   const [resProcessos, resHistoricos] = await Promise.all([
     supabase.from("processos")
@@ -70,7 +70,7 @@ export default async function FontesLeadsPage({ searchParams }: {
   for (const v of [...realizadas, ...historicasAno]) porCanal.set(nomeFonte(v), (porCanal.get(nomeFonte(v)) ?? 0) + 1);
   const canais = [...porCanal.entries()].sort((a,b) => b[1]-a[1]);
   const linhas = noAno
-    .filter(v => estado === "todos" || vendaRealizada(v))
+    .filter(v => vendaRealizada(v))
     .filter(v => !canal || nomeFonte(v) === canal)
     .filter(v => !busca || [v.imoveis?.endereco, v.numero_processo, v.codigo_san].join(" ").toLocaleLowerCase("pt-BR").includes(busca))
     .sort((a,b) => mesComercial(b).localeCompare(mesComercial(a)));
@@ -80,8 +80,9 @@ export default async function FontesLeadsPage({ searchParams }: {
   const anos = [...new Set(["2026", ...todas.map(v=>mesComercial(v).slice(0,4)), ...todasHistoricas.map(v=>v.mes_venda.slice(0,4))].filter(v=>/^20[0-9]{2}$/.test(v)))].sort().reverse();
   const query = new URLSearchParams({ ano, canal, busca: params.busca ?? "", estado });
   return <div className="w-full min-w-0 space-y-6">
-    <CabecalhoPagina titulo="Fontes de leads" descricao="Origem comercial das vendas, incluindo contratos em andamento e vendas históricas." acao={<Link href="/vendas?aba=andamento" className={SECONDARY_BUTTON_CLASS}>Ver processos</Link>} />
+    <CabecalhoPagina titulo="Fontes de leads" descricao="Origem dos imóveis vendidos, incluindo vendas com trâmites ainda em andamento." acao={<Link href="/vendas?aba=andamento" className={SECONDARY_BUTTON_CLASS}>Ver processos</Link>} />
     <NavegacaoContexto nome="Vendas" links={[{ href: "/vendas", label: "Processos de venda" }, { href: "/vendas/fontes-leads", label: "Fontes de leads" }]} />
+    {ano === "2026" && <p className="text-sm text-slate-600">Referência informada pela gestão: <strong>60 imóveis vendidos em 2026</strong>. O total abaixo mostra somente os registros já conciliados com o Vitral, sem completar artificialmente os cadastros.</p>}
     <div className="grid gap-3 sm:grid-cols-3">
       <div className={`${CARD_CLASS} p-5`}><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Vendas registradas em {ano}</p><p className="mt-2 text-3xl font-semibold tabular-nums text-slate-900">{total}</p></div>
       <div className={`${CARD_CLASS} p-5`}><p className="text-xs font-medium uppercase tracking-wide text-slate-500">Origem identificada</p><p className="mt-2 text-3xl font-semibold tabular-nums text-emerald-700">{comFonte}<span className="ml-2 text-sm font-normal text-slate-500">de {total}</span></p></div>
@@ -96,7 +97,7 @@ export default async function FontesLeadsPage({ searchParams }: {
       <form className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" method="get">
         <label className="text-xs font-medium text-slate-600">Ano<select className={`${INPUT_CLASS} mt-1 w-full`} name="ano" defaultValue={ano}>{anos.map(y=><option key={y} value={y}>{y}</option>)}</select></label>
         <label className="text-xs font-medium text-slate-600">Canal<select className={`${INPUT_CLASS} mt-1 w-full`} name="canal" defaultValue={canal}><option value="">Todos</option>{[...new Set(["Não informado",...CANAIS,...canais.map(c=>c[0])])].map(c=><option key={c} value={c}>{c}</option>)}</select></label>
-        <label className="text-xs font-medium text-slate-600">Visualização<select className={`${INPUT_CLASS} mt-1 w-full`} name="estado" defaultValue={estado}><option value="concluido">Vendas realizadas</option><option value="todos">Todos os processos</option></select></label>
+        <div className="self-end rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">Somente imóveis vendidos</div>
         <div className="flex gap-2"><label className="min-w-0 flex-1 text-xs font-medium text-slate-600">Pesquisar imóvel<input className={`${INPUT_CLASS} mt-1 w-full`} name="busca" placeholder="Nome ou código" defaultValue={params.busca ?? ""}/></label><button className={`${SECONDARY_BUTTON_CLASS} self-end`} type="submit">Filtrar</button></div>
       </form>
       <datalist id="fontes-lead-opcoes">{CANAIS.map(c=><option key={c} value={c}/>)}</datalist>
