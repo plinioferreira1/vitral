@@ -47,7 +47,7 @@ export default async function FontesLeadsPage({ searchParams }: {
   if (error) return <p className="p-6 text-sm text-rose-700">Erro ao carregar as vendas: {error.message}</p>;
   const todas = (data ?? []) as unknown as Venda[];
   const noAno = todas.filter(v => periodoVenda(v).startsWith(ano));
-  const concluidas = noAno.filter(v => v.status === "concluido");
+  const concluidas = noAno.filter(v => v.status === "concluido" || !!v.data_venda);
   const preenchidas = concluidas.filter(v => !!v.fonte_lead && v.fonte_lead !== "Indefinido");
   const porCanal = new Map<string, number>();
   for (const v of concluidas) {
@@ -56,7 +56,7 @@ export default async function FontesLeadsPage({ searchParams }: {
   }
   const canais = [...porCanal.entries()].sort((a,b) => b[1] - a[1]);
   const linhas = noAno
-    .filter(v => estado === "todos" || v.status === "concluido")
+    .filter(v => estado === "todos" || v.status === "concluido" || !!v.data_venda)
     .filter(v => !canal || (v.fonte_lead || "Não informado") === canal)
     .filter(v => !busca || [v.imoveis?.endereco, v.numero_processo, v.codigo_san].join(" ").toLocaleLowerCase("pt-BR").includes(busca))
     .sort((a,b) => periodoVenda(b).localeCompare(periodoVenda(a)));
@@ -71,7 +71,7 @@ export default async function FontesLeadsPage({ searchParams }: {
       <div className={`${CARD_CLASS} p-5`}><p className="text-xs font-medium uppercase tracking-wide text-slate-500">A classificar</p><p className="mt-2 text-3xl font-semibold tabular-nums text-amber-700">{semFonte}</p></div>
     </div>
     <section className={`${CARD_CLASS} p-4 sm:p-5`}>
-      <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold text-slate-900">Vendas por canal</h2><span className="text-xs text-slate-500">Somente processos concluídos</span></div>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><h2 className="font-semibold text-slate-900">Vendas por canal</h2><span className="text-xs text-slate-500">Vendas concluídas ou com data comercial informada</span></div>
       {canais.length ? <div className="space-y-3">{canais.map(([nome, qtd]) => <div key={nome} className="grid grid-cols-[minmax(110px,1fr)_minmax(110px,3fr)_36px] items-center gap-3 text-sm"><span className="truncate text-slate-700">{nome}</span><div className="h-2.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-emerald-700" style={{width: `${Math.max(2,100*qtd/concluidas.length)}%`}} /></div><strong className="text-right tabular-nums">{qtd}</strong></div>)}</div> : <p className="text-sm text-slate-500">Sem vendas concluídas no período.</p>}
     </section>
     <section className={`${CARD_CLASS} p-4 sm:p-5`}>
@@ -79,13 +79,13 @@ export default async function FontesLeadsPage({ searchParams }: {
       <form className="mb-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" method="get">
         <label className="text-xs font-medium text-slate-600">Ano<select className={`${INPUT_CLASS} mt-1 w-full`} name="ano" defaultValue={ano}>{anos.map(y=><option key={y} value={y}>{y}</option>)}</select></label>
         <label className="text-xs font-medium text-slate-600">Canal<select className={`${INPUT_CLASS} mt-1 w-full`} name="canal" defaultValue={canal}><option value="">Todos</option>{[...new Set(["Não informado",...CANAIS,...canais.map(c=>c[0])])].map(c=><option key={c} value={c}>{c}</option>)}</select></label>
-        <label className="text-xs font-medium text-slate-600">Visualização<select className={`${INPUT_CLASS} mt-1 w-full`} name="estado" defaultValue={estado}><option value="concluido">Concluídas</option><option value="todos">Todos os processos</option></select></label>
+        <label className="text-xs font-medium text-slate-600">Visualização<select className={`${INPUT_CLASS} mt-1 w-full`} name="estado" defaultValue={estado}><option value="concluido">Vendas realizadas</option><option value="todos">Todos os processos</option></select></label>
         <div className="flex gap-2"><label className="min-w-0 flex-1 text-xs font-medium text-slate-600">Pesquisar imóvel<input className={`${INPUT_CLASS} mt-1 w-full`} name="busca" placeholder="Nome ou código" defaultValue={params.busca ?? ""}/></label><button className={`${SECONDARY_BUTTON_CLASS} self-end`} type="submit">Filtrar</button></div>
       </form>
       <datalist id="fontes-lead-opcoes">{CANAIS.map(c=><option key={c} value={c}/>)}</datalist>
       {linhas.length ? <div className="space-y-3">{linhas.map(v=><form action={salvarFonteLead} key={v.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <input type="hidden" name="processo_id" value={v.id}/>
-        <div className="mb-3 flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><p className="font-semibold text-slate-900">{v.imoveis?.endereco || v.numero_processo || "Imóvel sem identificação"}</p><p className="mt-0.5 text-xs text-slate-500">{v.numero_processo} {v.codigo_san ? ` · SAN ${v.codigo_san}` : ""} · {v.status === "concluido" ? "Concluída" : "Em andamento"}</p></div><span className="text-sm font-semibold tabular-nums text-slate-700">{moeda(Number(v.valor_total||0))}</span></div>
+        <div className="mb-3 flex flex-wrap items-start justify-between gap-2"><div className="min-w-0"><p className="font-semibold text-slate-900">{v.imoveis?.endereco || v.numero_processo || "Imóvel sem identificação"}</p><p className="mt-0.5 text-xs text-slate-500">{v.numero_processo} {v.codigo_san ? ` · SAN ${v.codigo_san}` : ""} · {v.status === "concluido" || v.data_venda ? "Venda realizada" : "Em andamento"}</p></div><span className="text-sm font-semibold tabular-nums text-slate-700">{moeda(Number(v.valor_total||0))}</span></div>
         <div className="grid gap-3 sm:grid-cols-[minmax(170px,1fr)_minmax(135px,0.7fr)_minmax(200px,1.6fr)_auto] sm:items-end">
           <label className="min-w-0 text-xs font-medium text-slate-600">Fonte do lead<input list="fontes-lead-opcoes" name="fonte_lead" className={`${INPUT_CLASS} mt-1 w-full`} maxLength={100} defaultValue={v.fonte_lead ?? ""} placeholder="Selecione ou digite"/></label>
           <label className="min-w-0 text-xs font-medium text-slate-600">Data da venda<input type="date" name="data_venda" className={`${INPUT_CLASS} mt-1 w-full`} defaultValue={v.data_venda ?? v.data_conclusao ?? v.data_assinatura ?? ""}/></label>
