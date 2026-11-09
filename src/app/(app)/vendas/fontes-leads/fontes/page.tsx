@@ -21,7 +21,7 @@ export default async function GerenciarFontesPage() {
     <CabecalhoPagina titulo="Fontes de leads" descricao="Uma lista organizada por origem. Novos canais ficam disponíveis na planilha e nas próximas vendas." />
     <NavegacaoContexto nome="Vendas" links={[
       { href: "/vendas", label: "Processos de venda" },
-      { href: "/vendas/fontes-leads", label: "Controle de vendas" },
+      { href: "/vendas/fontes-leads", label: "Fonte de Vendas" },
       { href: "/vendas/fontes-leads/fontes", label: "Gerenciar fontes" },
     ]} />
     <Link href="/vendas/fontes-leads" className={SECONDARY_BUTTON_CLASS}>Voltar à planilha</Link>

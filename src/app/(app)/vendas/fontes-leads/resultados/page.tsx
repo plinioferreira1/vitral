@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ExportarGrafico } from "./exportar-grafico";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
@@ -77,10 +78,10 @@ export default async function ResultadosPorFontePage({ searchParams }: {
   const periodo = mes ? `${meses[Number(mes) - 1]} de ${ano}` : ano;
 
   return <div className="w-full min-w-0 space-y-5">
-    <CabecalhoPagina titulo="Vendas por fonte" descricao="Veja quais canais trouxeram mais vendas assinadas para a Sacra." />
+    <CabecalhoPagina titulo="Resultados por Fonte de Vendas" descricao="Veja quais canais trouxeram mais vendas assinadas para a Sacra." />
     <NavegacaoContexto nome="Vendas" links={[
       { href: "/vendas", label: "Processos de venda" },
-      { href: "/vendas/fontes-leads", label: "Controle de vendas" },
+      { href: "/vendas/fontes-leads", label: "Fonte de Vendas" },
       { href: "/vendas/fontes-leads/resultados", label: "Resultados por fonte" },
     ]} />
 
@@ -100,9 +101,12 @@ export default async function ResultadosPorFontePage({ searchParams }: {
         </label>
         <button type="submit" className={SECONDARY_BUTTON_CLASS}>Aplicar</button>
       </form>
-      <Link href={`/vendas/fontes-leads?ano=${ano}`} className={SECONDARY_BUTTON_CLASS}>
-        Voltar à planilha
-      </Link>
+      <div className="flex flex-wrap items-center gap-2">
+        <ExportarGrafico ranking={ranking} periodo={periodo} total={total} />
+        <Link href={`/vendas/fontes-leads?ano=${ano}`} className={SECONDARY_BUTTON_CLASS}>
+          Voltar à planilha
+        </Link>
+      </div>
     </div>
 
     <div className="grid grid-cols-3 gap-2 sm:gap-3">

@@ -63,10 +63,10 @@ export default async function FontesLeadsPage({ searchParams }: {
  const concluidas = linhas.filter(l => l.situacao === "concluida").length;
  const classificadas = linhas.filter(l => !!l.fonte && l.fonte !== "Indefinido").length;
  return <div className="w-full min-w-0 space-y-5">
-  <CabecalhoPagina titulo="Controle de vendas" descricao="Toda venda assinada entra aqui, mesmo com financiamento, registro ou entrega de chaves pendentes." />
+  <CabecalhoPagina titulo="Fonte de Vendas" descricao="Toda venda assinada entra aqui, mesmo com financiamento, registro ou entrega de chaves pendentes." />
   <NavegacaoContexto nome="Vendas" links={[
     { href: "/vendas", label: "Processos de venda" },
-    { href: "/vendas/fontes-leads", label: "Controle de vendas" },
+    { href: "/vendas/fontes-leads", label: "Fonte de Vendas" },
   ]} />
   <div className="flex flex-wrap items-center justify-between gap-3">
    <form method="get"><label className="flex items-center gap-2 text-sm text-ink-muted">
@@ -76,7 +76,7 @@ export default async function FontesLeadsPage({ searchParams }: {
      <button type="submit" className="rounded-lg border border-border bg-surface px-3 py-2 text-ink hover:bg-background">Aplicar</button>
    </label></form>
    <div className="flex flex-wrap items-center gap-3 text-sm">
-    <Link className="rounded-lg bg-brand px-4 py-2.5 font-semibold text-white hover:opacity-90" href={`/vendas/fontes-leads/resultados?ano=${ano}`}>Ver gráfico por fonte</Link>
+    <Link className="rounded-lg bg-brand px-4 py-2.5 font-semibold text-white hover:opacity-90" href={`/vendas/fontes-leads/resultados?ano=${ano}`}>Ver gráfico de fontes</Link>
     <Link className="text-brand hover:underline" href={`/vendas/fontes-leads/exportar?ano=${ano}`}>Exportar CSV</Link>
     <Link className="text-brand hover:underline" href="/vendas/fontes-leads/investimentos">Investimentos</Link>
     <Link className="text-brand hover:underline" href="/vendas/fontes-leads/fontes">Gerenciar fontes</Link>
