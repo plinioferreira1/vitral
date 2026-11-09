@@ -12,11 +12,11 @@ import { ROTULO_MARCO, ROTULO_PAGADOR, dataBR, dataPorExtenso, type EncargoCalcu
 import { compradores, marcoEfetivo, textoServico, vendedores, type Assinatura, type ParteTermo, type RetratoTermo } from "./conteudo";
 import { formatarCentavos, valorComExtenso } from "./extenso";
 
-const A4 = { largura: 595.28, altura: 841.89 };
-const MARGEM_X = 54;
-const LARGURA = A4.largura - MARGEM_X * 2;
+export const A4 = { largura: 595.28, altura: 841.89 };
+export const MARGEM_X = 54;
+export const LARGURA = A4.largura - MARGEM_X * 2;
 
-const COR = {
+export const COR = {
   tinta: rgb(0.11, 0.1, 0.09),
   cinza: rgb(0.37, 0.34, 0.31),
   claro: rgb(0.55, 0.52, 0.48),
@@ -38,10 +38,10 @@ export type OpcoesPdfTermo = {
   marcaDagua: string | null;
 };
 
-type Celula = { linhas: { texto: string; negrito?: boolean; cor?: RGB }[]; fundo?: RGB; alinhar?: "esquerda" | "centro" };
+export type Celula = { linhas: { texto: string; negrito?: boolean; cor?: RGB }[]; fundo?: RGB; alinhar?: "esquerda" | "centro" };
 const ESPACO_TITULO = 1.6;
 
-class Folha {
+export class Folha {
   doc!: PDFDocument;
   normal!: PDFFont;
   negrito!: PDFFont;
@@ -218,8 +218,8 @@ class Folha {
   }
 }
 
-const rot = (texto: string): Celula => ({ linhas: [{ texto: texto.replace(/:$/, "") + ":", cor: COR.cinza }], fundo: COR.rotulo });
-const val = (texto: string, negrito = false): Celula => ({ linhas: [{ texto: texto || "—", negrito }] });
+export const rot = (texto: string): Celula => ({ linhas: [{ texto: texto.replace(/:$/, "") + ":", cor: COR.cinza }], fundo: COR.rotulo });
+export const val = (texto: string, negrito = false): Celula => ({ linhas: [{ texto: texto || "—", negrito }] });
 
 function blocoPartes(f: Folha, titulo: string, partes: ParteTermo[]) {
   f.faixa(titulo);
