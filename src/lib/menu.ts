@@ -61,8 +61,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       children: [
         { href: "/locacao?aba=resumo", label: "Visão geral" },
         { href: "/locacao?aba=contratos", label: "Contratos" },
-        { href: "/locacao?aba=inadimplencias", label: "Contas da locação" },
-        ...(verDebitos ? [{ href: "/locacao/debitos", label: "Controle de débitos" }] : []),
+        ...(verDebitos ? [{ href: "/locacao/debitos", label: "Inadimplências" }] : []),
         { href: "/locacao/ficha-cadastral", label: "Fichas cadastrais" },
         ...(p.nivelComAcessoTotal ? [{ href: "/locacao/contratos", label: "Gerar contratos" }] : []),
         { href: "/locacao/multa-juros", label: "Multa e juros por atraso" },
