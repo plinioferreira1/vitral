@@ -2,7 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { createClient } from "@/lib/supabase/server";
-import { CATEGORIAS_FONTES, FONTES_PADRAO, type CategoriaFonte } from "@/lib/vendas/fontes-leads";
+import { CATEGORIAS_FONTES, FONTES_PADRAO } from "@/lib/vendas/fontes-leads";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { NavegacaoContexto } from "@/components/navegacao-contexto";
 import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
