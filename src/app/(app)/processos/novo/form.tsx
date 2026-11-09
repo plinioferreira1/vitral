@@ -170,8 +170,8 @@ export function NovoProcessoForm({
               <label className="text-xs font-medium text-ink-muted">Canal de origem
                 <input name="fonte_lead" list="fontes-lead-nova-venda" maxLength={100} placeholder="Ex.: DF Imóveis" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
               </label>
-              <label className="text-xs font-medium text-ink-muted">Data da venda (quando houver)
-                <input name="data_venda" type="date" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
+              <label className="text-xs font-medium text-ink-muted">Mês da venda (quando houver)
+                <input name="mes_venda" type="month" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
               </label>
             </div>
             <label className="block text-xs font-medium text-ink-muted">Observações
