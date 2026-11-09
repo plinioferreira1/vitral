@@ -133,7 +133,7 @@ export default async function ControleDebitosPage({
             href={hrefPainel({ mes: params.mes }, { aba: id === "painel" ? null : id })}
             className={`whitespace-nowrap border-b-2 px-3 py-2.5 text-sm font-medium ${aba === id ? "border-brand text-brand" : "border-transparent text-ink-muted hover:text-ink"}`}
           >
-            {rotulo}
+            {rotulo}{id === "solicitacoes" && dados.respostasZoho.length > 0 ? ` (${dados.respostasZoho.length} resposta(s))` : ""}
           </Link>
         ))}
       </nav>
