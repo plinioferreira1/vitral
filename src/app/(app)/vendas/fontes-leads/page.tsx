@@ -15,8 +15,8 @@ type Processo = {
 };
 type Historico = { id: string; imovel_nome: string; mes_venda: string; fonte_lead: string | null; situacao_comercial: string | null };
 function mes(v: Processo) {
- return v.mes_venda ?? v.data_venda?.slice(0,7) ?? v.data_conclusao?.slice(0,7) ??
-   v.data_assinatura?.slice(0,7) ?? v.data_criacao?.slice(0,7) ?? "";
+ return v.mes_venda ?? v.data_venda?.slice(0,7) ?? v.data_assinatura?.slice(0,7) ??
+   v.data_conclusao?.slice(0,7) ?? v.data_criacao?.slice(0,7) ?? "";
 }
 export default async function FontesLeadsPage({ searchParams }: {
  searchParams: Promise<{ ano?: string }>;
@@ -44,7 +44,7 @@ export default async function FontesLeadsPage({ searchParams }: {
  const listaHistorica = (historicos.data ?? []) as Historico[];
  const linhas: LinhaVenda[] = [
    ...listaProcessos
-    .filter(p => mes(p).startsWith(ano) && (!!p.situacao_comercial || !!p.data_venda))
+    .filter(p => mes(p).startsWith(ano) && (!!p.situacao_comercial || !!p.data_assinatura || !!p.data_venda))
     .map(p => ({
        id: p.id, tipo: "processo" as const,
        imovel: p.imoveis?.endereco || p.numero_processo || "Imóvel não identificado",
@@ -61,7 +61,7 @@ export default async function FontesLeadsPage({ searchParams }: {
  const concluidas = linhas.filter(l => l.situacao === "concluida").length;
  const classificadas = linhas.filter(l => !!l.fonte && l.fonte !== "Indefinido").length;
  return <div className="w-full min-w-0 space-y-5">
-  <CabecalhoPagina titulo="Controle de vendas" descricao="Uma planilha simples, integrada aos processos de venda do Vitral." />
+  <CabecalhoPagina titulo="Controle de vendas" descricao="Toda venda assinada entra aqui, mesmo com financiamento, registro ou entrega de chaves pendentes." />
   <NavegacaoContexto nome="Vendas" links={[
     { href: "/vendas", label: "Processos de venda" },
     { href: "/vendas/fontes-leads", label: "Controle de vendas" },
@@ -80,8 +80,8 @@ export default async function FontesLeadsPage({ searchParams }: {
   </div>
   <div className="grid grid-cols-3 gap-2 sm:gap-3">
    {[
-    ["Total de vendas", linhas.length],
-    ["Concluídas", concluidas],
+    ["Vendas assinadas", linhas.length],
+    ["Processos concluídos", concluidas],
     ["Origens preenchidas", classificadas],
    ].map(([rotulo, valor]) => <div key={rotulo} className="rounded-xl border border-border bg-surface p-3 sm:p-5">
      <p className="text-xs text-ink-muted sm:text-sm">{rotulo}</p>
