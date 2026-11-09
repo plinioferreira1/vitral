@@ -6502,6 +6502,47 @@ export type Database = {
           },
         ]
       }
+      vendas_investimentos_canais: {
+        Row: {
+          id: string
+          tenant_id: string
+          canal: string
+          mes: string
+          valor: number
+          observacoes: string | null
+          criado_em: string
+          atualizado_em: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          canal: string
+          mes: string
+          valor?: number
+          observacoes?: string | null
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          canal?: string
+          mes?: string
+          valor?: number
+          observacoes?: string | null
+          criado_em?: string
+          atualizado_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_investimentos_canais_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vendas_fontes_historicas: {
         Row: {
           id: string
