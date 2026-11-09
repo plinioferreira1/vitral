@@ -1,6 +1,7 @@
 "use client";
 
 
+import { agruparFontes, type FonteAgrupada } from "@/lib/vendas/fontes-leads";
 import { SeletorCorretor } from "@/components/seletor-corretor";
 import { useMemo, useState } from "react";
 import { criarProcesso } from "./actions";
@@ -29,7 +30,7 @@ interface Props {
   clientes: { id: string; nome: string }[];
   imoveis: { id: string; endereco: string }[];
   corretores: { id: string; nome: string; usuario_id?: string | null }[];
-  fontes: string[];
+  fontes: FonteAgrupada[];
 }
 
 export function NovoProcessoForm({
@@ -171,7 +172,7 @@ export function NovoProcessoForm({
             <h3 className="text-sm font-semibold text-ink">Fonte do lead</h3>
             <div className="grid gap-3 sm:grid-cols-2">
               <label className="text-xs font-medium text-ink-muted">Canal de origem
-                <select name="fonte_lead" defaultValue="" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink"><option value="">Selecione a fonte</option>{fontes.map(c => <option key={c} value={c}>{c}</option>)}</select>
+                <select name="fonte_lead" defaultValue="" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink"><option value="">Selecione a fonte</option>{agruparFontes(fontes).map(grupo => <optgroup key={grupo.id} label={grupo.titulo}>{grupo.fontes.map(c => <option key={c.nome} value={c.nome}>{c.nome}</option>)}</optgroup>)}</select>
               </label>
               <label className="text-xs font-medium text-ink-muted">Mês da venda (quando houver)
                 <input name="mes_venda" type="month" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />

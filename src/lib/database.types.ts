@@ -20,6 +20,7 @@ export type Database = {
           tenant_id: string
           nome: string
           ativo: boolean
+          categoria: string
           criado_em: string
         }
         Insert: {
@@ -27,6 +28,7 @@ export type Database = {
           tenant_id: string
           nome: string
           ativo?: boolean
+          categoria?: string
           criado_em?: string
         }
         Update: {
@@ -34,6 +36,7 @@ export type Database = {
           tenant_id?: string
           nome?: string
           ativo?: boolean
+          categoria?: string
           criado_em?: string
         }
         Relationships: [
