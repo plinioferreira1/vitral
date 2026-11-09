@@ -107,6 +107,9 @@ export async function adicionarFonteLead(formData: FormData) {
   const sessao = await exigirUsuario(["diretor", "gerente"]);
   if (!sessao) return;
   const nome = String(formData.get("nome") ?? "").replace(/\s+/g, " ").trim();
+  const categoria = String(formData.get("categoria") ?? "outros");
+  const { categoriaValida } = await import("@/lib/vendas/fontes-leads");
+  if (!categoriaValida(categoria)) { await avisar("erro", "Escolha uma categoria válida."); return; }
   if (nome.length < 2 || nome.length > 100) {
     await avisar("erro", "Informe um nome de fonte entre 2 e 100 caracteres.");
     return;
@@ -126,11 +129,11 @@ export async function adicionarFonteLead(formData: FormData) {
   if (anterior) {
     if (anterior.ativo) { await avisar("erro", "Essa fonte já está cadastrada."); return; }
     const { error } = await supabase.from("vendas_fontes_personalizadas")
-      .update({ ativo: true }).eq("tenant_id", sessao.tenantId).eq("id", anterior.id);
+      .update({ ativo: true, categoria }).eq("tenant_id", sessao.tenantId).eq("id", anterior.id);
     if (error) { await avisar("erro", "Não foi possível reativar a fonte."); return; }
   } else {
     const { error } = await supabase.from("vendas_fontes_personalizadas")
-      .insert({ tenant_id: sessao.tenantId, nome });
+      .insert({ tenant_id: sessao.tenantId, nome, categoria });
     if (error) { await avisar("erro", "Não foi possível cadastrar. Confira se a fonte já existe."); return; }
   }
   revalidatePath("/vendas/fontes-leads");
@@ -153,4 +156,26 @@ export async function desativarFonteLead(formData: FormData) {
   revalidatePath("/vendas/fontes-leads/fontes");
   revalidatePath("/processos/novo");
   await avisar("sucesso", "Fonte ocultada das opções. O histórico foi preservado.");
+}
+
+
+/** Mudar o grupo não altera a origem registrada nas vendas nem os resultados. */
+export async function atualizarCategoriaFonte(formData: FormData) {
+  const sessao = await exigirUsuario(["diretor", "gerente"]);
+  if (!sessao) return;
+  const id = String(formData.get("id") ?? "");
+  const categoria = String(formData.get("categoria") ?? "");
+  const { categoriaValida } = await import("@/lib/vendas/fontes-leads");
+  if (!uuidValido(id) || !categoriaValida(categoria)) {
+    await avisar("erro", "Categoria inválida.");
+    return;
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.from("vendas_fontes_personalizadas")
+    .update({ categoria }).eq("tenant_id", sessao.tenantId).eq("id", id);
+  if (error) { await avisar("erro", "Não foi possível alterar a categoria."); return; }
+  revalidatePath("/vendas/fontes-leads");
+  revalidatePath("/vendas/fontes-leads/fontes");
+  revalidatePath("/processos/novo");
+  await avisar("sucesso", "Fonte reorganizada.");
 }
