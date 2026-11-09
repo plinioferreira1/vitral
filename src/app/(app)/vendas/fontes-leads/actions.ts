@@ -88,11 +88,14 @@ export async function salvarFonteRapida(tipo: "processo" | "historico", id: stri
     return { ok: false, erro: "Dados inválidos." };
   }
   const supabase = await createClient();
-  const tabela = tipo === "processo" ? "processos" : "vendas_fontes_historicas";
-  let consulta = supabase.from(tabela).update({ fonte_lead: fonte || null })
-    .eq("id", id).eq("tenant_id", sessao.tenantId);
-  if (tipo === "processo") consulta = consulta.eq("categoria", "venda");
-  const { data, error } = await consulta.select("id").maybeSingle();
+  const resultado = tipo === "processo"
+    ? await supabase.from("processos").update({ fonte_lead: fonte || null })
+        .eq("id", id).eq("tenant_id", sessao.tenantId).eq("categoria", "venda")
+        .select("id").maybeSingle()
+    : await supabase.from("vendas_fontes_historicas").update({ fonte_lead: fonte || null })
+        .eq("id", id).eq("tenant_id", sessao.tenantId)
+        .select("id").maybeSingle();
+  const { data, error } = resultado;
   if (error || !data) return { ok: false, erro: error?.message ?? "Registro não encontrado." };
   revalidatePath("/vendas/fontes-leads");
   return { ok: true };
