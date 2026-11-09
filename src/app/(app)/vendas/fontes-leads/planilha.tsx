@@ -3,7 +3,6 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FONTES_LEADS } from "@/lib/vendas/fontes-leads";
 import { salvarFonteRapida } from "./actions";
 
 export type LinhaVenda = {
@@ -16,13 +15,13 @@ export type LinhaVenda = {
   situacao: "concluida" | "andamento";
 };
 
-function Linha({ linha }: { linha: LinhaVenda }) {
+function Linha({ linha, fontes }: { linha: LinhaVenda; fontes: string[] }) {
   const router = useRouter();
   const [fonte, setFonte] = useState(linha.fonte ?? "");
   const [erro, setErro] = useState("");
   const [pendente, iniciar] = useTransition();
-  const opcoes = fonte && !FONTES_LEADS.some((f) => f === fonte)
-    ? [fonte, ...FONTES_LEADS] : FONTES_LEADS;
+  const opcoes = fonte && !fontes.some((f) => f === fonte)
+    ? [fonte, ...fontes] : fontes;
   return <tr className="border-t border-border/70 hover:bg-background/70">
     <td className="px-3 py-3">
       <div className="font-medium text-ink">{linha.imovel}</div>
@@ -59,7 +58,7 @@ function Linha({ linha }: { linha: LinhaVenda }) {
   </tr>;
 }
 
-export function PlanilhaFontes({ linhas, ano }: { linhas: LinhaVenda[]; ano: string }) {
+export function PlanilhaFontes({ linhas, ano, fontes }: { linhas: LinhaVenda[]; ano: string; fontes: string[] }) {
   const [busca, setBusca] = useState("");
   const [estado, setEstado] = useState("todos");
   const [canal, setCanal] = useState("");
@@ -82,7 +81,7 @@ export function PlanilhaFontes({ linhas, ano }: { linhas: LinhaVenda[]; ano: str
       <select aria-label="Filtrar fonte" value={canal} onChange={e => setCanal(e.target.value)}
         className="rounded-lg border border-border bg-surface px-3 py-2 text-sm">
         <option value="">Todos os canais</option>
-        {FONTES_LEADS.map(op => <option key={op} value={op}>{op}</option>)}
+        {fontes.map(op => <option key={op} value={op}>{op}</option>)}
       </select>
     </div>
     <div className="overflow-x-auto">
@@ -90,7 +89,7 @@ export function PlanilhaFontes({ linhas, ano }: { linhas: LinhaVenda[]; ano: str
         <thead className="bg-background text-xs uppercase tracking-wide text-ink-muted">
           <tr><th className="px-3 py-3">Imóvel · {ano}</th><th className="px-3 py-3">Situação</th><th className="px-3 py-3">Fonte do lead</th></tr>
         </thead>
-        <tbody>{filtradas.map(l => <Linha key={l.tipo + l.id} linha={l} />)}</tbody>
+        <tbody>{filtradas.map(l => <Linha key={l.tipo + l.id} linha={l} fontes={fontes} />)}</tbody>
       </table>
     </div>
     {!filtradas.length && <p className="p-6 text-sm text-ink-muted">Nenhuma venda encontrada.</p>}
