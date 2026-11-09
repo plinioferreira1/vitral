@@ -4,22 +4,49 @@ import { createClient } from "@/lib/supabase/server";
 import { exigirUsuario } from "@/lib/usuario-atual";
 import { avisar } from "@/lib/aviso";
 
+const mesValido = (s: string) => /^20[0-9]{2}-(0[1-9]|1[0-2])$/.test(s);
+const uuidValido = (s: string) => /^[0-9a-f-]{36}$/i.test(s);
+
 export async function salvarFonteLead(formData: FormData) {
   const sessao = await exigirUsuario(["diretor", "gerente"]);
   if (!sessao) return;
   const id = String(formData.get("processo_id") || "");
   const fonte = String(formData.get("fonte_lead") || "").trim();
   const observacoes = String(formData.get("fonte_lead_observacoes") || "").trim();
-  const data = String(formData.get("data_venda") || "");
-  if (!/^[0-9a-f-]{36}$/i.test(id)) { await avisar("erro", "Processo inválido."); return; }
-  if (fonte.length > 100 || observacoes.length > 500 || (data && !/^\d{4}-\d{2}-\d{2}$/.test(data))) {
-    await avisar("erro", "Confira os dados informados."); return;
+  const mes = String(formData.get("mes_venda") || "");
+  if (!uuidValido(id) || fonte.length > 100 || observacoes.length > 500 || (mes && !mesValido(mes))) {
+    await avisar("erro", "Confira os dados informados.");
+    return;
   }
   const supabase = await createClient();
   const { error } = await supabase.from("processos")
-    .update({ fonte_lead: fonte || null, fonte_lead_observacoes: observacoes || null, data_venda: data || null } as never)
+    .update({ fonte_lead: fonte || null, fonte_lead_observacoes: observacoes || null, mes_venda: mes || null })
     .eq("id", id).eq("tenant_id", sessao.tenantId).eq("categoria", "venda");
   if (error) { await avisar("erro", "Não foi possível salvar a fonte do lead: " + error.message); return; }
   revalidatePath("/vendas/fontes-leads");
+  revalidatePath(`/processos/${id}`);
   await avisar("sucesso", "Fonte do lead atualizada.");
+}
+
+export async function salvarHistoricoFonteLead(formData: FormData) {
+  const sessao = await exigirUsuario(["diretor", "gerente"]);
+  if (!sessao) return;
+  const id = String(formData.get("historico_id") || "").trim();
+  const imovel = String(formData.get("imovel_nome") || "").trim();
+  const fonte = String(formData.get("fonte_lead") || "").trim();
+  const observacoes = String(formData.get("fonte_lead_observacoes") || "").trim();
+  const mes = String(formData.get("mes_venda") || "").trim();
+  if ((!id && !imovel) || (id && !uuidValido(id)) || imovel.length > 180 || fonte.length > 100 || observacoes.length > 500 || !mesValido(mes)) {
+    await avisar("erro", "Confira o imóvel, a fonte do lead e o mês da venda.");
+    return;
+  }
+  const supabase = await createClient();
+  const payload = { imovel_nome: imovel, mes_venda: mes, fonte_lead: fonte || null, fonte_lead_observacoes: observacoes || null };
+  const resultado = id
+    ? await supabase.from("vendas_fontes_historicas").update(payload).eq("id", id).eq("tenant_id", sessao.tenantId).select("id").maybeSingle()
+    : await supabase.from("vendas_fontes_historicas").insert({ ...payload, tenant_id: sessao.tenantId }).select("id").maybeSingle();
+  if (resultado.error) { await avisar("erro", "Não foi possível salvar a venda histórica: " + resultado.error.message); return; }
+  if (!resultado.data) { await avisar("erro", "Registro não encontrado ou sem permissão."); return; }
+  revalidatePath("/vendas/fontes-leads");
+  await avisar("sucesso", id ? "Venda histórica atualizada." : "Venda histórica cadastrada.");
 }
