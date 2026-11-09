@@ -25,6 +25,9 @@ import { enviarSolicitacoes, gerarCompetencia, registrarEventoDebitos, type Auto
 import { normalizarData } from "@/lib/fatura-csv";
 import { moedaParaNumero } from "@/lib/moeda";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { sincronizarRespostasZoho } from "@/lib/debitos/zoho-respostas";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { exigirUsuario } from "@/lib/usuario-atual";
 import { BUCKET_DEBITOS, carregarPermissoes } from "./dados";
 
@@ -698,4 +701,23 @@ export async function salvarConfigDebitos(formData: FormData) {
   });
   atualizarTelas();
   await avisar("sucesso", novo.envio_automatico ? `Configuração salva. O envio automático está ligado (a partir do dia ${novo.dia_envio} de cada mês).` : "Configuração salva. O envio automático está desligado.");
+}
+
+/** Atualiza manualmente os retornos das administradoras, sem marcar débitos como quitados. */
+export async function verificarRespostasZoho() {
+  const ctx = await contexto("operar");
+  if (!ctx) return;
+  try {
+    const admin = createAdminClient() as unknown as SupabaseClient;
+    const resultado = await sincronizarRespostasZoho(admin);
+    atualizarTelas();
+    if (resultado.status === "aguardando_autorizacao") {
+      await avisar("erro", "A caixa locacao@sacraimoveis.com.br ainda precisa ser autorizada para leitura no Zoho.");
+      return;
+    }
+    await avisar("sucesso", `Zoho consultado: ${resultado.novas} nova(s) resposta(s) vinculada(s) à locação.`);
+  } catch (error) {
+    console.error("Sincronização Zoho:",error instanceof Error ? error.message : "Erro desconhecido");
+    await avisar("erro", "Não foi possível consultar o Zoho. Confira a autorização da caixa de entrada.");
+  }
 }
