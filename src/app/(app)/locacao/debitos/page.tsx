@@ -104,7 +104,7 @@ export default async function ControleDebitosPage({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <CabecalhoPagina titulo="Controle de Débitos" descricao="Conferência mensal de condomínio e IPTU/TLP dos imóveis administrados." />
+        <CabecalhoPagina titulo="Inadimplências" descricao="Conferência mensal de condomínio, IPTU/TLP e acompanhamento das respostas das administradoras." />
         <div className="flex items-center gap-1 rounded-xl border border-border bg-surface p-1">
           <Link href={mesHref(somarMeses(competencia, -1))} aria-label="Mês anterior" className="rounded-lg p-2 text-ink-muted hover:bg-background">
             <ChevronLeft size={16} />
