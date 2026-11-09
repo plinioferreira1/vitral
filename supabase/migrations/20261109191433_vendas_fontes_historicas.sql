@@ -19,3 +19,4 @@ using(exists(select 1 from public.usuarios u where u.id=auth.uid() and u.tenant_
 with check(exists(select 1 from public.usuarios u where u.id=auth.uid() and u.tenant_id=vendas_fontes_historicas.tenant_id and u.nivel_acesso::text in ('diretor','gerente') and u.ativo=true));
 create policy vendas_fontes_historicas_gestores_delete on public.vendas_fontes_historicas for delete to authenticated
 using(exists(select 1 from public.usuarios u where u.id=auth.uid() and u.tenant_id=vendas_fontes_historicas.tenant_id and u.nivel_acesso::text in ('diretor','gerente') and u.ativo=true));
+grant select, insert, update, delete on table public.vendas_fontes_historicas to authenticated;
