@@ -1979,6 +1979,7 @@ export type Database = {
           administradora_id: string | null
           administradora_nome: string
           assunto: string
+          codigo_resposta: string | null
           competencia: string
           copia: string | null
           destinatario: string
@@ -1999,6 +2000,7 @@ export type Database = {
           administradora_id?: string | null
           administradora_nome: string
           assunto: string
+          codigo_resposta?: string | null
           competencia: string
           copia?: string | null
           destinatario: string
@@ -2019,6 +2021,7 @@ export type Database = {
           administradora_id?: string | null
           administradora_nome?: string
           assunto?: string
+          codigo_resposta?: string | null
           competencia?: string
           copia?: string | null
           destinatario?: string
