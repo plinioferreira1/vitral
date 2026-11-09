@@ -155,7 +155,7 @@ export function Solicitacoes({
                 <div className="min-w-0">
                   <h3 className="truncate text-sm font-semibold text-ink">{adm.nome}</h3>
                   <p className="truncate text-xs text-ink-muted">
-                    {linhas.length} unidade(s) · {adm.email_solicitacao ?? "sem e-mail cadastrado"}
+                    {linhas.length} unidade(s) · {adm.email_solicitacao ?? "sem e-mail cadastrado"}{adm.telefone ? ` · Tel.: ${adm.telefone}` : ""}
                   </p>
                 </div>
                 <SeloMetodo metodo={adm.metodo_consulta as "portal" | "email" | "outro"} />
