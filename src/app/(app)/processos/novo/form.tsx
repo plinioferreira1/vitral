@@ -163,6 +163,23 @@ export function NovoProcessoForm({
           <CampoMoeda id="novo-valor-total" name="valor_total" placeholder="420.000,00" />
         </div>
 
+        {!ehFinanciamento && modeloSelecionado?.categoria === "venda" && (
+          <div className="space-y-3 rounded-xl border border-border/70 bg-background/50 p-3 sm:col-span-2">
+            <h3 className="text-sm font-semibold text-ink">Fonte do lead</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="text-xs font-medium text-ink-muted">Canal de origem
+                <input name="fonte_lead" list="fontes-lead-nova-venda" maxLength={100} placeholder="Ex.: DF Imóveis" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
+              </label>
+              <label className="text-xs font-medium text-ink-muted">Data da venda (quando houver)
+                <input name="data_venda" type="date" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
+              </label>
+            </div>
+            <label className="block text-xs font-medium text-ink-muted">Observações
+              <input name="fonte_lead_observacoes" maxLength={500} placeholder="Ex.: indicação do porteiro" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
+            </label>
+            <datalist id="fontes-lead-nova-venda">{["DF Imóveis","Wimóveis","OLX","Viva Real","Instagram","Tráfego SACRA","Tráfego terceiros","Captação","SAN","Indicação","Site SACRA","WhatsApp","Outros","Indefinido"].map(c => <option key={c} value={c} />)}</datalist>
+          </div>
+        )}
         {ehFinanciamento && (
           <>
             <div>
