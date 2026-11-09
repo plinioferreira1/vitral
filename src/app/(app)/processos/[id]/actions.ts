@@ -167,6 +167,7 @@ export async function concluirEtapa(formData: FormData) {
       after(() => reconciliarAlertaContratoFinal(supabase, processoId));
       revalidatePath(`/processos/${processoId}`);
       revalidatePath("/vendas");
+  revalidatePath("/vendas/fontes-leads");
   revalidatePath("/painel-sacra");
       revalidatePath("/financiamentos");
     }
@@ -422,6 +423,16 @@ export async function salvarDadosProcesso(formData: FormData) {
     dadosProcesso.origem = campo("origem");
   }
 
+  if (existente.categoria === "venda" && formData.has("fonte_lead")) {
+    const fonte = campo("fonte_lead");
+    const observacoes = campo("fonte_lead_observacoes");
+    const dataVenda = campo("data_venda");
+    if ((fonte?.length ?? 0) > 100 || (observacoes?.length ?? 0) > 500 || (dataVenda && !/^\\d{4}-\\d{2}-\\d{2}$/.test(dataVenda))) {
+      await avisar("erro", "Confira os campos de fonte do lead.");
+      return;
+    }
+    Object.assign(dadosProcesso, { fonte_lead: fonte, fonte_lead_observacoes: observacoes, data_venda: dataVenda });
+  }
   await checar(supabase.from("processos").update(dadosProcesso).eq("id", processoId), "atualizar");
   await sincronizarPrazosPorAssinatura(supabase, processoId, existente.data_assinatura ?? null, dadosProcesso.data_assinatura ?? null);
 
