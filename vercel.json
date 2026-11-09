@@ -13,7 +13,7 @@
     },
     {
       "path": "/api/cron/zoho-locacao-respostas",
-      "schedule": "*/30 * * * *"
+      "schedule": "40 11 * * *"
     }
   ]
 }
