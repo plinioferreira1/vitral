@@ -73,7 +73,8 @@ export default async function FontesLeadsPage({ searchParams }: {
      </select>
      <button type="submit" className="rounded-lg border border-border bg-surface px-3 py-2 text-ink hover:bg-background">Aplicar</button>
    </label></form>
-   <div className="flex gap-3 text-sm">
+   <div className="flex flex-wrap items-center gap-3 text-sm">
+    <Link className="rounded-lg bg-brand px-4 py-2.5 font-semibold text-white hover:opacity-90" href={`/vendas/fontes-leads/resultados?ano=${ano}`}>Ver gráfico por fonte</Link>
     <Link className="text-brand hover:underline" href={`/vendas/fontes-leads/exportar?ano=${ano}`}>Exportar CSV</Link>
     <Link className="text-brand hover:underline" href="/vendas/fontes-leads/investimentos">Investimentos</Link>
    </div>
