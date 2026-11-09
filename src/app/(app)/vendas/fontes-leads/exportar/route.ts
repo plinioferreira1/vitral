@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
   if (error) return new NextResponse("Falha ao exportar vendas.", { status: 500 });
   const vendas = ((data ?? []) as unknown as VendaExportacao[])
     .filter(v => dataReferencia(v).startsWith(ano))
-    .filter(v => estado === "todos" || v.status === "concluido")
+    .filter(v => estado === "todos" || v.status === "concluido" || !!v.data_venda)
     .filter(v => !canal || (v.fonte_lead || "Não informado") === canal)
     .filter(v => !busca || [v.imoveis?.endereco, v.numero_processo, v.codigo_san].join(" ").toLocaleLowerCase("pt-BR").includes(busca))
     .sort((a,b)=>dataReferencia(a).localeCompare(dataReferencia(b)));
