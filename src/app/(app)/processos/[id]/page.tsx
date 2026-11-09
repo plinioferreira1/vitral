@@ -69,7 +69,7 @@ export default async function ProcessoDetalhePage({
     supabase
       .from("processos")
       .select(
-        `id, numero_processo, codigo_san, numero_proposta_contrato, status, valor_total, valor_financiado, origem, categoria, data_criacao,
+        `id, numero_processo, codigo_san, numero_proposta_contrato, status, valor_total, valor_financiado, origem, fonte_lead, fonte_lead_observacoes, data_venda, categoria, data_criacao,
          data_assinatura, data_final_contrato, imovel_id, corretor_id, captador_id, participacao_vgv_revisada,
          comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
          vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
@@ -135,6 +135,9 @@ export default async function ProcessoDetalhePage({
     categoria: string;
     valor_financiado: number | null;
     origem: string | null;
+    fonte_lead: string | null;
+    fonte_lead_observacoes: string | null;
+    data_venda: string | null;
     data_assinatura: string | null;
     data_final_contrato: string | null;
     imovel_id: string | null;
@@ -253,6 +256,25 @@ export default async function ProcessoDetalhePage({
               </div>
 
               {p.categoria === "venda" && <SeletorCorretor nome="captador_id" rotulo="Captador (opcional)" corretores={corretoresLista ?? []} atual={p.captador_id ?? participacaoHistorica?.[0]} />}
+
+              {p.categoria === "venda" && (
+                <div className="space-y-3 rounded-xl border border-border/70 bg-background/50 p-3">
+                  <h3 className="text-sm font-semibold text-ink">Origem do lead da venda</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="block text-xs font-medium text-ink-muted">Fonte do lead
+                      <input name="fonte_lead" list="fontes-leads-processo" maxLength={100} defaultValue={p.fonte_lead ?? ""} placeholder="Ex.: DF Imóveis" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
+                    </label>
+                    <label className="block text-xs font-medium text-ink-muted">Data comercial da venda
+                      <input name="data_venda" type="date" defaultValue={p.data_venda ?? ""} className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
+                    </label>
+                  </div>
+                  <label className="block text-xs font-medium text-ink-muted">Observação da origem
+                    <input name="fonte_lead_observacoes" maxLength={500} defaultValue={p.fonte_lead_observacoes ?? ""} placeholder="Ex.: indicação do porteiro do condomínio" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
+                  </label>
+                  <datalist id="fontes-leads-processo">{["DF Imóveis","Wimóveis","OLX","Viva Real","Instagram","Tráfego SACRA","Tráfego terceiros","Captação","SAN","Indicação","Site SACRA","WhatsApp","Outros","Indefinido"].map(v => <option key={v} value={v} />)}</datalist>
+                  <p className="text-xs text-ink-muted">Esta origem alimenta automaticamente o relatório Vendas → Fontes de leads.</p>
+                </div>
+              )}
               <div className="grid gap-3 sm:grid-cols-2">
                 <CampoTexto
                   label="Responsável"
@@ -380,6 +402,8 @@ export default async function ProcessoDetalhePage({
             <Info label="Banco" value={p.bancos?.nome} />
             <Info label={p.categoria === "venda" ? "Corretor vendedor" : "Corretor"} value={vendedorExibido} />
             {p.categoria === "venda" && <Info label="Captador" value={captadorExibido} />}
+            {p.categoria === "venda" && <Info label="Fonte do lead" value={p.fonte_lead} />}
+            {p.categoria === "venda" && <Info label="Obs. da fonte" value={p.fonte_lead_observacoes} />}
             <Info label="Responsável" value={p.usuarios?.nome} />
             <Info label={ehFinanciamento ? "Proposta/contrato" : "Código SAN"} value={ehFinanciamento ? p.numero_proposta_contrato : p.codigo_san} />
             {ehFinanciamento && (
