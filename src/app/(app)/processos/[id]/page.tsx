@@ -69,7 +69,7 @@ export default async function ProcessoDetalhePage({
     supabase
       .from("processos")
       .select(
-        `id, numero_processo, codigo_san, numero_proposta_contrato, status, valor_total, valor_financiado, origem, fonte_lead, fonte_lead_observacoes, data_venda, categoria, data_criacao,
+        `id, numero_processo, codigo_san, numero_proposta_contrato, status, valor_total, valor_financiado, origem, fonte_lead, fonte_lead_observacoes, data_venda, mes_venda, categoria, data_criacao,
          data_assinatura, data_final_contrato, imovel_id, corretor_id, captador_id, participacao_vgv_revisada,
          comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
          vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
@@ -138,6 +138,7 @@ export default async function ProcessoDetalhePage({
     fonte_lead: string | null;
     fonte_lead_observacoes: string | null;
     data_venda: string | null;
+    mes_venda: string | null;
     data_assinatura: string | null;
     data_final_contrato: string | null;
     imovel_id: string | null;
@@ -264,8 +265,8 @@ export default async function ProcessoDetalhePage({
                     <label className="block text-xs font-medium text-ink-muted">Fonte do lead
                       <input name="fonte_lead" list="fontes-leads-processo" maxLength={100} defaultValue={p.fonte_lead ?? ""} placeholder="Ex.: DF Imóveis" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
                     </label>
-                    <label className="block text-xs font-medium text-ink-muted">Data comercial da venda
-                      <input name="data_venda" type="date" defaultValue={p.data_venda ?? ""} className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
+                    <label className="block text-xs font-medium text-ink-muted">Mês da venda
+                      <input name="mes_venda" type="month" defaultValue={p.mes_venda ?? p.data_venda?.slice(0,7) ?? ""} className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
                     </label>
                   </div>
                   <label className="block text-xs font-medium text-ink-muted">Observação da origem
