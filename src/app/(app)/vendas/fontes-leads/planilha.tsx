@@ -61,7 +61,7 @@ function Linha({ linha, fontes }: { linha: LinhaVenda; fontes: FonteAgrupada[] }
   </tr>;
 }
 
-export function PlanilhaFontes({ linhas, ano, fontes }: { linhas: LinhaVenda[]; ano: string; fontes: string[] }) {
+export function PlanilhaFontes({ linhas, ano, fontes }: { linhas: LinhaVenda[]; ano: string; fontes: FonteAgrupada[] }) {
   const [busca, setBusca] = useState("");
   const [estado, setEstado] = useState("todos");
   const [canal, setCanal] = useState("");
