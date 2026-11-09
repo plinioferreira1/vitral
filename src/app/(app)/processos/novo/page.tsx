@@ -2,6 +2,7 @@ import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { NovoProcessoForm } from "./form";
+import { obterFontesLead } from "@/lib/vendas/fontes-leads-server";
 import type { CategoriaProcesso } from "@/lib/types";
 import { VoltarLink } from "@/components/voltar-link";
 
@@ -36,6 +37,8 @@ export default async function NovoProcessoPage({
     supabase.from("etapas_padrao").select("id, nome, ordem, categoria, tipo").order("ordem", { ascending: true }),
   ]);
 
+  const fontes = meuUsuario?.tenant_id ? await obterFontesLead(meuUsuario.tenant_id) : [];
+
   const modelosPermitidos = (modelos.data ?? []).filter((m) =>
     minhasCategorias.includes(m.categoria as CategoriaProcesso)
   );
@@ -68,6 +71,7 @@ export default async function NovoProcessoPage({
           clientes={clientes.data ?? []}
           imoveis={imoveis.data ?? []}
           corretores={corretores.data ?? []}
+          fontes={fontes}
         />
       )}
     </div>
