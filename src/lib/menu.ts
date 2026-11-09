@@ -43,6 +43,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
         { href: "/vendas?aba=resumo", label: "Visão geral" },
         { href: "/vendas?aba=andamento", label: "Processos de venda" },
         { href: "/vendas/negociacoes", label: "Negociações" },
+        ...(p.podeConfigurar ? [{ href: "/vendas/fontes-leads", label: "Fontes de leads" }] : []),
         { href: "/certidoes", label: "Certidões" },
         ...(verTermosEntrega ? [{ href: "/vendas/termos-entrega", label: "Termos de entrega de chaves" }] : []),
       ],
