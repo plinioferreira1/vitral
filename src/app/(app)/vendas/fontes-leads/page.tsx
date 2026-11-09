@@ -6,6 +6,7 @@ import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS }
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { salvarFonteLead, salvarHistoricoFonteLead } from "./actions";
+import { FONTES_LEADS } from "@/lib/vendas/fontes-leads";
 
 type Venda = {
   id: string;
@@ -29,7 +30,7 @@ type Historico = {
   fonte_lead: string | null;
   fonte_lead_observacoes: string | null;
 };
-const CANAIS = ["DF Imóveis","Wimóveis","OLX","Viva Real","Instagram","Tráfego SACRA","Tráfego terceiros","Captação","SAN","Indicação","Site SACRA","WhatsApp","Outros","Indefinido"];
+const CANAIS = FONTES_LEADS;
 const moeda = (v: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL", maximumFractionDigits: 0 }).format(v);
 const mesComercial = (v: Venda) => v.mes_venda ?? v.data_venda?.slice(0,7) ?? v.data_conclusao?.slice(0,7) ?? v.data_assinatura?.slice(0,7) ?? v.data_criacao?.slice(0,7) ?? "";
 const vendaRealizada = (v: Venda) => v.status === "concluido" || !!v.mes_venda || !!v.data_venda;
@@ -100,7 +101,6 @@ export default async function FontesLeadsPage({ searchParams }: {
         <div className="self-end rounded-lg bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800">Somente imóveis vendidos</div>
         <div className="flex gap-2"><label className="min-w-0 flex-1 text-xs font-medium text-slate-600">Pesquisar imóvel<input className={`${INPUT_CLASS} mt-1 w-full`} name="busca" placeholder="Nome ou código" defaultValue={params.busca ?? ""}/></label><button className={`${SECONDARY_BUTTON_CLASS} self-end`} type="submit">Filtrar</button></div>
       </form>
-      <datalist id="fontes-lead-opcoes">{CANAIS.map(c=><option key={c} value={c}/>)}</datalist>
       {historicas.length > 0 && <div className="mb-6"><h3 className="mb-3 text-sm font-semibold text-slate-800">Vendas históricas — cadastro manual</h3><div className="space-y-3">{historicas.map(h=><form action={salvarHistoricoFonteLead} key={h.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
         <input type="hidden" name="historico_id" value={h.id}/>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2"><strong className="text-sm text-slate-900">{h.imovel_nome}</strong><span className="text-xs text-slate-500">Venda histórica</span></div>
