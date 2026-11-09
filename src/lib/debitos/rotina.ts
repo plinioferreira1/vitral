@@ -7,6 +7,7 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { randomBytes } from "node:crypto";
 import type { Database, Json, Tables } from "@/lib/database.types";
 import { enviarEmail } from "@/lib/email";
 import {
@@ -290,6 +291,8 @@ export async function enviarSolicitacoes(
       }
     }
 
+    const codigoResposta = randomBytes(8).toString("hex");
+    const assuntoComCodigo = `${assunto} [VITRAL:${codigoResposta}]`;
     let erroEnvio: string | null = null;
     try {
       await enviarEmail({
@@ -297,7 +300,7 @@ export async function enviarSolicitacoes(
         copia,
         responderPara: EMAIL_LOCACAO,
         remetenteEmail: EMAIL_LOCACAO,
-        assunto,
+        assunto: assuntoComCodigo,
         html: textoParaHtml(texto),
         texto,
         nomeRemetente: "Sacra Imóveis",
@@ -315,7 +318,8 @@ export async function enviarSolicitacoes(
         competencia,
         destinatario: grupo.destinatario,
         copia: copia.join(", ") || null,
-        assunto,
+        assunto: assuntoComCodigo,
+        codigo_resposta: codigoResposta,
         mensagem: texto,
         status: erroEnvio ? "falha" : "enviado",
         origem: opcoes.origem,
