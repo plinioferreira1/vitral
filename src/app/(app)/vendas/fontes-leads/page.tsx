@@ -8,12 +8,12 @@ import { PlanilhaFontes, type LinhaVenda } from "./planilha";
 
 type Processo = {
  id: string; numero_processo: string | null; codigo_san: string | null;
- status: string | null; fonte_lead: string | null; data_venda: string | null;
+ status: string | null; situacao_comercial: string | null; fonte_lead: string | null; data_venda: string | null;
  mes_venda: string | null; data_conclusao: string | null;
  data_assinatura: string | null; data_criacao: string | null;
  imoveis: { endereco: string | null } | null;
 };
-type Historico = { id: string; imovel_nome: string; mes_venda: string; fonte_lead: string | null };
+type Historico = { id: string; imovel_nome: string; mes_venda: string; fonte_lead: string | null; situacao_comercial: string | null };
 function mes(v: Processo) {
  return v.mes_venda ?? v.data_venda?.slice(0,7) ?? v.data_conclusao?.slice(0,7) ??
    v.data_assinatura?.slice(0,7) ?? v.data_criacao?.slice(0,7) ?? "";
@@ -29,10 +29,10 @@ export default async function FontesLeadsPage({ searchParams }: {
  const supabase = await createClient();
  const [processos, historicos] = await Promise.all([
   supabase.from("processos")
-   .select("id,numero_processo,codigo_san,status,fonte_lead,data_venda,mes_venda,data_conclusao,data_assinatura,data_criacao,imoveis(endereco)")
+   .select("id,numero_processo,codigo_san,status,situacao_comercial,fonte_lead,data_venda,mes_venda,data_conclusao,data_assinatura,data_criacao,imoveis(endereco)")
    .eq("tenant_id", usuario.tenant_id).eq("categoria", "venda"),
   supabase.from("vendas_fontes_historicas")
-   .select("id,imovel_nome,mes_venda,fonte_lead")
+   .select("id,imovel_nome,mes_venda,fonte_lead,situacao_comercial")
    .eq("tenant_id", usuario.tenant_id),
  ]);
  if (processos.error || historicos.error) {
@@ -44,18 +44,18 @@ export default async function FontesLeadsPage({ searchParams }: {
  const listaHistorica = (historicos.data ?? []) as Historico[];
  const linhas: LinhaVenda[] = [
    ...listaProcessos
-    .filter(p => mes(p).startsWith(ano) && (p.status === "concluido" || !!p.mes_venda || !!p.data_venda))
+    .filter(p => mes(p).startsWith(ano) && (!!p.situacao_comercial || !!p.data_venda))
     .map(p => ({
        id: p.id, tipo: "processo" as const,
        imovel: p.imoveis?.endereco || p.numero_processo || "Imóvel não identificado",
        mes: mes(p), san: p.codigo_san, fonte: p.fonte_lead,
-       situacao: p.status === "concluido" ? "concluida" as const : "andamento" as const,
+       situacao: (p.situacao_comercial === "concluida" || (!p.situacao_comercial && p.status === "concluido")) ? "concluida" as const : "andamento" as const,
     })),
    ...listaHistorica.filter(h => h.mes_venda.startsWith(ano))
     .map(h => ({
        id: h.id, tipo: "historico" as const, imovel: h.imovel_nome,
        mes: h.mes_venda, san: null, fonte: h.fonte_lead,
-       situacao: "concluida" as const,
+       situacao: h.situacao_comercial === "andamento" ? "andamento" as const : "concluida" as const,
     })),
  ].sort((a, b) => b.mes.localeCompare(a.mes) || a.imovel.localeCompare(b.imovel, "pt-BR"));
  const concluidas = linhas.filter(l => l.situacao === "concluida").length;
