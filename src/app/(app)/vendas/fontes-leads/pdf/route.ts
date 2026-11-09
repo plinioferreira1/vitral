@@ -131,8 +131,8 @@ export async function GET(request: NextRequest) {
     if(q)txt(p1,String(q),x+8,chartY+58*q/maxM,7,bold,C.escuro);
   });
   line(p1,125);
-  txt(p1,"Atenção: existem "+pendentes+" processos não concluídos no ano selecionado; eles não entram",M,108,8,normal,C.cinza);
-  txt(p1,ano==="2026" ? "no total de vendas realizadas. Referência de 63 operações informada pela gestão, sujeita à conciliação." : "no total de vendas realizadas. Confira as fontes e custos antes de tomar decisões.",M,95,8,normal,C.cinza);
+  txt(p1,"Apenas vendas confirmadas entram nas métricas. "+pendentes+" processos sem confirmação",M,108,8,normal,C.cinza);
+  txt(p1,ano==="2026" ? "foram excluídos. Referência de 60 vendas da gestão ainda sujeita à conciliação." : "foram excluídos. Confira as fontes e custos antes de tomar decisões.",M,95,8,normal,C.cinza);
 
   const p2=page();header(p2,"Comparativo de investimento e eficiência",2);
   txt(p2,"CUSTO POR VENDA = INVESTIMENTO REGISTRADO / VENDAS REALIZADAS",M,720,10,bold,C.verde);
@@ -183,7 +183,7 @@ export async function GET(request: NextRequest) {
     "receita atribuída ao canal e despesas completas."
   ],ry);
   ry=sec("4. Qualidade e conciliação",[
-    ano==="2026" ? "A referência de 63 operações da gestão exige comparação com os cadastros." : "A base deste relatório exige conferência dos cadastros.",
+    ano==="2026" ? "A referência de 60 vendas da gestão exige comparação com os cadastros." : "A base deste relatório exige conferência dos cadastros.",
     "Processos em andamento sem mês comercial confirmado não contam como venda.",
     "O período usa mês informado; na ausência dele, utiliza as datas disponíveis.",
     "A fonte 'Indefinido' não é considerada origem identificada."
