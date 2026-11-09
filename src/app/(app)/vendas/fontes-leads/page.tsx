@@ -33,7 +33,7 @@ export default async function FontesLeadsPage({ searchParams }: {
   if (!usuario?.tenant_id) redirect("/login");
   if (!["diretor", "gerente"].includes(usuario.nivel_acesso)) redirect("/vendas");
   const params = await searchParams;
-  const ano = /^20\\d{2}$/.test(params.ano ?? "") ? params.ano! : "2026";
+  const ano = /^20\d{2}$/.test(params.ano ?? "") ? params.ano! : "2026";
   const canal = params.canal ?? "";
   const busca = (params.busca ?? "").trim().toLocaleLowerCase("pt-BR");
   const estado = params.estado === "todos" ? "todos" : "concluido";
@@ -60,7 +60,7 @@ export default async function FontesLeadsPage({ searchParams }: {
     .filter(v => !canal || (v.fonte_lead || "Não informado") === canal)
     .filter(v => !busca || [v.imoveis?.endereco, v.numero_processo, v.codigo_san].join(" ").toLocaleLowerCase("pt-BR").includes(busca))
     .sort((a,b) => periodoVenda(b).localeCompare(periodoVenda(a)));
-  const anos = [...new Set(["2026", ...todas.map(v => periodoVenda(v).slice(0,4)).filter(v => /^20\\d{2}$/.test(v))])].sort().reverse();
+  const anos = [...new Set(["2026", ...todas.map(v => periodoVenda(v).slice(0,4)).filter(v => /^20\d{2}$/.test(v))])].sort().reverse();
   const semFonte = concluidas.length - preenchidas.length;
   return <div className="w-full min-w-0 space-y-6">
     <CabecalhoPagina titulo="Fontes de leads" descricao="Identifique quais canais realmente geram vendas. Cada lançamento fica vinculado ao processo da venda." acao={<Link href="/vendas?aba=andamento" className={SECONDARY_BUTTON_CLASS}>Ver processos</Link>} />
