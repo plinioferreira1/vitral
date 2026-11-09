@@ -100,3 +100,57 @@ export async function salvarFonteRapida(tipo: "processo" | "historico", id: stri
   revalidatePath("/vendas/fontes-leads");
   return { ok: true };
 }
+
+
+/** Cadastro de canais próprios — visíveis também no novo processo e na planilha. */
+export async function adicionarFonteLead(formData: FormData) {
+  const sessao = await exigirUsuario(["diretor", "gerente"]);
+  if (!sessao) return;
+  const nome = String(formData.get("nome") ?? "").replace(/\\s+/g, " ").trim();
+  if (nome.length < 2 || nome.length > 100) {
+    await avisar("erro", "Informe um nome de fonte entre 2 e 100 caracteres.");
+    return;
+  }
+  const { FONTES_LEADS } = await import("@/lib/vendas/fontes-leads");
+  if (FONTES_LEADS.some(f => f.toLocaleLowerCase("pt-BR") === nome.toLocaleLowerCase("pt-BR"))) {
+    await avisar("erro", "Essa fonte já existe na lista padrão.");
+    return;
+  }
+  const supabase = await createClient();
+  const { data: existentes, error: erroConsulta } = await supabase
+    .from("vendas_fontes_personalizadas")
+    .select("id, nome, ativo")
+    .eq("tenant_id", sessao.tenantId);
+  if (erroConsulta) { await avisar("erro", "Não foi possível verificar as fontes."); return; }
+  const anterior = (existentes ?? []).find(f => f.nome.toLocaleLowerCase("pt-BR") === nome.toLocaleLowerCase("pt-BR"));
+  if (anterior) {
+    if (anterior.ativo) { await avisar("erro", "Essa fonte já está cadastrada."); return; }
+    const { error } = await supabase.from("vendas_fontes_personalizadas")
+      .update({ ativo: true }).eq("tenant_id", sessao.tenantId).eq("id", anterior.id);
+    if (error) { await avisar("erro", "Não foi possível reativar a fonte."); return; }
+  } else {
+    const { error } = await supabase.from("vendas_fontes_personalizadas")
+      .insert({ tenant_id: sessao.tenantId, nome });
+    if (error) { await avisar("erro", "Não foi possível cadastrar. Confira se a fonte já existe."); return; }
+  }
+  revalidatePath("/vendas/fontes-leads");
+  revalidatePath("/vendas/fontes-leads/fontes");
+  revalidatePath("/processos/novo");
+  await avisar("sucesso", "Fonte cadastrada! Já está disponível nas listas.");
+}
+
+/** Ocultar do seletor, sem apagar o histórico de vendas atribuído ao canal. */
+export async function desativarFonteLead(formData: FormData) {
+  const sessao = await exigirUsuario(["diretor", "gerente"]);
+  if (!sessao) return;
+  const id = String(formData.get("id") ?? "");
+  if (!uuidValido(id)) return;
+  const supabase = await createClient();
+  const { error } = await supabase.from("vendas_fontes_personalizadas")
+    .update({ ativo: false }).eq("id", id).eq("tenant_id", sessao.tenantId);
+  if (error) { await avisar("erro", "Não foi possível ocultar a fonte."); return; }
+  revalidatePath("/vendas/fontes-leads");
+  revalidatePath("/vendas/fontes-leads/fontes");
+  revalidatePath("/processos/novo");
+  await avisar("sucesso", "Fonte ocultada das opções. O histórico foi preservado.");
+}
