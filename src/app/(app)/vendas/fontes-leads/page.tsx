@@ -41,7 +41,7 @@ export default async function FontesLeadsPage({ searchParams }: {
    </p>;
  }
  const listaProcessos = (processos.data ?? []) as unknown as Processo[];
- const listaHistorica = (historicos.data ?? []) as Historico[];
+ const listaHistorica = (historicos.data ?? []) as unknown as Historico[];
  const linhas: LinhaVenda[] = [
    ...listaProcessos
     .filter(p => mes(p).startsWith(ano) && (!!p.situacao_comercial || !!p.data_assinatura || !!p.data_venda))
