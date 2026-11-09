@@ -136,6 +136,7 @@ export async function criarProcesso(formData: FormData) {
       corretor_id: corretorId,
       captador_id: captadorId,
       participacao_vgv_revisada: categoria === "venda",
+      situacao_comercial: null,
       responsavel_id: responsavelId,
       tipo: modeloProcesso?.nome ?? null,
       status: "ativo",
@@ -213,5 +214,6 @@ export async function criarProcesso(formData: FormData) {
 
   revalidatePath("/painel-sacra");
   revalidatePath("/vendas");
+  if (categoria === "venda") revalidatePath("/vendas/fontes-leads");
   redirect(`/processos/${processo.id}`);
 }

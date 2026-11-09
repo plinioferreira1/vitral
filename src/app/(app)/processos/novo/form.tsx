@@ -1,5 +1,6 @@
-import { FONTES_LEADS } from "@/lib/vendas/fontes-leads";
 "use client";
+
+import { FONTES_LEADS } from "@/lib/vendas/fontes-leads";
 
 import { SeletorCorretor } from "@/components/seletor-corretor";
 import { useMemo, useState } from "react";
