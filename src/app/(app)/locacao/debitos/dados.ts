@@ -5,6 +5,7 @@ import { obterConfigDebitos, type ConfigDebitos } from "@/lib/debitos/rotina";
 import type { Tables } from "@/lib/database.types";
 import { getPermissoesUsuario } from "@/lib/permissoes";
 import type { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type Supabase = Awaited<ReturnType<typeof createClient>>;
 
@@ -20,6 +21,7 @@ export async function carregarPermissoes(supabase: Supabase, userId: string, niv
 export type Administradora = Tables<"condominio_administradoras">;
 export type Verificacao = Tables<"debitos_verificacoes">;
 export type Solicitacao = Tables<"debitos_solicitacoes"> & { itens: Tables<"debitos_solicitacao_itens">[] };
+export type RespostaZoho = { id:string; tenant_id:string; mensagem_id:string; solicitacao_id:string|null; administradora_id:string|null; remetente:string; assunto:string; resumo:string|null; recebido_em:string; tem_anexo:boolean };
 
 export type ContratoPainel = {
   id: string;
@@ -46,6 +48,7 @@ export type DadosPainel = {
   contratos: ContratoPainel[];
   verificacoes: Verificacao[];
   solicitacoes: Solicitacao[];
+  respostasZoho: RespostaZoho[];
   linhas: (LinhaPainel & { contrato: ContratoPainel; inscricao: string | null; verificacaoCondominio: Verificacao | null; verificacaoIptu: Verificacao | null })[];
 };
 
@@ -57,12 +60,13 @@ const SELECT_CONTRATO = `id, numero, ativo, imovel_id, possui_condominio, admini
 
 /** Tudo o que o painel de uma competência mostra. */
 export async function carregarPainel(supabase: Supabase, tenantId: string, competencia: string): Promise<DadosPainel> {
-  const [config, { data: administradoras }, { data: contratosRaw }, { data: verificacoes }, { data: solicitacoesRaw }] = await Promise.all([
+  const [config, { data: administradoras }, { data: contratosRaw }, { data: verificacoes }, { data: solicitacoesRaw }, { data: respostasZoho }] = await Promise.all([
     obterConfigDebitos(supabase, tenantId),
     supabase.from("condominio_administradoras").select("*").order("nome"),
     supabase.from("contratos_locacao").select(SELECT_CONTRATO).order("numero"),
     supabase.from("debitos_verificacoes").select("*").eq("competencia", competencia),
     supabase.from("debitos_solicitacoes").select("*, itens:debitos_solicitacao_itens ( * )").eq("competencia", competencia).order("enviado_em", { ascending: false }),
+    (supabase as unknown as SupabaseClient).from("debitos_respostas_email").select("id,tenant_id,mensagem_id,solicitacao_id,administradora_id,remetente,assunto,resumo,recebido_em,tem_anexo").gte("recebido_em", competencia).order("recebido_em", { ascending: false }).limit(200),
   ]);
   const todosContratos = (contratosRaw ?? []) as unknown as ContratoPainel[];
   const lista = verificacoes ?? [];
@@ -105,6 +109,7 @@ export async function carregarPainel(supabase: Supabase, tenantId: string, compe
     contratos,
     verificacoes: lista,
     solicitacoes: (solicitacoesRaw ?? []) as unknown as Solicitacao[],
+    respostasZoho: (respostasZoho ?? []) as RespostaZoho[],
     linhas,
   };
 }
