@@ -49,7 +49,7 @@ export default async function FontesLeadsPage({ searchParams }: {
        id: p.id, tipo: "processo" as const,
        imovel: p.imoveis?.endereco || p.numero_processo || "Imóvel não identificado",
        mes: mes(p), san: p.codigo_san, fonte: p.fonte_lead,
-       situacao: (p.situacao_comercial === "concluida" || (!p.situacao_comercial && p.status === "concluido")) ? "concluida" as const : "andamento" as const,
+       situacao: (p.situacao_comercial === "concluida" || p.status === "concluido") ? "concluida" as const : "andamento" as const,
     })),
    ...listaHistorica.filter(h => h.mes_venda.startsWith(ano))
     .map(h => ({
