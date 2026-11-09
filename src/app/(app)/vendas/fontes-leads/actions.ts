@@ -12,7 +12,7 @@ export async function salvarFonteLead(formData: FormData) {
   const observacoes = String(formData.get("fonte_lead_observacoes") || "").trim();
   const data = String(formData.get("data_venda") || "");
   if (!/^[0-9a-f-]{36}$/i.test(id)) { await avisar("erro", "Processo inválido."); return; }
-  if (fonte.length > 100 || observacoes.length > 500 || (data && !/^\\d{4}-\\d{2}-\\d{2}$/.test(data))) {
+  if (fonte.length > 100 || observacoes.length > 500 || (data && !/^\d{4}-\d{2}-\d{2}$/.test(data))) {
     await avisar("erro", "Confira os dados informados."); return;
   }
   const supabase = await createClient();
