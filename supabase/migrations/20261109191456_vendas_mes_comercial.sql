@@ -1,0 +1,2 @@
+alter table public.processos add column if not exists mes_venda text check (mes_venda ~ '^20[0-9]{2}-(0[1-9]|1[0-2])$');
+comment on column public.processos.mes_venda is 'Mês comercial da venda, sem presumir o dia exato';
