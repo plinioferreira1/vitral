@@ -145,7 +145,7 @@ export async function GET(request: NextRequest) {
   let ty=631;
   const metricas=canais.filter(c=>c.nome!=="Não informado");
   for(const c of metricas.slice(0,17)){
-    if(ty<155)break;
+    if(ty<223)break;
     txt(p2,c.nome,M,ty,9,normal,C.escuro,194);
     txt(p2,String(c.vendas),M+210,ty,9,bold,C.escuro);
     txt(p2,c.custoConhecido?BRL(c.custo):"N/I",M+262,ty,9,normal,C.escuro,108);
