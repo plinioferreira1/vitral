@@ -1,3 +1,4 @@
+import { FONTES_LEADS } from "@/lib/vendas/fontes-leads";
 import { SeletorCorretor } from "@/components/seletor-corretor";
 import { NavegacaoSecoes } from "@/components/navegacao-secoes";
 import { HISTORICO_VGV } from "../../painel-sacra/dados";
@@ -263,7 +264,7 @@ export default async function ProcessoDetalhePage({
                   <h3 className="text-sm font-semibold text-ink">Origem do lead da venda</h3>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="block text-xs font-medium text-ink-muted">Fonte do lead
-                      <input name="fonte_lead" list="fontes-leads-processo" maxLength={100} defaultValue={p.fonte_lead ?? ""} placeholder="Ex.: DF Imóveis" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
+                      <select name="fonte_lead" defaultValue={p.fonte_lead ?? ""} className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink"><option value="">Não informado</option>{p.fonte_lead && !FONTES_LEADS.includes(p.fonte_lead as typeof FONTES_LEADS[number]) && <option value={p.fonte_lead}>{p.fonte_lead} (anterior)</option>}{FONTES_LEADS.map(c => <option key={c} value={c}>{c}</option>)}</select>
                     </label>
                     <label className="block text-xs font-medium text-ink-muted">Mês da venda
                       <input name="mes_venda" type="month" defaultValue={p.mes_venda ?? p.data_venda?.slice(0,7) ?? ""} className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
@@ -272,7 +273,6 @@ export default async function ProcessoDetalhePage({
                   <label className="block text-xs font-medium text-ink-muted">Observação da origem
                     <input name="fonte_lead_observacoes" maxLength={500} defaultValue={p.fonte_lead_observacoes ?? ""} placeholder="Ex.: indicação do porteiro do condomínio" className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
                   </label>
-                  <datalist id="fontes-leads-processo">{["DF Imóveis","Wimóveis","OLX","Viva Real","Instagram","Tráfego SACRA","Tráfego terceiros","Captação","SAN","Indicação","Site SACRA","WhatsApp","Outros","Indefinido"].map(v => <option key={v} value={v} />)}</datalist>
                   <p className="text-xs text-ink-muted">Esta origem alimenta automaticamente o relatório Vendas → Fontes de leads.</p>
                 </div>
               )}
