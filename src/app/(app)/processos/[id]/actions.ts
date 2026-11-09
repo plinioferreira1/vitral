@@ -427,7 +427,7 @@ export async function salvarDadosProcesso(formData: FormData) {
     const fonte = campo("fonte_lead");
     const observacoes = campo("fonte_lead_observacoes");
     const mesVenda = campo("mes_venda");
-    if ((fonte?.length ?? 0) > 100 || (observacoes?.length ?? 0) > 500 || (dataVenda && !/^\\d{4}-\\d{2}-\\d{2}$/.test(dataVenda))) {
+    if ((fonte?.length ?? 0) > 100 || (observacoes?.length ?? 0) > 500 || (mesVenda && !/^20[0-9]{2}-(0[1-9]|1[0-2])$/.test(mesVenda))) {
       await avisar("erro", "Confira os campos de fonte do lead.");
       return;
     }
