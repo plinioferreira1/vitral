@@ -13,7 +13,7 @@ import {
   type UnidadeSolicitacao,
 } from "@/lib/debitos/regras";
 import { formatarDataHoraBR } from "@/lib/data-br";
-import { acaoEmLote, enviarSolicitacaoAgora, registrarResposta } from "../actions";
+import { acaoEmLote, enviarSolicitacaoAgora, registrarResposta, verificarRespostasZoho } from "../actions";
 import type { DadosPainel, Solicitacao } from "../dados";
 import { ROTULO, SeloMetodo, SeloSolicitacao, SeloStatus, hrefPainel } from "./ui";
 
@@ -65,12 +65,14 @@ export function Solicitacoes({
   params,
   perms,
   agoraIso,
+  zohoConfigurado,
 }: {
   dados: DadosPainel;
   competencia: string;
   params: Record<string, string | undefined>;
   perms: PermissoesDebitos;
   agoraIso: string;
+  zohoConfigurado: boolean;
 }) {
   const mapaAdm = new Map(dados.administradoras.map((a) => [a.id, a]));
   // unidades com conferência de condomínio na competência, por administradora
@@ -117,8 +119,14 @@ export function Solicitacoes({
             {dados.config.envio_automatico ? `Envio automático ligado (a partir do dia ${dados.config.dia_envio}).` : "Envio automático desligado: os e-mails só saem quando alguém clica em enviar."}
           </p>
         </div>
+        <div className="w-full text-xs text-ink-muted">
+          {zohoConfigurado ? "Zoho Mail autorizado: respostas sincronizadas periodicamente." : "Leitura das respostas Zoho aguardando autorização da caixa locacao@sacraimoveis.com.br."}
+        </div>
         {perms.operar && (
           <div className="flex flex-wrap gap-2">
+            <form action={verificarRespostasZoho}>
+              <BotaoEnviar className={SECONDARY_BUTTON_CLASS} textoEnviando="Consultando Zoho…">Verificar respostas Zoho</BotaoEnviar>
+            </form>
             <form action={enviarSolicitacaoAgora}>
               <input type="hidden" name="competencia" value={competencia} />
               <input type="hidden" name="modo" value="teste" />
@@ -147,6 +155,7 @@ export function Solicitacoes({
         {grupos.map(({ adm, linhas }) => {
           const abertas = linhas.filter((l) => emAberto(l.condominio!.status));
           const enviosDaAdm = dados.solicitacoes.filter((s) => s.administradora_id === adm.id);
+          const respostas = dados.respostasZoho.filter((r) => r.administradora_id === adm.id);
           const { grupos: previa } = agruparPorAdministradora(abertas.map(paraUnidade), { somenteMetodoEmail: false });
           const temEmail = emailValido(adm.email_solicitacao) || abertas.some((l) => emailValido(l.contrato.condominio_email));
           return (
@@ -161,6 +170,20 @@ export function Solicitacoes({
                 <SeloMetodo metodo={adm.metodo_consulta as "portal" | "email" | "outro"} />
               </div>
 
+              {respostas.length > 0 && <details className="rounded-lg border border-emerald-200 bg-emerald-50/50 px-3 py-2">
+                <summary className="cursor-pointer text-xs font-semibold text-emerald-900">
+                  {respostas.length} resposta(s) recebida(s) no Zoho — conferir
+                </summary>
+                <ul className="mt-3 divide-y divide-emerald-200">
+                  {respostas.map((resposta) => <li key={resposta.id} className="space-y-1 py-2 text-xs text-ink">
+                    <p className="font-semibold">{resposta.assunto}</p>
+                    <p className="text-ink-muted">{resposta.remetente} · {formatarDataHoraBR(resposta.recebido_em)}{resposta.tem_anexo ? " · Com anexo no Zoho" : ""}</p>
+                    {resposta.resumo && <p className="whitespace-pre-wrap break-words">{resposta.resumo}</p>}
+                    {!resposta.solicitacao_id && <p className="font-medium text-amber-800">Resposta identificada pela administradora, mas sem solicitação única vinculada; confira no webmail.</p>}
+                  </li>)}
+                </ul>
+                <p className="mt-2 text-xs text-ink-muted">A resposta não confirma quitação: confira o retorno e registre o resultado de cada unidade.</p>
+              </details>}
               <ul className="space-y-1.5">
                 {linhas.map((l) => (
                   <li key={l.contratoId} className="flex items-center justify-between gap-3 text-xs">
