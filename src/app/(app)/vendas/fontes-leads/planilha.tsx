@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { FONTES_LEADS } from "@/lib/vendas/fontes-leads";
 import { salvarFonteRapida } from "./actions";
 
@@ -16,6 +17,7 @@ export type LinhaVenda = {
 };
 
 function Linha({ linha }: { linha: LinhaVenda }) {
+  const router = useRouter();
   const [fonte, setFonte] = useState(linha.fonte ?? "");
   const [erro, setErro] = useState("");
   const [pendente, iniciar] = useTransition();
@@ -45,6 +47,7 @@ function Linha({ linha }: { linha: LinhaVenda }) {
           iniciar(async () => {
             const resultado = await salvarFonteRapida(linha.tipo, linha.id, proxima);
             if (!resultado.ok) { setFonte(anterior); setErro(resultado.erro ?? "Erro ao salvar"); }
+            else router.refresh();
           });
         }}
         className="w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand disabled:opacity-60">
