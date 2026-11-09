@@ -50,3 +50,30 @@ export async function salvarHistoricoFonteLead(formData: FormData) {
   revalidatePath("/vendas/fontes-leads");
   await avisar("sucesso", id ? "Venda histórica atualizada." : "Venda histórica cadastrada.");
 }
+
+export async function salvarInvestimentoCanal(formData: FormData) {
+  const sessao = await exigirUsuario(["diretor", "gerente"]);
+  if (!sessao) return;
+  const canal = String(formData.get("canal") ?? "").trim();
+  const mes = String(formData.get("mes") ?? "").trim();
+  const valorTexto = String(formData.get("valor") ?? "").trim().replace(/\s/g, "").replace(/R\$/gi, "");
+  const valor = Number(valorTexto.includes(",") ? valorTexto.replace(/\./g, "").replace(",", ".") : valorTexto);
+  const observacoes = String(formData.get("observacoes") ?? "").trim();
+  if (!canal || canal.length > 100 || !mesValido(mes) || !valorTexto || !Number.isFinite(valor) || valor < 0 || valor > 999999999 || observacoes.length > 500) {
+    await avisar("erro", "Confira o canal, o mês e o investimento informado.");
+    return;
+  }
+  const supabase = await createClient();
+  const { error } = await supabase.from("vendas_investimentos_canais").upsert({
+    tenant_id: sessao.tenantId,
+    canal,
+    mes,
+    valor: Math.round(valor * 100) / 100,
+    observacoes: observacoes || null,
+    atualizado_em: new Date().toISOString(),
+  }, { onConflict: "tenant_id,canal,mes" });
+  if (error) { await avisar("erro", "Não foi possível salvar o investimento: " + error.message); return; }
+  revalidatePath("/vendas/fontes-leads");
+  revalidatePath("/vendas/fontes-leads/investimentos");
+  await avisar("sucesso", "Investimento mensal salvo.");
+}
