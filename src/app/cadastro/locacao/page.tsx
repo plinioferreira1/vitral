@@ -3,7 +3,9 @@ import { InicioFicha } from "./inicio-formulario";
 
 const ERROS: Record<string,string> = {
  nome: "Informe o nome completo do locatário, com nome e sobrenome.",
- existente: "Já existe uma ficha deste fiador para essa proposta. Solicite à Sacra o link para continuar a ficha existente.",
+ existente: "Outra pessoa já está preenchendo esta vaga de fiador para essa proposta. Confira se você é o fiador 1 ou o fiador 2, ou fale com a SACRA.",
+ enviada: "Sua ficha para essa proposta já foi enviada. Se precisar corrigir algo, fale com a SACRA.",
+ cpf: "Informe seu CPF corretamente para abrir ou continuar sua ficha.",
  salvar: "Não foi possível abrir sua ficha neste momento. Tente novamente.",
  limite: "Muitas fichas foram abertas recentemente nesta conexão. Tente novamente mais tarde ou fale com a SACRA."
 };

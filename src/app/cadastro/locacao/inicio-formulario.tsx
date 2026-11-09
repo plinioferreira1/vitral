@@ -37,9 +37,13 @@ export function InicioFicha() {
      </ul>
      <p className="mt-3 text-xs text-stone-500">Arquivos em PDF ou foto legível. Você poderá anexar durante o preenchimento.</p>
    </section>
+   {precisaNome && <label className="block text-sm font-semibold text-stone-800">Seu CPF
+      <input name="cpf" required inputMode="numeric" autoComplete="off" maxLength={14} placeholder="000.000.000-00" className="mt-2 min-h-12 w-full rounded-lg border border-stone-300 px-3 text-base" />
+      <span className="mt-2 block text-xs font-normal leading-5 text-stone-600">Se você já começou sua ficha, use o mesmo CPF para continuar de onde parou.</span>
+   </label>}
    {precisaNome && <label className="block text-sm font-semibold text-stone-800">Nome completo do locatário titular
       <input name="nome_titular" required maxLength={200} minLength={5} autoComplete="off" placeholder="Nome e sobrenome do locatário" className="mt-2 min-h-12 w-full rounded-lg border border-stone-300 px-3 text-base" />
-      <span className="mt-2 block text-xs font-normal leading-5 text-stone-600">Informe o nome completo de quem está solicitando a locação. Se houver pessoas com o mesmo nome, a Sacra confirmará o vínculo internamente.</span>
+      <span className="mt-2 block text-xs font-normal leading-5 text-stone-600">Basta digitar o nome de quem está alugando: sua ficha é ligada à dele automaticamente. Se houver nomes parecidos, a SACRA confirma o vínculo.</span>
    </label>}
    <p className="text-sm leading-6 text-stone-600">{papel==="titular"?"Você preencherá sua ficha e poderá informar seu nome completo ao fiador 1, ao fiador 2 e ao corresponsável, para que cada pessoa preencha sua ficha neste mesmo endereço.": "Seus dados, anexos e assinatura ficarão na sua ficha individual, associada à proposta após a conferência do nome do titular."}</p>
    <button type="submit" className="min-h-12 w-full rounded-lg bg-[#731515] px-5 py-3 text-sm font-semibold text-white">Começar minha ficha</button>

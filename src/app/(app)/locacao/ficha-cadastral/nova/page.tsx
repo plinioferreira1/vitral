@@ -22,7 +22,7 @@ export default function NovaFichaLocacaoPage() {
         </div></details>
         <div className="flex flex-col-reverse gap-3 border-t border-border pt-5 sm:flex-row sm:justify-end"><Link href="/locacao/ficha-cadastral" className={`${SECONDARY_BUTTON_CLASS} min-h-11`}>Cancelar</Link><BotaoEnviar textoEnviando="Criando ficha…" className={`${PRIMARY_BUTTON_CLASS} min-h-11`}><FilePlus2 size={16} /> Gerar link do cliente</BotaoEnviar></div>
       </form>
-      <aside className={`${CARD_CLASS} p-5`}><Link2 size={21} className="text-brand" /><h2 className="mt-3 text-sm font-semibold text-ink">Como funciona</h2><ol className="mt-3 space-y-3 text-sm leading-6 text-ink-muted"><li>1. Gere um link para cada cliente, copie e envie ao titular.</li><li>2. Ele informa nome, e-mail e os demais dados. Pode salvar e continuar depois.</li><li>3. Adicione corresponsável ou fiador dentro da ficha. Cada pessoa recebe seu próprio link.</li><li>4. Após a conclusão, confira os dados e baixe o PDF assinado.</li></ol></aside>
+      <aside className={`${CARD_CLASS} p-5`}><Link2 size={21} className="text-brand" /><h2 className="mt-3 text-sm font-semibold text-ink">Como funciona</h2><ol className="mt-3 space-y-3 text-sm leading-6 text-ink-muted"><li>1. Gere um link para cada cliente, copie e envie ao titular.</li><li>2. Ele informa nome, e-mail e os demais dados. Pode salvar e continuar depois.</li><li>3. Fiadores e corresponsável não precisam de link próprio: acessam o link público da ficha, escolhem a opção e digitam o nome do locatário. A ficha deles é vinculada automaticamente.</li><li>4. Após a conclusão, confira os dados e baixe o PDF assinado.</li></ol></aside>
     </div>
   </div>;
 }
