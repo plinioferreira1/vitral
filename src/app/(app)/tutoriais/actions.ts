@@ -5,7 +5,14 @@ import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
 import { checar } from "@/lib/aviso";
 
 import { createClient } from "@/lib/supabase/server";
+import { ASSUNTOS } from "@/lib/ajuda/topicos";
 import { revalidatePath } from "next/cache";
+
+/** Só os assuntos fixos da Central de ajuda; qualquer outro valor é recusado. */
+function categoriaDoForm(formData: FormData): string | null {
+  const valor = String(formData.get("categoria") ?? "").trim();
+  return (ASSUNTOS as readonly string[]).includes(valor) ? valor : null;
+}
 
 export async function adicionarTutorial(formData: FormData) {
   const supabase = await createClient();
@@ -14,7 +21,7 @@ export async function adicionarTutorial(formData: FormData) {
   const usuario = sessao.usuario;
   if (!usuario?.tenant_id) return;
 
-  const categoria = String(formData.get("categoria") ?? "").trim();
+  const categoria = categoriaDoForm(formData);
   const tipo = String(formData.get("tipo") ?? "texto");
   const titulo = String(formData.get("titulo") ?? "").trim();
   const descricao = String(formData.get("descricao") ?? "").trim() || null;
@@ -45,13 +52,14 @@ export async function editarTutorial(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
-  const categoria = String(formData.get("categoria") ?? "").trim();
+  const categoria = categoriaDoForm(formData);
   const tipo = String(formData.get("tipo") ?? "texto");
   const titulo = String(formData.get("titulo") ?? "").trim();
   const descricao = String(formData.get("descricao") ?? "").trim() || null;
   const conteudo = String(formData.get("conteudo") ?? "").trim() || null;
   const link = String(formData.get("link") ?? "").trim() || null;
   const ordem = Number(formData.get("ordem") ?? 0);
+  if (!categoria || !titulo) return;
 
   await checar(supabase
     .from("tutoriais")

@@ -3,10 +3,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { alternarEtapaOnboarding } from "./actions";
-import { MateriaisCorretor } from "@/components/materiais-corretor";
-import { TutoriaisSistema } from "@/components/tutoriais-sistema";
-import { CabecalhoSecao } from "@/components/cabecalho-secao";
-import { Sparkles, ListChecks, Check } from "lucide-react";
+import { CentralAjuda } from "@/components/central-ajuda";
+import { GUIAS_FIXOS } from "@/lib/ajuda/guias";
+import { tutorialParaTopico } from "@/lib/ajuda/topicos";
+import { Check, ChevronDown, Sparkles } from "lucide-react";
 import { BotaoEnviar } from "@/components/botao-enviar";
 
 export default async function CorretorPage() {
@@ -32,85 +32,74 @@ export default async function CorretorPage() {
   const statusPorEtapa = new Map((statusRaw ?? []).map((s) => [s.etapa_id, s]));
   const total = etapas?.length ?? 0;
   const concluidas = (etapas ?? []).filter((e) => statusPorEtapa.get(e.id)?.concluida).length;
+  const topicos = [...(tutoriais ?? []).map(tutorialParaTopico), ...GUIAS_FIXOS];
 
   return (
     <div className="w-full min-w-0 space-y-6">
-      <CabecalhoPagina titulo="Central de ajuda" descricao="Primeiros passos, tutoriais de como usar o sistema e materiais de referência." />
+      <CabecalhoPagina titulo="Central de ajuda" descricao="Busque tutoriais, guias, modelos de mensagem e documentos." />
 
       {total > 0 && (
-        <div className="rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
-          <CabecalhoSecao
-            icon={Sparkles}
-            titulo="Seu progresso"
-            descricao="Conclua os tutoriais e guias para aproveitar todo o potencial do sistema."
-            acao={
-              <span className="shrink-0 text-xs text-ink-muted">
-                {concluidas} de {total}
+        <details open={concluidas < total} className="group rounded-xl border border-border/60 bg-surface shadow-sm">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-3 p-4">
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
+              <Sparkles size={18} aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-sm font-medium text-ink">
+                Primeiros passos {concluidas === total && "concluídos"}
               </span>
-            }
-          />
-          <div className="h-2 overflow-hidden rounded-full bg-background">
-            <div
-              className="h-full rounded-full bg-brand transition-all"
-              style={{ width: `${total > 0 ? (concluidas / total) * 100 : 0}%` }}
-            />
-          </div>
-        </div>
+              <span className="mt-1.5 block h-2 overflow-hidden rounded-full bg-background">
+                <span
+                  className="block h-full rounded-full bg-brand transition-all"
+                  style={{ width: `${(concluidas / total) * 100}%` }}
+                />
+              </span>
+            </span>
+            <span className="shrink-0 text-xs text-ink-muted">
+              {concluidas} de {total}
+            </span>
+            <ChevronDown size={18} aria-hidden className="shrink-0 text-ink-muted transition group-open:rotate-180" />
+          </summary>
+          <ul className="divide-y divide-border border-t border-border">
+            {(etapas ?? []).map((e) => {
+              const status = statusPorEtapa.get(e.id);
+              const concluida = status?.concluida ?? false;
+              return (
+                <li key={e.id} className="flex items-start gap-3 px-4 py-3">
+                  <form action={alternarEtapaOnboarding} className="shrink-0">
+                    <input type="hidden" name="etapa_id" value={e.id} />
+                    <input type="hidden" name="concluida_atual" value={String(concluida)} />
+                    {status && <input type="hidden" name="status_id" value={status.id} />}
+                    <BotaoEnviar
+                      className="-m-3 flex h-11 w-11 items-center justify-center"
+                      aria-label={`Marcar ${e.nome} como ${concluida ? "não concluído" : "concluído"}`}
+                    >
+                      <span
+                        className={`flex h-5 w-5 items-center justify-center rounded border ${
+                          concluida ? "border-brand bg-brand text-white" : "border-border-strong bg-surface"
+                        }`}
+                      >
+                        {concluida && <Check size={12} strokeWidth={3} />}
+                      </span>
+                    </BotaoEnviar>
+                  </form>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-sm font-medium ${concluida ? "text-ink-muted line-through" : "text-ink"}`}>{e.nome}</p>
+                    {e.descricao && <p className="mt-0.5 text-sm text-ink-muted">{e.descricao}</p>}
+                    {e.link && (
+                      <Link href={e.link} className="mt-1.5 inline-block text-xs font-medium text-brand hover:underline">
+                        Ir agora →
+                      </Link>
+                    )}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </details>
       )}
 
-      <div>
-        <h2 className="mb-3 text-xl font-semibold tracking-tight text-ink">Primeiros passos</h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-        {(etapas ?? []).length === 0 ? (
-          <p className="rounded-xl border border-border/60 bg-surface p-6 text-center text-sm text-ink-muted shadow-sm sm:col-span-2">
-            Nenhum passo cadastrado ainda.
-          </p>
-        ) : (
-          (etapas ?? []).map((e) => {
-            const status = statusPorEtapa.get(e.id);
-            const concluida = status?.concluida ?? false;
-            return (
-              <div
-                key={e.id}
-                className="flex items-start gap-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm"
-              >
-                <form action={alternarEtapaOnboarding} className="mt-0.5 shrink-0">
-                  <input type="hidden" name="etapa_id" value={e.id} />
-                  <input type="hidden" name="concluida_atual" value={String(concluida)} />
-                  {status && <input type="hidden" name="status_id" value={status.id} />}
-                  <BotaoEnviar
-                    className={`flex h-5 w-5 items-center justify-center rounded border ${
-                      concluida ? "border-brand bg-brand text-white" : "border-border-strong bg-surface"
-                    }`}
-                    aria-label={`Marcar ${e.nome} como ${concluida ? "não concluído" : "concluído"}`}
-                  >
-                    {concluida && <Check size={12} strokeWidth={3} />}
-                  </BotaoEnviar>
-                </form>
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-soft text-brand">
-                  <ListChecks size={18} strokeWidth={2} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className={`text-sm font-medium ${concluida ? "text-ink-muted line-through" : "text-ink"}`}>
-                    {e.nome}
-                  </p>
-                  {e.descricao && <p className="mt-0.5 text-sm text-ink-muted">{e.descricao}</p>}
-                  {e.link && (
-                    <Link href={e.link} className="mt-1.5 inline-block text-xs font-medium text-brand hover:underline">
-                      Ir agora →
-                    </Link>
-                  )}
-                </div>
-              </div>
-            );
-          })
-        )}
-        </div>
-      </div>
-
-      <TutoriaisSistema tutoriais={tutoriais ?? []} />
-
-      <MateriaisCorretor />
+      <CentralAjuda topicos={topicos} />
     </div>
   );
 }

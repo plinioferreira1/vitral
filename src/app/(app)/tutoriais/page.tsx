@@ -4,6 +4,7 @@ import { ContextoConfiguracao } from "@/components/contexto-configuracao";
 import { createClient } from "@/lib/supabase/server";
 import { adicionarTutorial, editarTutorial, removerTutorial } from "./actions";
 import { BotaoEnviar } from "@/components/botao-enviar";
+import { ASSUNTOS } from "@/lib/ajuda/topicos";
 
 interface TutorialRow {
   id: string;
@@ -32,8 +33,7 @@ export default async function TutoriaisPage() {
   return (
     <div className="mx-auto w-full min-w-0 space-y-6">
       <ContextoConfiguracao />
-      <CabecalhoPagina titulo="Gerenciar tutoriais" descricao={<> Tutoriais de como usar o Vitral, organizados por categoria (ex: Vendas, Financiamento,
-          Locação, Google Agenda). Aparecem pra todo mundo na Central de ajuda. Pode ser um vídeo
+      <CabecalhoPagina titulo="Gerenciar tutoriais" descricao={<> Tutoriais de como usar o Vitral, organizados por assunto. Aparecem pra todo mundo na Central de ajuda, com busca. Pode ser um vídeo
           (cola o link do YouTube, Loom, Drive etc.) ou um texto escrito direto aqui.
          </>} />
 
@@ -45,18 +45,16 @@ export default async function TutoriaisPage() {
           Novo tutorial
         </p>
         <div className="grid grid-cols-2 gap-3">
-          <input
-            name="categoria"
-            required
-            list="categorias-tutorial"
-            placeholder="Categoria (ex: Vendas)"
-            className={campoClasse}
-          />
-          <datalist id="categorias-tutorial">
-            {categorias.map((c) => (
-              <option key={c} value={c} />
+          <select name="categoria" required defaultValue="" aria-label="Assunto" className={campoClasse}>
+            <option value="" disabled>
+              Assunto
+            </option>
+            {ASSUNTOS.map((a) => (
+              <option key={a} value={a}>
+                {a}
+              </option>
             ))}
-          </datalist>
+          </select>
           <select name="tipo" defaultValue="texto" className={campoClasse}>
             <option value="texto">Texto</option>
             <option value="video">Vídeo</option>
@@ -133,11 +131,23 @@ export default async function TutoriaisPage() {
                           >
                             <input type="hidden" name="id" value={t.id} />
                             <div className="grid grid-cols-2 gap-2">
-                              <input
+                              <select
                                 name="categoria"
                                 defaultValue={t.categoria}
+                                aria-label="Assunto"
                                 className="w-full rounded-md border border-border bg-surface px-2 py-1.5 text-xs outline-none focus:border-brand"
-                              />
+                              >
+                                {!(ASSUNTOS as readonly string[]).includes(t.categoria) && (
+                                  <option value={t.categoria} disabled>
+                                    {t.categoria} (escolha um assunto)
+                                  </option>
+                                )}
+                                {ASSUNTOS.map((a) => (
+                                  <option key={a} value={a}>
+                                    {a}
+                                  </option>
+                                ))}
+                              </select>
                               <select
                                 name="tipo"
                                 defaultValue={t.tipo}
