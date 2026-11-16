@@ -528,8 +528,12 @@ export async function salvarComissao(formData: FormData) {
   const processoId = String(formData.get("processo_id") ?? "");
   const comissaoId = String(formData.get("comissao_id") ?? "") || null;
   const destinatario = String(formData.get("destinatario_rateio") ?? "");
-  const tipoBeneficiario = destinatario === "sacra" || destinatario === "parceria" ? destinatario : "corretor";
+  const tipoBeneficiario = destinatario === "sacra" || destinatario === "parceria" ? destinatario : destinatario === "externo" ? "externo" : "corretor";
   const beneficiarioId = tipoBeneficiario === "corretor" ? destinatario || null : null;
+  const beneficiarioNome = tipoBeneficiario === "externo" ? String(formData.get("beneficiario_externo") ?? "").trim() : null;
+  if (tipoBeneficiario === "externo" && (!beneficiarioNome || beneficiarioNome.length < 2 || beneficiarioNome.length > 120)) {
+    await avisar("erro", "Informe o nome do beneficiário externo."); return;
+  }
   const valorPrevisto = String(formData.get("valor_previsto") ?? "");
   const status = String(formData.get("status") ?? "0% pago");
   const dataPrevista = String(formData.get("data_prevista") ?? "") || null;
@@ -555,6 +559,7 @@ export async function salvarComissao(formData: FormData) {
   const campos = {
     beneficiario_id: beneficiarioId,
     tipo_beneficiario: tipoBeneficiario,
+    beneficiario_nome: beneficiarioNome,
     valor_previsto: valorPrevisto ? Number(valorPrevisto) : null,
     status,
     data_prevista: dataPrevista,
@@ -574,6 +579,70 @@ export async function salvarComissao(formData: FormData) {
   revalidatePath("/painel-sacra");
   revalidatePath("/minhas-vendas");
   revalidatePath(`/minhas-vendas/${processoId}`);
+}
+
+
+/** Cria uma distribuição de comissão em uma só operação, com 1 a 24 parcelas.
+ * Cada parcela é um registro independente para preservar relatórios existentes.
+ */
+export async function criarPlanoComissao(formData: FormData) {
+  const sessao = await exigirUsuario();
+  if (!sessao?.usuario?.tenant_id) return;
+  const processoId = String(formData.get("processo_id") ?? "");
+  const destinatario = String(formData.get("destinatario_rateio") ?? "");
+  const nomeExterno = String(formData.get("beneficiario_externo") ?? "").trim().replace(/\s+/g, " ");
+  const total = Number(formData.get("valor_total"));
+  const quantidade = Number(formData.get("quantidade_parcelas"));
+  const valores = formData.getAll("parcela_valor").map(v => Number(v));
+  const datas = formData.getAll("parcela_data").map(v => String(v));
+  const observacoes = String(formData.get("observacoes") ?? "").trim();
+  const tipo = destinatario === "sacra" || destinatario === "parceria" ? destinatario : destinatario === "externo" ? "externo" : "corretor";
+  const corretorId = tipo === "corretor" ? destinatario : null;
+
+  if (!destinatario || !Number.isInteger(quantidade) || quantidade < 1 || quantidade > 24
+      || !Number.isFinite(total) || total <= 0 || total > 999999999
+      || valores.length !== quantidade || datas.length !== quantidade || observacoes.length > 500) {
+    await avisar("erro", "Confira beneficiário, total e quantidade de parcelas."); return;
+  }
+  if (tipo === "externo" && (nomeExterno.length < 2 || nomeExterno.length > 120)) {
+    await avisar("erro", "Informe o nome do beneficiário externo."); return;
+  }
+  if (valores.some(v => !Number.isFinite(v) || v <= 0 || v > 999999999)
+      || valores.reduce((s, v) => s + Math.round(v * 100), 0) !== Math.round(total * 100)) {
+    await avisar("erro", "A soma das parcelas precisa ser igual ao total da comissão."); return;
+  }
+  if (datas.some(d => d && !/^\d{4}-\d{2}-\d{2}$/.test(d)) || (quantidade > 1 && datas.some(d => !d))) {
+    await avisar("erro", "Informe datas válidas para todas as parcelas."); return;
+  }
+  const supabase = await createClient();
+  const tenantId = sessao.usuario.tenant_id;
+  const { data: processo, error: erroProcesso } = await supabase.from("processos")
+    .select("id").eq("id", processoId).eq("tenant_id", tenantId).eq("categoria", "venda").maybeSingle();
+  if (erroProcesso || !processo) { await avisar("erro", "Contrato de venda não encontrado."); return; }
+  if (tipo === "corretor") {
+    const erro = await validarCorretores(supabase, tenantId, [{ id: corretorId, atual: null }]);
+    if (erro) { await avisar("erro", erro); return; }
+  }
+  const grupoId = crypto.randomUUID();
+  const { error } = await supabase.from("comissoes").insert(valores.map((valor, i) => ({
+    processo_id: processoId,
+    tipo_beneficiario: tipo,
+    beneficiario_id: corretorId,
+    beneficiario_nome: tipo === "externo" ? nomeExterno : null,
+    grupo_rateio: grupoId,
+    parcela_numero: i + 1,
+    parcela_total: quantidade,
+    valor_previsto: Math.round(valor * 100) / 100,
+    data_prevista: datas[i] || null,
+    observacoes: observacoes || null,
+    status: "0% pago",
+  })));
+  if (error) { await avisar("erro", "Não foi possível salvar o parcelamento: " + error.message); return; }
+  revalidatePath(`/processos/${processoId}`);
+  revalidatePath("/painel-sacra");
+  revalidatePath("/minhas-vendas");
+  revalidatePath(`/minhas-vendas/${processoId}`);
+  await avisar("sucesso", quantidade === 1 ? "Comissão à vista cadastrada." : `Comissão distribuída em ${quantidade} parcelas.`);
 }
 
 export async function adicionarComentario(formData: FormData) {

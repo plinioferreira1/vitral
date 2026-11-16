@@ -1267,6 +1267,10 @@ export type Database = {
       }
       comissoes: {
         Row: {
+          beneficiario_nome: string | null
+          grupo_rateio: string | null
+          parcela_numero: number | null
+          parcela_total: number | null
           beneficiario_id: string | null
           criado_em: string
           data_prevista: string | null
@@ -1280,6 +1284,10 @@ export type Database = {
           valor_recebido: number | null
         }
         Insert: {
+          beneficiario_nome?: string | null
+          grupo_rateio?: string | null
+          parcela_numero?: number | null
+          parcela_total?: number | null
           beneficiario_id?: string | null
           criado_em?: string
           data_prevista?: string | null
@@ -1293,6 +1301,10 @@ export type Database = {
           valor_recebido?: number | null
         }
         Update: {
+          beneficiario_nome?: string | null
+          grupo_rateio?: string | null
+          parcela_numero?: number | null
+          parcela_total?: number | null
           beneficiario_id?: string | null
           criado_em?: string
           data_prevista?: string | null
