@@ -114,14 +114,14 @@ export function ComissoesVenda({ processoId, registros, corretores, envolvidos }
   const opcoes = useMemo(() => {
     const ids = new Set<string>();
     const nomes = new Set<string>();
-    return corretores.filter(c => {
+    return [...corretores].sort((a,b) => Number(envolvidos.includes(b.id)) - Number(envolvidos.includes(a.id))).filter(c => {
       if (!nomeValido(c.nome)) return false;
       const chave = c.usuario_id ? "u:" + c.usuario_id : "n:" + normalizar(c.nome);
       const alias = normalizar(c.nome);
       if (ids.has(chave) || nomes.has(alias)) return false;
       ids.add(chave); nomes.add(alias); return true;
     }).sort((a,b) => a.nome.localeCompare(b.nome, "pt-BR"));
-  }, [corretores]);
+  }, [corretores, envolvidos]);
   const prioritarios = opcoes.filter(c => envolvidos.includes(c.id));
   const restantes = opcoes.filter(c => !envolvidos.includes(c.id));
   const filtrados = (lista: Corretor[]) => lista.filter(c => !busca || normalizar(c.nome).includes(normalizar(busca)) || c.id === destinatario);
