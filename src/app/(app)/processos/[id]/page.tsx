@@ -43,6 +43,7 @@ import { ETAPAS_OPCIONAIS, ehEtapaIntermediaria, mesmaEtapa } from "@/lib/vendas
 import { ModalEdicaoProcesso } from "@/components/modal-edicao-processo";
 import { CertidoesProcesso } from "./certidoes";
 import { ChecklistProcesso } from "./checklist-processo";
+import { ComissoesVenda, type RegistroComissao } from "./comissoes-venda";
 
 export default async function ProcessoDetalhePage({
   params,
@@ -818,7 +819,7 @@ export default async function ProcessoDetalhePage({
             <h2 className="text-sm font-semibold text-ink">Comissão</h2>
             <p className="mt-1 text-xs text-ink-muted">
               {(comissoes ?? []).length > 0
-                ? `${(comissoes ?? []).length} registro${(comissoes ?? []).length === 1 ? "" : "s"}`
+                ? `${(comissoes ?? []).length} pagamento${(comissoes ?? []).length === 1 ? "" : "s"} registrado${(comissoes ?? []).length === 1 ? "" : "s"}`
                 : "Nenhuma comissão cadastrada"}
             </p>
           </div>
@@ -826,7 +827,14 @@ export default async function ProcessoDetalhePage({
           <span className="hidden text-xs font-semibold text-brand group-open:inline">Fechar</span>
         </summary>
         <div className="border-t border-border/70 p-4 sm:p-5">
-          <div className="space-y-4">
+          {p.categoria === "venda"
+            ? <ComissoesVenda
+                processoId={p.id}
+                registros={(comissoes ?? []) as unknown as RegistroComissao[]}
+                corretores={corretoresLista ?? []}
+                envolvidos={[p.corretor_id, p.captador_id].filter((id): id is string => !!id)}
+              />
+            : (<div className="space-y-4">
             <div className="rounded-xl border border-border bg-background p-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Rateio da comissão</p>
               <p className="mt-1 text-xs text-ink-muted">Cadastre um valor para cada pessoa. A soma é apenas demonstrativa e não cria um segundo lançamento no financeiro.</p>
@@ -848,7 +856,7 @@ export default async function ProcessoDetalhePage({
               <summary className="cursor-pointer text-sm font-semibold text-brand">+ Adicionar pessoa ao rateio</summary>
               <div className="mt-4"><ComissaoForm processoId={p.id} comissao={null} corretores={corretoresLista ?? []} /></div>
             </details>
-          </div>
+          </div>)}
         </div>
       </details>
 
