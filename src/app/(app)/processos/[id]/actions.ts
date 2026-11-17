@@ -531,54 +531,133 @@ export async function salvarComissao(formData: FormData) {
   const tipoBeneficiario = destinatario === "sacra" || destinatario === "parceria" ? destinatario : destinatario === "externo" ? "externo" : "corretor";
   const beneficiarioId = tipoBeneficiario === "corretor" ? destinatario || null : null;
   const beneficiarioNome = tipoBeneficiario === "externo" ? String(formData.get("beneficiario_externo") ?? "").trim() : null;
-  if (tipoBeneficiario === "externo" && (!beneficiarioNome || beneficiarioNome.length < 2 || beneficiarioNome.length > 120)) {
-    await avisar("erro", "Informe o nome do beneficiário externo."); return;
-  }
-  const valorPrevisto = String(formData.get("valor_previsto") ?? "");
+  const valorPrevisto = Number(formData.get("valor_previsto") ?? "");
   const status = String(formData.get("status") ?? "0% pago");
   const dataPrevista = String(formData.get("data_prevista") ?? "") || null;
+  const dataRecebidaDigitada = String(formData.get("data_recebida") ?? "").trim();
+  const valorRecebidoDigitado = String(formData.get("valor_recebido") ?? "").trim();
+  const confirmarRetificacao = formData.get("confirmar_retificacao") === "sim";
   const observacoes = String(formData.get("observacoes") ?? "").trim() || null;
+  const situacoes = ["0% pago", "50% pago", "100% pago", "cancelada"];
 
-  if (!destinatario) {
-    await avisar("erro", "Selecione quem receberá esta parte da comissão.");
-    return;
-  }
-  if (!valorPrevisto || !Number.isFinite(Number(valorPrevisto)) || Number(valorPrevisto) <= 0) {
-    await avisar("erro", "Informe um valor válido e maior que zero para o rateio.");
+  if (!destinatario || !situacoes.includes(status) ||
+      !Number.isFinite(valorPrevisto) || valorPrevisto <= 0 || valorPrevisto > 999999999 ||
+      (tipoBeneficiario === "externo" && (!beneficiarioNome || beneficiarioNome.length < 2 || beneficiarioNome.length > 120)) ||
+      (dataPrevista && !/^\\d{4}-\\d{2}-\\d{2}$/.test(dataPrevista)) || (observacoes?.length ?? 0) > 500) {
+    await avisar("erro", "Confira beneficiário, valor, situação e datas da comissão.");
     return;
   }
   const tenantId = sessao.usuario.tenant_id;
-  const { data: processo } = await supabase.from("processos").select("id").eq("id", processoId).eq("tenant_id", tenantId).maybeSingle();
-  if (!processo) { await avisar("erro", "Venda não encontrada."); return; }
-  const anterior = comissaoId ? await supabase.from("comissoes").select("beneficiario_id").eq("id", comissaoId).eq("processo_id", processoId).maybeSingle() : null;
-  if (comissaoId && !anterior?.data) { await avisar("erro", "Comissão não encontrada nesta venda."); return; }
-  const erroCorretor = tipoBeneficiario === "corretor" ? await validarCorretores(supabase, tenantId, [{ id: beneficiarioId, atual: anterior?.data?.beneficiario_id }]) : null;
+  const { data: processo } = await supabase.from("processos")
+    .select("id,categoria").eq("id", processoId).eq("tenant_id", tenantId).maybeSingle();
+  if (!processo) { await avisar("erro", "Processo não encontrado."); return; }
+  const { data: anterior, error: erroConsulta } = comissaoId
+    ? await supabase.from("comissoes")
+        .select("id,status,beneficiario_id,valor_previsto,valor_recebido,data_recebida")
+        .eq("id", comissaoId).eq("processo_id", processoId).maybeSingle()
+    : { data: null, error: null };
+  if (erroConsulta || (comissaoId && !anterior)) {
+    await avisar("erro", "Comissão não encontrada neste processo."); return;
+  }
+  const erroCorretor = tipoBeneficiario === "corretor"
+    ? await validarCorretores(supabase, tenantId, [{ id: beneficiarioId, atual: anterior?.beneficiario_id }])
+    : null;
   if (erroCorretor) { await avisar("erro", erroCorretor); return; }
-  const pago100 = status === "100% pago";
+
+  const mudandoStatus = !!anterior && anterior.status !== status;
+  const antesQuitada = anterior?.status === "100% pago";
+  // Não permitir que o valor previsto de uma parcela paga seja alterado por acidente.
+  if (anterior && (anterior.valor_recebido ?? 0) > 0 &&
+      Math.round(Number(anterior.valor_previsto ?? 0) * 100) !== Math.round(valorPrevisto * 100) &&
+      !confirmarRetificacao) {
+    await avisar("erro", "Esta comissão já tem recebimento registrado. Confirme a retificação para alterar o valor previsto.");
+    return;
+  }
+  // Alterar previsão/observações não pode reescrever data e valor de um pagamento já efetuado.
+  let valorRecebido: number | null = anterior?.valor_recebido ?? null;
+  let dataRecebida: string | null = anterior?.data_recebida ?? null;
+  const solicitouRetificacao = confirmarRetificacao &&
+    (!!dataRecebidaDigitada || !!valorRecebidoDigitado || (antesQuitada && mudandoStatus));
+
+  if (antesQuitada && mudandoStatus && !confirmarRetificacao) {
+    await avisar("erro", "Para alterar uma comissão já quitada, confirme a retificação do pagamento.");
+    return;
+  }
+
+  if (status === "100% pago" && (!antesQuitada || solicitouRetificacao)) {
+    // No novo fluxo de vendas a data e o valor realmente recebidos são explícitos;
+    // não se deve presumir que a comissão entrou na conta só pela data de edição.
+    if (processo.categoria === "venda") {
+      if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dataRecebidaDigitada) ||
+          !valorRecebidoDigitado || !Number.isFinite(Number(valorRecebidoDigitado)) ||
+          Number(valorRecebidoDigitado) <= 0 || Number(valorRecebidoDigitado) > valorPrevisto) {
+        await avisar("erro", "Informe a data e o valor efetivamente recebidos para confirmar a quitação.");
+        return;
+      }
+      if (Math.round(Number(valorRecebidoDigitado) * 100) !== Math.round(valorPrevisto * 100)) {
+        await avisar("erro", "O valor recebido deve igualar o valor da parcela para marcá-la como quitada.");
+        return;
+      }
+      valorRecebido = Number(valorRecebidoDigitado);
+      dataRecebida = dataRecebidaDigitada;
+    } else {
+      // Compatibilidade com formulários legados de financiamento.
+      valorRecebido = Number(valorRecebidoDigitado || valorPrevisto);
+      dataRecebida = dataRecebidaDigitada || (antesQuitada ? anterior?.data_recebida : null) || hojeISO();
+    }
+  } else if (antesQuitada && mudandoStatus && confirmarRetificacao) {
+    // Retificação expressa: o histórico da operação anterior ficará preservado no log.
+    valorRecebido = null;
+    dataRecebida = null;
+  } else if (status === "0% pago" && anterior?.status !== "0% pago") {
+    if (!confirmarRetificacao && (anterior?.valor_recebido ?? 0) > 0) {
+      await avisar("erro", "O lançamento possui recebimento; marque a confirmação para corrigir.");
+      return;
+    }
+    if (confirmarRetificacao) { valorRecebido = null; dataRecebida = null; }
+  }
 
   const campos = {
     beneficiario_id: beneficiarioId,
     tipo_beneficiario: tipoBeneficiario,
     beneficiario_nome: beneficiarioNome,
-    valor_previsto: valorPrevisto ? Number(valorPrevisto) : null,
-    status,
-    data_prevista: dataPrevista,
-    observacoes,
-    ...(pago100
-      ? { valor_recebido: valorPrevisto ? Number(valorPrevisto) : null, data_recebida: hojeISO() }
-      : { valor_recebido: null, data_recebida: null }),
+    valor_previsto: valorPrevisto,
+    status, data_prevista: dataPrevista, observacoes,
+    valor_recebido: valorRecebido, data_recebida: dataRecebida,
   };
-
   if (comissaoId) {
-    await checar(supabase.from("comissoes").update(campos as never).eq("id", comissaoId).eq("processo_id", processoId), "atualizar");
+    const { error } = await supabase.from("comissoes").update(campos)
+      .eq("id", comissaoId).eq("processo_id", processoId);
+    if (error) { await avisar("erro", "Não foi possível atualizar a comissão: " + error.message); return; }
   } else {
-    await checar(supabase.from("comissoes").insert({ processo_id: processoId, ...campos } as never), "salvar");
+    const { error } = await supabase.from("comissoes").insert({ processo_id: processoId, ...campos });
+    if (error) { await avisar("erro", "Não foi possível cadastrar a comissão: " + error.message); return; }
   }
 
+  // A operação anterior fica legível no histórico quando há mudança de quitação.
+  if (anterior && (mudandoStatus || anterior.valor_recebido !== valorRecebido || anterior.data_recebida !== dataRecebida)) {
+    const { error: erroHistorico } = await supabase.from("historico").insert({
+      processo_id: processoId,
+      usuario_id: sessao.user?.id ?? null,
+      acao: "retificação de pagamento de comissão",
+      detalhe: {
+        comissao_id: comissaoId,
+        situacao_anterior: anterior.status,
+        situacao_atual: status,
+        valor_recebido_anterior: anterior.valor_recebido,
+        data_recebida_anterior: anterior.data_recebida,
+        valor_recebido_atual: valorRecebido,
+        data_recebida_atual: dataRecebida,
+        confirmacao_explicita: confirmarRetificacao,
+      },
+    });
+    if (erroHistorico) console.error("Não foi possível registrar histórico da retificação:", erroHistorico.message);
+  }
   revalidatePath(`/processos/${processoId}`);
   revalidatePath("/painel-sacra");
   revalidatePath("/minhas-vendas");
   revalidatePath(`/minhas-vendas/${processoId}`);
+  await avisar("sucesso", "Comissão atualizada sem alterar recebimentos anteriores indevidamente.");
 }
 
 

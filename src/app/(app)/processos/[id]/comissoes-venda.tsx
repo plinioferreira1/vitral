@@ -13,6 +13,7 @@ export type RegistroComissao = {
   beneficiario_nome: string | null;
   valor_previsto: number | null;
   valor_recebido: number | null;
+  data_recebida: string | null;
   data_prevista: string | null;
   status: string;
   observacoes: string | null;
@@ -87,6 +88,23 @@ function EditarLancamento({ registro, processoId }: { registro: RegistroComissao
           <option value="cancelada">Cancelado</option>
         </select>
       </label>
+      <div className="space-y-3 rounded-lg border border-border bg-surface p-3 sm:col-span-2">
+        <p className="text-xs font-semibold text-ink">Recebimento efetivo</p>
+        <p className="text-xs text-ink-muted">Informe os dados reais ao marcar um pagamento como quitado. Editar outras informações não altera automaticamente um recebimento existente.</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-xs font-medium text-ink-muted">Valor recebido (R$)
+            <CampoMoeda name="valor_recebido" defaultValue={registro.valor_recebido ?? 0} />
+          </label>
+          <label className="block text-xs font-medium text-ink-muted">Data real do recebimento
+            <input type="date" name="data_recebida" defaultValue={registro.data_recebida ?? ""}
+              className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink"/>
+          </label>
+        </div>
+        <label className="flex items-start gap-2 text-xs text-ink-muted">
+          <input type="checkbox" name="confirmar_retificacao" value="sim" className="mt-0.5 h-4 w-4 shrink-0 accent-brand"/>
+          Confirmo que estou corrigindo um recebimento já registrado (inclusive reversão de quitação).
+        </label>
+      </div>
       <label className="block text-xs font-medium text-ink-muted sm:col-span-2">Observações
         <textarea name="observacoes" rows={2} defaultValue={registro.observacoes ?? ""} maxLength={500}
           className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink" />
@@ -111,6 +129,7 @@ export function ComissoesVenda({ processoId, registros, corretores, envolvidos }
   const [quantidade, setQuantidade] = useState(1);
   const [primeiraData, setPrimeiraData] = useState("");
   const [observacoes, setObservacoes] = useState("");
+  const [valoresAlterados, setValoresAlterados] = useState<Record<string,number>>({});
   const opcoes = useMemo(() => {
     const ids = new Set<string>();
     const nomes = new Set<string>();
@@ -145,6 +164,11 @@ export function ComissoesVenda({ processoId, registros, corretores, envolvidos }
 
   const centavos = Math.round(valorTotal * 100);
   const valores = Array.from({ length: quantidade }, (_, i) => (Math.floor(centavos / quantidade) + (i < centavos % quantidade ? 1 : 0)) / 100);
+  const valorParcela = (i: number) => valoresAlterados[`${quantidade}-${centavos}-${i}`] ?? valores[i];
+  const somaCentavos = valores.reduce((total, _, i) => total + Math.round(valorParcela(i) * 100), 0);
+  const diferencaCentavos = centavos - somaCentavos;
+  const cronogramaValido = centavos > 0 && diferencaCentavos === 0;
+
   const classInput = "mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-brand";
 
   return <div className="space-y-5">
@@ -230,13 +254,19 @@ export function ComissoesVenda({ processoId, registros, corretores, envolvidos }
             {valores.map((v,i)=><div key={i} className="grid items-end gap-2 rounded-lg bg-background/70 p-3 sm:grid-cols-[100px_1fr_1fr]">
               <span className="pb-2 text-xs font-semibold text-ink-muted">{quantidade===1?"Pagamento":`Parcela ${i+1}`}</span>
               <label className="block text-xs font-medium text-ink-muted">Valor
-                <CampoMoeda key={`${quantidade}-${centavos}-${i}`} name="parcela_valor" defaultValue={v}/>
+                <CampoMoeda key={`${quantidade}-${centavos}-${i}`} name="parcela_valor" defaultValue={v} onValorChange={atual => setValoresAlterados(prev => ({ ...prev, [`${quantidade}-${centavos}-${i}`]: atual }))}/>
               </label>
               <label className="block text-xs font-medium text-ink-muted">Previsão
                 <input key={`d-${primeiraData}-${i}`} name="parcela_data" type="date" defaultValue={adicionarMeses(primeiraData,i)}
                   required={quantidade>1} className={classInput}/>
               </label>
             </div>)}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-sm" aria-live="polite">
+            <span className="text-ink-muted">Soma das parcelas: <strong className="text-ink">{moeda(somaCentavos / 100)}</strong></span>
+            <span className={cronogramaValido ? "font-medium text-emerald-700" : "font-semibold text-rose-700"}>
+              {cronogramaValido ? "Valores conferidos" : `Diferença: ${moeda(Math.abs(diferencaCentavos) / 100)} ${diferencaCentavos > 0 ? "a distribuir" : "acima do total"}`}
+            </span>
           </div>
         </div>}
         <label className="block text-xs font-medium text-ink-muted">Observação geral (opcional)
@@ -245,7 +275,7 @@ export function ComissoesVenda({ processoId, registros, corretores, envolvidos }
         </label>
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
           <p className="text-xs text-ink-muted">A distribuição não cria lançamentos financeiros adicionais.</p>
-          <BotaoEnviar className="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90">Salvar rateio e parcelas</BotaoEnviar>
+          <BotaoEnviar disabled={!cronogramaValido || !destinatario} className="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90">Salvar rateio e parcelas</BotaoEnviar>
         </div>
       </form>
     </section>}
