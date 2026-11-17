@@ -20,6 +20,8 @@ export type Database = {
           tenant_id: string
           titulo: string
           descricao: string | null
+          lote_id: string | null
+          lote_item: number | null
           solicitante_id: string
           responsavel_id: string
           processo_id: string | null
@@ -35,6 +37,8 @@ export type Database = {
           tenant_id: string
           titulo: string
           descricao?: string | null
+          lote_id?: string | null
+          lote_item?: number | null
           solicitante_id: string
           responsavel_id: string
           processo_id?: string | null
