@@ -566,6 +566,13 @@ export async function salvarComissao(formData: FormData) {
 
   const mudandoStatus = !!anterior && anterior.status !== status;
   const antesQuitada = anterior?.status === "100% pago";
+  // Não permitir que o valor previsto de uma parcela paga seja alterado por acidente.
+  if (anterior && (anterior.valor_recebido ?? 0) > 0 &&
+      Math.round(Number(anterior.valor_previsto ?? 0) * 100) !== Math.round(valorPrevisto * 100) &&
+      !confirmarRetificacao) {
+    await avisar("erro", "Esta comissão já tem recebimento registrado. Confirme a retificação para alterar o valor previsto.");
+    return;
+  }
   // Alterar previsão/observações não pode reescrever data e valor de um pagamento já efetuado.
   let valorRecebido: number | null = anterior?.valor_recebido ?? null;
   let dataRecebida: string | null = anterior?.data_recebida ?? null;
