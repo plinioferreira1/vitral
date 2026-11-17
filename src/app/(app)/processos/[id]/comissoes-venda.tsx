@@ -83,9 +83,9 @@ function EditarLancamento({ registro, processoId }: { registro: RegistroComissao
       <label className="block text-xs font-medium text-ink-muted">Situação
         <select name="status" defaultValue={registro.status} className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink">
           <option value="0% pago">A receber</option>
-          <option value="50% pago">50% pago (legado)</option>
-          <option value="parcialmente pago">Parcialmente pago (calculado)</option>
-          <option value="100% pago">Pago integralmente</option>
+          <option value="50% pago" disabled={registro.status !== "50% pago"}>50% pago (legado)</option>
+          <option value="parcialmente pago" disabled={registro.status !== "parcialmente pago"}>Parcialmente pago (calculado)</option>
+          <option value="100% pago" disabled={registro.status !== "100% pago"}>Pago integralmente (via recebimento)</option>
           <option value="cancelada">Cancelado</option>
         </select>
       </label>
