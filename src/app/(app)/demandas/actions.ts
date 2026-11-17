@@ -6,7 +6,7 @@ import { exigirUsuario } from "@/lib/usuario-atual";
 import { avisar } from "@/lib/aviso";
 
 const uuidValido = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
-export const STATUS_DEMANDA = ["pendente", "em_andamento", "aguardando", "bloqueada", "concluida"] as const;
+const STATUS_DEMANDA = ["pendente", "em_andamento", "aguardando", "bloqueada", "concluida"] as const;
 
 export async function criarDemanda(formData: FormData) {
   const sessao = await exigirUsuario(["diretor","gerente"]);
