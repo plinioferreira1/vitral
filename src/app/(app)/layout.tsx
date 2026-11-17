@@ -22,11 +22,12 @@ const PRAZO_NOTIFICACOES_MS = 4000;
 
 async function TopBarComDados({ hoje, nivelAcesso }: { hoje: string; nivelAcesso: string }) {
   const supabase = await createClient();
+  const { user } = await getUsuarioAtual();
   const limiteNotificacoes = format(addDays(parseISO(hoje), 7), "yyyy-MM-dd");
   // As notificações são acessórias: se o banco demorar, o cabeçalho aparece sem
   // elas em vez de segurar a tela. Sem esse prazo, depois de qualquer gravação a
   // página ficava "Salvando…" esperando este trecho ser recalculado.
-  const { valor: [etapasNotificacao, avisosFerias, notificacoesDispensadas, lembretesVendas], noPrazo } = await comPrazo(
+  const { valor: [etapasNotificacao, avisosFerias, notificacoesDispensadas, lembretesVendas, demandasNovas], noPrazo } = await comPrazo(
     Promise.all([
       supabase
         .from("etapas")
@@ -62,9 +63,16 @@ async function TopBarComDados({ hoje, nivelAcesso }: { hoje: string; nivelAcesso
         .is("lida_em", null)
         .order("criado_em", { ascending: false })
         .limit(20),
-    ]).then(([etapas, ferias, dispensadas, lembretes]) => [etapas.data, ferias.data, dispensadas.data, lembretes.data] as const),
+      user ? supabase.from("demandas_notificacoes")
+        .select("id,demanda_id,titulo,mensagem,criada_em")
+        .eq("destinatario_id",user.id)
+        .is("lida_em",null)
+        .order("criada_em",{ascending:false})
+        .limit(15)
+        : Promise.resolve({data:[] as {id:string;demanda_id:string;titulo:string;mensagem:string;criada_em:string}[]}),
+    ]).then(([etapas, ferias, dispensadas, lembretes, demandas]) => [etapas.data, ferias.data, dispensadas.data, lembretes.data, demandas.data] as const),
     PRAZO_NOTIFICACOES_MS,
-    [null, null, null, null] as const,
+    [null, null, null, null, null] as const,
   );
   if (!noPrazo) console.error(`cabecalho: notificações passaram de ${PRAZO_NOTIFICACOES_MS} ms e foram omitidas`);
 
@@ -131,6 +139,18 @@ async function TopBarComDados({ hoje, nivelAcesso }: { hoje: string; nivelAcesso
       prazo: l.tipo === "intermediaria" ? "Lembrete · intermediária" : "Lembrete · fim do contrato",
       tipo: l.tipo === "intermediaria" || l.marco <= 7 ? "hoje" : "proxima",
       href: `/processos/${l.processo_id}`,
+    });
+  }
+
+  for (const aviso of [...(demandasNovas ?? [])].reverse()) {
+    notificacoes.unshift({
+      id: aviso.id,
+      processoId: "",
+      etapa: aviso.titulo,
+      contexto: aviso.mensagem,
+      prazo: "Demanda da equipe",
+      tipo: "proxima",
+      href: `/demandas/${aviso.demanda_id}`,
     });
   }
 
