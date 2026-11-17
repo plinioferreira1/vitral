@@ -1,0 +1,101 @@
+"use server";
+
+import { revalidatePath } from "next/cache";
+import { createClient } from "@/lib/supabase/server";
+import { exigirUsuario } from "@/lib/usuario-atual";
+import { avisar } from "@/lib/aviso";
+
+const uuidValido = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+export const STATUS_DEMANDA = ["pendente", "em_andamento", "aguardando", "bloqueada", "concluida"] as const;
+
+export async function criarDemanda(formData: FormData) {
+  const sessao = await exigirUsuario(["diretor","gerente"]);
+  if (!sessao) return;
+  const titulo = String(formData.get("titulo") ?? "").trim().replace(/\s+/g, " ");
+  const descricao = String(formData.get("descricao") ?? "").trim();
+  const responsavelId = String(formData.get("responsavel_id") ?? "");
+  const prazo = String(formData.get("prazo") ?? "").trim();
+  const prioridade = String(formData.get("prioridade") ?? "normal");
+  const processoId = String(formData.get("processo_id") ?? "").trim();
+  if (titulo.length < 4 || titulo.length > 180 || descricao.length > 5000 ||
+    !uuidValido(responsavelId) || (processoId && !uuidValido(processoId)) ||
+    !["baixa","normal","alta","urgente"].includes(prioridade) ||
+    (prazo && !/^\d{4}-\d{2}-\d{2}$/.test(prazo))) {
+    await avisar("erro", "Confira título, responsável, prioridade e data da demanda.");
+    return;
+  }
+  const supabase = await createClient();
+  // Validar tenant e atividade do destinatário, mesmo que o cliente envie IDs adulterados.
+  const { data: colaborador } = await supabase.from("usuarios")
+    .select("id").eq("id", responsavelId).eq("tenant_id", sessao.tenantId).eq("ativo",true).maybeSingle();
+  if (!colaborador) { await avisar("erro", "Escolha um colaborador ativo da sua equipe."); return; }
+  if (processoId) {
+    const { data: processo } = await supabase.from("processos")
+      .select("id").eq("id",processoId).eq("tenant_id",sessao.tenantId).maybeSingle();
+    if (!processo) { await avisar("erro", "Processo selecionado não pertence à sua empresa."); return; }
+  }
+  const { data, error } = await supabase.from("demandas").insert({
+    tenant_id:sessao.tenantId, solicitante_id:sessao.userId,
+    responsavel_id:responsavelId, titulo, descricao:descricao||null,
+    prioridade, prazo:prazo||null, processo_id:processoId||null,
+  }).select("id").single();
+  if (error || !data) {
+    await avisar("erro", "Não foi possível cadastrar a demanda. " + (error?.message ?? ""));
+    return;
+  }
+  revalidatePath("/demandas");
+  revalidatePath("/demandas/" + data.id);
+  await avisar("sucesso","Demanda distribuída e notificação interna criada.");
+}
+
+export async function atualizarStatusDemanda(formData: FormData) {
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const id = String(formData.get("demanda_id") ?? "");
+  const status = String(formData.get("status") ?? "");
+  if (!uuidValido(id) || !STATUS_DEMANDA.includes(status as typeof STATUS_DEMANDA[number])) {
+    await avisar("erro","Situação inválida."); return;
+  }
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("demandas")
+    .update({status}).eq("id",id).eq("tenant_id",sessao.tenantId).select("id").maybeSingle();
+  if (error || !data) { await avisar("erro","Não foi possível atualizar. Confira suas permissões."); return; }
+  revalidatePath("/demandas");
+  revalidatePath("/demandas/" + id);
+  await avisar("sucesso","Andamento atualizado e registrado no histórico.");
+}
+
+export async function comentarDemanda(formData: FormData) {
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const id = String(formData.get("demanda_id") ?? "");
+  const comentario = String(formData.get("comentario") ?? "").trim();
+  if (!uuidValido(id) || comentario.length < 1 || comentario.length > 2000) {
+    await avisar("erro","Escreva uma atualização de até 2.000 caracteres."); return;
+  }
+  const supabase = await createClient();
+  const { data: demanda } = await supabase.from("demandas")
+    .select("id").eq("id",id).eq("tenant_id",sessao.tenantId).maybeSingle();
+  if (!demanda) { await avisar("erro","Demanda não encontrada ou sem permissão."); return; }
+  const { error } = await supabase.from("demandas_atualizacoes").insert({
+    tenant_id:sessao.tenantId, demanda_id:id, autor_id:sessao.userId,
+    tipo:"comentario", comentario,
+  });
+  if (error) { await avisar("erro","Não foi possível enviar sua atualização."); return; }
+  revalidatePath("/demandas");
+  revalidatePath("/demandas/" + id);
+  await avisar("sucesso","Comentário registrado. O gestor ou responsável será notificado.");
+}
+
+export async function marcarNotificacaoDemandaLida(formData: FormData) {
+  const sessao = await exigirUsuario();
+  if (!sessao) return;
+  const id = String(formData.get("notificacao_id") ?? "");
+  if (!uuidValido(id)) return;
+  const supabase = await createClient();
+  const { error } = await supabase.from("demandas_notificacoes")
+    .update({lida_em:new Date().toISOString()})
+    .eq("id",id).eq("tenant_id",sessao.tenantId).eq("destinatario_id",sessao.userId);
+  if (error) { await avisar("erro","Não foi possível marcar o aviso como lido."); return; }
+  revalidatePath("/demandas");
+}
