@@ -6,6 +6,7 @@ import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { NavegacaoContexto } from "@/components/navegacao-contexto";
 import { PlanilhaFontes, type LinhaVenda } from "./planilha";
 import { obterFontesLead } from "@/lib/vendas/fontes-leads-server";
+import { mesComercial, vendaAssinada, historicoAssinado, normalizarFonte } from "@/lib/vendas/fontes-vendas-regras";
 
 type Processo = {
  id: string; numero_processo: string | null; codigo_san: string | null;
@@ -15,10 +16,6 @@ type Processo = {
  imoveis: { endereco: string | null } | null;
 };
 type Historico = { id: string; imovel_nome: string; mes_venda: string; fonte_lead: string | null; situacao_comercial: string | null };
-function mes(v: Processo) {
- return v.mes_venda ?? v.data_venda?.slice(0,7) ?? v.data_assinatura?.slice(0,7) ??
-   v.data_conclusao?.slice(0,7) ?? v.data_criacao?.slice(0,7) ?? "";
-}
 export default async function FontesLeadsPage({ searchParams }: {
  searchParams: Promise<{ ano?: string }>;
 }) {
@@ -46,14 +43,14 @@ export default async function FontesLeadsPage({ searchParams }: {
  const listaHistorica = (historicos.data ?? []) as unknown as Historico[];
  const linhas: LinhaVenda[] = [
    ...listaProcessos
-    .filter(p => mes(p).startsWith(ano) && (!!p.situacao_comercial || !!p.data_assinatura || !!p.data_venda))
+    .filter(p => mesComercial(p).startsWith(ano) && vendaAssinada(p))
     .map(p => ({
        id: p.id, tipo: "processo" as const,
        imovel: p.imoveis?.endereco || p.numero_processo || "Imóvel não identificado",
-       mes: mes(p), san: p.codigo_san, fonte: p.fonte_lead,
+       mes: mesComercial(p), san: p.codigo_san, fonte: p.fonte_lead,
        situacao: (p.situacao_comercial === "concluida" || p.status === "concluido") ? "concluida" as const : "andamento" as const,
     })),
-   ...listaHistorica.filter(h => h.mes_venda.startsWith(ano))
+   ...listaHistorica.filter(h => h.mes_venda.startsWith(ano) && historicoAssinado(h))
     .map(h => ({
        id: h.id, tipo: "historico" as const, imovel: h.imovel_nome,
        mes: h.mes_venda, san: null, fonte: h.fonte_lead,
@@ -61,7 +58,7 @@ export default async function FontesLeadsPage({ searchParams }: {
     })),
  ].sort((a, b) => b.mes.localeCompare(a.mes) || a.imovel.localeCompare(b.imovel, "pt-BR"));
  const concluidas = linhas.filter(l => l.situacao === "concluida").length;
- const classificadas = linhas.filter(l => !!l.fonte && l.fonte !== "Indefinido").length;
+ const classificadas = linhas.filter(l => normalizarFonte(l.fonte) !== "Não informado").length;
  return <div className="w-full min-w-0 space-y-5">
   <CabecalhoPagina titulo="Fonte de Vendas" descricao="Toda venda assinada entra aqui, mesmo com financiamento, registro ou entrega de chaves pendentes." />
   <NavegacaoContexto nome="Vendas" links={[

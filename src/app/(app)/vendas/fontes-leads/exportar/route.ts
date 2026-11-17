@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
+import { mesComercial, vendaAssinada, historicoAssinado } from "@/lib/vendas/fontes-vendas-regras";
 
 function valorCsv(valor: unknown): string {
   let texto = String(valor ?? "").replace(/\r?\n/g, " ");
@@ -11,6 +12,7 @@ type Venda = {
   numero_processo: string | null;
   codigo_san: string | null;
   status: string | null;
+  situacao_comercial: string | null;
   fonte_lead: string | null;
   fonte_lead_observacoes: string | null;
   data_venda: string | null;
@@ -21,7 +23,6 @@ type Venda = {
   valor_total: number | null;
   imoveis: { endereco: string | null } | null;
 };
-const mesComercial = (v: Venda) => v.mes_venda ?? v.data_venda?.slice(0,7) ?? v.data_conclusao?.slice(0,7) ?? v.data_assinatura?.slice(0,7) ?? v.data_criacao?.slice(0,7) ?? "";
 export async function GET(request: NextRequest) {
   const { usuario } = await getUsuarioAtual();
   if (!usuario?.tenant_id || !["diretor", "gerente"].includes(usuario.nivel_acesso))
@@ -34,19 +35,19 @@ export async function GET(request: NextRequest) {
   const supabase = await createClient();
   const [processos, historicos] = await Promise.all([
     supabase.from("processos")
-      .select("numero_processo,codigo_san,status,fonte_lead,fonte_lead_observacoes,data_venda,mes_venda,data_conclusao,data_assinatura,data_criacao,valor_total,imoveis(endereco)")
+      .select("numero_processo,codigo_san,status,situacao_comercial,fonte_lead,fonte_lead_observacoes,data_venda,mes_venda,data_conclusao,data_assinatura,data_criacao,valor_total,imoveis(endereco)")
       .eq("tenant_id", usuario.tenant_id).eq("categoria", "venda"),
     supabase.from("vendas_fontes_historicas")
-      .select("imovel_nome,mes_venda,fonte_lead,fonte_lead_observacoes").eq("tenant_id", usuario.tenant_id),
+      .select("imovel_nome,mes_venda,fonte_lead,fonte_lead_observacoes,situacao_comercial").eq("tenant_id", usuario.tenant_id),
   ]);
   if (processos.error || historicos.error) return new NextResponse("Falha ao exportar vendas.", { status: 500 });
   const vendas = ((processos.data ?? []) as unknown as Venda[])
     .filter(v => mesComercial(v).startsWith(ano))
-    .filter(v => v.status === "concluido" || !!v.mes_venda || !!v.data_venda)
+    .filter(v => vendaAssinada(v))
     .filter(v => !canal || (v.fonte_lead || "Não informado") === canal)
     .filter(v => !busca || [v.imoveis?.endereco,v.numero_processo,v.codigo_san].join(" ").toLocaleLowerCase("pt-BR").includes(busca));
   const antigos = (historicos.data ?? [])
-    .filter(v => v.mes_venda.startsWith(ano))
+    .filter(v => v.mes_venda.startsWith(ano) && historicoAssinado(v))
     .filter(v => !canal || (v.fonte_lead || "Não informado") === canal)
     .filter(v => !busca || v.imovel_nome.toLocaleLowerCase("pt-BR").includes(busca));
   const cabecalho = ["Imóvel","Código SAN","Processo","Fonte do lead","Observações","Data exata da venda","Mês da venda","Situação","Valor da venda (R$)"];
