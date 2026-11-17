@@ -3,7 +3,7 @@
 import { exigirUsuario, GESTORES } from "@/lib/usuario-atual";
 
 import { createClient } from "@/lib/supabase/server";
-import { reconciliarAgendaProcesso, reconciliarAlertaContratoFinal } from "@/lib/google-agenda";
+import { GOOGLE_AGENDA_ATIVA, reconciliarAgendaProcesso, reconciliarAlertaContratoFinal } from "@/lib/google-agenda";
 
 /**
  * Sincroniza um único processo com o Google Agenda (prazos de
@@ -14,7 +14,7 @@ import { reconciliarAgendaProcesso, reconciliarAlertaContratoFinal } from "@/lib
  */
 export async function sincronizarUmProcesso(processoId: string): Promise<{ ok: boolean }> {
   // Tela de Configurações — só diretor/gerente sincroniza a agenda.
-  if (!(await exigirUsuario(GESTORES))) return { ok: false };
+  if (!GOOGLE_AGENDA_ATIVA || !(await exigirUsuario(GESTORES))) return { ok: false };
   try {
     const supabase = await createClient();
     await reconciliarAgendaProcesso(supabase, processoId);
