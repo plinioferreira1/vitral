@@ -564,6 +564,10 @@ export async function salvarComissao(formData: FormData) {
     : null;
   if (erroCorretor) { await avisar("erro", erroCorretor); return; }
 
+  if (Number(anterior?.valor_recebido ?? 0) > valorPrevisto) {
+    await avisar("erro", "O valor previsto não pode ficar abaixo do valor efetivamente recebido.");
+    return;
+  }
   const mudandoStatus = !!anterior && anterior.status !== status;
   const antesQuitada = anterior?.status === "100% pago";
   if (processo.categoria === "venda" && status === "100% pago" && !antesQuitada && !confirmarRetificacao) {
