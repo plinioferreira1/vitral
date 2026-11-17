@@ -20,6 +20,10 @@ import type { CategoriaProcesso } from "@/lib/types";
 // registramos o erro no log do servidor.
 // =========================================================
 
+// Desativada por decisão operacional: e-mail diário e calendário interno seguem ativos.
+// Desativação é padrão; reativação exige decisão explícita e variável no servidor.
+export const GOOGLE_AGENDA_ATIVA = process.env.GOOGLE_CALENDAR_SYNC_ENABLED === "true";
+
 const CALENDAR_IDS: Record<CategoriaProcesso, string | undefined> = {
   venda: process.env.GOOGLE_CALENDAR_ID_VENDA?.trim(),
   financiamento: process.env.GOOGLE_CALENDAR_ID_FINANCIAMENTO?.trim(),
@@ -255,6 +259,7 @@ export async function reconciliarAgendaProcesso(
   supabase: SupabaseClient,
   processoId: string
 ): Promise<void> {
+  if (!GOOGLE_AGENDA_ATIVA) return;
   try {
     const { data: processoRaw } = await supabase
       .from("processos")
@@ -338,6 +343,7 @@ export async function removerEventosDeEtapas(
   supabase: SupabaseClient,
   etapaIds: string[]
 ): Promise<void> {
+  if (!GOOGLE_AGENDA_ATIVA) return;
   if (etapaIds.length === 0) return;
   try {
     const { data: etapasRaw } = await supabase
@@ -411,6 +417,7 @@ export async function reconciliarAlertaContratoFinal(
   supabase: SupabaseClient,
   processoId: string
 ): Promise<void> {
+  if (!GOOGLE_AGENDA_ATIVA) return;
   try {
     const { data: processoRaw } = await supabase
       .from("processos")
@@ -511,6 +518,7 @@ export async function removerAlertasContratoDeProcessos(
   supabase: SupabaseClient,
   processoIds: string[]
 ): Promise<void> {
+  if (!GOOGLE_AGENDA_ATIVA) return;
   if (processoIds.length === 0) return;
   try {
     const { data: processosRaw } = await supabase
