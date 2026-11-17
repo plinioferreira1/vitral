@@ -58,9 +58,22 @@ async function buscarMensagens():Promise<EmailZoho[]> {
     method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},
     body:cred,cache:"no-store",signal:AbortSignal.timeout(12000)
   });
-  if(!tokenRes.ok)throw new Error("Falha na autorização do Zoho Mail ("+tokenRes.status+").");
-  const tokenObj=await tokenRes.json() as {access_token?:string;error?:string};
-  if(!tokenObj.access_token)throw new Error("Zoho Mail precisa de uma nova autorização OAuth.");
+  // O endpoint OAuth pode responder HTTP 200 mesmo quando o refresh token foi revogado.
+  // Nunca registrar tokens, segredos ou corpo bruto da resposta em logs.
+  const tokenObj=await tokenRes.json().catch(()=>null) as {access_token?:string;error?:string} | null;
+  if(!tokenRes.ok || !tokenObj?.access_token) {
+    switch (tokenObj?.error) {
+      case "invalid_client":
+      case "invalid_client_secret":
+        throw new Error("Zoho OAuth: identificador/segredo do aplicativo inválidos ou datacenter incorreto. Revise as credenciais.");
+      case "invalid_code":
+        throw new Error("Zoho OAuth: autorização de leitura expirada, inválida ou revogada. Reautorize locacao@sacraimoveis.com.br e atualize o refresh token.");
+      case "access_denied":
+        throw new Error("Zoho OAuth: acesso à leitura de e-mails não autorizado para a conta de locação.");
+      default:
+        throw new Error("Zoho OAuth: falha ao renovar o acesso (HTTP "+tokenRes.status+"). Verifique a autorização da conta.");
+    }
+  }
   const base=dc.mail+"/api/accounts/"+encodeURIComponent(process.env.ZOHO_LOCACAO_ACCOUNT_ID!);
   let pastaId=process.env.ZOHO_LOCACAO_FOLDER_ID;
   if(!pastaId){
