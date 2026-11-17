@@ -37,7 +37,7 @@ BEGIN
   IF v_comissao.status='50% pago' AND v_comissao.valor_recebido IS NULL THEN
     RAISE EXCEPTION 'Pagamento legado incompleto. Revise o valor já recebido antes de registrar outro.';
   END IF;
-  IF p_valor IS NULL OR p_valor <= 0 OR p_valor > 999999999
+  IF p_valor IS NULL OR p_valor < 0.01 OR p_valor <> round(p_valor,2) OR p_valor > 999999999
      OR p_data IS NULL OR p_data > CURRENT_DATE
      OR char_length(coalesce(p_observacao,'')) > 500 THEN
     RAISE EXCEPTION 'Confira o valor, a data real e a observação do pagamento.';
