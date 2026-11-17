@@ -718,6 +718,9 @@ export async function verificarRespostasZoho() {
     await avisar("sucesso", `Zoho consultado: ${resultado.novas} nova(s) resposta(s) vinculada(s) à locação.`);
   } catch (error) {
     console.error("Sincronização Zoho:",error instanceof Error ? error.message : "Erro desconhecido");
-    await avisar("erro", "Não foi possível consultar o Zoho. Confira a autorização da caixa de entrada.");
+    const mensagem = error instanceof Error ? error.message : "";
+    const detalheSeguro = mensagem.startsWith("Zoho OAuth:") ? mensagem :
+      "Não foi possível consultar o Zoho. Confira a autorização da caixa de entrada.";
+    await avisar("erro", detalheSeguro);
   }
 }
