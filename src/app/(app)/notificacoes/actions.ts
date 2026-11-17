@@ -13,6 +13,13 @@ export async function limparTodasNotificacoes(): Promise<void> {
   const { user } = await getUsuarioAtual();
   if (!user) return;
   await marcarNotificacoesFeriasLidas();
+  // Ao limpar o sino, marcar também os avisos internos da Central de Demandas.
+  // RLS garante acesso apenas aos próprios avisos.
+  const { error: erroDemandas } = await supabase.from("demandas_notificacoes")
+    .update({ lida_em: new Date().toISOString() })
+    .eq("destinatario_id", user.id).is("lida_em", null);
+  if (erroDemandas) throw new Error("Não foi possível marcar as demandas como lidas.");
+
   // lembretes de vendas: só leitura pelo usuário; marca como lidos com a chave do servidor, apenas os dele
   await createAdminClient().from("vendas_lembretes").update({ lida_em: new Date().toISOString() }).eq("usuario_id", user.id).is("lida_em", null);
 
