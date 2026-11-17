@@ -48,6 +48,68 @@ export async function criarDemanda(formData: FormData) {
   await avisar("sucesso","Demanda distribuída e notificação interna criada.");
 }
 
+
+/** Distribuição em lote sempre revisada pelo gestor. Reenvio com o mesmo ID não duplica tarefas. */
+export async function criarDemandasEmLote(formData: FormData) {
+  const sessao = await exigirUsuario(["diretor","gerente"]);
+  if (!sessao) return;
+  const loteId = String(formData.get("lote_id") ?? "");
+  const raw = String(formData.get("tarefas_json") ?? "");
+  if (!uuidValido(loteId) || raw.length > 60000) {
+    await avisar("erro","Lote inválido. Revise as tarefas e tente novamente."); return;
+  }
+  let propostas: unknown;
+  try { propostas=JSON.parse(raw); } catch { await avisar("erro","Não foi possível interpretar as tarefas."); return; }
+  if (!Array.isArray(propostas) || propostas.length<1 || propostas.length>10) {
+    await avisar("erro","Revise de 1 a 10 demandas antes de distribuir."); return;
+  }
+  type Proposta = {titulo:string;descricao:string|null;responsavel_id:string;prazo:string|null;prioridade:string};
+  const tarefas:Proposta[]=[];
+  for (const proposta of propostas) {
+    if (!proposta || typeof proposta!=="object" || Array.isArray(proposta)) {
+      await avisar("erro","Dados da tarefa inválidos.");return;
+    }
+    const v=proposta as Record<string,unknown>;
+    const titulo=typeof v.titulo==="string"?v.titulo.trim():"";
+    const descricao=typeof v.descricao==="string"?v.descricao.trim():"";
+    const responsavel=typeof v.responsavel_id==="string"?v.responsavel_id:"";
+    const prazo=typeof v.prazo==="string"?v.prazo:"";
+    const prioridade=typeof v.prioridade==="string"?v.prioridade:"normal";
+    if (titulo.length<4||titulo.length>180||descricao.length>5000||!uuidValido(responsavel)||
+      (prazo&&!/^\\d{4}-\\d{2}-\\d{2}$/.test(prazo))||
+      !["baixa","normal","alta","urgente"].includes(prioridade)) {
+      await avisar("erro","Corrija os títulos, responsáveis e prazos das tarefas antes de distribuir.");return;
+    }
+    tarefas.push({titulo,descricao:descricao||null,responsavel_id:responsavel,prazo:prazo||null,prioridade});
+  }
+  const supabase=await createClient();
+  const ids=[...new Set(tarefas.map(t=>t.responsavel_id))];
+  const {data:ativos,error:erroAtivos}=await supabase.from("usuarios").select("id")
+    .eq("tenant_id",sessao.tenantId).eq("ativo",true).in("id",ids);
+  if (erroAtivos || (ativos??[]).length!==ids.length) {
+    await avisar("erro","Um ou mais destinatários não fazem parte da equipe ativa.");return;
+  }
+  const payload=tarefas.map((t,i)=>({
+    tenant_id:sessao.tenantId,solicitante_id:sessao.userId,...t,
+    lote_id:loteId,lote_item:i+1,
+  }));
+  const {error}=await supabase.from("demandas").insert(payload);
+  if (error) {
+    if (error.code==="23505") {
+      const {count}=await supabase.from("demandas").select("id",{count:"exact",head:true})
+        .eq("tenant_id",sessao.tenantId).eq("lote_id",loteId);
+      if (count===tarefas.length) {
+        await avisar("sucesso","Esse lote já tinha sido distribuído; nenhuma tarefa foi duplicada.");
+        return;
+      }
+    }
+    await avisar("erro","Não foi possível distribuir o lote; nenhuma tarefa foi confirmada. "+error.message);
+    return;
+  }
+  revalidatePath("/demandas");
+  await avisar("sucesso",`${tarefas.length} ${tarefas.length===1?"demanda distribuída":"demandas distribuídas"} e avisos criados.`);
+}
+
 export async function atualizarStatusDemanda(formData: FormData) {
   const sessao = await exigirUsuario();
   if (!sessao) return;
