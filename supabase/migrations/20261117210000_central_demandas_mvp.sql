@@ -163,3 +163,10 @@ GRANT SELECT, INSERT, UPDATE ON public.demandas TO authenticated;
 GRANT SELECT, INSERT ON public.demandas_atualizacoes TO authenticated;
 GRANT SELECT, UPDATE ON public.demandas_notificacoes TO authenticated;
 REVOKE ALL ON public.demandas,public.demandas_atualizacoes,public.demandas_notificacoes FROM anon;
+
+-- Funções de gatilho não precisam ser acessadas pela API. Conservar somente uso por triggers.
+REVOKE ALL ON FUNCTION public.demandas_guarda_integridade() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.demandas_registrar_criacao() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.demandas_registrar_status() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.demandas_registrar_comentario() FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.demandas_notificacao_guardar() FROM PUBLIC, anon, authenticated;
