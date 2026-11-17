@@ -7,9 +7,8 @@ export const GRUPOS_CONFIGURACOES = [
     { href: "/tarefas-recorrentes", label: "Rotinas de locação", descricao: "Tarefas e periodicidades da operação de locação." },
     { href: "/checklists-financiamento", label: "Modelos de checklist de financiamento", descricao: "Itens que precisam ser conferidos em cada financiamento." },
   ] },
-  { titulo: "Comunicação e integrações", descricao: "Destinatários dos resumos e conexão com a agenda.", links: [
+  { titulo: "Comunicação e integrações", descricao: "Destinatários dos avisos e resumos diários por e-mail.", links: [
     { href: "/financeiro/configuracoes-email", label: "Resumos por e-mail", descricao: "Destinatários dos resumos financeiros e dos processos." },
-    { href: "/google-agenda", label: "Integração com Google Agenda", descricao: "Conexão e sincronização dos prazos dos processos." },
   ] },
   { titulo: "Financeiro", descricao: "Organização dos lançamentos e centros de resultado.", links: [
     { href: "/financeiro/categorias", label: "Categorias financeiras", descricao: "Categorias de receitas e despesas e centros de resultado." },
