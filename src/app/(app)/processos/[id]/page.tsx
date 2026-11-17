@@ -1,4 +1,5 @@
-import { FONTES_LEADS } from "@/lib/vendas/fontes-leads";
+import { agruparFontes } from "@/lib/vendas/fontes-leads";
+import { obterFontesLead } from "@/lib/vendas/fontes-leads-server";
 import { SeletorCorretor } from "@/components/seletor-corretor";
 import { NavegacaoSecoes } from "@/components/navegacao-secoes";
 import { HISTORICO_VGV } from "../../painel-sacra/dados";
@@ -71,7 +72,7 @@ export default async function ProcessoDetalhePage({
     supabase
       .from("processos")
       .select(
-        `id, numero_processo, codigo_san, numero_proposta_contrato, status, valor_total, valor_financiado, origem, fonte_lead, fonte_lead_observacoes, data_venda, mes_venda, categoria, data_criacao,
+        `id, tenant_id, numero_processo, codigo_san, numero_proposta_contrato, status, valor_total, valor_financiado, origem, fonte_lead, fonte_lead_observacoes, data_venda, mes_venda, categoria, data_criacao,
          data_assinatura, data_final_contrato, imovel_id, corretor_id, captador_id, participacao_vgv_revisada,
          comprador:clientes!processos_comprador_id_fkey ( nome, telefone ),
          vendedor:clientes!processos_vendedor_id_fkey ( nome, telefone ),
@@ -147,7 +148,9 @@ export default async function ProcessoDetalhePage({
     codigo_san: string | null;
     numero_proposta_contrato: string | null;
   };
-  const p = processo as unknown as P;
+  const p = processo as unknown as P & { tenant_id: string };
+  const fontesPersonalizadas = p.categoria === "venda" ? await obterFontesLead(p.tenant_id) : [];
+  const gruposFontes = agruparFontes(fontesPersonalizadas);
   const participacaoHistorica = !p.participacao_vgv_revisada ? HISTORICO_VGV.find(h => h.processoId === p.id)?.participantesIds : undefined;
   const nomeHistorico = (indice: number) => corretoresLista?.find(c => c.id === participacaoHistorica?.[indice])?.nome;
   const captadorExibido = p.captador?.nome ?? nomeHistorico(0);
@@ -265,7 +268,7 @@ export default async function ProcessoDetalhePage({
                   <h3 className="text-sm font-semibold text-ink">Origem do lead da venda</h3>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <label className="block text-xs font-medium text-ink-muted">Fonte do lead
-                      <select name="fonte_lead" defaultValue={p.fonte_lead ?? ""} className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink"><option value="">Não informado</option>{p.fonte_lead && !FONTES_LEADS.includes(p.fonte_lead as typeof FONTES_LEADS[number]) && <option value={p.fonte_lead}>{p.fonte_lead} (anterior)</option>}{FONTES_LEADS.map(c => <option key={c} value={c}>{c}</option>)}</select>
+                      <select name="fonte_lead" defaultValue={p.fonte_lead ?? ""} className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink"><option value="">Não informado</option>{p.fonte_lead && !fontesPersonalizadas.some(f => f.nome === p.fonte_lead) && <option value={p.fonte_lead}>{p.fonte_lead} (histórico)</option>}{gruposFontes.map(grupo => <optgroup key={grupo.id} label={grupo.titulo}>{grupo.fontes.map(f => <option key={f.nome} value={f.nome}>{f.nome}</option>)}</optgroup>)}</select>
                     </label>
                     <label className="block text-xs font-medium text-ink-muted">Mês da venda
                       <input name="mes_venda" type="month" defaultValue={p.mes_venda ?? p.data_venda?.slice(0,7) ?? ""} className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-ink" />
