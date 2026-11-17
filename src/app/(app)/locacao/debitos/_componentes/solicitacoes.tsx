@@ -120,7 +120,7 @@ export function Solicitacoes({
           </p>
         </div>
         <div className="w-full text-xs text-ink-muted">
-          {zohoConfigurado ? "Zoho Mail autorizado: respostas sincronizadas periodicamente." : "Leitura das respostas Zoho aguardando autorização da caixa locacao@sacraimoveis.com.br."}
+          {zohoConfigurado ? "Credenciais de leitura Zoho cadastradas. A conexão pode exigir renovação de autorização; use “Verificar respostas Zoho” para confirmar." : "Leitura das respostas Zoho ainda não configurada para locacao@sacraimoveis.com.br."}
         </div>
         {perms.operar && (
           <div className="flex flex-wrap gap-2">
