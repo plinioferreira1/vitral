@@ -129,6 +129,7 @@ export function ComissoesVenda({ processoId, registros, corretores, envolvidos }
   const [quantidade, setQuantidade] = useState(1);
   const [primeiraData, setPrimeiraData] = useState("");
   const [observacoes, setObservacoes] = useState("");
+  const [valoresAlterados, setValoresAlterados] = useState<Record<string,number>>({});
   const opcoes = useMemo(() => {
     const ids = new Set<string>();
     const nomes = new Set<string>();
@@ -163,6 +164,11 @@ export function ComissoesVenda({ processoId, registros, corretores, envolvidos }
 
   const centavos = Math.round(valorTotal * 100);
   const valores = Array.from({ length: quantidade }, (_, i) => (Math.floor(centavos / quantidade) + (i < centavos % quantidade ? 1 : 0)) / 100);
+  const valorParcela = (i: number) => valoresAlterados[`${quantidade}-${centavos}-${i}`] ?? valores[i];
+  const somaCentavos = valores.reduce((total, _, i) => total + Math.round(valorParcela(i) * 100), 0);
+  const diferencaCentavos = centavos - somaCentavos;
+  const cronogramaValido = centavos > 0 && diferencaCentavos === 0;
+
   const classInput = "mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink outline-none focus:border-brand";
 
   return <div className="space-y-5">
@@ -248,13 +254,19 @@ export function ComissoesVenda({ processoId, registros, corretores, envolvidos }
             {valores.map((v,i)=><div key={i} className="grid items-end gap-2 rounded-lg bg-background/70 p-3 sm:grid-cols-[100px_1fr_1fr]">
               <span className="pb-2 text-xs font-semibold text-ink-muted">{quantidade===1?"Pagamento":`Parcela ${i+1}`}</span>
               <label className="block text-xs font-medium text-ink-muted">Valor
-                <CampoMoeda key={`${quantidade}-${centavos}-${i}`} name="parcela_valor" defaultValue={v}/>
+                <CampoMoeda key={`${quantidade}-${centavos}-${i}`} name="parcela_valor" defaultValue={v} onValorChange={atual => setValoresAlterados(prev => ({ ...prev, [`${quantidade}-${centavos}-${i}`]: atual }))}/>
               </label>
               <label className="block text-xs font-medium text-ink-muted">Previsão
                 <input key={`d-${primeiraData}-${i}`} name="parcela_data" type="date" defaultValue={adicionarMeses(primeiraData,i)}
                   required={quantidade>1} className={classInput}/>
               </label>
             </div>)}
+          </div>
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-sm" aria-live="polite">
+            <span className="text-ink-muted">Soma das parcelas: <strong className="text-ink">{moeda(somaCentavos / 100)}</strong></span>
+            <span className={cronogramaValido ? "font-medium text-emerald-700" : "font-semibold text-rose-700"}>
+              {cronogramaValido ? "Valores conferidos" : `Diferença: ${moeda(Math.abs(diferencaCentavos) / 100)} ${diferencaCentavos > 0 ? "a distribuir" : "acima do total"}`}
+            </span>
           </div>
         </div>}
         <label className="block text-xs font-medium text-ink-muted">Observação geral (opcional)
@@ -263,7 +275,7 @@ export function ComissoesVenda({ processoId, registros, corretores, envolvidos }
         </label>
         <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
           <p className="text-xs text-ink-muted">A distribuição não cria lançamentos financeiros adicionais.</p>
-          <BotaoEnviar className="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90">Salvar rateio e parcelas</BotaoEnviar>
+          <BotaoEnviar disabled={!cronogramaValido || !destinatario} className="rounded-lg bg-brand px-5 py-2.5 text-sm font-semibold text-white hover:opacity-90">Salvar rateio e parcelas</BotaoEnviar>
         </div>
       </form>
     </section>}
