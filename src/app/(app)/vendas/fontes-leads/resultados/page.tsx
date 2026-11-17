@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ExportarGrafico } from "./exportar-grafico";
+import { mesComercial, normalizarFonte, vendaAssinada, historicoAssinado } from "@/lib/vendas/fontes-vendas-regras";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
@@ -17,14 +18,7 @@ type ProcessoFonte = {
   data_conclusao: string | null;
   data_criacao: string | null;
 };
-type HistoricoFonte = { mes_venda: string; fonte_lead: string | null };
-const fonteNormalizada = (valor: string | null) =>
-  !valor?.trim() || valor.trim().toLocaleLowerCase("pt-BR") === "indefinido"
-    ? "Não informado"
-    : valor.trim();
-const mesProcesso = (v: ProcessoFonte) =>
-  v.mes_venda ?? v.data_venda?.slice(0, 7) ?? v.data_assinatura?.slice(0, 7) ??
-  v.data_conclusao?.slice(0, 7) ?? v.data_criacao?.slice(0, 7) ?? "";
+type HistoricoFonte = { mes_venda: string; fonte_lead: string | null; situacao_comercial: string | null };
 const percentual = (n: number, total: number) =>
   total ? (100 * n / total).toLocaleString("pt-BR", { maximumFractionDigits: 1 }) + "%" : "0%";
 
@@ -45,7 +39,7 @@ export default async function ResultadosPorFontePage({ searchParams }: {
       .select("status,situacao_comercial,fonte_lead,mes_venda,data_venda,data_assinatura,data_conclusao,data_criacao")
       .eq("tenant_id", usuario.tenant_id).eq("categoria", "venda"),
     supabase.from("vendas_fontes_historicas")
-      .select("mes_venda,fonte_lead")
+      .select("mes_venda,fonte_lead,situacao_comercial")
       .eq("tenant_id", usuario.tenant_id),
   ]);
   if (rProcessos.error || rHistoricos.error) return (
@@ -60,9 +54,9 @@ export default async function ResultadosPorFontePage({ searchParams }: {
   const historicos = (rHistoricos.data ?? []) as unknown as HistoricoFonte[];
   const fontes = [
     ...processos
-      .filter(p => (!!p.situacao_comercial || !!p.data_assinatura || !!p.data_venda) && mesProcesso(p).startsWith(inicio))
-      .map(p => fonteNormalizada(p.fonte_lead)),
-    ...historicos.filter(h => h.mes_venda.startsWith(inicio)).map(h => fonteNormalizada(h.fonte_lead)),
+      .filter(p => vendaAssinada(p) && mesComercial(p).startsWith(inicio))
+      .map(p => normalizarFonte(p.fonte_lead)),
+    ...historicos.filter(h => h.mes_venda.startsWith(inicio) && historicoAssinado(h)).map(h => normalizarFonte(h.fonte_lead)),
   ];
   const total = fontes.length;
   const semFonte = fontes.filter(f => f === "Não informado").length;
