@@ -566,6 +566,10 @@ export async function salvarComissao(formData: FormData) {
 
   const mudandoStatus = !!anterior && anterior.status !== status;
   const antesQuitada = anterior?.status === "100% pago";
+  if (processo.categoria === "venda" && status === "100% pago" && !antesQuitada && !confirmarRetificacao) {
+    await avisar("erro", "Para quitar, registre o recebimento real no campo abaixo da parcela.");
+    return;
+  }
   if (anterior?.status === "parcialmente pago" && mudandoStatus && !confirmarRetificacao) {
     await avisar("erro", "O pagamento parcial só pode ser concluído registrando o saldo restante. Alterações manuais exigem retificação expressa.");
     return;
