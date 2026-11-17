@@ -14,6 +14,123 @@ export type Database = {
   }
   public: {
     Tables: {
+      demandas: {
+        Row: {
+          id: string
+          tenant_id: string
+          titulo: string
+          descricao: string | null
+          solicitante_id: string
+          responsavel_id: string
+          processo_id: string | null
+          prazo: string | null
+          prioridade: string
+          status: string
+          criada_em: string
+          atualizada_em: string
+          concluida_em: string | null
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          titulo: string
+          descricao?: string | null
+          solicitante_id: string
+          responsavel_id: string
+          processo_id?: string | null
+          prazo?: string | null
+          prioridade?: string
+          status?: string
+          criada_em?: string
+          atualizada_em?: string
+          concluida_em?: string | null
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          titulo?: string
+          descricao?: string | null
+          solicitante_id?: string
+          responsavel_id?: string
+          processo_id?: string | null
+          prazo?: string | null
+          prioridade?: string
+          status?: string
+          criada_em?: string
+          atualizada_em?: string
+          concluida_em?: string | null
+        }
+        Relationships: []
+      }
+      demandas_atualizacoes: {
+        Row: {
+          id: string
+          tenant_id: string
+          demanda_id: string
+          autor_id: string | null
+          tipo: string
+          comentario: string | null
+          status_anterior: string | null
+          status_novo: string | null
+          criada_em: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          demanda_id: string
+          autor_id?: string | null
+          tipo: string
+          comentario?: string | null
+          status_anterior?: string | null
+          status_novo?: string | null
+          criada_em?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          demanda_id?: string
+          autor_id?: string | null
+          tipo?: string
+          comentario?: string | null
+          status_anterior?: string | null
+          status_novo?: string | null
+          criada_em?: string
+        }
+        Relationships: []
+      }
+      demandas_notificacoes: {
+        Row: {
+          id: string
+          tenant_id: string
+          demanda_id: string
+          destinatario_id: string
+          titulo: string
+          mensagem: string
+          lida_em: string | null
+          criada_em: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          demanda_id: string
+          destinatario_id: string
+          titulo: string
+          mensagem: string
+          lida_em?: string | null
+          criada_em?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          demanda_id?: string
+          destinatario_id?: string
+          titulo?: string
+          mensagem?: string
+          lida_em?: string | null
+          criada_em?: string
+        }
+        Relationships: []
+      }
       vendas_fontes_personalizadas: {
         Row: {
           id: string
