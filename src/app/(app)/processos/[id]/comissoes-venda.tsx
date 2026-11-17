@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { CampoMoeda } from "@/components/campo-moeda";
 import { BotaoEnviar } from "@/components/botao-enviar";
-import { criarPlanoComissao, salvarComissao } from "./actions";
+import { criarPlanoComissao, salvarComissao, registrarPagamentoComissao } from "./actions";
 import { ChevronDown, Plus, Users, CalendarDays, Wallet, CircleCheck, AlertCircle } from "lucide-react";
 
 export type RegistroComissao = {
@@ -48,7 +48,7 @@ function nomeRegistro(c: RegistroComissao) {
 const statusClass = (s: string) => s === "100% pago"
   ? "bg-emerald-50 text-emerald-800 border-emerald-200"
   : s === "cancelada" ? "bg-rose-50 text-rose-800 border-rose-200"
-  : s === "50% pago" ? "bg-amber-50 text-amber-800 border-amber-200"
+  : (s === "50% pago" || s === "parcialmente pago") ? "bg-amber-50 text-amber-800 border-amber-200"
   : "bg-background text-ink-muted border-border";
 
 function EditarLancamento({ registro, processoId }: { registro: RegistroComissao; processoId: string }) {
@@ -83,8 +83,9 @@ function EditarLancamento({ registro, processoId }: { registro: RegistroComissao
       <label className="block text-xs font-medium text-ink-muted">Situação
         <select name="status" defaultValue={registro.status} className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink">
           <option value="0% pago">A receber</option>
-          <option value="50% pago">50% pago (legado)</option>
-          <option value="100% pago">Pago integralmente</option>
+          <option value="50% pago" disabled={registro.status !== "50% pago"}>50% pago (legado)</option>
+          <option value="parcialmente pago" disabled={registro.status !== "parcialmente pago"}>Parcialmente pago (calculado)</option>
+          <option value="100% pago" disabled={registro.status !== "100% pago"}>Pago integralmente (via recebimento)</option>
           <option value="cancelada">Cancelado</option>
         </select>
       </label>
@@ -113,6 +114,37 @@ function EditarLancamento({ registro, processoId }: { registro: RegistroComissao
         <BotaoEnviar className="rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white hover:opacity-90">Salvar alterações</BotaoEnviar>
       </div>
     </form>
+    {registro.status !== "cancelada" && <div className="space-y-2 border-t border-border bg-background/40 p-4">
+      <p className="text-xs font-semibold text-ink">Conciliação deste lançamento</p>
+      <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 text-xs text-ink-muted">
+        <span>Valor recebido: <strong className="text-ink">{registro.valor_recebido === null ? "Não informado" : moeda(Number(registro.valor_recebido))}</strong></span>
+        <span>Saldo previsto: <strong className="text-ink">{moeda(Math.max(0, Number(registro.valor_previsto ?? 0) - Number(registro.valor_recebido ?? 0)))}</strong></span>
+        <span>Último recebimento: <strong className="text-ink">{registro.data_recebida ? dataBR(registro.data_recebida) : "Não informado"}</strong></span>
+      </div>
+      {registro.status !== "100% pago" && registro.status !== "50% pago" &&
+        <form action={registrarPagamentoComissao} className="grid gap-3 rounded-lg border border-border bg-surface p-3 sm:grid-cols-2">
+          <input type="hidden" name="processo_id" value={processoId}/>
+          <input type="hidden" name="comissao_id" value={registro.id}/>
+          <label className="text-xs font-medium text-ink-muted">Novo valor recebido (R$)
+            <CampoMoeda name="valor_recebimento" required/>
+          </label>
+          <label className="text-xs font-medium text-ink-muted">Data real do recebimento
+            <input type="date" name="data_recebimento" required
+              className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink"/>
+          </label>
+          <label className="text-xs font-medium text-ink-muted sm:col-span-2">Observação (opcional)
+            <input name="observacao_recebimento" maxLength={500}
+              placeholder="Ex.: transferência da primeira parcela" className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink"/>
+          </label>
+          <div className="sm:col-span-2">
+            <BotaoEnviar className="rounded-lg border border-brand bg-surface px-4 py-2 text-sm font-semibold text-brand hover:bg-brand-soft">
+              Registrar recebimento
+            </BotaoEnviar>
+          </div>
+        </form>}
+      {registro.status === "50% pago" && registro.valor_recebido === null &&
+        <p className="text-xs text-amber-800">Registro antigo com pagamento parcial sem valor efetivo. Concilie o histórico antes de adicionar outro recebimento.</p>}
+    </div>}
   </details>;
 }
 
