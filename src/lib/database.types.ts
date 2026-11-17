@@ -6599,6 +6599,7 @@ export type Database = {
           fonte_lead: string | null
           fonte_lead_observacoes: string | null
           criado_em: string
+          situacao_comercial: string | null
         }
         Insert: {
           id?: string
@@ -6608,6 +6609,7 @@ export type Database = {
           fonte_lead?: string | null
           fonte_lead_observacoes?: string | null
           criado_em?: string
+          situacao_comercial?: string | null
         }
         Update: {
           id?: string
