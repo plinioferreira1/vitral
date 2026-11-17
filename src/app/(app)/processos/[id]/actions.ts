@@ -538,7 +538,7 @@ export async function salvarComissao(formData: FormData) {
   const valorRecebidoDigitado = String(formData.get("valor_recebido") ?? "").trim();
   const confirmarRetificacao = formData.get("confirmar_retificacao") === "sim";
   const observacoes = String(formData.get("observacoes") ?? "").trim() || null;
-  const situacoes = ["0% pago", "50% pago", "100% pago", "cancelada"];
+  const situacoes = ["0% pago", "50% pago", "parcialmente pago", "100% pago", "cancelada"];
 
   if (!destinatario || !situacoes.includes(status) ||
       !Number.isFinite(valorPrevisto) || valorPrevisto <= 0 || valorPrevisto > 999999999 ||
@@ -564,8 +564,20 @@ export async function salvarComissao(formData: FormData) {
     : null;
   if (erroCorretor) { await avisar("erro", erroCorretor); return; }
 
+  if (Number(anterior?.valor_recebido ?? 0) > valorPrevisto) {
+    await avisar("erro", "O valor previsto não pode ficar abaixo do valor efetivamente recebido.");
+    return;
+  }
   const mudandoStatus = !!anterior && anterior.status !== status;
   const antesQuitada = anterior?.status === "100% pago";
+  if (processo.categoria === "venda" && status === "100% pago" && !antesQuitada && !confirmarRetificacao) {
+    await avisar("erro", "Para quitar, registre o recebimento real no campo abaixo da parcela.");
+    return;
+  }
+  if (anterior?.status === "parcialmente pago" && mudandoStatus && !confirmarRetificacao) {
+    await avisar("erro", "O pagamento parcial só pode ser concluído registrando o saldo restante. Alterações manuais exigem retificação expressa.");
+    return;
+  }
   // Não permitir que o valor previsto de uma parcela paga seja alterado por acidente.
   if (anterior && (anterior.valor_recebido ?? 0) > 0 &&
       Math.round(Number(anterior.valor_previsto ?? 0) * 100) !== Math.round(valorPrevisto * 100) &&
@@ -660,6 +672,50 @@ export async function salvarComissao(formData: FormData) {
   await avisar("sucesso", "Comissão atualizada sem alterar recebimentos anteriores indevidamente.");
 }
 
+
+/** Recebimento real e auditável, com validação atômica no PostgreSQL. */
+export async function registrarPagamentoComissao(formData: FormData) {
+  const sessao = await exigirUsuario(["diretor", "gerente"]);
+  if (!sessao?.usuario?.tenant_id) return;
+  const processoId = String(formData.get("processo_id") ?? "");
+  const comissaoId = String(formData.get("comissao_id") ?? "");
+  const valorTexto = String(formData.get("valor_recebimento") ?? "").trim();
+  const valor = Number(valorTexto);
+  const data = String(formData.get("data_recebimento") ?? "").trim();
+  const observacao = String(formData.get("observacao_recebimento") ?? "").trim();
+  if (!/^[a-f0-9-]{36}$/i.test(processoId) || !/^[a-f0-9-]{36}$/i.test(comissaoId)
+      || !valorTexto || !Number.isFinite(valor) || valor <= 0 || valor > 999999999
+      || !/^\\d{4}-\\d{2}-\\d{2}$/.test(data) || observacao.length > 500) {
+    await avisar("erro", "Confira o valor e a data efetivamente recebidos."); return;
+  }
+  const supabase = await createClient();
+  const { data: processo } = await supabase.from("processos")
+    .select("id").eq("id", processoId).eq("tenant_id", sessao.usuario.tenant_id)
+    .eq("categoria", "venda").maybeSingle();
+  if (!processo) { await avisar("erro", "Contrato de venda não encontrado."); return; }
+  const { data: comissao } = await supabase.from("comissoes")
+    .select("id").eq("id", comissaoId).eq("processo_id", processoId).maybeSingle();
+  if (!comissao) { await avisar("erro", "Parcela não encontrada nesta venda."); return; }
+
+  const { error } = await supabase.rpc("registrar_recebimento_comissao", {
+    p_comissao_id: comissaoId, p_valor: valor, p_data: data, p_observacao: observacao || null,
+  });
+  if (error) {
+    // Não expor detalhes internos do SQL além das validações conhecidas.
+    const mensagem = error.message;
+    const conhecida = [
+      "Comissão quitada ou cancelada", "Pagamento legado incompleto",
+      "O pagamento excede", "Confira o valor", "Você não tem permissão",
+    ].some(t => mensagem.includes(t));
+    await avisar("erro", conhecida ? mensagem : "Não foi possível registrar o recebimento. Confira os dados e tente novamente.");
+    return;
+  }
+  revalidatePath(`/processos/${processoId}`);
+  revalidatePath("/painel-sacra");
+  revalidatePath("/minhas-vendas");
+  revalidatePath(`/minhas-vendas/${processoId}`);
+  await avisar("sucesso", "Recebimento registrado e saldo atualizado. O histórico foi preservado.");
+}
 
 /** Cria uma distribuição de comissão em uma só operação, com 1 a 24 parcelas.
  * Cada parcela é um registro independente para preservar relatórios existentes.
