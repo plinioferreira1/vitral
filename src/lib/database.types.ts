@@ -6872,6 +6872,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      registrar_recebimento_comissao: {
+        Args: {
+          p_comissao_id: string
+          p_valor: number
+          p_data: string
+          p_observacao?: string | null
+        }
+        Returns: string
+      }
       add_member: {
         Args: {
           p_categorias: Database["public"]["Enums"]["categoria_processo"][]
