@@ -13,6 +13,7 @@ export type RegistroComissao = {
   beneficiario_nome: string | null;
   valor_previsto: number | null;
   valor_recebido: number | null;
+  data_recebida: string | null;
   data_prevista: string | null;
   status: string;
   observacoes: string | null;
@@ -87,6 +88,23 @@ function EditarLancamento({ registro, processoId }: { registro: RegistroComissao
           <option value="cancelada">Cancelado</option>
         </select>
       </label>
+      <div className="space-y-3 rounded-lg border border-border bg-surface p-3 sm:col-span-2">
+        <p className="text-xs font-semibold text-ink">Recebimento efetivo</p>
+        <p className="text-xs text-ink-muted">Informe os dados reais ao marcar um pagamento como quitado. Editar outras informações não altera automaticamente um recebimento existente.</p>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="block text-xs font-medium text-ink-muted">Valor recebido (R$)
+            <CampoMoeda name="valor_recebido" defaultValue={registro.valor_recebido ?? 0} />
+          </label>
+          <label className="block text-xs font-medium text-ink-muted">Data real do recebimento
+            <input type="date" name="data_recebida" defaultValue={registro.data_recebida ?? ""}
+              className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2.5 text-sm text-ink"/>
+          </label>
+        </div>
+        <label className="flex items-start gap-2 text-xs text-ink-muted">
+          <input type="checkbox" name="confirmar_retificacao" value="sim" className="mt-0.5 h-4 w-4 shrink-0 accent-brand"/>
+          Confirmo que estou corrigindo um recebimento já registrado (inclusive reversão de quitação).
+        </label>
+      </div>
       <label className="block text-xs font-medium text-ink-muted sm:col-span-2">Observações
         <textarea name="observacoes" rows={2} defaultValue={registro.observacoes ?? ""} maxLength={500}
           className="mt-1 w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-ink" />
