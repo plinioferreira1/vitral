@@ -32,7 +32,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       ...(!p.ehSocialMedia && verAvaliacoes ? [{ href: "/avaliacoes", label: "Avaliações de imóveis" }] : []),
     ],
   };
-  const itens: ItemMenu[] = [{ href: "/", label: "Início" }];
+  const itens: ItemMenu[] = [{ href: "/", label: "Início" }, { href: "/demandas", label: "Demandas" }];
   if (p.ehCorretor) itens.push({ href: "/minhas-vendas", label: "Minhas vendas" });
   if (operacional) {
     itens.push({ href: "/calendario", label: "Calendário" });
