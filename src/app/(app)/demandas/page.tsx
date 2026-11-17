@@ -6,6 +6,7 @@ import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS }
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { criarDemanda, marcarNotificacaoDemandaLida } from "./actions";
+import { DitadoDemandas } from "./ditado-demandas";
 
 type Situacao = "pendente"|"em_andamento"|"aguardando"|"bloqueada"|"concluida";
 const LABEL: Record<Situacao,string> = {
@@ -96,6 +97,8 @@ export default async function DemandasPage({searchParams}:{
         </div>
       </div>)}
     </section>}
+
+    {gestor && <DitadoDemandas equipe={equipe.map(u=>({id:u.id,nome:u.nome}))}/>}
 
     {gestor && <details className={`${CARD_CLASS} group p-4 sm:p-5`}>
       <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold text-brand"><Plus size={18}/> Nova demanda
