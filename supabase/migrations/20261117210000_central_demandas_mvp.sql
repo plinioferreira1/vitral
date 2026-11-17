@@ -15,6 +15,14 @@ CREATE TABLE public.demandas (
   atualizada_em timestamptz NOT NULL DEFAULT now(),
   concluida_em timestamptz
 );
+-- Chave idempotente de distribuição por áudio/lote para evitar tarefas duplicadas.
+ALTER TABLE public.demandas ADD COLUMN lote_id uuid, ADD COLUMN lote_item smallint;
+ALTER TABLE public.demandas ADD CONSTRAINT demandas_lote_coerente CHECK (
+  (lote_id IS NULL AND lote_item IS NULL) OR
+  (lote_id IS NOT NULL AND lote_item BETWEEN 1 AND 10)
+);
+CREATE UNIQUE INDEX demandas_lote_unico_idx ON public.demandas (tenant_id,lote_id,lote_item)
+  WHERE lote_id IS NOT NULL;
 CREATE INDEX demandas_responsavel_idx ON public.demandas (tenant_id,responsavel_id,status,prazo);
 CREATE INDEX demandas_solicitante_idx ON public.demandas (tenant_id,solicitante_id,criada_em DESC);
 CREATE TABLE public.demandas_atualizacoes (
