@@ -76,7 +76,7 @@ export async function criarDemandasEmLote(formData: FormData) {
     const prazo=typeof v.prazo==="string"?v.prazo:"";
     const prioridade=typeof v.prioridade==="string"?v.prioridade:"normal";
     if (titulo.length<4||titulo.length>180||descricao.length>5000||!uuidValido(responsavel)||
-      (prazo&&!/^\\d{4}-\\d{2}-\\d{2}$/.test(prazo))||
+      (prazo&&!/^\d{4}-\d{2}-\d{2}$/.test(prazo))||
       !["baixa","normal","alta","urgente"].includes(prioridade)) {
       await avisar("erro","Corrija os títulos, responsáveis e prazos das tarefas antes de distribuir.");return;
     }
