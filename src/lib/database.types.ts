@@ -14,6 +14,93 @@ export type Database = {
   }
   public: {
     Tables: {
+      demandas_recorrencias: {
+        Row: {
+          id: string
+          tenant_id: string
+          solicitante_id: string
+          responsavel_id: string
+          titulo: string
+          descricao: string | null
+          prioridade: string
+          periodicidade: string
+          proxima_data: string
+          ativa: boolean
+          criada_em: string
+          atualizada_em: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          solicitante_id: string
+          responsavel_id: string
+          titulo: string
+          descricao?: string | null
+          prioridade?: string
+          periodicidade: string
+          proxima_data: string
+          ativa?: boolean
+          criada_em?: string
+          atualizada_em?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          solicitante_id?: string
+          responsavel_id?: string
+          titulo?: string
+          descricao?: string | null
+          prioridade?: string
+          periodicidade?: string
+          proxima_data?: string
+          ativa?: boolean
+          criada_em?: string
+          atualizada_em?: string
+        }
+        Relationships: []
+      }
+      demandas_email_pendentes: {
+        Row: {
+          id: string
+          tenant_id: string
+          demanda_id: string
+          destinatario_id: string
+          tipo: string
+          situacao: string
+          tentativas: number
+          proxima_tentativa: string
+          enviada_em: string | null
+          ultimo_erro: string | null
+          criada_em: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          demanda_id: string
+          destinatario_id: string
+          tipo?: string
+          situacao?: string
+          tentativas?: number
+          proxima_tentativa?: string
+          enviada_em?: string | null
+          ultimo_erro?: string | null
+          criada_em?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          demanda_id?: string
+          destinatario_id?: string
+          tipo?: string
+          situacao?: string
+          tentativas?: number
+          proxima_tentativa?: string
+          enviada_em?: string | null
+          ultimo_erro?: string | null
+          criada_em?: string
+        }
+        Relationships: []
+      }
       demandas_push_assinaturas: {
         Row: {
           id: string
@@ -119,6 +206,8 @@ export type Database = {
           tenant_id: string
           titulo: string
           descricao: string | null
+          recorrencia_data: string | null
+          recorrencia_id: string | null
           lote_id: string | null
           lote_item: number | null
           solicitante_id: string
@@ -136,6 +225,8 @@ export type Database = {
           tenant_id: string
           titulo: string
           descricao?: string | null
+          recorrencia_data?: string | null
+          recorrencia_id?: string | null
           lote_id?: string | null
           lote_item?: number | null
           solicitante_id: string
