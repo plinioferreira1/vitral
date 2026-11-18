@@ -8,6 +8,7 @@ CREATE TABLE public.demandas_recorrencias (
   descricao text CHECK (descricao IS NULL OR char_length(descricao) <= 5000),
   prioridade text NOT NULL DEFAULT 'normal' CHECK (prioridade IN ('baixa','normal','alta','urgente')),
   periodicidade text NOT NULL CHECK (periodicidade IN ('diaria','semanal','mensal')),
+  dia_base smallint NOT NULL CHECK (dia_base BETWEEN 1 AND 31),
   proxima_data date NOT NULL,
   ativa boolean NOT NULL DEFAULT true,
   criada_em timestamptz NOT NULL DEFAULT now(),
