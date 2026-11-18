@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bell, CalendarClock, CheckCircle2, ClipboardList, Plus, Search, Users } from "lucide-react";
+import { Bell, CalendarClock, CheckCircle2, ClipboardList, Plus, Search, Users, AlertTriangle, CalendarDays, Repeat2, PauseCircle, PlayCircle } from "lucide-react";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
-import { criarDemanda, marcarNotificacaoDemandaLida } from "./actions";
+import { criarDemanda, criarRecorrenciaDemanda, alternarRecorrenciaDemanda, marcarNotificacaoDemandaLida } from "./actions";
 import { DitadoDemandas } from "./ditado-demandas";
 import { NotificacoesPush } from "./notificacoes-push";
 
@@ -26,14 +26,14 @@ const hojeSP = () => new Intl.DateTimeFormat("en-CA",{timeZone:"America/Sao_Paul
 const fmt = (data:string|null) => data ? data.slice(0,10).split("-").reverse().join("/") : "Sem prazo";
 
 export default async function DemandasPage({searchParams}:{
-  searchParams:Promise<{q?:string;status?:string;escopo?:string}>;
+  searchParams:Promise<{q?:string;status?:string;escopo?:string;prazo?:string}>;
 }) {
   const { user, usuario } = await getUsuarioAtual();
   if(!user || !usuario?.tenant_id || !usuario.ativo) redirect("/login");
   const gestor=["diretor","gerente"].includes(usuario.nivel_acesso);
   const sp=await searchParams;
   const supabase=await createClient();
-  const [rDemandas,rAvisos,rEquipe]=await Promise.all([
+  const [rDemandas,rAvisos,rEquipe,rRotinas]=await Promise.all([
     supabase.from("demandas")
       .select("id,titulo,descricao,status,prioridade,prazo,responsavel_id,solicitante_id,criada_em,concluida_em")
       .eq("tenant_id",usuario.tenant_id).order("criada_em",{ascending:false}).limit(250),
@@ -43,6 +43,10 @@ export default async function DemandasPage({searchParams}:{
       .is("lida_em",null).order("criada_em",{ascending:false}).limit(12),
     supabase.from("usuarios").select("id,nome,ativo")
       .eq("tenant_id",usuario.tenant_id).eq("ativo",true).order("nome"),
+    gestor ? supabase.from("demandas_recorrencias")
+      .select("id,titulo,responsavel_id,periodicidade,proxima_data,ativa,prioridade")
+      .eq("tenant_id",usuario.tenant_id).order("ativa",{ascending:false}).order("proxima_data",{ascending:true}).limit(80)
+      : Promise.resolve({data:[] as {id:string;titulo:string;responsavel_id:string;periodicidade:string;proxima_data:string;ativa:boolean;prioridade:string}[]}),
   ]);
   if(rDemandas.error || rAvisos.error || rEquipe.error) {
     return <div role="alert" className="rounded-xl border border-rose-200 p-5 text-sm text-rose-800">
@@ -56,15 +60,28 @@ export default async function DemandasPage({searchParams}:{
   const buscar=(sp.q??"").trim().toLocaleLowerCase("pt-BR");
   const statusValido=Object.prototype.hasOwnProperty.call(LABEL,sp.status??"") ? sp.status! : "";
   const escopo=sp.escopo==="minhas"||!gestor?"minhas":"todas";
-  const filtradas=tarefas
-    .filter(d=>escopo!=="minhas"||d.responsavel_id===user.id)
-    .filter(d=>!statusValido||d.status===statusValido)
-    .filter(d=>!buscar||[d.titulo,d.descricao,nomes.get(d.responsavel_id)].some(v=>v?.toLocaleLowerCase("pt-BR").includes(buscar)));
+  const prazoFiltro=["atrasadas","hoje","futuras","sem_prazo"].includes(sp.prazo??"")?sp.prazo??"":"";
+  const universo=tarefas.filter(d=>escopo!=="minhas"||d.responsavel_id===user.id);
   const contagens={
-    abertas:tarefas.filter(d=>d.status!=="concluida").length,
-    minhas:tarefas.filter(d=>d.responsavel_id===user.id && d.status!=="concluida").length,
-    concluidas:tarefas.filter(d=>d.status==="concluida").length,
-    atrasadas:tarefas.filter(d=>d.prazo && d.prazo<agora && d.status!=="concluida").length,
+    atrasadas:universo.filter(d=>d.status!=="concluida"&&!!d.prazo&&d.prazo<agora).length,
+    hoje:universo.filter(d=>d.status!=="concluida"&&d.prazo===agora).length,
+    futuras:universo.filter(d=>d.status!=="concluida"&&!!d.prazo&&d.prazo>agora).length,
+    concluidas:universo.filter(d=>d.status==="concluida").length,
+  };
+  const prioridadePeso:Record<string,number>={urgente:0,alta:1,normal:2,baixa:3};
+  const filtradas=universo
+    .filter(d=>!statusValido||d.status===statusValido)
+    .filter(d=>!prazoFiltro||(d.status!=="concluida"&&(
+      prazoFiltro==="atrasadas"?!!d.prazo&&d.prazo<agora:
+      prazoFiltro==="hoje"?d.prazo===agora:
+      prazoFiltro==="futuras"?!!d.prazo&&d.prazo>agora:!d.prazo)))
+    .filter(d=>!buscar||[d.titulo,d.descricao,nomes.get(d.responsavel_id)].some(v=>v?.toLocaleLowerCase("pt-BR").includes(buscar)))
+    .sort((a,b)=>(a.status==="concluida"?1:0)-(b.status==="concluida"?1:0)||
+      (a.prazo??"9999").localeCompare(b.prazo??"9999")||
+      (prioridadePeso[a.prioridade]??2)-(prioridadePeso[b.prioridade]??2));
+  const coresPrioridade:Record<string,string>={
+    urgente:"bg-rose-100 text-rose-800",alta:"bg-orange-100 text-orange-800",
+    normal:"bg-sky-100 text-sky-800",baixa:"bg-slate-100 text-slate-700",
   };
   return <main className="w-full min-w-0 space-y-5">
     <CabecalhoPagina titulo="Central de Demandas"
@@ -72,13 +89,13 @@ export default async function DemandasPage({searchParams}:{
       acao={<Link href="/demandas/resumo" className={SECONDARY_BUTTON_CLASS}><ClipboardList size={16}/> Fechamento do dia</Link>}/>
     <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
       {[
-        {t:"Em aberto",n:contagens.abertas,icon:ClipboardList},
-        {t:"Minhas pendências",n:contagens.minhas,icon:Users},
-        {t:"Concluídas",n:contagens.concluidas,icon:CheckCircle2},
-        {t:"Atrasadas",n:contagens.atrasadas,icon:CalendarClock},
-      ].map(({t,n,icon:Icon})=><div key={t} className={`${CARD_CLASS} p-3 sm:p-4`}>
-        <span className="flex items-center gap-2 text-xs font-medium text-ink-muted"><Icon size={15}/>{t}</span>
-        <p className="mt-2 text-2xl font-bold tabular-nums text-ink">{n}</p>
+        {t:"Vencidas",n:contagens.atrasadas,icon:AlertTriangle,cor:"text-rose-700",fundo:"border-rose-200 bg-rose-50/50"},
+        {t:"Vencem hoje",n:contagens.hoje,icon:CalendarClock,cor:"text-amber-700",fundo:"border-amber-200 bg-amber-50/50"},
+        {t:"Próximas",n:contagens.futuras,icon:CalendarDays,cor:"text-sky-700",fundo:"border-sky-200 bg-sky-50/50"},
+        {t:"Concluídas",n:contagens.concluidas,icon:CheckCircle2,cor:"text-emerald-700",fundo:"border-emerald-200 bg-emerald-50/50"},
+      ].map(({t,n,icon:Icon,cor,fundo})=><div key={t} className={`rounded-xl border p-3 sm:p-4 ${fundo}`}>
+        <span className={`flex items-center gap-2 text-xs font-semibold ${cor}`}><Icon size={15}/>{t}</span>
+        <p className={`mt-2 text-2xl font-bold tabular-nums ${cor}`}>{n}</p>
       </div>)}
     </div>
 
@@ -133,7 +150,63 @@ export default async function DemandasPage({searchParams}:{
           <button className={PRIMARY_BUTTON_CLASS} type="submit"><Plus size={16}/> Distribuir demanda</button>
         </div>
       </form>
-      <p className="mt-3 text-xs text-ink-muted">Nesta primeira versão, as demandas são criadas por texto. Gravação de áudio e extração automática entram na próxima etapa, com revisão antes do envio.</p>
+      <p className="mt-3 text-xs text-ink-muted">Para várias demandas, use o ditado e revise a prévia acima. Para uma atividade isolada, preencha este formulário.</p>
+    </details>}
+
+    {gestor && <details className={`${CARD_CLASS} group p-4 sm:p-5`}>
+      <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-brand">
+        <Repeat2 size={18}/> Demandas recorrentes
+        <span className="ml-auto text-xs font-normal text-ink-muted">{(rRotinas.data??[]).filter(r=>r.ativa).length} ativas · abrir configuração</span>
+      </summary>
+      <p className="mt-3 text-xs leading-5 text-ink-muted">Crie uma atividade automática diária, semanal ou mensal. Cada ocorrência vira uma nova demanda com responsável, prazo, histórico e notificação.</p>
+      <form action={criarRecorrenciaDemanda} className="mt-4 grid gap-3 rounded-xl border border-border bg-background/40 p-3 sm:grid-cols-2">
+        <label className="text-xs font-medium text-ink-muted sm:col-span-2">Atividade recorrente *
+          <input name="titulo" required minLength={4} maxLength={180} className={`${INPUT_CLASS} mt-1`} placeholder="Ex.: Conferir inadimplência do condomínio"/>
+        </label>
+        <label className="text-xs font-medium text-ink-muted sm:col-span-2">Instruções (opcional)
+          <textarea name="descricao" rows={2} maxLength={5000} className={`${INPUT_CLASS} mt-1`}/>
+        </label>
+        <label className="text-xs font-medium text-ink-muted">Responsável *
+          <select name="responsavel_id" required defaultValue="" className={`${INPUT_CLASS} mt-1`}>
+            <option value="" disabled>Escolha um colaborador</option>
+            {equipe.map(u=><option key={u.id} value={u.id}>{u.nome}</option>)}
+          </select>
+        </label>
+        <label className="text-xs font-medium text-ink-muted">Frequência *
+          <select name="periodicidade" required defaultValue="semanal" className={`${INPUT_CLASS} mt-1`}>
+            <option value="diaria">Todos os dias</option>
+            <option value="semanal">Toda semana</option>
+            <option value="mensal">Todo mês</option>
+          </select>
+        </label>
+        <label className="text-xs font-medium text-ink-muted">Primeira ocorrência *
+          <input type="date" name="proxima_data" required min={agora} defaultValue={agora} className={`${INPUT_CLASS} mt-1`}/>
+        </label>
+        <label className="text-xs font-medium text-ink-muted">Prioridade
+          <select name="prioridade" defaultValue="normal" className={`${INPUT_CLASS} mt-1`}>
+            {Object.entries(PRIORIDADE).map(([value,label])=><option value={value} key={value}>{label}</option>)}
+          </select>
+        </label>
+        <div className="sm:col-span-2">
+          <button type="submit" className={PRIMARY_BUTTON_CLASS}><Plus size={16}/> Criar recorrência</button>
+        </div>
+      </form>
+      <div className="mt-4 space-y-2">
+        {(rRotinas.data??[]).map(rotina=><div key={rotina.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border p-3">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-ink">{rotina.titulo}</p>
+            <p className="mt-1 text-xs text-ink-muted">{nomes.get(rotina.responsavel_id)??"Colaborador"} · {rotina.periodicidade} · Próxima: {fmt(rotina.proxima_data)}</p>
+          </div>
+          <form action={alternarRecorrenciaDemanda}>
+            <input type="hidden" name="recorrencia_id" value={rotina.id}/>
+            <input type="hidden" name="ativa" value={rotina.ativa?"false":"true"}/>
+            <button className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-border px-3 text-xs font-semibold text-ink" type="submit">
+              {rotina.ativa?<PauseCircle size={15}/>:<PlayCircle size={15}/>} {rotina.ativa?"Pausar":"Reativar"}
+            </button>
+          </form>
+        </div>)}
+        {!rRotinas.data?.length&&<p className="text-sm text-ink-muted">Nenhuma demanda recorrente cadastrada.</p>}
+      </div>
     </details>}
 
     <section className="space-y-3">
@@ -141,7 +214,7 @@ export default async function DemandasPage({searchParams}:{
         <h2 className="text-lg font-semibold text-ink">Acompanhamento</h2>
         <span className="text-xs text-ink-muted">{filtradas.length} exibidas · até 250 registros recentes</span>
       </div>
-      <form method="get" className={`${CARD_CLASS} grid gap-3 p-3 sm:grid-cols-[2fr_1fr_1fr_auto] sm:items-end`}>
+      <form method="get" className={`${CARD_CLASS} grid gap-3 p-3 sm:grid-cols-[2fr_1fr_1fr_1fr_auto] sm:items-end`}>
         <label className="text-xs font-medium text-ink-muted">Buscar
           <span className="relative block">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted"/>
@@ -152,6 +225,15 @@ export default async function DemandasPage({searchParams}:{
           <select name="status" defaultValue={statusValido} className={`${INPUT_CLASS} mt-1`}>
             <option value="">Todas</option>
             {Object.entries(LABEL).map(([value,label])=><option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
+        <label className="text-xs font-medium text-ink-muted">Vencimento
+          <select name="prazo" defaultValue={prazoFiltro} className={`${INPUT_CLASS} mt-1`}>
+            <option value="">Todos os prazos</option>
+            <option value="atrasadas">Vencidas</option>
+            <option value="hoje">Vencem hoje</option>
+            <option value="futuras">Próximas</option>
+            <option value="sem_prazo">Sem prazo</option>
           </select>
         </label>
         <label className="text-xs font-medium text-ink-muted">Visualização
@@ -169,13 +251,13 @@ export default async function DemandasPage({searchParams}:{
           return <Link key={d.id} href={`/demandas/${d.id}`} className={`${CARD_CLASS} block space-y-3 p-4 transition hover:border-brand/40 hover:shadow-sm focus-visible:ring-2 focus-visible:ring-brand`}>
             <div className="flex flex-wrap items-center justify-between gap-2">
               <span className={`rounded-md px-2 py-1 text-xs font-semibold ${estiloStatus[status]??"bg-background text-ink"}`}>{LABEL[status]??d.status}</span>
-              <span className={`text-xs font-medium ${atrasada?"text-rose-700":"text-ink-muted"}`}>{atrasada?"Atrasada · ":"Prazo: "}{fmt(d.prazo)}</span>
+              <span className={`text-xs font-semibold ${atrasada?"text-rose-700":d.prazo===agora&&d.status!=="concluida"?"text-amber-700":"text-ink-muted"}`}>{atrasada?"Vencida · ":d.prazo===agora&&d.status!=="concluida"?"Vence hoje · ":"Prazo: "}{fmt(d.prazo)}</span>
             </div>
             <h3 className="text-sm font-semibold leading-6 text-ink">{d.titulo}</h3>
             {d.descricao && <p className="line-clamp-2 text-xs leading-5 text-ink-muted">{d.descricao}</p>}
             <div className="flex justify-between gap-2 border-t border-border/70 pt-3 text-xs text-ink-muted">
               <span>Responsável: <strong className="text-ink">{nomes.get(d.responsavel_id)??"Colaborador"}</strong></span>
-              <span>{PRIORIDADE[d.prioridade]??d.prioridade}</span>
+              <span className={`rounded-lg px-2 py-1 text-xs font-semibold ${coresPrioridade[d.prioridade]??coresPrioridade.normal}`}>{PRIORIDADE[d.prioridade]??d.prioridade}</span>
             </div>
           </Link>;
         })}
