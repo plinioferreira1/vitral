@@ -22,7 +22,7 @@ export async function POST(req:Request,{params}:{params:Promise<{id:string}>}){
   if(!user||!usuario?.ativo||!usuario.tenant_id)return resposta("Acesso negado.",401);
   const supabase=await createClient();
   const {data:demanda,error:erroDemanda}=await supabase.from("demandas")
-    .select("id,tenant_id,solicitante_id,responsavel_id").eq("id",id).eq("tenant_id",usuario.tenant_id).maybeSingle();
+    .select("id,tenant_id,solicitante_id,responsavel_id").eq("id",id).eq("tenant_id",usuario.tenant_id).is("excluida_em",null).maybeSingle();
   if(erroDemanda||!demanda)return resposta("Demanda não encontrada ou sem permissão.",404);
   let arquivo:FormDataEntryValue|null=null;
   try{const form=await req.formData();arquivo=form.get("audio");}
