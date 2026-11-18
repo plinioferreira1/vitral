@@ -36,14 +36,21 @@ function sugerir(texto:string,pessoas:Colaborador[]):Proposta[] {
     let instrucao=textoItem;
     const nomesValidos=pessoas.filter(p=>{
       const primeiro=normalizar(p.nome.split(/\s+/)[0]);
-      return primeiro.length>=3 && (t.startsWith(primeiro+",")||t.startsWith(primeiro+":")||t.startsWith(primeiro+" "));
+      if(primeiro.length<3)return false;
+      const explicito=new RegExp("(?:^|\\s)(?:(?:para|pra|pro|com|que|ao|a|o|da|do)\\s+)?"+primeiro+"(?:$|[\\s,:.])","i");
+      return explicito.test(t);
     });
     if(nomesValidos.length===1){
       responsavel_id=nomesValidos[0].id;
-      instrucao=textoItem.replace(/^\S+[\s,:–—-]*/,"").trim()||textoItem;
+      const primeiro=normalizar(nomesValidos[0].nome.split(/\s+/)[0]);
+      if(t.startsWith(primeiro+" ")||t.startsWith(primeiro+",")||t.startsWith(primeiro+":")){
+        instrucao=textoItem.replace(/^\S+[\s,:–—-]*/,"").trim()||textoItem;
+      }
     }
-    const prazo=/\bamanh[ãa]\b/i.test(textoItem)?agoraSP(1):/\bhoje\b/i.test(textoItem)?agoraSP():"";
-    const prioridade=/\burgent[ea]\b/i.test(textoItem)?"urgente":/\bprioridade\b/i.test(textoItem)?"alta":"normal";
+    const prazo=/(?:^|\s)amanha(?:$|[\s,.;])/.test(t)?agoraSP(1):
+      /(?:^|\s)hoje(?:$|[\s,.;])/.test(t)?agoraSP():"";
+    const prioridade=/(?:^|\s)urgente(?:$|[\s,.;])/.test(t)?"urgente":
+      /(?:^|\s)prioridade(?:$|[\s,.;])/.test(t)?"alta":"normal";
     const titulo=instrucao.slice(0,180);
     const descricao=instrucao.length>180?instrucao:"";
     return {titulo,descricao,responsavel_id,prazo,prioridade};
