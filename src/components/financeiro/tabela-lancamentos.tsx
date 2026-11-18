@@ -131,7 +131,7 @@ export function TabelaLancamentos({ linhas, tipo, rotuloPessoa, categorias, cent
               <td className="lancamento-selecao px-2 py-2.5">
                 {(l.status === "pendente" || l.status === "pago_parcial") && (
                   <label className="-ml-3 -mt-2 flex h-11 w-11 items-center justify-center md:m-0 md:h-auto md:w-auto">
-                    <input type="checkbox" name="ids" value={l.id} form="form-acoes-lote" aria-label={`Selecionar ${l.descricao}`} className="accent-brand" />
+                    <input type="checkbox" name="ids" value={l.id} data-valor-centavos={Math.round(Number(l.valor) * 100)} form="form-acoes-lote" aria-label={`Selecionar ${l.descricao}`} className="accent-brand" />
                   </label>
                 )}
               </td>
