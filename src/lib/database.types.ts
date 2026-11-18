@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      demandas_email_envios: {
+        Row: {
+          id: string
+          tenant_id: string
+          dia: string
+          situacao: string
+          iniciado_em: string
+          enviado_em: string | null
+          erro: string | null
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          dia: string
+          situacao?: string
+          iniciado_em?: string
+          enviado_em?: string | null
+          erro?: string | null
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          dia?: string
+          situacao?: string
+          iniciado_em?: string
+          enviado_em?: string | null
+          erro?: string | null
+        }
+        Relationships: []
+      }
       demandas: {
         Row: {
           id: string
