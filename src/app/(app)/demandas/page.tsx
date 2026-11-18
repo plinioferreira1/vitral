@@ -22,7 +22,7 @@ const estiloStatus: Record<Situacao,string> = {
   aguardando:"bg-amber-50 text-amber-800", bloqueada:"bg-rose-50 text-rose-800",
   concluida:"bg-emerald-50 text-emerald-800",
 };
-const hojeSP = () => new Intl.DateTimeFormat("en-CA",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+const hojeSP = () => { const p=new Intl.DateTimeFormat("en-US",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date()); const v=(t:string)=>p.find(x=>x.type===t)?.value??""; return [v("year"),v("month"),v("day")].join("-"); };
 const fmt = (data:string|null) => data ? data.slice(0,10).split("-").reverse().join("/") : "Sem prazo";
 
 export default async function DemandasPage({searchParams}:{
