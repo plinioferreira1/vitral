@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { exigirUsuario } from "@/lib/usuario-atual";
 import { avisar } from "@/lib/aviso";
 import { validarLote } from "@/lib/demandas/validacao";
+import { enviarEmailsNovasDemandas } from "@/lib/demandas/email-atribuicao";
+import { gerarDemandasRecorrentes } from "@/lib/demandas/recorrencias";
 
 const uuidValido = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 const STATUS_DEMANDA = ["pendente", "em_andamento", "aguardando", "bloqueada", "concluida"] as const;
@@ -47,6 +49,7 @@ export async function criarDemanda(formData: FormData) {
     return;
   }
   after(()=>notificarPush(sessao.tenantId,responsavelId,data.id));
+  after(()=>enviarEmailsNovasDemandas([data.id]).then(()=>{}).catch(e=>console.error("Fila de e-mail de demanda",e)));
   revalidatePath("/demandas");
   revalidatePath("/demandas/" + data.id);
   await avisar("sucesso","Demanda distribuída e notificação interna criada.");
@@ -110,11 +113,59 @@ export async function criarDemandasEmLote(formData: FormData) {
     await avisar("erro","Não foi possível distribuir o lote; nenhuma tarefa foi confirmada. "+error.message);
     return;
   }
+  if(criadas?.length)after(()=>enviarEmailsNovasDemandas(criadas.map(t=>t.id)).then(()=>{}).catch(e=>console.error("Fila de e-mails de demanda",e)));
   for(const tarefa of criadas??[]){
     after(()=>notificarPush(sessao.tenantId,tarefa.responsavel_id,tarefa.id));
   }
   revalidatePath("/demandas");
   await avisar("sucesso",`${tarefas.length} ${tarefas.length===1?"demanda distribuída":"demandas distribuídas"} e avisos criados.`);
+}
+
+
+export async function criarRecorrenciaDemanda(formData:FormData){
+ const sessao=await exigirUsuario(["diretor","gerente"]);
+ if(!sessao)return;
+ const titulo=String(formData.get("titulo")??"").trim();
+ const descricao=String(formData.get("descricao")??"").trim();
+ const responsavelId=String(formData.get("responsavel_id")??"");
+ const periodicidade=String(formData.get("periodicidade")??"");
+ const prioridade=String(formData.get("prioridade")??"normal");
+ const data=String(formData.get("proxima_data")??"");
+ if(titulo.length<4||titulo.length>180||descricao.length>5000||
+   !uuidValido(responsavelId)||!["diaria","semanal","mensal"].includes(periodicidade)||
+   !["baixa","normal","alta","urgente"].includes(prioridade)||
+   !/^\d{4}-\d{2}-\d{2}$/.test(data)){
+   await avisar("erro","Confira título, colaborador, periodicidade e data inicial.");return;
+ }
+ const db=await createClient();
+ const {data:colaborador}=await db.from("usuarios").select("id")
+   .eq("id",responsavelId).eq("tenant_id",sessao.tenantId).eq("ativo",true).maybeSingle();
+ if(!colaborador){await avisar("erro","O responsável precisa estar ativo na empresa.");return;}
+ const {error}=await db.from("demandas_recorrencias").insert({
+   tenant_id:sessao.tenantId,solicitante_id:sessao.userId,responsavel_id:responsavelId,
+   titulo,descricao:descricao||null,prioridade,periodicidade,proxima_data:data,dia_base:Number(data.slice(-2)),
+ });
+ if(error){await avisar("erro","Não foi possível criar a rotina: "+error.message);return;}
+ after(async()=>{
+   try{await gerarDemandasRecorrentes();await enviarEmailsNovasDemandas();}
+   catch(e){console.error("Falha ao processar demanda recorrente",e);}
+ });
+ revalidatePath("/demandas");
+ await avisar("sucesso","Rotina criada. O VITRAL distribuirá as demandas conforme a periodicidade.");
+}
+export async function alternarRecorrenciaDemanda(formData:FormData){
+ const sessao=await exigirUsuario(["diretor","gerente"]);
+ if(!sessao)return;
+ const id=String(formData.get("recorrencia_id")??"");
+ const ativa=String(formData.get("ativa")??"")==="true";
+ if(!uuidValido(id))return;
+ const db=await createClient();
+ const {data,error}=await db.from("demandas_recorrencias")
+  .update({ativa,atualizada_em:new Date().toISOString()})
+  .eq("id",id).eq("tenant_id",sessao.tenantId).select("id").maybeSingle();
+ if(error||!data){await avisar("erro","Não foi possível alterar a recorrência.");return;}
+ revalidatePath("/demandas");
+ await avisar("sucesso",ativa?"Rotina reativada.":"Rotina pausada.");
 }
 
 export async function atualizarStatusDemanda(formData: FormData) {

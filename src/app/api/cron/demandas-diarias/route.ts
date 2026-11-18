@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enviarFechamentoDemandas } from "@/lib/demandas/email-diario";
+import { enviarEmailsNovasDemandas } from "@/lib/demandas/email-atribuicao";
 
 export const dynamic="force-dynamic";
 export const maxDuration=60;
@@ -11,6 +12,7 @@ export async function GET(request:Request) {
   if(!segredo || request.headers.get("authorization")!==`Bearer ${segredo}`) {
     return NextResponse.json({erro:"Não autorizado"},{status:401});
   }
+  try { await enviarEmailsNovasDemandas(); } catch(e) { console.error("Falha na fila de e-mails das demandas",e); }
   const db=createAdminClient();
   const {data:tenants,error}=await db.from("tenants").select("id");
   if(error)return NextResponse.json({erro:"Falha ao consultar empresas"},{status:500});
