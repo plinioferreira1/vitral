@@ -222,3 +222,41 @@ export async function marcarNotificacaoDemandaLida(formData: FormData) {
   if (error) { await avisar("erro","Não foi possível marcar o aviso como lido."); return; }
   revalidatePath("/demandas");
 }
+
+/** Exclusão lógica: somente gestão, preservando histórico, áudios e trilha de auditoria no banco. */
+export async function excluirDemanda(formData:FormData) {
+  const sessao=await exigirUsuario(["diretor","gerente"]);
+  if(!sessao)return;
+  const id=String(formData.get("demanda_id")??"");
+  const confirmacao=String(formData.get("confirmacao")??"");
+  if(!uuidValido(id)||confirmacao!=="EXCLUIR"){
+    await avisar("erro","Confirme a exclusão da demanda.");return;
+  }
+  const db=await createClient();
+  const {data,error}=await db.from("demandas")
+    .update({excluida_em:new Date().toISOString(),excluida_por:sessao.userId})
+    .eq("id",id).eq("tenant_id",sessao.tenantId).is("excluida_em",null)
+    .select("id").maybeSingle();
+  if(error||!data){await avisar("erro","Não foi possível mover para a lixeira. "+(error?.message??""));return;}
+  revalidatePath("/demandas");
+  revalidatePath("/demandas/lixeira");
+  revalidatePath("/demandas/"+id);
+  await avisar("sucesso","Demanda movida para a lixeira. O histórico foi preservado.");
+}
+
+export async function restaurarDemanda(formData:FormData) {
+  const sessao=await exigirUsuario(["diretor","gerente"]);
+  if(!sessao)return;
+  const id=String(formData.get("demanda_id")??"");
+  if(!uuidValido(id))return;
+  const db=await createClient();
+  const {data,error}=await db.from("demandas")
+    .update({excluida_em:null,excluida_por:null})
+    .eq("id",id).eq("tenant_id",sessao.tenantId).not("excluida_em","is",null)
+    .select("id").maybeSingle();
+  if(error||!data){await avisar("erro","Não foi possível restaurar. "+(error?.message??""));return;}
+  revalidatePath("/demandas");
+  revalidatePath("/demandas/lixeira");
+  revalidatePath("/demandas/"+id);
+  await avisar("sucesso","Demanda restaurada e visível novamente.");
+}
