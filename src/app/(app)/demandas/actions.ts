@@ -143,7 +143,7 @@ export async function criarRecorrenciaDemanda(formData:FormData){
  if(!colaborador){await avisar("erro","O responsável precisa estar ativo na empresa.");return;}
  const {error}=await db.from("demandas_recorrencias").insert({
    tenant_id:sessao.tenantId,solicitante_id:sessao.userId,responsavel_id:responsavelId,
-   titulo,descricao:descricao||null,prioridade,periodicidade,proxima_data:data,
+   titulo,descricao:descricao||null,prioridade,periodicidade,proxima_data:data,dia_base:Number(data.slice(-2)),
  });
  if(error){await avisar("erro","Não foi possível criar a rotina: "+error.message);return;}
  after(async()=>{
