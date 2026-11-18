@@ -7,7 +7,8 @@ import { criarDemandasEmLote } from "./actions";
 import { validarLote } from "@/lib/demandas/validacao";
 
 type Colaborador={id:string;nome:string};
-type Proposta={titulo:string;descricao:string;responsavel_id:string;prazo:string;prioridade:string};
+type Proposta={titulo:string;descricao:string;responsavel_id:string;prazo:string;prioridade:string;categoria_id:string};
+type Categoria={id:string;nome:string};
 type ResultadoVoz={isFinal:boolean;[index:number]:{transcript:string}};
 type EventoVoz={results:ArrayLike<ResultadoVoz>};
 type ReconhecimentoVoz={
@@ -53,11 +54,11 @@ function sugerir(texto:string,pessoas:Colaborador[]):Proposta[] {
       /(?:^|\s)prioridade(?:$|[\s,.;])/.test(t)?"alta":"normal";
     const titulo=instrucao.slice(0,180);
     const descricao=instrucao.length>180?instrucao:"";
-    return {titulo,descricao,responsavel_id,prazo,prioridade};
+    return {titulo,descricao,responsavel_id,prazo,prioridade,categoria_id:""};
   });
 }
 
-export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:boolean}) {
+export function DitadoDemandas({equipe,iaAtiva,categorias}:{equipe:Colaborador[];iaAtiva:boolean;categorias:Categoria[]}) {
   const [gravando,setGravando]=useState(false);
   const [texto,setTexto]=useState("");
   const [erro,setErro]=useState("");
@@ -161,7 +162,7 @@ export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:bo
       if(!res.ok)throw new Error(json.erro||"Não foi possível interpretar a demanda.");
       if(json.texto)setTexto(json.texto);
       const novas=(json.tarefas??[]).map(t=>({titulo:t.titulo,descricao:t.descricao||"",
-        responsavel_id:t.responsavel_id||"",prazo:t.prazo||"",prioridade:t.prioridade||"normal"}));
+        responsavel_id:t.responsavel_id||"",prazo:t.prazo||"",prioridade:t.prioridade||"normal",categoria_id:""}));
       if(!novas.length)throw new Error("Nenhuma tarefa foi identificada.");
       setPropostas(novas);setLoteId(crypto.randomUUID());
     }catch(e){setErro(e instanceof Error?e.message:"Não foi possível analisar a solicitação.");}
@@ -177,7 +178,10 @@ export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:bo
   };
   const ajustar=(i:number,campos:Partial<Proposta>)=>setPropostas(prev=>prev.map((p,j)=>j===i?{...p,...campos}:p));
   const remover=(i:number)=>setPropostas(prev=>prev.filter((_,j)=>i!==j));
-  const problemas=validarLote(propostas);
+  const problemas=validarLote(propostas).map(x=>({...x,campos:[...x.campos,...(!categorias.some(c=>c.id===propostas[x.indice]?.categoria_id)?["Selecione uma categoria"]:[])]}));
+  for(const [indice,p] of propostas.entries()){
+    if(!categorias.some(c=>c.id===p.categoria_id)&&!problemas.some(e=>e.indice===indice))problemas.push({indice,campos:["Selecione uma categoria"]});
+  }
   const podeEnviar=!!loteId && propostas.length>0 && problemas.length===0 && !enviandoLote;
   const distribuir=async(formData:FormData)=>{
     if(!podeEnviar)return;
@@ -272,6 +276,13 @@ export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:bo
               {equipe.map(u=><option key={u.id} value={u.id}>{u.nome}</option>)}
             </select>
           </label>
+          <label className="text-xs font-medium text-ink-muted">Categoria *
+            <select required value={p.categoria_id} onChange={e=>ajustar(i,{categoria_id:e.target.value})}
+              className={`${INPUT_CLASS} mt-1`}>
+              <option value="">Escolha uma categoria</option>
+              {categorias.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}
+            </select>
+          </label>
           <label className="text-xs font-medium text-ink-muted">Prazo
             <input type="date" value={p.prazo} onChange={e=>ajustar(i,{prazo:e.target.value})}
               className={`${INPUT_CLASS} mt-1`}/>
@@ -287,7 +298,7 @@ export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:bo
       </div>)}
       {!!problemas.length&&<p role="alert" className="text-xs text-amber-800">Antes de distribuir, escolha um responsável e confira o título e a data nas tarefas destacadas acima. As tarefas não serão enviadas enquanto houver pendências.</p>}
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <button type="button" className={SECONDARY_BUTTON_CLASS} onClick={()=>setPropostas(p=>p.length<10?[...p,{titulo:"",descricao:"",responsavel_id:"",prazo:"",prioridade:"normal"}]:p)}
+        <button type="button" className={SECONDARY_BUTTON_CLASS} onClick={()=>setPropostas(p=>p.length<10?[...p,{titulo:"",descricao:"",responsavel_id:"",prazo:"",prioridade:"normal",categoria_id:""}]:p)}
           disabled={propostas.length>=10}><Plus size={15}/> Adicionar tarefa</button>
         <button type="submit" disabled={!podeEnviar}
           className={`${PRIMARY_BUTTON_CLASS} disabled:cursor-not-allowed disabled:opacity-40`}><Send size={15}/> {enviandoLote?"Enviando...":`Distribuir ${propostas.length} demanda(s)`}</button>
