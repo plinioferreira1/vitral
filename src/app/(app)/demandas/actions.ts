@@ -11,6 +11,12 @@ import { enviarEmailsNovasDemandas } from "@/lib/demandas/email-atribuicao";
 import { gerarDemandasRecorrentes } from "@/lib/demandas/recorrencias";
 
 const uuidValido = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+async function categoriaValida(db: Awaited<ReturnType<typeof createClient>>, tenantId:string, categoriaId:string) {
+  if(!uuidValido(categoriaId))return false;
+  const {data,error}=await db.from("demandas_categorias").select("id")
+    .eq("id",categoriaId).eq("tenant_id",tenantId).eq("ativa",true).maybeSingle();
+  return !error && !!data;
+}
 const STATUS_DEMANDA = ["pendente", "em_andamento", "aguardando", "bloqueada", "concluida"] as const;
 
 export async function criarDemanda(formData: FormData) {
@@ -22,14 +28,16 @@ export async function criarDemanda(formData: FormData) {
   const prazo = String(formData.get("prazo") ?? "").trim();
   const prioridade = String(formData.get("prioridade") ?? "normal");
   const processoId = String(formData.get("processo_id") ?? "").trim();
+  const categoriaId = String(formData.get("categoria_id") ?? "");
   if (titulo.length < 4 || titulo.length > 180 || descricao.length > 5000 ||
-    !uuidValido(responsavelId) || (processoId && !uuidValido(processoId)) ||
+    !uuidValido(responsavelId) || !uuidValido(categoriaId) || (processoId && !uuidValido(processoId)) ||
     !["baixa","normal","alta","urgente"].includes(prioridade) ||
     (prazo && !/^\d{4}-\d{2}-\d{2}$/.test(prazo))) {
     await avisar("erro", "Confira título, responsável, prioridade e data da demanda.");
     return;
   }
   const supabase = await createClient();
+  if(!await categoriaValida(supabase,sessao.tenantId,categoriaId)){await avisar("erro","Escolha uma categoria ativa da empresa.");return;}
   // Validar tenant e atividade do destinatário, mesmo que o cliente envie IDs adulterados.
   const { data: colaborador } = await supabase.from("usuarios")
     .select("id").eq("id", responsavelId).eq("tenant_id", sessao.tenantId).eq("ativo",true).maybeSingle();
@@ -42,7 +50,7 @@ export async function criarDemanda(formData: FormData) {
   const { data, error } = await supabase.from("demandas").insert({
     tenant_id:sessao.tenantId, solicitante_id:sessao.userId,
     responsavel_id:responsavelId, titulo, descricao:descricao||null,
-    prioridade, prazo:prazo||null, processo_id:processoId||null,
+    prioridade, prazo:prazo||null, processo_id:processoId||null,categoria_id:categoriaId,
   }).select("id").single();
   if (error || !data) {
     await avisar("erro", "Não foi possível cadastrar a demanda. " + (error?.message ?? ""));
@@ -70,7 +78,7 @@ export async function criarDemandasEmLote(formData: FormData) {
   if (!Array.isArray(propostas) || propostas.length<1 || propostas.length>10) {
     await avisar("erro","Revise de 1 a 10 demandas antes de distribuir."); return;
   }
-  type Proposta = {titulo:string;descricao:string|null;responsavel_id:string;prazo:string|null;prioridade:string};
+  type Proposta = {titulo:string;descricao:string|null;responsavel_id:string;prazo:string|null;prioridade:string;categoria_id:string};
   const tarefas:Proposta[]=[];
   for (const proposta of propostas) {
     if (!proposta || typeof proposta!=="object" || Array.isArray(proposta)) {
@@ -82,14 +90,21 @@ export async function criarDemandasEmLote(formData: FormData) {
     const responsavel=typeof v.responsavel_id==="string"?v.responsavel_id:"";
     const prazo=typeof v.prazo==="string"?v.prazo:"";
     const prioridade=typeof v.prioridade==="string"?v.prioridade:"normal";
+    const categoria=typeof v.categoria_id==="string"?v.categoria_id:"";
     const erros = validarLote([{titulo,descricao:descricao||null,responsavel_id:responsavel,prazo:prazo||null,prioridade}]);
-    if(erros.length){
-      await avisar("erro", `Demanda ${tarefas.length+1}: ${erros[0].campos.join("; ")}.`);
+    if(erros.length||!uuidValido(categoria)){
+      await avisar("erro", `Demanda ${tarefas.length+1}: ${erros[0]?.campos.join("; ")||"Selecione uma categoria"}.`);
       return;
     }
-    tarefas.push({titulo,descricao:descricao||null,responsavel_id:responsavel,prazo:prazo||null,prioridade});
+    tarefas.push({titulo,descricao:descricao||null,responsavel_id:responsavel,prazo:prazo||null,prioridade,categoria_id:categoria});
   }
   const supabase=await createClient();
+  const categorias=[...new Set(tarefas.map(t=>t.categoria_id))];
+  const {data:categoriasAtivas,error:erroCategorias}=await supabase.from("demandas_categorias")
+    .select("id").eq("tenant_id",sessao.tenantId).eq("ativa",true).in("id",categorias);
+  if(erroCategorias||(categoriasAtivas??[]).length!==categorias.length){
+    await avisar("erro","Uma ou mais categorias estão indisponíveis.");return;
+  }
   const ids=[...new Set(tarefas.map(t=>t.responsavel_id))];
   const {data:ativos,error:erroAtivos}=await supabase.from("usuarios").select("id")
     .eq("tenant_id",sessao.tenantId).eq("ativo",true).in("id",ids);
@@ -131,19 +146,21 @@ export async function criarRecorrenciaDemanda(formData:FormData){
  const periodicidade=String(formData.get("periodicidade")??"");
  const prioridade=String(formData.get("prioridade")??"normal");
  const data=String(formData.get("proxima_data")??"");
+ const categoriaId=String(formData.get("categoria_id")??"");
  if(titulo.length<4||titulo.length>180||descricao.length>5000||
-   !uuidValido(responsavelId)||!["diaria","semanal","mensal"].includes(periodicidade)||
+   !uuidValido(responsavelId)||!uuidValido(categoriaId)||!["diaria","semanal","mensal"].includes(periodicidade)||
    !["baixa","normal","alta","urgente"].includes(prioridade)||
    !/^\d{4}-\d{2}-\d{2}$/.test(data)){
    await avisar("erro","Confira título, colaborador, periodicidade e data inicial.");return;
  }
  const db=await createClient();
+ if(!await categoriaValida(db,sessao.tenantId,categoriaId)){await avisar("erro","Escolha uma categoria ativa.");return;}
  const {data:colaborador}=await db.from("usuarios").select("id")
    .eq("id",responsavelId).eq("tenant_id",sessao.tenantId).eq("ativo",true).maybeSingle();
  if(!colaborador){await avisar("erro","O responsável precisa estar ativo na empresa.");return;}
  const {error}=await db.from("demandas_recorrencias").insert({
    tenant_id:sessao.tenantId,solicitante_id:sessao.userId,responsavel_id:responsavelId,
-   titulo,descricao:descricao||null,prioridade,periodicidade,proxima_data:data,dia_base:Number(data.slice(-2)),
+   titulo,descricao:descricao||null,prioridade,periodicidade,proxima_data:data,dia_base:Number(data.slice(-2)),categoria_id:categoriaId,
  });
  if(error){await avisar("erro","Não foi possível criar a rotina: "+error.message);return;}
  after(async()=>{
@@ -259,4 +276,38 @@ export async function restaurarDemanda(formData:FormData) {
   revalidatePath("/demandas/lixeira");
   revalidatePath("/demandas/"+id);
   await avisar("sucesso","Demanda restaurada e visível novamente.");
+}
+
+/** Gestão de categorias de demandas sem perder histórico das categorias existentes. */
+export async function criarCategoriaDemanda(formData:FormData){
+  const sessao=await exigirUsuario(["diretor","gerente"]);
+  if(!sessao)return;
+  const nome=String(formData.get("nome")??"").trim().replace(/\s+/g," ");
+  if(nome.length<2||nome.length>60){
+    await avisar("erro","Informe um nome de categoria de 2 a 60 caracteres.");return;
+  }
+  const db=await createClient();
+  const {error}=await db.from("demandas_categorias").insert({
+    tenant_id:sessao.tenantId,nome,criada_por:sessao.userId,ativa:true
+  });
+  if(error){
+    await avisar("erro",error.code==="23505"?"Essa categoria já existe.":"Não foi possível criar a categoria.");return;
+  }
+  revalidatePath("/demandas");
+  await avisar("sucesso","Categoria criada e disponível para novas demandas.");
+}
+
+export async function alternarCategoriaDemanda(formData:FormData){
+  const sessao=await exigirUsuario(["diretor","gerente"]);
+  if(!sessao)return;
+  const id=String(formData.get("categoria_id")??"");
+  const ativa=String(formData.get("ativa")??"")==="true";
+  if(!uuidValido(id))return;
+  const db=await createClient();
+  const {data,error}=await db.from("demandas_categorias")
+    .update({ativa}).eq("id",id).eq("tenant_id",sessao.tenantId)
+    .select("id").maybeSingle();
+  if(error||!data){await avisar("erro","Não foi possível alterar a categoria.");return;}
+  revalidatePath("/demandas");
+  await avisar("sucesso",ativa?"Categoria reativada.":"Categoria arquivada. O histórico foi preservado.");
 }
