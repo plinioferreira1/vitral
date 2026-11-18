@@ -9,7 +9,11 @@ type TarefaExtraida={
   titulo:string;descricao:string;responsavel_id:string;
   prazo:string;prioridade:string;revisao:string;
 };
-const hojeSP=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"America/Sao_Paulo",dateStyle:"short"}).format(new Date());
+const hojeSP=()=>{
+  const partes=new Intl.DateTimeFormat("en-US",{timeZone:"America/Sao_Paulo",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
+  const valor=(tipo:string)=>partes.find(p=>p.type===tipo)?.value??"";
+  return [valor("year"),valor("month"),valor("day")].join("-");
+};
 const normalizar=(s:string)=>s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim();
 export async function GET(){
   const {user,usuario}=await getUsuarioAtual();
@@ -54,7 +58,7 @@ export async function POST(req:Request){
     additionalProperties:false,
     required:["tarefas"],
     properties:{tarefas:{
-      type:"array",maxItems:10,items:{
+      type:"array",items:{
         type:"object",additionalProperties:false,
         required:["titulo","descricao","nome_responsavel","prazo","prioridade"],
         properties:{
