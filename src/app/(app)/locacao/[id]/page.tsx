@@ -501,6 +501,66 @@ export default async function ContratoLocacaoPage({
             </div>
           </div>
 
+
+          <div className="rounded-xl border border-border/70 bg-background p-4">
+            <h3 className="mb-3 text-sm font-semibold text-ink">Endereço do imóvel e identificação condominial</h3>
+            <div className="grid gap-3 sm:grid-cols-4">
+              <label className="sm:col-span-3 text-xs font-medium text-ink-muted">Endereço completo (quadra, lote, bloco, unidade, bairro, cidade/UF)
+                <input name="imovel_endereco" defaultValue={c.imoveis?.endereco??""} required className={`${INPUT_CLASS} mt-1`}/>
+              </label>
+              <label className="text-xs font-medium text-ink-muted">CEP
+                <input name="imovel_cep" defaultValue={c.imoveis?.cep??""} inputMode="numeric" placeholder="00000-000"
+                  maxLength={9} className={`${INPUT_CLASS} mt-1`}/>
+              </label>
+              <label className="sm:col-span-2 text-xs font-medium text-ink-muted">Condomínio / edifício
+                <input name="condominio_nome" defaultValue={c.condominio_nome??""} className={`${INPUT_CLASS} mt-1`}/>
+              </label>
+              <label className="text-xs font-medium text-ink-muted">Bloco
+                <input name="condominio_bloco" defaultValue={c.condominio_bloco??""} className={`${INPUT_CLASS} mt-1`}/>
+              </label>
+              <label className="text-xs font-medium text-ink-muted">Unidade
+                <input name="condominio_unidade" defaultValue={c.condominio_unidade??""} className={`${INPUT_CLASS} mt-1`}/>
+              </label>
+            </div>
+            <p className="mt-2 text-xs text-ink-muted">Esses dados são utilizados nas solicitações de inadimplência às administradoras. Não altere a identificação sem verificar o documento.</p>
+          </div>
+
+          <div className="rounded-xl border border-border/70 bg-background p-4">
+            <h3 className="mb-3 text-sm font-semibold text-ink">Condições contratuais</h3>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <label className="text-xs font-medium text-ink-muted">Início da vigência
+                <input type="date" name="vigencia_inicio" defaultValue={c.vigencia_inicio??""} className={`${INPUT_CLASS} mt-1`}/>
+              </label>
+              <label className="text-xs font-medium text-ink-muted">Fim da vigência
+                <input type="date" name="vigencia_fim" defaultValue={c.vigencia_fim??""} className={`${INPUT_CLASS} mt-1`}/>
+              </label>
+              <label className="text-xs font-medium text-ink-muted">Primeiro vencimento
+                <input type="date" name="primeiro_aluguel_vencimento" defaultValue={c.primeiro_aluguel_vencimento??""} className={`${INPUT_CLASS} mt-1`}/>
+              </label>
+              <label className="text-xs font-medium text-ink-muted">Aluguel mensal (R$)
+                <input type="number" min="0" step="0.01" name="aluguel_valor" defaultValue={c.aluguel_valor??""}
+                  className={`${INPUT_CLASS} mt-1`}/>
+              </label>
+              <label className="text-xs font-medium text-ink-muted">Dia do vencimento
+                <input type="number" min="1" max="31" step="1" name="aluguel_dia_vencimento"
+                  defaultValue={c.aluguel_dia_vencimento??""} className={`${INPUT_CLASS} mt-1`}/>
+              </label>
+              <label className="text-xs font-medium text-ink-muted">Desconto de pontualidade (R$)
+                <input type="number" min="0" step="0.01" name="desconto_pontualidade"
+                  defaultValue={c.desconto_pontualidade??""} className={`${INPUT_CLASS} mt-1`}/>
+              </label>
+              <label className="sm:col-span-2 text-xs font-medium text-ink-muted">Garantia locatícia
+                <input name="garantia_locaticia" defaultValue={c.garantia_locaticia??""}
+                  placeholder="Ex.: Fiador, Seguro Fiança, Título de Capitalização"
+                  className={`${INPUT_CLASS} mt-1`}/>
+              </label>
+              <label className="sm:col-span-3 text-xs font-medium text-ink-muted">Link do contrato no Google Drive
+                <input type="url" name="documento_origem_url" defaultValue={c.documento_origem_url??""}
+                  placeholder="https://drive.google.com/..." className={`${INPUT_CLASS} mt-1`}/>
+              </label>
+            </div>
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
               <label className="mb-1 block text-xs font-medium text-ink-muted">
