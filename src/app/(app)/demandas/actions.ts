@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { notificarPush } from "@/lib/demandas/push";
 import { createClient } from "@/lib/supabase/server";
 import { exigirUsuario } from "@/lib/usuario-atual";
 import { avisar } from "@/lib/aviso";
@@ -44,6 +46,7 @@ export async function criarDemanda(formData: FormData) {
     await avisar("erro", "Não foi possível cadastrar a demanda. " + (error?.message ?? ""));
     return;
   }
+  after(()=>notificarPush(sessao.tenantId,responsavelId,data.id));
   revalidatePath("/demandas");
   revalidatePath("/demandas/" + data.id);
   await avisar("sucesso","Demanda distribuída e notificação interna criada.");
@@ -94,7 +97,7 @@ export async function criarDemandasEmLote(formData: FormData) {
     tenant_id:sessao.tenantId,solicitante_id:sessao.userId,...t,
     lote_id:loteId,lote_item:i+1,
   }));
-  const {error}=await supabase.from("demandas").insert(payload);
+  const {data:criadas,error}=await supabase.from("demandas").insert(payload).select("id,responsavel_id");
   if (error) {
     if (error.code==="23505") {
       const {count}=await supabase.from("demandas").select("id",{count:"exact",head:true})
@@ -106,6 +109,9 @@ export async function criarDemandasEmLote(formData: FormData) {
     }
     await avisar("erro","Não foi possível distribuir o lote; nenhuma tarefa foi confirmada. "+error.message);
     return;
+  }
+  for(const tarefa of criadas??[]){
+    after(()=>notificarPush(sessao.tenantId,tarefa.responsavel_id,tarefa.id));
   }
   revalidatePath("/demandas");
   await avisar("sucesso",`${tarefas.length} ${tarefas.length===1?"demanda distribuída":"demandas distribuídas"} e avisos criados.`);
@@ -121,8 +127,9 @@ export async function atualizarStatusDemanda(formData: FormData) {
   }
   const supabase = await createClient();
   const { data, error } = await supabase.from("demandas")
-    .update({status}).eq("id",id).eq("tenant_id",sessao.tenantId).select("id").maybeSingle();
+    .update({status}).eq("id",id).eq("tenant_id",sessao.tenantId).select("id,solicitante_id").maybeSingle();
   if (error || !data) { await avisar("erro","Não foi possível atualizar. Confira suas permissões."); return; }
+  if(data.solicitante_id!==sessao.userId)after(()=>notificarPush(sessao.tenantId,data.solicitante_id,id,"Demanda atualizada"));
   revalidatePath("/demandas");
   revalidatePath("/demandas/" + id);
   await avisar("sucesso","Andamento atualizado e registrado no histórico.");
@@ -138,13 +145,15 @@ export async function comentarDemanda(formData: FormData) {
   }
   const supabase = await createClient();
   const { data: demanda } = await supabase.from("demandas")
-    .select("id").eq("id",id).eq("tenant_id",sessao.tenantId).maybeSingle();
+    .select("id,solicitante_id,responsavel_id").eq("id",id).eq("tenant_id",sessao.tenantId).maybeSingle();
   if (!demanda) { await avisar("erro","Demanda não encontrada ou sem permissão."); return; }
   const { error } = await supabase.from("demandas_atualizacoes").insert({
     tenant_id:sessao.tenantId, demanda_id:id, autor_id:sessao.userId,
     tipo:"comentario", comentario,
   });
   if (error) { await avisar("erro","Não foi possível enviar sua atualização."); return; }
+  const destino=demanda.solicitante_id===sessao.userId?demanda.responsavel_id:demanda.solicitante_id;
+  if(destino!==sessao.userId)after(()=>notificarPush(sessao.tenantId,destino,id,"Nova atualização"));
   revalidatePath("/demandas");
   revalidatePath("/demandas/" + id);
   await avisar("sucesso","Comentário registrado. O gestor ou responsável será notificado.");
