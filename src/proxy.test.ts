@@ -35,6 +35,13 @@ describe("sessão durante redirecionamentos", () => {
     expect(resposta.headers.get("location")).toBe("https://vitral.example/cartorio");
     expect(resposta.cookies.get("sb-sessao")?.value).toBe("renovada");
   });
+  it("permite ao corretor acessar sua própria Central de Demandas", async () => {
+    auth.nivel = "corretor";
+    for(const path of ["/demandas", "/demandas/11111111-2222-4333-8444-555555555555"]) {
+      const resposta = await proxy(new NextRequest(`https://vitral.example${path}`));
+      expect(resposta.headers.get("location")).toBeNull();
+    }
+  });
   it("mantém visitante sem sessão fora de rotas internas", async () => {
     auth.sub = "";
     const resposta = await proxy(new NextRequest("https://vitral.example/vendas"));

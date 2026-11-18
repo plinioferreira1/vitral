@@ -6,6 +6,7 @@ import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS }
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { atualizarStatusDemanda, comentarDemanda } from "../actions";
+import { AudioDemanda } from "./audio-demanda";
 
 const STATUS = [
   {id:"pendente",nome:"Pendente"},
@@ -27,11 +28,13 @@ export default async function DetalheDemandaPage({params}:{params:Promise<{id:st
   if(error||!demanda) notFound();
   const gestor=["diretor","gerente"].includes(usuario.nivel_acesso);
   const podeAlterar=gestor||demanda.responsavel_id===user.id;
-  const [eventosResult,usuarioResult]=await Promise.all([
+  const [eventosResult,usuarioResult,audiosResult]=await Promise.all([
     supabase.from("demandas_atualizacoes").select("id,autor_id,tipo,comentario,status_anterior,status_novo,criada_em")
       .eq("demanda_id",id).eq("tenant_id",usuario.tenant_id).order("criada_em",{ascending:false}).limit(150),
     supabase.from("usuarios").select("id,nome").eq("tenant_id",usuario.tenant_id)
       .in("id",[demanda.solicitante_id,demanda.responsavel_id]),
+    supabase.from("demandas_audios").select("id,autor_id,nome_original,criada_em,tamanho_bytes")
+      .eq("demanda_id",id).eq("tenant_id",usuario.tenant_id).order("criada_em",{ascending:false}).limit(50),
   ]);
   const nomes=new Map((usuarioResult.data??[]).map(u=>[u.id,u.nome]));
   const statusNome=(s:string|null)=>STATUS.find(x=>x.id===s)?.nome??s??"";
@@ -66,6 +69,18 @@ export default async function DetalheDemandaPage({params}:{params:Promise<{id:st
       </form>
       <p className="mt-2 text-xs text-ink-muted">Toda mudança de situação entra automaticamente no histórico.</p>
     </section>}
+    <section className={`${CARD_CLASS} space-y-4 p-4 sm:p-5`}>
+      <h2 className="flex items-center gap-2 font-semibold text-ink">Áudios da demanda</h2>
+      <AudioDemanda demandaId={id}/>
+      {audiosResult.error && <p role="alert" className="text-xs text-rose-700">Não foi possível consultar os áudios da demanda.</p>}
+      {(audiosResult.data??[]).map(a=><div key={a.id} className="space-y-2 rounded-lg border border-border bg-background p-3">
+        <p className="text-xs text-ink-muted">Enviado por {a.autor_id===user.id?"você":nomes.get(a.autor_id)??"colaborador"} · {dataFormatada(a.criada_em)}</p>
+        <audio controls preload="none" className="w-full" src={`/demandas/${id}/audios/${a.id}`}>
+          Seu navegador não suporta reprodução de áudio.
+        </audio>
+      </div>)}
+      {!audiosResult.error&&!audiosResult.data?.length&&<p className="text-xs text-ink-muted">Nenhum áudio registrado ainda.</p>}
+    </section>
     <section className={`${CARD_CLASS} space-y-4 p-4 sm:p-5`}>
       <h2 className="flex items-center gap-2 font-semibold text-ink"><MessageSquare size={18}/> Atualizações da equipe</h2>
       <form action={comentarDemanda} className="space-y-3">
