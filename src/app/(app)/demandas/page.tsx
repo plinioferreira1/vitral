@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bell, CalendarClock, CheckCircle2, ClipboardList, Plus, Search, AlertTriangle, CalendarDays, Repeat2, PauseCircle, PlayCircle } from "lucide-react";
+import { Bell, CalendarClock, CheckCircle2, ClipboardList, Plus, Search, AlertTriangle, CalendarDays, Repeat2, PauseCircle, PlayCircle, Trash2 } from "lucide-react";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { createClient } from "@/lib/supabase/server";
@@ -36,7 +36,7 @@ export default async function DemandasPage({searchParams}:{
   const [rDemandas,rAvisos,rEquipe,rRotinas]=await Promise.all([
     supabase.from("demandas")
       .select("id,titulo,descricao,status,prioridade,prazo,responsavel_id,solicitante_id,criada_em,concluida_em")
-      .eq("tenant_id",usuario.tenant_id).order("criada_em",{ascending:false}).limit(250),
+      .eq("tenant_id",usuario.tenant_id).is("excluida_em",null).order("criada_em",{ascending:false}).limit(250),
     supabase.from("demandas_notificacoes")
       .select("id,demanda_id,titulo,mensagem,criada_em")
       .eq("tenant_id",usuario.tenant_id).eq("destinatario_id",user.id)
@@ -86,7 +86,10 @@ export default async function DemandasPage({searchParams}:{
   return <main className="w-full min-w-0 space-y-5">
     <CabecalhoPagina titulo="Central de Demandas"
       descricao="Distribua atividades e acompanhe o andamento de cada colaborador. Todo pedido fica registrado, com responsável e histórico."
-      acao={<Link href="/demandas/resumo" className={SECONDARY_BUTTON_CLASS}><ClipboardList size={16}/> Fechamento do dia</Link>}/>
+      acao={<div className="flex flex-wrap items-center gap-2">
+        {gestor&&<Link href="/demandas/lixeira" className={SECONDARY_BUTTON_CLASS}><Trash2 size={16}/> Lixeira</Link>}
+        <Link href="/demandas/resumo" className={SECONDARY_BUTTON_CLASS}><ClipboardList size={16}/> Fechamento do dia</Link>
+      </div>}/>
     <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
       {[
         {t:"Vencidas",n:contagens.atrasadas,icon:AlertTriangle,cor:"text-rose-700",fundo:"border-rose-200 bg-rose-50/50"},
