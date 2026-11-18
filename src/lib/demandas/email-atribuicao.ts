@@ -5,10 +5,13 @@ const SITE=process.env.NEXT_PUBLIC_SITE_URL||"https://vitral.sacraimoveis.com.br
 const escapar=(v:string)=>v.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 export async function enviarEmailsNovasDemandas(ids?:string[]):Promise<{enviados:number;falhas:number}>{
  const db=createAdminClient();
+ // Recuperar envios cujo servidor caiu após reservar a fila.
+ await db.from("demandas_email_pendentes").update({situacao:"erro"})
+   .eq("situacao","enviando").lt("proxima_tentativa",new Date().toISOString());
  let consulta=db.from("demandas_email_pendentes")
   .select("id,tenant_id,demanda_id,destinatario_id,tentativas")
   .in("situacao",["pendente","erro"]).lte("proxima_tentativa",new Date().toISOString())
-  .lt("tentativas",6).order("criada_em",{ascending:true}).limit(30);
+  .lt("tentativas",6).order("criada_em",{ascending:true}).limit(12);
  if(ids?.length)consulta=consulta.in("demanda_id",ids);
  const {data:fila,error}=await consulta;
  if(error)throw new Error("Não foi possível consultar fila de atribuições");
@@ -16,7 +19,7 @@ export async function enviarEmailsNovasDemandas(ids?:string[]):Promise<{enviados
  for(const item of fila??[]){
   const now=new Date().toISOString();
   const {data:reservado,error:erroReserva}=await db.from("demandas_email_pendentes")
-   .update({situacao:"enviando",tentativas:item.tentativas+1})
+   .update({situacao:"enviando",tentativas:item.tentativas+1,proxima_tentativa:new Date(Date.now()+10*60*1000).toISOString()})
    .eq("id",item.id).in("situacao",["pendente","erro"])
    .lte("proxima_tentativa",now).select("id").maybeSingle();
   if(erroReserva||!reservado)continue;
