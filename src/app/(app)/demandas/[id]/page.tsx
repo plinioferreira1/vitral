@@ -98,7 +98,8 @@ export default async function DetalheDemandaPage({params}:{params:Promise<{id:st
     </section>}
     <section className={`${CARD_CLASS} space-y-4 p-4 sm:p-5`}>
       <h2 className="flex items-center gap-2 font-semibold text-ink">Áudios da demanda</h2>
-      {!excluida&&<AudioDemanda demandaId={id}/>}
+      {gestor&&!excluida&&<AudioDemanda demandaId={id}/>}
+      {!gestor&&<p className="text-xs leading-5 text-ink-muted">Os áudios são orientações enviadas pela gestão. Para responder, utilize o campo de atualização por texto abaixo.</p>}
       {audiosResult.error && <p role="alert" className="text-xs text-rose-700">Não foi possível consultar os áudios da demanda.</p>}
       {(audiosResult.data??[]).map(a=><div key={a.id} className="space-y-2 rounded-lg border border-border bg-background p-3">
         <p className="text-xs text-ink-muted">Enviado por {a.autor_id===user.id?"você":nomes.get(a.autor_id)??"colaborador"} · {dataFormatada(a.criada_em)}</p>
@@ -109,7 +110,7 @@ export default async function DetalheDemandaPage({params}:{params:Promise<{id:st
       {!audiosResult.error&&!audiosResult.data?.length&&<p className="text-xs text-ink-muted">Nenhum áudio registrado ainda.</p>}
     </section>
     <section className={`${CARD_CLASS} space-y-4 p-4 sm:p-5`}>
-      <h2 className="flex items-center gap-2 font-semibold text-ink"><MessageSquare size={18}/> Atualizações da equipe</h2>
+      <h2 className="flex items-center gap-2 font-semibold text-ink"><MessageSquare size={18}/> Atualizações por texto</h2>
       {!excluida&&<form action={comentarDemanda} className="space-y-3">
         <input type="hidden" name="demanda_id" value={id}/>
         <label className="block text-xs font-medium text-ink-muted">Comente o que foi feito, o que está faltando ou o motivo de algum impedimento
