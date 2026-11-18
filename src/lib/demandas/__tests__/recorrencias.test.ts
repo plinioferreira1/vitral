@@ -5,4 +5,5 @@ describe("recorrências",()=>{
  it("avança semanalmente",()=>expect(proximoVencimento("2026-11-17","semanal")).toBe("2026-11-24"));
  it("ajusta fevereiro",()=>expect(proximoVencimento("2026-01-31","mensal")).toBe("2026-02-28"));
  it("avança dezembro para janeiro",()=>expect(proximoVencimento("2026-12-31","mensal")).toBe("2027-01-31"));
+ it("preserva o dia 31 após fevereiro",()=>expect(proximoVencimento("2026-02-28","mensal",31)).toBe("2026-03-31"));
 });
