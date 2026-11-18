@@ -24,6 +24,7 @@ export type Database = {
           descricao: string | null
           prioridade: string
           periodicidade: string
+          dia_base: number
           proxima_data: string
           ativa: boolean
           criada_em: string
@@ -38,6 +39,7 @@ export type Database = {
           descricao?: string | null
           prioridade?: string
           periodicidade: string
+          dia_base: number
           proxima_data: string
           ativa?: boolean
           criada_em?: string
@@ -52,6 +54,7 @@ export type Database = {
           descricao?: string | null
           prioridade?: string
           periodicidade?: string
+          dia_base?: number
           proxima_data?: string
           ativa?: boolean
           criada_em?: string
