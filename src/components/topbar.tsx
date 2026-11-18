@@ -95,7 +95,7 @@ export function TopBar({
             <div className="flex items-start justify-between gap-2 border-b border-border px-4 py-3.5">
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-ink">Notificações</p>
-                <p className="text-xs text-ink-muted">Prazos vencidos e dos próximos 7 dias</p>
+                <p className="text-xs text-ink-muted">Prazos importantes e demandas da equipe</p>
               </div>
               <div className="flex shrink-0 items-center gap-1">
               {totalNotificacoes > 0 && (
