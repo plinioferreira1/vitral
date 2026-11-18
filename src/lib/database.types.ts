@@ -14,6 +14,66 @@ export type Database = {
   }
   public: {
     Tables: {
+      demandas_categorias: {
+        Row: {
+          id: string
+          tenant_id: string
+          nome: string
+          ativa: boolean
+          criada_em: string
+          criada_por: string | null
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          nome: string
+          ativa?: boolean
+          criada_em?: string
+          criada_por?: string | null
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          nome?: string
+          ativa?: boolean
+          criada_em?: string
+          criada_por?: string | null
+        }
+        Relationships: []
+      }
+      demandas_lote_audios: {
+        Row: {
+          lote_id: string
+          tenant_id: string
+          autor_id: string
+          caminho: string
+          mime_type: string
+          tamanho_bytes: number
+          nome_original: string | null
+          criada_em: string
+        }
+        Insert: {
+          lote_id: string
+          tenant_id: string
+          autor_id: string
+          caminho: string
+          mime_type: string
+          tamanho_bytes: number
+          nome_original?: string | null
+          criada_em?: string
+        }
+        Update: {
+          lote_id?: string
+          tenant_id?: string
+          autor_id?: string
+          caminho?: string
+          mime_type?: string
+          tamanho_bytes?: number
+          nome_original?: string | null
+          criada_em?: string
+        }
+        Relationships: []
+      }
       demandas_recorrencias: {
         Row: {
           id: string
@@ -21,6 +81,7 @@ export type Database = {
           solicitante_id: string
           responsavel_id: string
           titulo: string
+          categoria_id: string | null
           descricao: string | null
           prioridade: string
           periodicidade: string
@@ -36,6 +97,7 @@ export type Database = {
           solicitante_id: string
           responsavel_id: string
           titulo: string
+          categoria_id?: string | null
           descricao?: string | null
           prioridade?: string
           periodicidade: string
@@ -51,6 +113,7 @@ export type Database = {
           solicitante_id?: string
           responsavel_id?: string
           titulo?: string
+          categoria_id?: string | null
           descricao?: string | null
           prioridade?: string
           periodicidade?: string
@@ -208,6 +271,9 @@ export type Database = {
           id: string
           tenant_id: string
           titulo: string
+          categoria_id: string | null
+          excluida_em: string | null
+          excluida_por: string | null
           descricao: string | null
           recorrencia_data: string | null
           recorrencia_id: string | null
@@ -227,6 +293,9 @@ export type Database = {
           id?: string
           tenant_id: string
           titulo: string
+          categoria_id?: string | null
+          excluida_em?: string | null
+          excluida_por?: string | null
           descricao?: string | null
           recorrencia_data?: string | null
           recorrencia_id?: string | null
@@ -246,6 +315,9 @@ export type Database = {
           id?: string
           tenant_id?: string
           titulo?: string
+          categoria_id?: string | null
+          excluida_em?: string | null
+          excluida_por?: string | null
           descricao?: string | null
           solicitante_id?: string
           responsavel_id?: string
