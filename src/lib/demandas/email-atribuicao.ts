@@ -26,7 +26,7 @@ export async function enviarEmailsNovasDemandas(ids?:string[]):Promise<{enviados
   try{
    const [u,d]=await Promise.all([
     db.from("usuarios").select("nome,email,ativo,tenant_id").eq("id",item.destinatario_id).single(),
-    db.from("demandas").select("id,titulo,descricao,prazo,prioridade,responsavel_id,tenant_id").eq("id",item.demanda_id).single(),
+    db.from("demandas").select("id,titulo,descricao,prazo,prioridade,responsavel_id,tenant_id").eq("id",item.demanda_id).is("excluida_em",null).single(),
    ]);
    if(u.error||d.error||!u.data||!d.data||!u.data.ativo||
       u.data.tenant_id!==item.tenant_id||d.data.tenant_id!==item.tenant_id||
