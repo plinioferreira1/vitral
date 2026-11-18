@@ -20,7 +20,7 @@ export default async function ResumoDemandasPage({searchParams}:{
   const supabase=await createClient();
   const [tarefasResult,eventosResult,usuariosResult]=await Promise.all([
     supabase.from("demandas").select("id,titulo,status,prioridade,prazo,responsavel_id,solicitante_id,criada_em,concluida_em")
-      .eq("tenant_id",usuario.tenant_id).order("criada_em",{ascending:false}).limit(500),
+      .eq("tenant_id",usuario.tenant_id).is("excluida_em",null).order("criada_em",{ascending:false}).limit(500),
     supabase.from("demandas_atualizacoes").select("demanda_id,tipo,criada_em,autor_id,status_novo")
       .eq("tenant_id",usuario.tenant_id).order("criada_em",{ascending:false}).limit(1200),
     supabase.from("usuarios").select("id,nome").eq("tenant_id",usuario.tenant_id).eq("ativo",true),
