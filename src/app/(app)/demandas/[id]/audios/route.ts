@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { NextResponse, after } from "next/server";
+import { notificarPush } from "@/lib/demandas/push";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
@@ -21,7 +22,7 @@ export async function POST(req:Request,{params}:{params:Promise<{id:string}>}){
   if(!user||!usuario?.ativo||!usuario.tenant_id)return resposta("Acesso negado.",401);
   const supabase=await createClient();
   const {data:demanda,error:erroDemanda}=await supabase.from("demandas")
-    .select("id,tenant_id").eq("id",id).eq("tenant_id",usuario.tenant_id).maybeSingle();
+    .select("id,tenant_id,solicitante_id,responsavel_id").eq("id",id).eq("tenant_id",usuario.tenant_id).maybeSingle();
   if(erroDemanda||!demanda)return resposta("Demanda não encontrada ou sem permissão.",404);
   let arquivo:FormDataEntryValue|null=null;
   try{const form=await req.formData();arquivo=form.get("audio");}
@@ -48,5 +49,7 @@ export async function POST(req:Request,{params}:{params:Promise<{id:string}>}){
     await admin.storage.from(BUCKET).remove([caminho]);
     return resposta("Não foi possível registrar o áudio.",503);
   }
+  const destino=demanda.solicitante_id===user.id?demanda.responsavel_id:demanda.solicitante_id;
+  if(destino!==user.id)after(()=>notificarPush(usuario.tenant_id!,destino,id,"Novo áudio"));
   return NextResponse.json({ok:true,id:idAudio},{status:201,headers:{"Cache-Control":"no-store"}});
 }

@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      demandas_push_assinaturas: {
+        Row: {
+          id: string
+          tenant_id: string
+          usuario_id: string
+          endpoint: string
+          p256dh: string
+          auth_secret: string
+          criada_em: string
+          atualizada_em: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          usuario_id: string
+          endpoint: string
+          p256dh: string
+          auth_secret: string
+          criada_em?: string
+          atualizada_em?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          usuario_id?: string
+          endpoint?: string
+          p256dh?: string
+          auth_secret?: string
+          criada_em?: string
+          atualizada_em?: string
+        }
+        Relationships: []
+      }
       demandas_audios: {
         Row: {
           id: string

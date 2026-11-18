@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { criarDemanda, marcarNotificacaoDemandaLida } from "./actions";
 import { DitadoDemandas } from "./ditado-demandas";
+import { NotificacoesPush } from "./notificacoes-push";
 
 type Situacao = "pendente"|"em_andamento"|"aguardando"|"bloqueada"|"concluida";
 const LABEL: Record<Situacao,string> = {
@@ -81,6 +82,8 @@ export default async function DemandasPage({searchParams}:{
       </div>)}
     </div>
 
+    <NotificacoesPush/>
+
     {(rAvisos.data??[]).length>0 && <section className={`${CARD_CLASS} space-y-2 p-4`} aria-label="Notificações não lidas">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-ink"><Bell size={16}/> Novidades para você <span className="text-xs text-ink-muted">({rAvisos.data?.length})</span></h2>
       {(rAvisos.data??[]).map(n=><div key={n.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-background p-3">
@@ -98,7 +101,7 @@ export default async function DemandasPage({searchParams}:{
       </div>)}
     </section>}
 
-    {gestor && <DitadoDemandas equipe={equipe.map(u=>({id:u.id,nome:u.nome}))}/>}
+    {gestor && <DitadoDemandas equipe={equipe.map(u=>({id:u.id,nome:u.nome}))} iaAtiva={Boolean(process.env.OPENAI_API_KEY)}/>}
 
     {gestor && <details className={`${CARD_CLASS} group p-4 sm:p-5`}>
       <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold text-brand"><Plus size={18}/> Nova demanda
