@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enviarEmail } from "@/lib/email";
+import { cabecalhoEmailSacra, rodapeEmailSacra } from "@/lib/email-layout-sacra";
 import { hojeISO } from "@/lib/data-br";
 
 function brl(v: number): string {
@@ -152,13 +153,7 @@ export async function enviarRelatorioFinanceiroDiario(tenantId: string) {
           <tr>
             <td align="center" style="padding:28px 14px;">
               <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width:760px;border-collapse:collapse;">
-                <tr>
-                  <td style="background:#731515;border-radius:22px 22px 0 0;padding:26px 28px;">
-                    <div style="font-size:12px;line-height:16px;color:#f5d7d7;letter-spacing:.08em;text-transform:uppercase;font-weight:700;">Vitral Financeiro</div>
-                    <div style="margin-top:8px;font-size:28px;line-height:34px;color:#ffffff;font-weight:800;">Resumo diário</div>
-                    <div style="margin-top:6px;font-size:14px;line-height:20px;color:#f8e9e9;">${dataBR(hoje)} · Sacra Netimóveis</div>
-                  </td>
-                </tr>
+                ${cabecalhoEmailSacra("Financeiro","Resumo diário",dataBR(hoje)+" · Sacra Netimóveis")}
                 <tr>
                   <td style="background:#fffaf4;border:1px solid #e7e2dc;border-top:0;border-radius:0 0 22px 22px;padding:22px;">
                     <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="border-collapse:collapse;">
@@ -189,7 +184,8 @@ export async function enviarRelatorioFinanceiroDiario(tenantId: string) {
                     </div>
                   </td>
                 </tr>
-              </table>
+
+                ${rodapeEmailSacra()}              </table>
             </td>
           </tr>
         </table>
