@@ -29,6 +29,7 @@ import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
 import { TabelaLancamentos, type LancamentoLinha, type EstadoExibicao, type CampoOrdenacao } from "@/components/financeiro/tabela-lancamentos";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
+import { ResumoSelecionadosLancamentos } from "@/components/financeiro/resumo-selecionados-lancamentos";
 
 const campoClasse =
   INPUT_CLASS;
@@ -495,7 +496,8 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
             <p className="font-semibold text-ink">Ações em lote</p>
             <p className="mt-0.5">Marque lançamentos em aberto para baixar ou apagar vários de uma vez.</p>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <ResumoSelecionadosLancamentos />
             <BotaoEnviar
               formAction={prepararBaixaEmLote}
               name="acao_lote"
