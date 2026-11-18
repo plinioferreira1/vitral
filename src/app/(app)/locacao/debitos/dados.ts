@@ -37,7 +37,7 @@ export type ContratoPainel = {
   condominio_codigo_unidade: string | null;
   condominio_observacoes: string | null;
   iptu_inscricao: string | null;
-  imoveis: { endereco: string; inscricao_iptu: string | null } | null;
+  imoveis: { endereco: string; cep: string | null; inscricao_iptu: string | null } | null;
   locatario: { nome: string } | null;
   locador: { nome: string } | null;
 };
@@ -54,7 +54,7 @@ export type DadosPainel = {
 
 const SELECT_CONTRATO = `id, numero, ativo, imovel_id, possui_condominio, administradora_id, condominio_nome, condominio_unidade, condominio_bloco,
   condominio_email, condominio_codigo_unidade, condominio_observacoes, iptu_inscricao,
-  imoveis ( endereco, inscricao_iptu ),
+  imoveis ( endereco, cep, inscricao_iptu ),
   locatario:clientes!contratos_locacao_locatario_id_fkey ( nome ),
   locador:clientes!contratos_locacao_locador_id_fkey ( nome )`;
 
@@ -87,7 +87,7 @@ export async function carregarPainel(supabase: Supabase, tenantId: string, compe
     const adm = admId ? mapaAdm.get(admId) : undefined;
     return {
       contratoId: c.id,
-      imovel: c.imoveis?.endereco ?? c.numero,
+      imovel: c.imoveis?.endereco ? [c.imoveis.endereco,c.imoveis.cep ? `CEP ${c.imoveis.cep}` : null].filter(Boolean).join(" · ") : c.numero,
       inquilino: c.locatario?.nome ?? null,
       condominioNome: c.condominio_nome,
       administradoraId: adm?.id ?? null,
