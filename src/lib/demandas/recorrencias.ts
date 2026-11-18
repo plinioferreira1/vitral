@@ -5,21 +5,21 @@ const hojeBrasilia=()=>{
  const n=(t:string)=>Number(partes.find(p=>p.type===t)?.value??0);
  return new Date(Date.UTC(n("year"),n("month")-1,n("day"))).toISOString().slice(0,10);
 };
-export function proximoVencimento(data:string,periodicidade:string):string{
+export function proximoVencimento(data:string,periodicidade:string,diaBase?:number):string{
  const [ano,mes,dia]=data.split("-").map(Number);
  if(!ano||!mes||!dia)throw new Error("Data inválida");
  const p=periodicidade==="diaria"?1:periodicidade==="semanal"?7:0;
  if(p)return new Date(Date.UTC(ano,mes-1,dia+p)).toISOString().slice(0,10);
  if(periodicidade!=="mensal")throw new Error("Periodicidade inválida");
  const ultimoDia=new Date(Date.UTC(ano,mes+1,0)).getUTCDate();
- return new Date(Date.UTC(ano,mes,Math.min(dia,ultimoDia))).toISOString().slice(0,10);
+ return new Date(Date.UTC(ano,mes,Math.min(diaBase??dia,ultimoDia))).toISOString().slice(0,10);
 }
 /** Rodar por agendamento. Repetições sobrevivem a retries sem duplicar tarefas. */
 export async function gerarDemandasRecorrentes():Promise<{geradas:number;falhas:number}>{
  const db=createAdminClient();
  const hoje=hojeBrasilia();
  const {data:rotinas,error}=await db.from("demandas_recorrencias")
-  .select("id,tenant_id,solicitante_id,responsavel_id,titulo,descricao,prioridade,periodicidade,proxima_data")
+  .select("id,tenant_id,solicitante_id,responsavel_id,titulo,descricao,prioridade,periodicidade,proxima_data,dia_base")
   .eq("ativa",true).lte("proxima_data",hoje).order("proxima_data",{ascending:true}).limit(100);
  if(error)throw new Error("Falha ao consultar demandas recorrentes");
  let geradas=0,falhas=0;
@@ -35,7 +35,7 @@ export async function gerarDemandasRecorrentes():Promise<{geradas:number;falhas:
     });
     if(insertError&&insertError.code!=="23505")throw new Error("Não foi possível gerar recorrência");
     if(!insertError)geradas++;
-    data=proximoVencimento(data,rotina.periodicidade);
+    data=proximoVencimento(data,rotina.periodicidade,rotina.dia_base);
    }
    const {error:erroUpdate}=await db.from("demandas_recorrencias").update({proxima_data:data,atualizada_em:new Date().toISOString()})
     .eq("id",rotina.id).eq("tenant_id",rotina.tenant_id).eq("proxima_data",rotina.proxima_data);
