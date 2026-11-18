@@ -65,7 +65,7 @@ export function AvisosDeEntrada({usuarioId,notificacoes,demandas}:{
     </div>
     {!!notificacoes.length&&<section className="space-y-2">
       <h3 className="text-sm font-semibold text-ink">Notificações não lidas</h3>
-      {notificacoes.slice(0,6).map(n=><Link key={n.id} href={n.href??"/demandas"} onClick={fechar} className="block rounded-xl border border-border p-3 hover:bg-background">
+      {notificacoes.slice(0,6).map(n=><Link key={n.id} href={n.href??(n.processoId?"/processos/"+n.processoId+"#etapa-"+n.id:"/demandas")} onClick={fechar} className="block rounded-xl border border-border p-3 hover:bg-background">
        <p className="text-sm font-medium text-ink">{n.etapa}</p>
        <p className="mt-1 line-clamp-2 text-xs text-ink-muted">{n.contexto} · {n.prazo}</p>
       </Link>)}
