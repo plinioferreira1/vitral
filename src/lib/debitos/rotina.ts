@@ -153,7 +153,7 @@ type VerificacaoComContrato = {
     condominio_email: string | null;
     condominio_codigo_unidade: string | null;
     administradora_id: string | null;
-    imoveis: { endereco: string } | null;
+    imoveis: { endereco: string; cep: string | null } | null;
     condominio_administradoras: { id: string; nome: string; metodo_consulta: string; email_solicitacao: string | null; ativa: boolean } | null;
   } | null;
 };
@@ -205,7 +205,7 @@ export async function enviarSolicitacoes(
     .select(
       `id, contrato_id, status, solicitacao_id,
        contratos_locacao ( numero, condominio_nome, condominio_unidade, condominio_bloco, condominio_email, condominio_codigo_unidade, administradora_id,
-         imoveis ( endereco ),
+         imoveis ( endereco, cep ),
          condominio_administradoras ( id, nome, metodo_consulta, email_solicitacao, ativa ) )`
     )
     .eq("tenant_id", tenantId)
@@ -229,7 +229,7 @@ export async function enviarSolicitacoes(
     unidades.push({
       verificacaoId: v.id,
       contratoId: v.contrato_id,
-      imovel: c.imoveis?.endereco ?? c.numero,
+      imovel: c.imoveis?.endereco ? [c.imoveis.endereco,c.imoveis.cep ? `CEP ${c.imoveis.cep}` : null].filter(Boolean).join(" · ") : c.numero,
       condominioNome: c.condominio_nome,
       bloco: c.condominio_bloco,
       unidade: c.condominio_unidade,
