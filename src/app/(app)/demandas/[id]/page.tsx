@@ -26,6 +26,10 @@ export default async function DetalheDemandaPage({params}:{params:Promise<{id:st
   const {data:demanda,error}=await supabase.from("demandas").select("*")
     .eq("id",id).eq("tenant_id",usuario.tenant_id).maybeSingle();
   if(error||!demanda) notFound();
+  const {data:audioOriginal}=demanda.lote_id
+    ?await supabase.from("demandas_lote_audios").select("lote_id,nome_original,criada_em")
+      .eq("lote_id",demanda.lote_id).eq("tenant_id",usuario.tenant_id).maybeSingle()
+    :{data:null};
   const gestor=["diretor","gerente"].includes(usuario.nivel_acesso);
   const excluida=!!demanda.excluida_em;
   const podeAlterar=!excluida&&(gestor||demanda.responsavel_id===user.id);
@@ -64,6 +68,11 @@ export default async function DetalheDemandaPage({params}:{params:Promise<{id:st
       <div className={`${CARD_CLASS} p-4`}><span className="text-xs text-ink-muted">Prazo</span><p className="mt-2 font-semibold text-ink">{dia(demanda.prazo)}</p></div>
       <div className={`${CARD_CLASS} p-4`}><span className="text-xs text-ink-muted">Situação</span><p className="mt-2 font-semibold text-ink">{statusNome(demanda.status)}</p></div>
     </div>
+    {audioOriginal&&<section className={CARD_CLASS+" space-y-3 p-4 sm:p-5"}>
+      <h2 className="font-semibold text-ink">Áudio original das orientações</h2>
+      <p className="text-xs text-ink-muted">Ouça a mensagem do gestor que originou este conjunto de demandas. O acesso é privado.</p>
+      <audio controls preload="none" className="w-full" src={`/api/demandas/lote-audio/${audioOriginal.lote_id}`}>Seu navegador não reproduz o áudio.</audio>
+    </section>}
     <section className={`${CARD_CLASS} space-y-3 p-4 sm:p-5`}>
       <h2 className="font-semibold text-ink">Orientações</h2>
       <p className="whitespace-pre-wrap text-sm leading-6 text-ink">{demanda.descricao??"Nenhuma orientação adicional registrada."}</p>
