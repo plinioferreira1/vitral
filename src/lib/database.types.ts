@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      demandas_audios: {
+        Row: {
+          id: string
+          tenant_id: string
+          demanda_id: string
+          autor_id: string
+          caminho: string
+          mime_type: string
+          tamanho_bytes: number
+          nome_original: string | null
+          criada_em: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          demanda_id: string
+          autor_id: string
+          caminho: string
+          mime_type: string
+          tamanho_bytes: number
+          nome_original?: string | null
+          criada_em?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          demanda_id?: string
+          autor_id?: string
+          caminho?: string
+          mime_type?: string
+          tamanho_bytes?: number
+          nome_original?: string | null
+          criada_em?: string
+        }
+        Relationships: []
+      }
       demandas_email_envios: {
         Row: {
           id: string
