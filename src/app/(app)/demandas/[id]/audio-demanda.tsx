@@ -5,7 +5,6 @@ import { Mic, Square, Upload, AlertCircle, FileAudio } from "lucide-react";
 
 const MAX=4*1024*1024;
 const formatar=(v:number)=>`${Math.round(v/1024)} KB`;
-type Gravador={stop():void;state:string;ondataavailable:((e:BlobEvent)=>void)|null;onstop:(()=>void)|null;onerror:((e:Event)=>void)|null;start():void;};
 
 export function AudioDemanda({demandaId}:{demandaId:string}){
   const recorder=useRef<MediaRecorder|null>(null);
