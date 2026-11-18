@@ -23,7 +23,7 @@ export async function enviarFechamentoDemandas(tenantId:string):Promise<Resultad
   try{
     const {data:tarefas,error:erroTarefas}=await db.from("demandas")
       .select("id,titulo,status,prazo,responsavel_id,solicitante_id,criada_em,concluida_em")
-      .eq("tenant_id",tenantId).order("criada_em",{ascending:false}).limit(1000);
+      .eq("tenant_id",tenantId).is("excluida_em",null).order("criada_em",{ascending:false}).limit(1000);
     if(erroTarefas) throw new Error("Falha ao consultar demandas.");
     if((tarefas??[]).length===0)return {sucesso:true,ignorado:true};
     if((tarefas??[]).length===1000)throw new Error("Relatório excedeu o limite de 1.000 demandas; revise a paginação.");
