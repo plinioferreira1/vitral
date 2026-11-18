@@ -104,7 +104,7 @@ export default async function ContratoLocacaoPage({
     supabase
       .from("contratos_locacao")
       .select(
-        `*, imoveis ( endereco ),
+        `*, imoveis ( endereco, cep ),
          locador:clientes!contratos_locacao_locador_id_fkey ( nome, telefone, email ),
          locatario:clientes!contratos_locacao_locatario_id_fkey ( nome, telefone, email )`
       )
@@ -127,11 +127,16 @@ export default async function ContratoLocacaoPage({
   if (!contrato) notFound();
 
   type Contrato = typeof contrato & {
-    imoveis: { endereco: string } | null;
+    imoveis: { endereco: string; cep: string | null } | null;
     locador: { nome: string; telefone: string | null; email: string | null } | null;
     locatario: { nome: string; telefone: string | null; email: string | null } | null;
   };
   const c = contrato as unknown as Contrato;
+  const dataContratoBR = (valor:string|null)=>valor?valor.split("-").reverse().join("/"):"—";
+  const valorContratoBR=(valor:number|null)=>valor===null?"—":Number(valor).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+  const locatariosAdicionais = Array.isArray(c.locatarios_adicionais)
+    ? c.locatarios_adicionais.map(p=>(p && typeof p==="object" && !Array.isArray(p) && typeof p.nome==="string")?p.nome:"").filter(Boolean)
+    : [];
 
   const RESPONSAVEL_POR_TIPO: Record<TipoContaLocacao, ResponsavelPagamentoLocacao | null> = {
     iptu: c.responsavel_iptu,
@@ -225,6 +230,49 @@ export default async function ContratoLocacaoPage({
           </div>
         </div>
       </div>
+
+      <section className="rounded-2xl border border-border/70 bg-surface p-4 shadow-sm sm:p-5" aria-label="Identificação da locação">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-sm font-semibold text-ink">Identificação para condomínio e IPTU/TLP</h2>
+          {c.documento_origem_url?.startsWith("https://drive.google.com/") &&
+            <a href={c.documento_origem_url} target="_blank" rel="noopener noreferrer"
+              className="text-xs font-semibold text-brand hover:underline">Conferir contrato no Drive</a>}
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="sm:col-span-2">
+            <p className="text-xs font-medium text-ink-muted">Endereço completo do imóvel</p>
+            <p className="mt-1 break-words text-sm font-semibold text-ink">
+              {c.imoveis?.endereco??"Endereço não cadastrado"}
+              {c.imoveis?.cep ? ` · CEP ${c.imoveis.cep}` : ""}
+            </p>
+            {!c.imoveis?.cep&&<p className="mt-1 text-xs text-amber-700">CEP ainda não confirmado. Conferir documentação antes de enviar à administradora.</p>}
+          </div>
+          <div>
+            <p className="text-xs font-medium text-ink-muted">Identificação condominial</p>
+            <p className="mt-1 text-sm text-ink">
+              {[c.condominio_nome,c.condominio_bloco&&`Bloco ${c.condominio_bloco}`,
+                c.condominio_unidade&&`Unidade ${c.condominio_unidade}`].filter(Boolean).join(" · ")||"Não informada"}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs font-medium text-ink-muted">Inscrição IPTU/TLP</p>
+            <p className="mt-1 text-sm text-ink">{c.iptu_inscricao??"—"}</p>
+          </div>
+          {(c.vigencia_inicio||c.vigencia_fim||c.aluguel_valor!==null)&&
+            <div className="sm:col-span-2 grid gap-3 rounded-xl bg-background p-3 sm:grid-cols-3">
+              <div><p className="text-xs text-ink-muted">Vigência</p><p className="mt-1 text-sm font-medium text-ink">{dataContratoBR(c.vigencia_inicio)} até {dataContratoBR(c.vigencia_fim)}</p></div>
+              <div><p className="text-xs text-ink-muted">Aluguel mensal</p><p className="mt-1 text-sm font-medium text-ink">{valorContratoBR(c.aluguel_valor)}</p></div>
+              <div><p className="text-xs text-ink-muted">Vencimento</p><p className="mt-1 text-sm font-medium text-ink">{c.aluguel_dia_vencimento?`Dia ${c.aluguel_dia_vencimento}`:"—"}</p></div>
+              <div><p className="text-xs text-ink-muted">Garantia</p><p className="mt-1 text-sm font-medium text-ink">{c.garantia_locaticia||"Não cadastrada"}</p></div>
+              <div><p className="text-xs text-ink-muted">Desconto de pontualidade</p><p className="mt-1 text-sm font-medium text-ink">{valorContratoBR(c.desconto_pontualidade)}</p></div>
+              <div><p className="text-xs text-ink-muted">Primeiro vencimento</p><p className="mt-1 text-sm font-medium text-ink">{dataContratoBR(c.primeiro_aluguel_vencimento)}</p></div>
+            </div>}
+          {locatariosAdicionais.length>0&&<div className="sm:col-span-2">
+            <p className="text-xs font-medium text-ink-muted">Outros locatários no contrato</p>
+            <p className="mt-1 text-sm text-ink">{locatariosAdicionais.join(", ")}</p>
+          </div>}
+        </div>
+      </section>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Resumo das contas do ano">
         <CartaoIndicador compacto icon={Calendar} valor={contasComDados.length} label={`Contas em ${ano}`} />
