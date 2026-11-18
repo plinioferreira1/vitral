@@ -14,12 +14,13 @@ const TIPOS:Record<string,string>={
 const uuid=(s:string)=>/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(s);
 const resposta=(message:string,status:number)=>NextResponse.json({erro:message},{status});
 
-/** Upload pelo servidor. Somente quem já consegue abrir a demanda poderá adicionar voz. */
+/** Upload pelo servidor exclusivo de diretores e gerentes da organização. */
 export async function POST(req:Request,{params}:{params:Promise<{id:string}>}){
   const {id}=await params;
   if(!uuid(id))return resposta("Demanda inválida.",400);
   const {user,usuario}=await getUsuarioAtual();
   if(!user||!usuario?.ativo||!usuario.tenant_id)return resposta("Acesso negado.",401);
+  if(!["diretor","gerente"].includes(usuario.nivel_acesso))return resposta("Somente gestores podem enviar áudios. Responda por texto.",403);
   const supabase=await createClient();
   const {data:demanda,error:erroDemanda}=await supabase.from("demandas")
     .select("id,tenant_id,solicitante_id,responsavel_id").eq("id",id).eq("tenant_id",usuario.tenant_id).is("excluida_em",null).maybeSingle();
