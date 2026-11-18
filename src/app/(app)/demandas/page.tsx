@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bell, CalendarClock, CheckCircle2, ClipboardList, Plus, Search, AlertTriangle, CalendarDays, Repeat2, PauseCircle, PlayCircle, Trash2 } from "lucide-react";
+import { Bell, CalendarClock, CheckCircle2, ClipboardList, Plus, Search, AlertTriangle, CalendarDays, Repeat2, PauseCircle, PlayCircle, Trash2, Tags } from "lucide-react";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
-import { criarDemanda, criarRecorrenciaDemanda, alternarRecorrenciaDemanda, marcarNotificacaoDemandaLida } from "./actions";
+import { criarDemanda, criarRecorrenciaDemanda, alternarRecorrenciaDemanda, marcarNotificacaoDemandaLida, criarCategoriaDemanda, alternarCategoriaDemanda } from "./actions";
 import { DitadoDemandas } from "./ditado-demandas";
 import { NotificacoesPush } from "./notificacoes-push";
 
@@ -26,16 +26,16 @@ const hojeSP = () => { const p=new Intl.DateTimeFormat("en-US",{timeZone:"Americ
 const fmt = (data:string|null) => data ? data.slice(0,10).split("-").reverse().join("/") : "Sem prazo";
 
 export default async function DemandasPage({searchParams}:{
-  searchParams:Promise<{q?:string;status?:string;escopo?:string;prazo?:string}>;
+  searchParams:Promise<{q?:string;status?:string;escopo?:string;prazo?:string;categoria?:string}>;
 }) {
   const { user, usuario } = await getUsuarioAtual();
   if(!user || !usuario?.tenant_id || !usuario.ativo) redirect("/login");
   const gestor=["diretor","gerente"].includes(usuario.nivel_acesso);
   const sp=await searchParams;
   const supabase=await createClient();
-  const [rDemandas,rAvisos,rEquipe,rRotinas]=await Promise.all([
+  const [rDemandas,rAvisos,rEquipe,rRotinas,rCategorias]=await Promise.all([
     supabase.from("demandas")
-      .select("id,titulo,descricao,status,prioridade,prazo,responsavel_id,solicitante_id,criada_em,concluida_em")
+      .select("id,titulo,descricao,status,prioridade,prazo,responsavel_id,solicitante_id,criada_em,concluida_em,categoria_id")
       .eq("tenant_id",usuario.tenant_id).is("excluida_em",null).order("criada_em",{ascending:false}).limit(250),
     supabase.from("demandas_notificacoes")
       .select("id,demanda_id,titulo,mensagem,criada_em,demandas!inner(excluida_em)")
@@ -45,17 +45,23 @@ export default async function DemandasPage({searchParams}:{
     supabase.from("usuarios").select("id,nome,ativo")
       .eq("tenant_id",usuario.tenant_id).eq("ativo",true).order("nome"),
     gestor ? supabase.from("demandas_recorrencias")
-      .select("id,titulo,responsavel_id,periodicidade,proxima_data,ativa,prioridade")
+      .select("id,titulo,responsavel_id,periodicidade,proxima_data,ativa,prioridade,categoria_id")
       .eq("tenant_id",usuario.tenant_id).order("ativa",{ascending:false}).order("proxima_data",{ascending:true}).limit(80)
-      : Promise.resolve({data:[] as {id:string;titulo:string;responsavel_id:string;periodicidade:string;proxima_data:string;ativa:boolean;prioridade:string}[]}),
+      : Promise.resolve({data:[] as {id:string;titulo:string;responsavel_id:string;periodicidade:string;proxima_data:string;ativa:boolean;prioridade:string;categoria_id:string|null}[]}),
+    supabase.from("demandas_categorias").select("id,nome,ativa")
+      .eq("tenant_id",usuario.tenant_id).order("nome"),
   ]);
-  if(rDemandas.error || rAvisos.error || rEquipe.error) {
+  if(rDemandas.error || rAvisos.error || rEquipe.error || rCategorias.error) {
     return <div role="alert" className="rounded-xl border border-rose-200 p-5 text-sm text-rose-800">
-      Não foi possível carregar a Central de Demandas. {rDemandas.error?.message||rAvisos.error?.message||rEquipe.error?.message}
+      Não foi possível carregar a Central de Demandas. {rDemandas.error?.message||rAvisos.error?.message||rEquipe.error?.message||rCategorias.error?.message}
     </div>;
   }
   const tarefas = rDemandas.data??[];
   const equipe=rEquipe.data??[];
+  const categorias=rCategorias.data??[];
+  const categoriasAtivas=categorias.filter(c=>c.ativa);
+  const nomesCategoria=new Map(categorias.map(c=>[c.id,c.nome]));
+  const categoriaFiltro=categorias.some(c=>c.id===sp.categoria)?sp.categoria??"":"";
   const nomes=new Map(equipe.map(u=>[u.id,u.nome]));
   const agora=hojeSP();
   const buscar=(sp.q??"").trim().toLocaleLowerCase("pt-BR");
@@ -72,6 +78,7 @@ export default async function DemandasPage({searchParams}:{
   const prioridadePeso:Record<string,number>={urgente:0,alta:1,normal:2,baixa:3};
   const filtradas=universo
     .filter(d=>!statusValido||d.status===statusValido)
+    .filter(d=>!categoriaFiltro||d.categoria_id===categoriaFiltro)
     .filter(d=>!prazoFiltro||(d.status!=="concluida"&&(
       prazoFiltro==="atrasadas"?!!d.prazo&&d.prazo<agora:
       prazoFiltro==="hoje"?d.prazo===agora:
@@ -122,7 +129,7 @@ export default async function DemandasPage({searchParams}:{
       </div>)}
     </section>}
 
-    {gestor && <DitadoDemandas equipe={equipe.map(u=>({id:u.id,nome:u.nome}))} iaAtiva={Boolean(process.env.OPENAI_API_KEY)}/>}
+    {gestor && <DitadoDemandas equipe={equipe.map(u=>({id:u.id,nome:u.nome}))} categorias={categoriasAtivas.map(c=>({id:c.id,nome:c.nome}))} iaAtiva={Boolean(process.env.OPENAI_API_KEY)}/>}
 
     {gestor && <details className={`${CARD_CLASS} group p-4 sm:p-5`}>
       <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold text-brand"><Plus size={18}/> Nova demanda
@@ -140,6 +147,12 @@ export default async function DemandasPage({searchParams}:{
           <select name="responsavel_id" required defaultValue="" className={`${INPUT_CLASS} mt-1`}>
             <option value="" disabled>Selecione um colaborador</option>
             {equipe.map(u=><option key={u.id} value={u.id}>{u.nome}</option>)}
+          </select>
+        </label>
+        <label className="block text-xs font-medium text-ink-muted">Categoria *
+          <select name="categoria_id" required defaultValue="" className={`${INPUT_CLASS} mt-1`}>
+            <option value="" disabled>Escolha uma categoria</option>
+            {categoriasAtivas.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}
           </select>
         </label>
         <label className="block text-xs font-medium text-ink-muted">Prazo
@@ -176,6 +189,12 @@ export default async function DemandasPage({searchParams}:{
             {equipe.map(u=><option key={u.id} value={u.id}>{u.nome}</option>)}
           </select>
         </label>
+        <label className="text-xs font-medium text-ink-muted">Categoria *
+          <select name="categoria_id" required defaultValue="" className={`${INPUT_CLASS} mt-1`}>
+            <option value="" disabled>Escolha uma categoria</option>
+            {categoriasAtivas.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}
+          </select>
+        </label>
         <label className="text-xs font-medium text-ink-muted">Frequência *
           <select name="periodicidade" required defaultValue="semanal" className={`${INPUT_CLASS} mt-1`}>
             <option value="diaria">Todos os dias</option>
@@ -199,7 +218,7 @@ export default async function DemandasPage({searchParams}:{
         {(rRotinas.data??[]).map(rotina=><div key={rotina.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border p-3">
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold text-ink">{rotina.titulo}</p>
-            <p className="mt-1 text-xs text-ink-muted">{nomes.get(rotina.responsavel_id)??"Colaborador"} · {rotina.periodicidade} · Próxima: {fmt(rotina.proxima_data)}</p>
+            <p className="mt-1 text-xs text-ink-muted">{nomes.get(rotina.responsavel_id)??"Colaborador"} · {nomesCategoria.get(rotina.categoria_id??"")??"Sem categoria"} · {rotina.periodicidade} · Próxima: {fmt(rotina.proxima_data)}</p>
           </div>
           <form action={alternarRecorrenciaDemanda}>
             <input type="hidden" name="recorrencia_id" value={rotina.id}/>
@@ -213,12 +232,38 @@ export default async function DemandasPage({searchParams}:{
       </div>
     </details>}
 
+    {gestor&&<details className={`${CARD_CLASS} group p-4 sm:p-5`}>
+      <summary className="flex cursor-pointer list-none items-center gap-2 text-sm font-semibold text-brand">
+        <Tags size={18}/> Gerenciar categorias
+        <span className="ml-auto text-xs font-normal text-ink-muted">{categoriasAtivas.length} ativas · adicionar ou arquivar</span>
+      </summary>
+      <p className="mt-3 text-xs leading-5 text-ink-muted">Crie categorias para classificar demandas avulsas e recorrentes. Arquivar oculta a opção nos novos cadastros, sem apagar o histórico.</p>
+      <form action={criarCategoriaDemanda} className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <label className="flex-1 text-xs font-medium text-ink-muted">Nova categoria
+          <input name="nome" minLength={2} maxLength={60} required className={`${INPUT_CLASS} mt-1`} placeholder="Ex.: Pós-venda, Financeiro, Jurídico"/>
+        </label>
+        <button type="submit" className={`${PRIMARY_BUTTON_CLASS} sm:self-end`}><Plus size={16}/> Adicionar</button>
+      </form>
+      <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        {categorias.map(c=><div key={c.id} className="flex items-center justify-between gap-2 rounded-lg border border-border p-3">
+          <span className="min-w-0 truncate text-sm font-medium text-ink">{c.nome}{!c.ativa&&<span className="ml-2 text-xs text-ink-muted">(arquivada)</span>}</span>
+          <form action={alternarCategoriaDemanda}>
+            <input type="hidden" name="categoria_id" value={c.id}/>
+            <input type="hidden" name="ativa" value={c.ativa?"false":"true"}/>
+            <button type="submit" className="shrink-0 rounded-lg border border-border px-3 py-2 text-xs font-semibold text-ink">
+              {c.ativa?"Arquivar":"Reativar"}
+            </button>
+          </form>
+        </div>)}
+      </div>
+    </details>}
+
     <section className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <h2 className="text-lg font-semibold text-ink">Acompanhamento</h2>
         <span className="text-xs text-ink-muted">{filtradas.length} exibidas · até 250 registros recentes</span>
       </div>
-      <form method="get" className={`${CARD_CLASS} grid gap-3 p-3 sm:grid-cols-[2fr_1fr_1fr_1fr_auto] sm:items-end`}>
+      <form method="get" className={`${CARD_CLASS} grid gap-3 p-3 sm:grid-cols-[2fr_1fr_1fr_1fr_1fr_auto] sm:items-end`}>
         <label className="text-xs font-medium text-ink-muted">Buscar
           <span className="relative block">
             <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-muted"/>
@@ -229,6 +274,12 @@ export default async function DemandasPage({searchParams}:{
           <select name="status" defaultValue={statusValido} className={`${INPUT_CLASS} mt-1`}>
             <option value="">Todas</option>
             {Object.entries(LABEL).map(([value,label])=><option key={value} value={value}>{label}</option>)}
+          </select>
+        </label>
+        <label className="text-xs font-medium text-ink-muted">Categoria
+          <select name="categoria" defaultValue={categoriaFiltro} className={`${INPUT_CLASS} mt-1`}>
+            <option value="">Todas</option>
+            {categorias.map(c=><option key={c.id} value={c.id}>{c.nome}{c.ativa?"":" (arquivada)"}</option>)}
           </select>
         </label>
         <label className="text-xs font-medium text-ink-muted">Vencimento
@@ -258,6 +309,7 @@ export default async function DemandasPage({searchParams}:{
               <span className={`text-xs font-semibold ${atrasada?"text-rose-700":d.prazo===agora&&d.status!=="concluida"?"text-amber-700":"text-ink-muted"}`}>{atrasada?"Vencida · ":d.prazo===agora&&d.status!=="concluida"?"Vence hoje · ":"Prazo: "}{fmt(d.prazo)}</span>
             </div>
             <h3 className="text-sm font-semibold leading-6 text-ink">{d.titulo}</h3>
+            <span className="inline-flex rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-ink-muted">{nomesCategoria.get(d.categoria_id??"")??"Sem categoria"}</span>
             {d.descricao && <p className="line-clamp-2 text-xs leading-5 text-ink-muted">{d.descricao}</p>}
             <div className="flex justify-between gap-2 border-t border-border/70 pt-3 text-xs text-ink-muted">
               <span>Responsável: <strong className="text-ink">{nomes.get(d.responsavel_id)??"Colaborador"}</strong></span>
