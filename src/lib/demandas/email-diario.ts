@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enviarEmail } from "@/lib/email";
+import { layoutEmailSacra, EMAIL_SACRA, botaoEmailSacra } from "@/lib/email-layout-sacra";
 
 const SITE=process.env.NEXT_PUBLIC_SITE_URL || "https://vitral.sacraimoveis.com.br";
 const escapar=(v:unknown)=>String(v??"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
@@ -49,36 +50,30 @@ export async function enviarFechamentoDemandas(tenantId:string):Promise<Resultad
     const semAtualizacao=demandas.filter(t=>t.status!=="concluida"&&!eventos?.some(e=>e.demanda_id===t.id));
     const nomesPorId=new Map(demandas.map(t=>[t.id,t.titulo]));
     const resumoLinha=(t:{id:string;titulo:string;responsavel_id:string})=>
-      `<li style="margin:0 0 7px"><a href="${SITE}/demandas/${t.id}" style="color:#0e3e34;font-weight:600;text-decoration:none">${escapar(t.titulo)}</a> <span style="color:#65736b">— ${escapar(usuarios.get(t.responsavel_id)??"Equipe")}</span></li>`;
+      `<li style="margin:0 0 7px"><a href="${SITE}/demandas/${t.id}" style="color:#731515;font-weight:600;text-decoration:none">${escapar(t.titulo)}</a> <span style="color:#746D68">— ${escapar(usuarios.get(t.responsavel_id)??"Equipe")}</span></li>`;
     const secao=(titulo:string,items:string[],vazio:string)=>
-      `<section style="margin-top:20px;padding:16px;background:#ffffff;border:1px solid #e1e7e2;border-radius:12px"><h2 style="font-size:16px;margin:0 0 12px;color:#17392e">${titulo}</h2>${items.length?`<ul style="margin:0;padding-left:19px;font-size:13px;line-height:21px">${items.slice(0,15).join("")}</ul>`:`<p style="font-size:13px;color:#65736b">${vazio}</p>`}</section>`;
+      `<section style="margin-top:20px;padding:16px;background:#ffffff;border:1px solid #E8E2DB;border-radius:12px"><h2 style="font-size:16px;margin:0 0 12px;color:#731515">${titulo}</h2>${items.length?`<ul style="margin:0;padding-left:19px;font-size:13px;line-height:21px">${items.slice(0,15).join("")}</ul>`:`<p style="font-size:13px;color:#746D68">${vazio}</p>`}</section>`;
     const statusPorId=new Map(demandas.map(t=>[t.id,t]));
     const historico=(eventos??[]).slice(0,30).map(e=>{
       const t=statusPorId.get(e.demanda_id);
       if(!t)return "";
       const tipo=e.tipo==="criacao"?"Criada":e.tipo==="comentario"?"Comentada":e.status_novo==="concluida"?"Concluída":"Andamento atualizado";
-      return `<li style="margin:0 0 6px"><strong>${tipo}</strong>: <a href="${SITE}/demandas/${e.demanda_id}" style="color:#0e3e34">${escapar(nomesPorId.get(e.demanda_id)??"Demanda")}</a> <span style="color:#65736b">(${escapar(usuarios.get(e.autor_id??"")??"Sistema")})</span></li>`;
+      return `<li style="margin:0 0 6px"><strong>${tipo}</strong>: <a href="${SITE}/demandas/${e.demanda_id}" style="color:#731515">${escapar(nomesPorId.get(e.demanda_id)??"Demanda")}</a> <span style="color:#746D68">(${escapar(usuarios.get(e.autor_id??"")??"Sistema")})</span></li>`;
     }).filter(Boolean);
-    const html=`<div style="padding:24px;background:#f4f7f4;font-family:Arial,Helvetica,sans-serif;color:#1b2b23">
-      <div style="max-width:760px;margin:0 auto">
-        <header style="background:#0e3e34;border-radius:16px;padding:25px;color:white">
-          <div style="font-size:12px;letter-spacing:1px;opacity:.9">VITRAL · CENTRAL DE DEMANDAS</div>
-          <h1 style="font-size:25px;margin:10px 0 6px;color:white">Fechamento diário</h1>
-          <p style="font-size:14px;margin:0;color:#d6ebe1">${dataPt(dia)} · Informações registradas pela equipe</p>
-        </header>
-        <div style="display:block;margin-top:14px;padding:16px;background:#fff;border:1px solid #e1e7e2;border-radius:14px">
-          <strong>${doDia.length}</strong> novas · <strong>${concluidasNoDia.length}</strong> concluídas no dia ·
-          <strong>${(eventos??[]).length}</strong> atividades no histórico · <strong>${bloqueadas.length}</strong> bloqueadas ·
-          <strong>${atrasadas.length}</strong> atrasadas
-        </div>
-        ${secao("O que foi concluído",concluidasNoDia.map(id=>statusPorId.get(id)).filter((t):t is typeof demandas[number]=>!!t).map(resumoLinha),"Nenhuma conclusão registrada hoje.")}
-        ${secao("Novas solicitações",doDia.map(resumoLinha),"Nenhuma demanda criada hoje.")}
-        ${secao("Bloqueadas ou atrasadas",[...new Map([...bloqueadas,...atrasadas].map(t=>[t.id,t])).values()].map(resumoLinha),"Nenhuma demanda bloqueada ou vencida.")}
-        ${secao("Atualizações do dia",historico,"Nenhuma atualização registrada.")}
-        ${semAtualizacao.length?`<p style="margin-top:16px;font-size:13px;color:#6b5542"><strong>${semAtualizacao.length}</strong> demandas em aberto não tiveram atualizações neste dia.</p>`:""}
-        <p style="margin-top:20px;font-size:12px;color:#65736b">Acompanhamento baseado nos registros do sistema; atividade não registrada não é presumida. <a href="${SITE}/demandas/resumo?dia=${dia}" style="color:#0e3e34">Abrir relatório completo no VITRAL</a>.</p>
+    const html=layoutEmailSacra("Central de Demandas","Fechamento diário",`
+      <div style="background:#FAF8F5;border:1px solid ${EMAIL_SACRA.borda};border-radius:10px;padding:16px;font-size:14px;line-height:25px;">
+        <strong>${doDia.length}</strong> novas · <strong>${concluidasNoDia.length}</strong> concluídas ·
+        <strong>${(eventos??[]).length}</strong> atualizações · <strong>${bloqueadas.length}</strong> bloqueadas ·
+        <strong>${atrasadas.length}</strong> atrasadas
       </div>
-    </div>`;
+      ${secao("O que foi concluído",concluidasNoDia.map(id=>statusPorId.get(id)).filter((t):t is typeof demandas[number]=>!!t).map(resumoLinha),"Nenhuma conclusão registrada hoje.")}
+      ${secao("Novas solicitações",doDia.map(resumoLinha),"Nenhuma demanda criada hoje.")}
+      ${secao("Bloqueadas ou atrasadas",[...new Map([...bloqueadas,...atrasadas].map(t=>[t.id,t])).values()].map(resumoLinha),"Nenhuma demanda bloqueada ou vencida.")}
+      ${secao("Atualizações do dia",historico,"Nenhuma atualização registrada.")}
+      ${semAtualizacao.length?`<p style="margin-top:16px;font-size:13px;color:#746D68"><strong>${semAtualizacao.length}</strong> demandas em aberto não tiveram atualizações neste dia.</p>`:""}
+      <p style="margin-top:20px;font-size:12px;color:#746D68">Relatório baseado nos registros do sistema; atividades não registradas não são presumidas.</p>
+      ${botaoEmailSacra("Abrir relatório completo",SITE+"/demandas/resumo?dia="+dia)}
+    `,dataPt(dia)+" · Sacra Netimóveis",760);
 
     // Reserva envio de forma atômica; se cron repetir não envia o mesmo relatório duas vezes.
     const {error:erroReserva}=await db.from("demandas_email_envios").insert({tenant_id:tenantId,dia,situacao:"pendente"});
