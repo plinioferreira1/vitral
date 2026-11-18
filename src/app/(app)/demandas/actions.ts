@@ -196,7 +196,7 @@ export async function comentarDemanda(formData: FormData) {
   }
   const supabase = await createClient();
   const { data: demanda } = await supabase.from("demandas")
-    .select("id,solicitante_id,responsavel_id").eq("id",id).eq("tenant_id",sessao.tenantId).maybeSingle();
+    .select("id,solicitante_id,responsavel_id").eq("id",id).eq("tenant_id",sessao.tenantId).is("excluida_em",null).maybeSingle();
   if (!demanda) { await avisar("erro","Demanda não encontrada ou sem permissão."); return; }
   const { error } = await supabase.from("demandas_atualizacoes").insert({
     tenant_id:sessao.tenantId, demanda_id:id, autor_id:sessao.userId,
