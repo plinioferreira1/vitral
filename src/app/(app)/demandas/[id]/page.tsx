@@ -1,11 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { ArrowLeft, Clock3, MessageSquare, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Clock3, MessageSquare, CheckCircle2, Trash2, RotateCcw } from "lucide-react";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
-import { atualizarStatusDemanda, comentarDemanda } from "../actions";
+import { atualizarStatusDemanda, comentarDemanda, excluirDemanda, restaurarDemanda } from "../actions";
 import { AudioDemanda } from "./audio-demanda";
 
 const STATUS = [
@@ -27,7 +27,8 @@ export default async function DetalheDemandaPage({params}:{params:Promise<{id:st
     .eq("id",id).eq("tenant_id",usuario.tenant_id).maybeSingle();
   if(error||!demanda) notFound();
   const gestor=["diretor","gerente"].includes(usuario.nivel_acesso);
-  const podeAlterar=gestor||demanda.responsavel_id===user.id;
+  const excluida=!!demanda.excluida_em;
+  const podeAlterar=!excluida&&(gestor||demanda.responsavel_id===user.id);
   const [eventosResult,usuarioResult,audiosResult]=await Promise.all([
     supabase.from("demandas_atualizacoes").select("id,autor_id,tipo,comentario,status_anterior,status_novo,criada_em")
       .eq("demanda_id",id).eq("tenant_id",usuario.tenant_id).order("criada_em",{ascending:false}).limit(150),
@@ -41,6 +42,23 @@ export default async function DetalheDemandaPage({params}:{params:Promise<{id:st
   return <main className="w-full min-w-0 space-y-5">
     <Link href="/demandas" className="inline-flex items-center gap-2 text-sm font-medium text-brand hover:underline"><ArrowLeft size={16}/> Voltar às demandas</Link>
     <CabecalhoPagina titulo={demanda.titulo} descricao="Acompanhe as atualizações, informe o andamento e registre o que foi feito."/>
+    {excluida&&<div role="status" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+      Esta demanda está na lixeira. Seu histórico foi preservado, mas não é possível atualizar o andamento nem enviar novas respostas antes de restaurá-la.
+    </div>}
+    {gestor&&<div className="flex flex-wrap items-center gap-3">
+      {excluida?
+        <form action={restaurarDemanda}><input type="hidden" name="demanda_id" value={id}/>
+          <button type="submit" className={SECONDARY_BUTTON_CLASS}><RotateCcw size={16}/> Restaurar demanda</button>
+        </form>:
+        <form action={excluirDemanda} className="flex flex-wrap items-center gap-2">
+          <input type="hidden" name="demanda_id" value={id}/>
+          <label className="flex items-center gap-2 text-xs font-medium text-ink-muted">
+            <input type="checkbox" name="confirmacao" value="EXCLUIR" required className="h-4 w-4"/>
+            Confirmo mover esta demanda para a lixeira
+          </label>
+          <button type="submit" className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-rose-300 px-3 text-sm font-semibold text-rose-800 hover:bg-rose-50"><Trash2 size={16}/> Excluir demanda</button>
+        </form>}
+    </div>}
     <div className="grid gap-3 sm:grid-cols-3">
       <div className={`${CARD_CLASS} p-4`}><span className="text-xs text-ink-muted">Responsável</span><p className="mt-2 font-semibold text-ink">{nomes.get(demanda.responsavel_id)??"Colaborador"}</p></div>
       <div className={`${CARD_CLASS} p-4`}><span className="text-xs text-ink-muted">Prazo</span><p className="mt-2 font-semibold text-ink">{dia(demanda.prazo)}</p></div>
@@ -71,7 +89,7 @@ export default async function DetalheDemandaPage({params}:{params:Promise<{id:st
     </section>}
     <section className={`${CARD_CLASS} space-y-4 p-4 sm:p-5`}>
       <h2 className="flex items-center gap-2 font-semibold text-ink">Áudios da demanda</h2>
-      <AudioDemanda demandaId={id}/>
+      {!excluida&&<AudioDemanda demandaId={id}/>}
       {audiosResult.error && <p role="alert" className="text-xs text-rose-700">Não foi possível consultar os áudios da demanda.</p>}
       {(audiosResult.data??[]).map(a=><div key={a.id} className="space-y-2 rounded-lg border border-border bg-background p-3">
         <p className="text-xs text-ink-muted">Enviado por {a.autor_id===user.id?"você":nomes.get(a.autor_id)??"colaborador"} · {dataFormatada(a.criada_em)}</p>
@@ -83,14 +101,14 @@ export default async function DetalheDemandaPage({params}:{params:Promise<{id:st
     </section>
     <section className={`${CARD_CLASS} space-y-4 p-4 sm:p-5`}>
       <h2 className="flex items-center gap-2 font-semibold text-ink"><MessageSquare size={18}/> Atualizações da equipe</h2>
-      <form action={comentarDemanda} className="space-y-3">
+      {!excluida&&<form action={comentarDemanda} className="space-y-3">
         <input type="hidden" name="demanda_id" value={id}/>
         <label className="block text-xs font-medium text-ink-muted">Comente o que foi feito, o que está faltando ou o motivo de algum impedimento
           <textarea name="comentario" required minLength={1} maxLength={2000} rows={3} className={`${INPUT_CLASS} mt-1`}
             placeholder="Ex.: solicitei a certidão, aguardando retorno do cartório..."/>
         </label>
         <button type="submit" className={SECONDARY_BUTTON_CLASS}>Adicionar atualização</button>
-      </form>
+      </form>}
       <div className="space-y-3 border-t border-border pt-4">
         <h3 className="flex items-center gap-2 text-sm font-semibold text-ink"><Clock3 size={16}/> Histórico de atividades</h3>
         {eventosResult.error && <p role="alert" className="text-sm text-rose-700">Não foi possível carregar o histórico.</p>}
