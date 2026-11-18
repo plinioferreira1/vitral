@@ -63,19 +63,29 @@ export function DitadoDemandas({equipe}:{equipe:Colaborador[]}) {
     setErro("");
     const w=window as JanelaVoz;
     const Construtor=w.SpeechRecognition||w.webkitSpeechRecognition;
-    if(!Construtor){setErro("O reconhecimento de voz não é compatível com este navegador. Digite a mensagem abaixo.");return;}
+    if(!Construtor){setErro("Seu navegador não oferece reconhecimento de voz. Você pode escrever a solicitação e distribuí-la normalmente, ou registrar áudio como resposta em uma demanda.");return;}
     const r=new Construtor();
     r.lang="pt-BR";r.continuous=true;r.interimResults=true;
     r.onresult=e=>{
       const partes=Array.from({length:e.results.length},(_,i)=>e.results[i][0]?.transcript??"");
       setTexto(partes.join(" ").trim());
     };
-    r.onerror=e=>{setErro("O ditado não pôde continuar ("+e.error+"). Você pode editar o texto manualmente.");setGravando(false);};
+    r.onerror=e=>{
+      const mensagens:Record<string,string>={
+        "not-allowed":"O navegador bloqueou o ditado. No computador, clique no ícone de controles/cadeado ao lado do endereço do VITRAL, permita o microfone e atualize a página. No celular, verifique a permissão do microfone nas configurações do navegador. Se continuar, use o cadastro por texto ou grave uma mensagem na própria demanda.",
+        "service-not-allowed":"O serviço de reconhecimento de voz foi bloqueado pelo navegador, mesmo que o microfone esteja autorizado. Experimente o Chrome atualizado ou use o cadastro por texto.",
+        "audio-capture":"Nenhum microfone foi encontrado. Confira o dispositivo ou use o cadastro manual.",
+        "network":"O serviço de ditado perdeu a conexão. Confirme sua internet ou escreva as solicitações.",
+        "no-speech":"Nenhuma fala foi reconhecida. Fale perto do microfone e tente novamente.",
+      };
+      setErro(mensagens[e.error]??"O ditado não pôde continuar. Você pode escrever as tarefas diretamente abaixo.");
+      setGravando(false);
+    };
     r.onend=()=>setGravando(false);
     reconhecimento.current=r;
     setTexto("");
     setPropostas([]);
-    try{r.start();setGravando(true);}catch{setErro("Não foi possível acessar o microfone.");setGravando(false);}
+    try{r.start();setGravando(true);}catch{setErro("O navegador não autorizou o reconhecimento de voz. Libere o microfone nas permissões do site, atualize a página e tente novamente.");setGravando(false);}
   };
   const parar=()=>{reconhecimento.current?.stop();setGravando(false);};
   const preparar=()=>{
