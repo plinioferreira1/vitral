@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { exigirUsuario } from "@/lib/usuario-atual";
 import { avisar } from "@/lib/aviso";
+import { validarLote } from "@/lib/demandas/validacao";
 
 const uuidValido = (s: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 const STATUS_DEMANDA = ["pendente", "em_andamento", "aguardando", "bloqueada", "concluida"] as const;
@@ -75,10 +76,10 @@ export async function criarDemandasEmLote(formData: FormData) {
     const responsavel=typeof v.responsavel_id==="string"?v.responsavel_id:"";
     const prazo=typeof v.prazo==="string"?v.prazo:"";
     const prioridade=typeof v.prioridade==="string"?v.prioridade:"normal";
-    if (titulo.length<4||titulo.length>180||descricao.length>5000||!uuidValido(responsavel)||
-      (prazo&&!/^\d{4}-\d{2}-\d{2}$/.test(prazo))||
-      !["baixa","normal","alta","urgente"].includes(prioridade)) {
-      await avisar("erro","Corrija os títulos, responsáveis e prazos das tarefas antes de distribuir.");return;
+    const erros = validarLote([{titulo,descricao:descricao||null,responsavel_id:responsavel,prazo:prazo||null,prioridade}]);
+    if(erros.length){
+      await avisar("erro", `Demanda ${tarefas.length+1}: ${erros[0].campos.join("; ")}.`);
+      return;
     }
     tarefas.push({titulo,descricao:descricao||null,responsavel_id:responsavel,prazo:prazo||null,prioridade});
   }
