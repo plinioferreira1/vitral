@@ -27,7 +27,7 @@ export default async function LixeiraDemandasPage() {
     <div className="space-y-3">{itens.map(d=><section key={d.id} className={CARD_CLASS+" flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"}>
       <div className="min-w-0">
         <Link href={`/demandas/${d.id}`} className="font-semibold text-ink hover:text-brand hover:underline">{d.titulo}</Link>
-        <p className="mt-1 text-xs text-ink-muted">Responsável: {nomes.get(d.responsavel_id)??"Colaborador"} · Excluída em {d.excluida_em?new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",dateStyle:"short",timeStyle:"short"}).format(new Date(d.excluida_em)):"—"} · Por {nomes.get(d.excluida_por)??"Gestão"}</p>
+        <p className="mt-1 text-xs text-ink-muted">Responsável: {nomes.get(d.responsavel_id)??"Colaborador"} · Excluída em {d.excluida_em?new Intl.DateTimeFormat("pt-BR",{timeZone:"America/Sao_Paulo",dateStyle:"short",timeStyle:"short"}).format(new Date(d.excluida_em)):"—"} · Por {nomes.get(d.excluida_por??"")??"Gestão"}</p>
       </div>
       <form action={restaurarDemanda} className="shrink-0">
         <input type="hidden" name="demanda_id" value={d.id}/>
