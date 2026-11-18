@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Mic, MicOff, Sparkles, Send, AlertTriangle, Plus, Trash2 } from "lucide-react";
 import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { criarDemandasEmLote } from "./actions";
+import { validarLote } from "@/lib/demandas/validacao";
 
 type Colaborador={id:string;nome:string};
 type Proposta={titulo:string;descricao:string;responsavel_id:string;prazo:string;prioridade:string};
@@ -97,8 +98,9 @@ export function DitadoDemandas({equipe}:{equipe:Colaborador[]}) {
   };
   const ajustar=(i:number,campos:Partial<Proposta>)=>setPropostas(prev=>prev.map((p,j)=>j===i?{...p,...campos}:p));
   const remover=(i:number)=>setPropostas(prev=>prev.filter((_,j)=>i!==j));
-  const podeEnviar=!!loteId && propostas.length>0 && propostas.every(p=>
-    p.titulo.length>=4&&p.titulo.length<=180&&!!p.responsavel_id&&(!p.prazo||/^\d{4}-\d{2}-\d{2}$/.test(p.prazo)));
+  const problemas=validarLote(propostas);
+  const podeEnviar=!!loteId && propostas.length>0 && problemas.length===0;
+  const problema=(indice:number)=>problemas.find(p=>p.indice===indice)?.campos??[];
   return <section className={`${CARD_CLASS} space-y-4 p-4 sm:p-5`}>
     <div className="flex items-start gap-3">
       <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand"><Mic size={20}/></span>
@@ -126,11 +128,12 @@ export function DitadoDemandas({equipe}:{equipe:Colaborador[]}) {
       <input type="hidden" name="tarefas_json" value={JSON.stringify(propostas)}/>
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-ink">{propostas.length} {propostas.length===1?"demanda identificada":"demandas identificadas"}</h3>
-        <span className="text-xs text-ink-muted">Revise antes de confirmar</span>
+        <span className="text-xs text-ink-muted">{problemas.length?"Faltam informações em "+problemas.length+" demanda(s)":"Todas prontas para distribuir"}</span>
       </div>
-      {propostas.map((p,i)=><div key={i} className="space-y-3 rounded-xl border border-border bg-background/60 p-3 sm:p-4">
+      {propostas.map((p,i)=><div key={i} className={`space-y-3 rounded-xl border p-3 sm:p-4 ${problema(i).length?"border-amber-400 bg-amber-50/50":"border-border bg-background/60"}`} >
         <div className="flex items-center justify-between">
-          <h4 className="text-xs font-semibold text-ink">Demanda {i+1}</h4>
+          <div><h4 className="text-xs font-semibold text-ink">Demanda {i+1}</h4>
+          {!!problema(i).length&&<p className="mt-1 text-xs text-amber-800">{problema(i).join(" · ")}</p>}</div>
           <button type="button" onClick={()=>remover(i)} aria-label={`Remover demanda ${i+1}`}
             className="rounded-lg p-2 text-ink-muted hover:text-rose-700"><Trash2 size={16}/></button>
         </div>
@@ -159,6 +162,7 @@ export function DitadoDemandas({equipe}:{equipe:Colaborador[]}) {
           </label>
         </div>
       </div>)}
+      {!!problemas.length&&<p role="alert" className="text-xs text-amber-800">Antes de distribuir, escolha um responsável e confira o título e a data nas tarefas destacadas acima. As tarefas não serão enviadas enquanto houver pendências.</p>}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <button type="button" className={SECONDARY_BUTTON_CLASS} onClick={()=>setPropostas(p=>p.length<10?[...p,{titulo:"",descricao:"",responsavel_id:"",prazo:"",prioridade:"normal"}]:p)}
           disabled={propostas.length>=10}><Plus size={15}/> Adicionar tarefa</button>
