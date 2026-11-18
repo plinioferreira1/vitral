@@ -30,6 +30,10 @@ export default async function DetalheDemandaPage({params}:{params:Promise<{id:st
     ?await supabase.from("demandas_lote_audios").select("lote_id,nome_original,criada_em")
       .eq("lote_id",demanda.lote_id).eq("tenant_id",usuario.tenant_id).maybeSingle()
     :{data:null};
+  const {data:categoriaDemanda}=demanda.categoria_id
+    ?await supabase.from("demandas_categorias").select("nome")
+      .eq("tenant_id",usuario.tenant_id).eq("id",demanda.categoria_id).maybeSingle()
+    :{data:null};
   const gestor=["diretor","gerente"].includes(usuario.nivel_acesso);
   const excluida=!!demanda.excluida_em;
   const podeAlterar=!excluida&&(gestor||demanda.responsavel_id===user.id);
@@ -79,6 +83,7 @@ export default async function DetalheDemandaPage({params}:{params:Promise<{id:st
       <div className="flex flex-wrap gap-x-5 gap-y-1 border-t border-border pt-3 text-xs text-ink-muted">
         <span>Solicitado por: {nomes.get(demanda.solicitante_id)??"Gestão"}</span>
         <span>Prioridade: {demanda.prioridade}</span>
+        <span>Categoria: {categoriaDemanda?.nome??"Sem categoria"}</span>
         <span>Solicitado em: {dataFormatada(demanda.criada_em)}</span>
         {demanda.processo_id && <Link href={`/processos/${demanda.processo_id}`} className="font-medium text-brand underline">Ver processo relacionado</Link>}
       </div>
