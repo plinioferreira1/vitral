@@ -101,7 +101,7 @@ export default async function DemandasPage({searchParams}:{
       </div>)}
     </section>}
 
-    {gestor && <DitadoDemandas equipe={equipe.map(u=>({id:u.id,nome:u.nome}))}/>}
+    {gestor && <DitadoDemandas equipe={equipe.map(u=>({id:u.id,nome:u.nome}))} iaAtiva={Boolean(process.env.OPENAI_API_KEY)}/>}
 
     {gestor && <details className={`${CARD_CLASS} group p-4 sm:p-5`}>
       <summary className="flex cursor-pointer list-none items-center gap-2 font-semibold text-brand"><Plus size={18}/> Nova demanda
