@@ -27,7 +27,7 @@ async function TopBarComDados({ hoje, nivelAcesso }: { hoje: string; nivelAcesso
   // As notificações são acessórias: se o banco demorar, o cabeçalho aparece sem
   // elas em vez de segurar a tela. Sem esse prazo, depois de qualquer gravação a
   // página ficava "Salvando…" esperando este trecho ser recalculado.
-  const { valor: [etapasNotificacao, avisosFerias, notificacoesDispensadas, lembretesVendas, demandasNovas], noPrazo } = await comPrazo(
+  const { valor: [etapasNotificacao, avisosFerias, notificacoesDispensadas, lembretesVendas, demandasNovas, demandasAbertas], noPrazo } = await comPrazo(
     Promise.all([
       supabase
         .from("etapas")
@@ -70,9 +70,16 @@ async function TopBarComDados({ hoje, nivelAcesso }: { hoje: string; nivelAcesso
         .order("criada_em",{ascending:false})
         .limit(15)
         : Promise.resolve({data:[] as {id:string;demanda_id:string;titulo:string;mensagem:string;criada_em:string}[]}),
-    ]).then(([etapas, ferias, dispensadas, lembretes, demandas]) => [etapas.data, ferias.data, dispensadas.data, lembretes.data, demandas.data] as const),
+      user ? supabase.from("demandas")
+        .select("id,titulo,prazo,prioridade")
+        .neq("status","concluida")
+        .eq("responsavel_id",user.id)
+        .order("prazo",{ascending:true,nullsFirst:false}).limit(10)
+        : Promise.resolve({data:[] as {id:string;titulo:string;prazo:string|null;prioridade:string}[]}),
+    ]).then(([etapas, ferias, dispensadas, lembretes, demandas, abertas]) =>
+      [etapas.data, ferias.data, dispensadas.data, lembretes.data, demandas.data, abertas.data] as const),
     PRAZO_NOTIFICACOES_MS,
-    [null, null, null, null, null] as const,
+    [null, null, null, null, null, null] as const,
   );
   if (!noPrazo) console.error(`cabecalho: notificações passaram de ${PRAZO_NOTIFICACOES_MS} ms e foram omitidas`);
 
@@ -168,6 +175,8 @@ async function TopBarComDados({ hoje, nivelAcesso }: { hoje: string; nivelAcesso
       notificacoes={notificacoes}
       totalNotificacoes={notificacoes.length}
       limparTodasAction={limparTodasNotificacoes}
+      usuarioId={user?.id ?? ""}
+      demandasEntrada={demandasAbertas ?? []}
     />
   );
 }
