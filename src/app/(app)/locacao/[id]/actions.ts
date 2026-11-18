@@ -128,6 +128,18 @@ export async function atualizarContrato(formData: FormData) {
     locatario_id: locatarioId,
     emite_nf: formData.get("emite_nf") === "on",
     iptu_inscricao: String(formData.get("iptu_inscricao") ?? "").trim() || null,
+    vigencia_inicio: String(formData.get("vigencia_inicio") ?? "") || null,
+    vigencia_fim: String(formData.get("vigencia_fim") ?? "") || null,
+    aluguel_valor: formData.get("aluguel_valor") ? Number(formData.get("aluguel_valor")) : null,
+    aluguel_dia_vencimento: formData.get("aluguel_dia_vencimento") ? Number(formData.get("aluguel_dia_vencimento")) : null,
+    primeiro_aluguel_vencimento: String(formData.get("primeiro_aluguel_vencimento") ?? "") || null,
+    desconto_pontualidade: formData.get("desconto_pontualidade") ? Number(formData.get("desconto_pontualidade")) : null,
+    garantia_locaticia: String(formData.get("garantia_locaticia") ?? "").trim() || null,
+    documento_origem_url: String(formData.get("documento_origem_url") ?? "").trim() || null,
+    condominio_nome: String(formData.get("condominio_nome") ?? "").trim() || null,
+    condominio_unidade: String(formData.get("condominio_unidade") ?? "").trim() || null,
+    condominio_bloco: String(formData.get("condominio_bloco") ?? "").trim() || null,
+
     iptu_tipo: valorDaLista("tipo_iptu_locacao", formData.get("iptu_tipo")),
     condominio_administradora: String(formData.get("condominio_administradora") ?? "").trim() || null,
     condominio_contato: String(formData.get("condominio_contato") ?? "").trim() || null,
@@ -145,11 +157,22 @@ export async function atualizarContrato(formData: FormData) {
   };
 
   await checar(supabase.from("contratos_locacao").update(campos).eq("id", id), "atualizar");
-  // A inscrição do imóvel no DF fica no cadastro do imóvel (usada no Controle de Débitos).
-  if (campos.iptu_inscricao && contratoAtual.imovel_id) {
-    await supabase.from("imoveis").update({ inscricao_iptu: campos.iptu_inscricao }).eq("id", contratoAtual.imovel_id);
+  // O endereço/CEP são atributos do imóvel e alimentam as consultas condominiais.
+  if (contratoAtual.imovel_id) {
+    const novoEndereco = String(formData.get("imovel_endereco")??"").trim();
+    const novoCep = String(formData.get("imovel_cep")??"").trim();
+    const cepValido = !novoCep || /^\\d{5}-?\\d{3}$/.test(novoCep);
+    if (!cepValido) throw new Error("CEP inválido. Informe 00000-000.");
+    if (novoEndereco) {
+      await checar(supabase.from("imoveis").update({
+        endereco:novoEndereco,
+        cep:novoCep ? novoCep.replace(/^(\\d{5})(\\d{3})$/,"$1-$2") : null,
+        ...(campos.iptu_inscricao ? {inscricao_iptu:campos.iptu_inscricao}:{}),
+      }).eq("id",contratoAtual.imovel_id).eq("tenant_id",contratoAtual.tenant_id),"atualizar");
+    }
   }
   revalidatePath(`/locacao/${id}`);
+  revalidatePath("/locacao");
   revalidatePath("/locacao/debitos");
   redirect(`/locacao/${id}?salvo=1`);
 }
