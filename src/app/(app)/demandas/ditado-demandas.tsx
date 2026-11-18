@@ -72,6 +72,7 @@ export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:bo
   const [segundosAudio,setSegundosAudio]=useState(0);
   const inicioAudio=useRef(0);
   const [processandoIA,setProcessandoIA]=useState(false);
+  const [enviandoLote,setEnviandoLote]=useState(false);
   useEffect(()=>{
     if(!audio){setUrlAudio("");return;}
     const url=URL.createObjectURL(audio);
@@ -177,7 +178,21 @@ export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:bo
   const ajustar=(i:number,campos:Partial<Proposta>)=>setPropostas(prev=>prev.map((p,j)=>j===i?{...p,...campos}:p));
   const remover=(i:number)=>setPropostas(prev=>prev.filter((_,j)=>i!==j));
   const problemas=validarLote(propostas);
-  const podeEnviar=!!loteId && propostas.length>0 && problemas.length===0;
+  const podeEnviar=!!loteId && propostas.length>0 && problemas.length===0 && !enviandoLote;
+  const distribuir=async(formData:FormData)=>{
+    if(!podeEnviar)return;
+    setErro("");setEnviandoLote(true);
+    try{
+      if(audio){
+        const dados=new FormData();dados.set("lote_id",loteId);dados.set("audio",audio);
+        const resposta=await fetch("/api/demandas/lote-audio",{method:"POST",body:dados});
+        if(!resposta.ok){const json=await resposta.json().catch(()=>({})) as {erro?:string};
+          throw new Error(json.erro||"Não foi possível guardar o áudio original.");}
+      }
+      await criarDemandasEmLote(formData);
+    }catch(e){setErro(e instanceof Error?e.message:"Falha ao distribuir demandas. Tente novamente.");}
+    finally{setEnviandoLote(false);}
+  };
   const problema=(indice:number)=>problemas.find(p=>p.indice===indice)?.campos??[];
   return <section className={`${CARD_CLASS} space-y-4 p-4 sm:p-5`}>
     <div className="flex items-start gap-3">
@@ -230,9 +245,10 @@ export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:bo
         onClick={()=>analisarIA("texto")}><Sparkles size={16}/>{processandoIA?"Analisando...":"Organizar texto com IA"}</button>}
     </div>
     {erro&&<p role="alert" className="flex items-center gap-2 text-xs text-rose-700"><AlertTriangle size={15}/>{erro}</p>}
-    {!!propostas.length&&<form action={criarDemandasEmLote} className="space-y-3 border-t border-border pt-4">
+    {!!propostas.length&&<form action={distribuir} className="space-y-3 border-t border-border pt-4">
       <input type="hidden" name="lote_id" value={loteId}/>
       <input type="hidden" name="tarefas_json" value={JSON.stringify(propostas)}/>
+      {audio&&<p className="rounded-lg bg-background p-3 text-xs leading-5 text-ink-muted">O áudio original será armazenado de forma privada e poderá ser ouvido pelos responsáveis nas demandas deste lote. Revise as tarefas antes de confirmar.</p>}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-sm font-semibold text-ink">{propostas.length} {propostas.length===1?"demanda identificada":"demandas identificadas"}</h3>
         <span className="text-xs text-ink-muted">{problemas.length?"Faltam informações em "+problemas.length+" demanda(s)":"Todas prontas para distribuir"}</span>
@@ -274,7 +290,7 @@ export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:bo
         <button type="button" className={SECONDARY_BUTTON_CLASS} onClick={()=>setPropostas(p=>p.length<10?[...p,{titulo:"",descricao:"",responsavel_id:"",prazo:"",prioridade:"normal"}]:p)}
           disabled={propostas.length>=10}><Plus size={15}/> Adicionar tarefa</button>
         <button type="submit" disabled={!podeEnviar}
-          className={`${PRIMARY_BUTTON_CLASS} disabled:cursor-not-allowed disabled:opacity-40`}><Send size={15}/> Distribuir {propostas.length} demanda(s)</button>
+          className={`${PRIMARY_BUTTON_CLASS} disabled:cursor-not-allowed disabled:opacity-40`}><Send size={15}/> {enviandoLote?"Enviando...":`Distribuir ${propostas.length} demanda(s)`}</button>
       </div>
     </form>}
   </section>;
