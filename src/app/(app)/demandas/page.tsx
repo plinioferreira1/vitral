@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bell, CalendarClock, CheckCircle2, ClipboardList, Plus, Search, Users, AlertTriangle, CalendarDays, Repeat2, PauseCircle, PlayCircle } from "lucide-react";
+import { Bell, CalendarClock, CheckCircle2, ClipboardList, Plus, Search, AlertTriangle, CalendarDays, Repeat2, PauseCircle, PlayCircle } from "lucide-react";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { createClient } from "@/lib/supabase/server";
