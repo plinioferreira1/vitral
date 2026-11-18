@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { criarDemanda, marcarNotificacaoDemandaLida } from "./actions";
 import { DitadoDemandas } from "./ditado-demandas";
+import { NotificacoesPush } from "./notificacoes-push";
 
 type Situacao = "pendente"|"em_andamento"|"aguardando"|"bloqueada"|"concluida";
 const LABEL: Record<Situacao,string> = {
@@ -80,6 +81,8 @@ export default async function DemandasPage({searchParams}:{
         <p className="mt-2 text-2xl font-bold tabular-nums text-ink">{n}</p>
       </div>)}
     </div>
+
+    <NotificacoesPush/>
 
     {(rAvisos.data??[]).length>0 && <section className={`${CARD_CLASS} space-y-2 p-4`} aria-label="Notificações não lidas">
       <h2 className="flex items-center gap-2 text-sm font-semibold text-ink"><Bell size={16}/> Novidades para você <span className="text-xs text-ink-muted">({rAvisos.data?.length})</span></h2>
