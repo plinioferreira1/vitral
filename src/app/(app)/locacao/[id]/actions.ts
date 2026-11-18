@@ -122,6 +122,14 @@ export async function atualizarContrato(formData: FormData) {
   const locadorId = await resolverOuCriarCliente(supabase, contratoAtual.tenant_id, locadorNome);
   const locatarioId = await resolverOuCriarCliente(supabase, contratoAtual.tenant_id, locatarioNome);
 
+  const cepInformado = String(formData.get("imovel_cep")??"").trim();
+  if (cepInformado && !/^\d{5}-?\d{3}$/.test(cepInformado)) throw new Error("CEP inválido. Informe 00000-000.");
+  const dataInicio = String(formData.get("vigencia_inicio")??"");
+  const dataFim = String(formData.get("vigencia_fim")??"");
+  if(dataInicio && dataFim && dataFim<dataInicio) throw new Error("A data final da vigência não pode ser anterior ao início.");
+  const vencimentoInformado=Number(formData.get("aluguel_dia_vencimento")??0);
+  if(vencimentoInformado && (!Number.isInteger(vencimentoInformado)||vencimentoInformado<1||vencimentoInformado>31))
+    throw new Error("Dia de vencimento inválido.");
   const campos = {
     numero: String(formData.get("numero") ?? "").trim(),
     locador_id: locadorId,
@@ -161,12 +169,10 @@ export async function atualizarContrato(formData: FormData) {
   if (contratoAtual.imovel_id) {
     const novoEndereco = String(formData.get("imovel_endereco")??"").trim();
     const novoCep = String(formData.get("imovel_cep")??"").trim();
-    const cepValido = !novoCep || /^\\d{5}-?\\d{3}$/.test(novoCep);
-    if (!cepValido) throw new Error("CEP inválido. Informe 00000-000.");
     if (novoEndereco) {
       await checar(supabase.from("imoveis").update({
         endereco:novoEndereco,
-        cep:novoCep ? novoCep.replace(/^(\\d{5})(\\d{3})$/,"$1-$2") : null,
+        cep:novoCep ? novoCep.replace(/^(\d{5})(\d{3})$/,"$1-$2") : null,
         ...(campos.iptu_inscricao ? {inscricao_iptu:campos.iptu_inscricao}:{}),
       }).eq("id",contratoAtual.imovel_id).eq("tenant_id",contratoAtual.tenant_id),"atualizar");
     }
