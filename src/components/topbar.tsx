@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Search, Bell, Calendar, X, AlertTriangle, Clock3, CheckCircle2 } from "lucide-react";
 import { BotaoEnviar } from "@/components/botao-enviar";
+import { AvisosDeEntrada, type DemandaEntrada } from "@/components/avisos-de-entrada";
 
 export interface NotificacaoTopBar {
   id: string;
@@ -22,11 +23,15 @@ export function TopBar({
   notificacoes = [],
   totalNotificacoes = 0,
   limparTodasAction,
+  usuarioId,
+  demandasEntrada = [],
 }: {
   dataFormatada: string;
   notificacoes?: NotificacaoTopBar[];
   totalNotificacoes?: number;
   limparTodasAction: () => Promise<void>;
+  usuarioId: string;
+  demandasEntrada?: DemandaEntrada[];
 }) {
   const router = useRouter();
   const [termo, setTermo] = useState("");
@@ -58,6 +63,7 @@ export function TopBar({
 
   return (
     <div className="flex items-center gap-3">
+      {usuarioId && <AvisosDeEntrada usuarioId={usuarioId} notificacoes={notificacoes} demandas={demandasEntrada}/>}
       <form onSubmit={buscar} role="search" className="relative min-w-0 flex-1">
         <Search size={16} className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-muted" />
         <input
