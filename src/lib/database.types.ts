@@ -1846,6 +1846,15 @@ export type Database = {
       }
       contratos_locacao: {
         Row: {
+          vigencia_inicio: string | null
+          vigencia_fim: string | null
+          aluguel_valor: number | null
+          aluguel_dia_vencimento: number | null
+          primeiro_aluguel_vencimento: string | null
+          desconto_pontualidade: number | null
+          garantia_locaticia: string | null
+          locatarios_adicionais: Json
+          documento_origem_url: string | null
           administradora_id: string | null
           agua_codigo_cliente: string | null
           agua_inscricao: string | null
@@ -1893,6 +1902,15 @@ export type Database = {
           tenant_id: string
         }
         Insert: {
+          vigencia_inicio?: string | null
+          vigencia_fim?: string | null
+          aluguel_valor?: number | null
+          aluguel_dia_vencimento?: number | null
+          primeiro_aluguel_vencimento?: string | null
+          desconto_pontualidade?: number | null
+          garantia_locaticia?: string | null
+          locatarios_adicionais?: Json
+          documento_origem_url?: string | null
           administradora_id?: string | null
           agua_codigo_cliente?: string | null
           agua_inscricao?: string | null
@@ -1940,6 +1958,15 @@ export type Database = {
           tenant_id: string
         }
         Update: {
+          vigencia_inicio?: string | null
+          vigencia_fim?: string | null
+          aluguel_valor?: number | null
+          aluguel_dia_vencimento?: number | null
+          primeiro_aluguel_vencimento?: string | null
+          desconto_pontualidade?: number | null
+          garantia_locaticia?: string | null
+          locatarios_adicionais?: Json
+          documento_origem_url?: string | null
           administradora_id?: string | null
           agua_codigo_cliente?: string | null
           agua_inscricao?: string | null
