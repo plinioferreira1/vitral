@@ -57,7 +57,7 @@ function sugerir(texto:string,pessoas:Colaborador[]):Proposta[] {
   });
 }
 
-export function DitadoDemandas({equipe}:{equipe:Colaborador[]}) {
+export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:boolean}) {
   const [gravando,setGravando]=useState(false);
   const [texto,setTexto]=useState("");
   const [erro,setErro]=useState("");
@@ -180,7 +180,7 @@ export function DitadoDemandas({equipe}:{equipe:Colaborador[]}) {
       <span className="text-xs text-ink-muted" role="status">{gravando?"Ouvindo pelo microfone...":"Se o navegador não permitir o ditado, digite abaixo"}</span>
     </div>
     <p className="text-xs leading-5 text-ink-muted">Este modo experimental usa o reconhecimento de voz do navegador, que pode processar o áudio pelo provedor do navegador. O VITRAL não guarda a gravação nesta etapa. Não dite informações confidenciais. Você também pode digitar.</p>
-    <div className="space-y-3 rounded-lg border border-border bg-background/40 p-3">
+    {iaAtiva ? <div className="space-y-3 rounded-lg border border-border bg-background/40 p-3">
       <p className="text-sm font-semibold text-ink">Gravação para transcrição por IA</p>
       <p className="text-xs leading-5 text-ink-muted">Alternativa ao ditado do navegador. Ao enviar, o áudio será processado pelo provedor de IA configurado. A transcrição não cria demandas sem sua revisão e confirmação.</p>
       <div className="flex flex-wrap items-center gap-2">
@@ -198,7 +198,7 @@ export function DitadoDemandas({equipe}:{equipe:Colaborador[]}) {
         <button type="button" onClick={()=>analisarIA("audio")} disabled={processandoIA||audio.size>8*1024*1024}
           className={PRIMARY_BUTTON_CLASS}>{processandoIA?"Processando...":"Transcrever e organizar com IA"}</button>
       </div>}
-    </div>
+    </div> : <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">A transcrição avançada por IA está preparada, mas o VITRAL ainda precisa de uma credencial de provedor para ativá-la. O ditado do navegador e a prévia de tarefas por texto continuam disponíveis.</p>}
     <label className="block text-xs font-medium text-ink-muted">Texto do áudio (editável)
       <textarea className={`${INPUT_CLASS} mt-1`} value={texto} onChange={e=>setTexto(e.target.value)}
         rows={4} maxLength={12000} placeholder="Ex.: Amanda, finalizar a avaliação do Guará amanhã; João, conferir documentação do cliente hoje."/>
@@ -206,8 +206,8 @@ export function DitadoDemandas({equipe}:{equipe:Colaborador[]}) {
     <p className="text-xs text-ink-muted">Separe atividades por ponto e vírgula ou linha. O sistema apenas sugere nome e prazo quando encontra indicação clara; sempre revise.</p>
     <div className="flex flex-wrap gap-2">
       <button type="button" className={SECONDARY_BUTTON_CLASS} onClick={preparar}><Sparkles size={16}/> Preparar prévia das tarefas</button>
-      <button type="button" disabled={processandoIA} className={SECONDARY_BUTTON_CLASS}
-        onClick={()=>analisarIA("texto")}><Sparkles size={16}/>{processandoIA?"Analisando...":"Organizar texto com IA"}</button>
+      {iaAtiva&&<button type="button" disabled={processandoIA} className={SECONDARY_BUTTON_CLASS}
+        onClick={()=>analisarIA("texto")}><Sparkles size={16}/>{processandoIA?"Analisando...":"Organizar texto com IA"}</button>}
     </div>
     {erro&&<p role="alert" className="flex items-center gap-2 text-xs text-rose-700"><AlertTriangle size={15}/>{erro}</p>}
     {!!propostas.length&&<form action={criarDemandasEmLote} className="space-y-3 border-t border-border pt-4">
