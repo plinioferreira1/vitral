@@ -50,7 +50,6 @@ function sugerir(texto:string,pessoas:Colaborador[]):Proposta[] {
 }
 
 export function DitadoDemandas({equipe}:{equipe:Colaborador[]}) {
-  const [suportado,setSuportado]=useState(false);
   const [gravando,setGravando]=useState(false);
   const [texto,setTexto]=useState("");
   const [erro,setErro]=useState("");
@@ -58,8 +57,6 @@ export function DitadoDemandas({equipe}:{equipe:Colaborador[]}) {
   const [loteId,setLoteId]=useState("");
   const reconhecimento=useRef<ReconhecimentoVoz|null>(null);
   useEffect(()=>{
-    const w=window as JanelaVoz;
-    setSuportado(Boolean(w.SpeechRecognition||w.webkitSpeechRecognition));
     return ()=>{reconhecimento.current?.stop();};
   },[]);
   const iniciar=()=>{
@@ -101,10 +98,10 @@ export function DitadoDemandas({equipe}:{equipe:Colaborador[]}) {
       </div>
     </div>
     <div className="flex flex-wrap items-center gap-2">
-      {!gravando?<button type="button" onClick={iniciar} disabled={!suportado}
+      {!gravando?<button type="button" onClick={iniciar}
         className={PRIMARY_BUTTON_CLASS}><Mic size={16}/> Iniciar ditado</button>:
         <button type="button" onClick={parar} className={PRIMARY_BUTTON_CLASS}><MicOff size={16}/> Parar ditado</button>}
-      <span className="text-xs text-ink-muted" role="status">{gravando?"Ouvindo pelo microfone...":suportado?"Microfone disponível":"Ditado indisponível neste navegador"}</span>
+      <span className="text-xs text-ink-muted" role="status">{gravando?"Ouvindo pelo microfone...":"Se o navegador não permitir o ditado, digite abaixo"}</span>
     </div>
     <p className="text-xs leading-5 text-ink-muted">Este modo experimental usa o reconhecimento de voz do navegador, que pode processar o áudio pelo provedor do navegador. O VITRAL não guarda a gravação nesta etapa. Não dite informações confidenciais. Você também pode digitar.</p>
     <label className="block text-xs font-medium text-ink-muted">Texto do áudio (editável)
