@@ -68,7 +68,21 @@ export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:bo
   const stream=useRef<MediaStream|null>(null);
   const [gravacaoAtiva,setGravacaoAtiva]=useState(false);
   const [audio,setAudio]=useState<File|null>(null);
+  const [urlAudio,setUrlAudio]=useState("");
+  const [segundosAudio,setSegundosAudio]=useState(0);
+  const inicioAudio=useRef(0);
   const [processandoIA,setProcessandoIA]=useState(false);
+  useEffect(()=>{
+    if(!audio){setUrlAudio("");return;}
+    const url=URL.createObjectURL(audio);
+    setUrlAudio(url);
+    return ()=>URL.revokeObjectURL(url);
+  },[audio]);
+  useEffect(()=>{
+    if(!gravacaoAtiva)return;
+    const temporizador=window.setInterval(()=>setSegundosAudio(Math.floor((Date.now()-inicioAudio.current)/1000)),500);
+    return ()=>window.clearInterval(temporizador);
+  },[gravacaoAtiva]);
   useEffect(()=>{
     return ()=>{reconhecimento.current?.stop();if(gravador.current?.state==="recording")gravador.current.stop();stream.current?.getTracks().forEach(t=>t.stop());};
   },[]);
@@ -102,7 +116,7 @@ export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:bo
   };
   const parar=()=>{reconhecimento.current?.stop();setGravando(false);};
   const iniciarAudio=async()=>{
-    setErro("");setAudio(null);
+    setErro("");setAudio(null);setSegundosAudio(0);
     if(!navigator.mediaDevices?.getUserMedia||typeof MediaRecorder==="undefined"){
       setErro("Este navegador não oferece gravação por áudio. Selecione um arquivo já gravado.");return;
     }
@@ -122,7 +136,7 @@ export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:bo
         setGravacaoAtiva(false);mic.getTracks().forEach(t=>t.stop());
       };
       r.onerror=()=>{setErro("A gravação foi interrompida. Você também pode selecionar um arquivo.");setGravacaoAtiva(false);mic.getTracks().forEach(t=>t.stop());};
-      gravador.current=r;r.start();setGravacaoAtiva(true);
+      gravador.current=r;inicioAudio.current=Date.now();r.start(1000);setGravacaoAtiva(true);
     }catch{
       setErro("O navegador não permitiu acessar o microfone. Verifique as permissões do VITRAL ou selecione um áudio existente.");
     }
@@ -186,17 +200,23 @@ export function DitadoDemandas({equipe,iaAtiva}:{equipe:Colaborador[];iaAtiva:bo
       <div className="flex flex-wrap items-center gap-2">
         {!gravacaoAtiva?<button type="button" onClick={iniciarAudio} disabled={processandoIA}
           className={SECONDARY_BUTTON_CLASS}><AudioLines size={16}/> Gravar áudio</button>:
-          <button type="button" onClick={pararAudio} className={SECONDARY_BUTTON_CLASS}><MicOff size={16}/> Parar gravação</button>}
+          <button type="button" onClick={pararAudio} className={SECONDARY_BUTTON_CLASS}><MicOff size={16}/> Parar · {Math.floor(segundosAudio/60).toString().padStart(2,"0")}:{(segundosAudio%60).toString().padStart(2,"0")}</button>}
         <label className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-lg border border-border px-3 text-sm font-medium text-ink">
           <Upload size={16}/> Escolher arquivo
           <input type="file" className="sr-only" accept="audio/*" onChange={e=>{setAudio(e.target.files?.[0]??null);setErro("");}}/>
         </label>
         {gravacaoAtiva&&<span className="text-xs font-semibold text-rose-700">Gravando...</span>}
       </div>
-      {audio&&<div className="flex flex-wrap items-center justify-between gap-2 text-xs text-ink-muted">
-        <span>Pronto: {audio.name} ({Math.ceil(audio.size/1024)} KB)</span>
-        <button type="button" onClick={()=>analisarIA("audio")} disabled={processandoIA||audio.size>8*1024*1024}
-          className={PRIMARY_BUTTON_CLASS}>{processandoIA?"Processando...":"Transcrever e organizar com IA"}</button>
+      {audio&&<div className="space-y-3 rounded-lg border border-border bg-surface p-3">
+        <p className="text-xs text-ink-muted">Áudio pronto: {audio.name} ({Math.ceil(audio.size/1024)} KB). Ouça e confira antes de transcrever.</p>
+        {urlAudio&&<audio controls preload="metadata" className="w-full" src={urlAudio}>Seu navegador não reproduz áudio.</audio>}
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" onClick={()=>analisarIA("audio")} disabled={processandoIA||audio.size>8*1024*1024}
+            className={PRIMARY_BUTTON_CLASS}>{processandoIA?"Processando...":"Transcrever e organizar com IA"}</button>
+          <button type="button" disabled={processandoIA} onClick={()=>{setAudio(null);setSegundosAudio(0);setErro("");}}
+            className={SECONDARY_BUTTON_CLASS}><Trash2 size={16}/> Descartar áudio</button>
+        </div>
+        {audio.size>8*1024*1024&&<p role="alert" className="text-xs text-rose-700">Limite de 8 MB para transcrição.</p>}
       </div>}
     </div> : <p className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900">A transcrição avançada por IA está preparada, mas o VITRAL ainda precisa de uma credencial de provedor para ativá-la. O ditado do navegador e a prévia de tarefas por texto continuam disponíveis.</p>}
     <label className="block text-xs font-medium text-ink-muted">Texto do áudio (editável)
