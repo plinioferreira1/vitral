@@ -19,7 +19,7 @@ export async function gerarDemandasRecorrentes():Promise<{geradas:number;falhas:
  const db=createAdminClient();
  const hoje=hojeBrasilia();
  const {data:rotinas,error}=await db.from("demandas_recorrencias")
-  .select("id,tenant_id,solicitante_id,responsavel_id,titulo,descricao,prioridade,periodicidade,proxima_data,dia_base")
+  .select("id,tenant_id,solicitante_id,responsavel_id,titulo,descricao,prioridade,periodicidade,proxima_data,dia_base,categoria_id")
   .eq("ativa",true).lte("proxima_data",hoje).order("proxima_data",{ascending:true}).limit(100);
  if(error)throw new Error("Falha ao consultar demandas recorrentes");
  let geradas=0,falhas=0;
@@ -31,7 +31,7 @@ export async function gerarDemandasRecorrentes():Promise<{geradas:number;falhas:
     const {error:insertError}=await db.from("demandas").insert({
       tenant_id:rotina.tenant_id,solicitante_id:rotina.solicitante_id,
       responsavel_id:rotina.responsavel_id,titulo:rotina.titulo,descricao:rotina.descricao,
-      prioridade:rotina.prioridade,prazo:data,recorrencia_id:rotina.id,recorrencia_data:data,
+      prioridade:rotina.prioridade,prazo:data,recorrencia_id:rotina.id,recorrencia_data:data,categoria_id:rotina.categoria_id,
     });
     if(insertError&&insertError.code!=="23505")throw new Error("Não foi possível gerar recorrência");
     if(!insertError)geradas++;
