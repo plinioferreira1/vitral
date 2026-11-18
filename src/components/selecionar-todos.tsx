@@ -21,6 +21,7 @@ export function SelecionarTodos({ formId, className }: { formId: string; classNa
         );
         checkboxes.forEach((cb) => {
           cb.checked = e.target.checked;
+          cb.dispatchEvent(new Event("change", { bubbles: true }));
         });
       }}
     />
