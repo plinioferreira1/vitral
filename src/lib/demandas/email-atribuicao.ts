@@ -1,8 +1,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { enviarEmail } from "@/lib/email";
+import { layoutEmailSacra, botaoEmailSacra, escaparHtmlEmail, EMAIL_SACRA } from "@/lib/email-layout-sacra";
 
 const SITE=process.env.NEXT_PUBLIC_SITE_URL||"https://vitral.sacraimoveis.com.br";
-const escapar=(v:string)=>v.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
 export async function enviarEmailsNovasDemandas(ids?:string[]):Promise<{enviados:number;falhas:number}>{
  const db=createAdminClient();
  // Recuperar envios cujo servidor caiu após reservar a fila.
@@ -33,16 +33,17 @@ export async function enviarEmailsNovasDemandas(ids?:string[]):Promise<{enviados
       d.data.responsavel_id!==item.destinatario_id||!u.data.email)
      throw new Error("Destinatário ou tarefa indisponível");
    const link=SITE+"/demandas/"+d.data.id;
-   const corpo='<div style="font-family:Arial,sans-serif;background:#f5f7f5;padding:24px"><div style="max-width:580px;margin:auto;background:white;border-radius:14px;padding:24px">'+
-    '<p style="font-size:12px;letter-spacing:1px;color:#0e3e34">VITRAL · NOVA DEMANDA</p>'+
-    '<h1 style="font-size:22px;color:#173d32">Uma atividade foi atribuída a você</h1>'+
-    '<p>Olá, '+escapar(u.data.nome)+'!</p>'+
-    '<h2 style="font-size:17px">'+escapar(d.data.titulo)+'</h2>'+
-    '<p style="font-size:13px;color:#53645a">Prioridade: '+escapar(d.data.prioridade)+' · Prazo: '+(d.data.prazo?.split("-").reverse().join("/")??"a definir")+'</p>'+
-    (d.data.descricao?'<p style="white-space:pre-wrap">'+escapar(d.data.descricao.slice(0,1000))+'</p>':"")+
-    '<p style="margin-top:25px"><a style="display:inline-block;background:#0e3e34;color:white;padding:12px 20px;border-radius:8px;text-decoration:none" href="'+link+'">Abrir minha demanda no VITRAL</a></p>'+
-    '<p style="font-size:12px;color:#66756b;margin-top:24px">Acompanhe e registre seu andamento diretamente na Central de Demandas.</p>'+
-    '</div></div>';
+   const prioridade=d.data.prioridade.toLowerCase();
+   const corPrioridade=prioridade==="urgente"?"#A52828":prioridade==="alta"?"#A96215":EMAIL_SACRA.vinho;
+   const prazo=d.data.prazo?.split("-").reverse().join("/")??"a definir";
+   const corpo=layoutEmailSacra("Central de Demandas","Nova demanda atribuída",
+    '<p style="margin:0 0 16px;">Olá, <strong>'+escaparHtmlEmail(u.data.nome)+'</strong>! Uma atividade foi atribuída a você.</p>'+
+    '<div style="background:#FAF8F5;border:1px solid '+EMAIL_SACRA.borda+';border-radius:10px;padding:18px;margin:0 0 22px;">'+
+    '<div style="font-size:17px;font-weight:700;color:'+EMAIL_SACRA.texto+';">'+escaparHtmlEmail(d.data.titulo)+'</div>'+
+    '<p style="font-size:13px;margin:10px 0;color:'+corPrioridade+';font-weight:700;">Prioridade: '+escaparHtmlEmail(d.data.prioridade)+' · Prazo: '+escaparHtmlEmail(prazo)+'</p>'+
+    (d.data.descricao?'<p style="margin:12px 0 0;white-space:pre-wrap;">'+escaparHtmlEmail(d.data.descricao.slice(0,1000))+'</p>':"")+
+    '</div>'+botaoEmailSacra("Abrir minha demanda no VITRAL",link)+
+    '<p style="font-size:12px;color:'+EMAIL_SACRA.secundario+';margin:20px 0 0;">Acompanhe e registre seu andamento na Central de Demandas.</p>');
    await enviarEmail({destinatarios:[u.data.email],assunto:"Nova demanda no VITRAL: "+d.data.titulo,html:corpo});
    const {error:erroConfirmacao}=await db.from("demandas_email_pendentes")
      .update({situacao:"enviado",enviada_em:new Date().toISOString(),ultimo_erro:null}).eq("id",item.id);
