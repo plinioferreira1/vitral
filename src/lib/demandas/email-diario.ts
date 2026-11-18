@@ -47,7 +47,6 @@ export async function enviarFechamentoDemandas(tenantId:string):Promise<Resultad
     const bloqueadas=demandas.filter(t=>t.status==="bloqueada");
     const atrasadas=demandas.filter(t=>t.status!=="concluida"&&t.prazo&&t.prazo<dia);
     const semAtualizacao=demandas.filter(t=>t.status!=="concluida"&&!eventos?.some(e=>e.demanda_id===t.id));
-    const novosSet=new Set(doDia.map(t=>t.id));
     const nomesPorId=new Map(demandas.map(t=>[t.id,t.titulo]));
     const resumoLinha=(t:{id:string;titulo:string;responsavel_id:string})=>
       `<li style="margin:0 0 7px"><a href="${SITE}/demandas/${t.id}" style="color:#0e3e34;font-weight:600;text-decoration:none">${escapar(t.titulo)}</a> <span style="color:#65736b">— ${escapar(usuarios.get(t.responsavel_id)??"Equipe")}</span></li>`;
