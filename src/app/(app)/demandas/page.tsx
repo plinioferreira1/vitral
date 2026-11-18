@@ -38,8 +38,9 @@ export default async function DemandasPage({searchParams}:{
       .select("id,titulo,descricao,status,prioridade,prazo,responsavel_id,solicitante_id,criada_em,concluida_em")
       .eq("tenant_id",usuario.tenant_id).is("excluida_em",null).order("criada_em",{ascending:false}).limit(250),
     supabase.from("demandas_notificacoes")
-      .select("id,demanda_id,titulo,mensagem,criada_em")
+      .select("id,demanda_id,titulo,mensagem,criada_em,demandas!inner(excluida_em)")
       .eq("tenant_id",usuario.tenant_id).eq("destinatario_id",user.id)
+      .is("demandas.excluida_em",null)
       .is("lida_em",null).order("criada_em",{ascending:false}).limit(12),
     supabase.from("usuarios").select("id,nome,ativo")
       .eq("tenant_id",usuario.tenant_id).eq("ativo",true).order("nome"),
