@@ -398,7 +398,15 @@ export type Database = {
           lida_em?: string | null
           criada_em?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "demandas_notificacoes_demanda_id_fkey"
+            columns: ["demanda_id"]
+            isOneToOne: false
+            referencedRelation: "demandas"
+            referencedColumns: ["id"]
+          }
+        ]
       }
       vendas_fontes_personalizadas: {
         Row: {
