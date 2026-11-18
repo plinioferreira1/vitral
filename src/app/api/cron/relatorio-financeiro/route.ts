@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   // Vercel Cron chama essa rota com esse header; se alguém tentar
   // chamar de fora sem o segredo certo, recusa.
   const authHeader = request.headers.get("authorization");
-  if (process.env.CRON_SECRET && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     return NextResponse.json({ erro: "Não autorizado" }, { status: 401 });
   }
 
