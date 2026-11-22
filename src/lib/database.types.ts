@@ -14,6 +14,12 @@ export type Database = {
   }
   public: {
     Tables: {
+      vitral_desenvolvimento: {
+        Row: { id: string; tenant_id: string; titulo: string; modulo: string; descricao: string | null; prioridade: string; situacao: string; responsavel_id: string | null; prazo: string | null; observacoes: string | null; criado_por: string | null; criado_em: string; atualizado_em: string }
+        Insert: { id?: string; tenant_id: string; titulo: string; modulo?: string; descricao?: string | null; prioridade?: string; situacao?: string; responsavel_id?: string | null; prazo?: string | null; observacoes?: string | null; criado_por?: string | null; criado_em?: string; atualizado_em?: string }
+        Update: { id?: string; tenant_id?: string; titulo?: string; modulo?: string; descricao?: string | null; prioridade?: string; situacao?: string; responsavel_id?: string | null; prazo?: string | null; observacoes?: string | null; criado_por?: string | null; criado_em?: string; atualizado_em?: string }
+        Relationships: []
+      }
       demandas_resumos_individuais: {
         Row: {
           id: string
