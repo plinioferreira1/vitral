@@ -60,7 +60,6 @@ export default async function OnboardingAjudaPage() {
     <nav aria-label="Seções de Onboarding e Ajuda" className="flex flex-wrap gap-2">
       <a href="#onboarding" className="rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-medium text-brand hover:bg-background">Meu onboarding</a>
       <a href="#biblioteca" className="rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-medium text-brand hover:bg-background">Tutoriais e guias</a>
-      <a href="#biblioteca" className="rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-medium text-brand hover:bg-background">Materiais e modelos</a>
       {gestor && <a href="#gestao" className="rounded-full border border-border bg-surface px-4 py-2.5 text-sm font-medium text-brand hover:bg-background">Gestão do conteúdo</a>}
     </nav>
 
