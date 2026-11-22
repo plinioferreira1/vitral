@@ -37,7 +37,7 @@ describe("navegação por acesso", () => {
   });
   it("não oferece documentos ou administração ao social media", () => {
     expect(montarMenu({ ...gestor, ehSocialMedia: true }).map((i) => i.label))
-      .toEqual(["Início", "Demandas", "Ferramentas", "Central de ajuda"]);
+      .toEqual(["Início", "Demandas", "Ferramentas", "Aprendizagem", "Central de ajuda"]);
   });
   it("respeita categorias e não oferece multa sem acesso à locação", () => {
     const hrefs = destinos(montarMenu({ ...gestor, podeConfigurar: false, temVenda: false, temLocacao: false }));
