@@ -44,6 +44,8 @@ export function CaixaEntradaLocacao() {
   const [corpos, setCorpos] = useState<Record<string, string>>({});
   const [abrindo, setAbrindo] = useState(false);
   const [erroLeitura, setErroLeitura] = useState("");
+  const [anexos, setAnexos] = useState<Record<string, Array<{ id: string; nome: string; tamanho: number }>>>({});
+  const [erroAnexos, setErroAnexos] = useState("");
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -103,6 +105,28 @@ export function CaixaEntradaLocacao() {
     void buscarCorpo();
     return () => controller.abort();
   }, [mensagemAtiva?.messageId, corpos]);
+
+  useEffect(() => {
+    if (!mensagemAtiva || !temAnexo(mensagemAtiva)) return;
+    const id = mensagemAtiva.messageId;
+    if (anexos[id]) return;
+    const controller = new AbortController();
+    const carregarAnexos = async () => {
+      setErroAnexos("");
+      try {
+        const res = await fetch("/api/integracoes/zoho/locacao?attachmentsFor=" + encodeURIComponent(id), {
+          cache: "no-store", credentials: "same-origin", signal: controller.signal
+        });
+        const data = await res.json() as { attachments?: Array<{ id: string; nome: string; tamanho: number }>; error?: string };
+        if (!res.ok || !Array.isArray(data.attachments)) throw new Error(data.error || "Anexos indisponíveis");
+        if (!controller.signal.aborted) setAnexos(prev => ({ ...prev, [id]: data.attachments! }));
+      } catch (e) {
+        if (!controller.signal.aborted) setErroAnexos(e instanceof Error ? e.message : "Falha na leitura de anexos");
+      }
+    };
+    void carregarAnexos();
+    return () => controller.abort();
+  }, [mensagemAtiva?.messageId, anexos]);
 
   const pastas = [
     { id: "todas" as const, label: "Caixa de entrada", count: mensagens.length, icon: Inbox },
@@ -224,8 +248,25 @@ export function CaixaEntradaLocacao() {
                 <div className="whitespace-pre-wrap break-words text-sm leading-7 text-ink">
                   {corpos[mensagemAtiva.messageId] ?? (abrindo ? "Carregando mensagem completa…" : limpar(mensagemAtiva.summary) || "Sem conteúdo disponível.")}
                 </div>
+                {temAnexo(mensagemAtiva) && (
+                  <div className="space-y-2 rounded-lg border border-border bg-background p-3">
+                    <p className="flex items-center gap-2 text-sm font-semibold text-ink"><Paperclip size={15} /> Anexos</p>
+                    {erroAnexos && <p role="alert" className="text-xs text-rose-700">{erroAnexos}</p>}
+                    {!anexos[mensagemAtiva.messageId] && !erroAnexos && <p className="text-xs text-ink-muted">Carregando anexos…</p>}
+                    {(anexos[mensagemAtiva.messageId] ?? []).map(anexo => (
+                      <a key={anexo.id}
+                        href={"/api/integracoes/zoho/locacao?downloadMessage=" + encodeURIComponent(mensagemAtiva.messageId) + "&attachmentId=" + encodeURIComponent(anexo.id)}
+                        download={anexo.nome}
+                        className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface px-3 py-2 text-xs font-medium text-brand hover:bg-brand-soft">
+                        <span className="flex min-w-0 items-center gap-2"><Paperclip size={13} /> <span className="break-all">{anexo.nome}</span></span>
+                        <span className="text-ink-muted">{anexo.tamanho > 0 ? (anexo.tamanho / 1024).toFixed(0) + " KB" : "Baixar"}</span>
+                      </a>
+                    ))}
+                    <p className="text-[11px] text-ink-muted">Download restrito a 10 MB por arquivo. Anexos maiores devem ser abertos no Zoho.</p>
+                  </div>
+                )}
                 {erroLeitura && <p role="alert" className="border-t border-border pt-4 text-xs text-rose-700">Não foi possível abrir o conteúdo completo: {erroLeitura}. Exibindo a prévia.</p>}
-                <p className="border-t border-border pt-4 text-xs text-ink-muted">Leitura em texto seguro, sem carregar imagens ou scripts externos. Anexos permanecem disponíveis no Zoho.</p>
+                <p className="border-t border-border pt-4 text-xs text-ink-muted">Leitura em texto seguro, sem carregar imagens ou scripts externos. Anexos disponíveis para download seguro, sujeitos ao limite de tamanho.</p>
                 {codigoVitral(mensagemAtiva.subject) && (
                   <div className="rounded-lg bg-background p-3 text-xs text-ink-muted">
                     <p className="font-semibold text-ink">Referência de solicitação VITRAL</p>
