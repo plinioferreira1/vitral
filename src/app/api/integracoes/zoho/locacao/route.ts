@@ -84,9 +84,14 @@ export async function GET(request: Request) {
       cache: "no-store",
       signal: AbortSignal.timeout(10000),
     });
-    const tokenJson = await tokenResponse.json() as { access_token?: string };
+    const tokenJson = await tokenResponse.json() as { access_token?: string; error?: string };
     if (!tokenResponse.ok || !tokenJson.access_token) {
-      return NextResponse.json({ error: "Falha na autorização Zoho" }, { status: 502 });
+      const allowedErrors = new Set(["invalid_client", "invalid_client_secret", "invalid_code", "invalid_grant", "access_denied", "invalid_request"]);
+      const code = tokenJson.error && allowedErrors.has(tokenJson.error) ? tokenJson.error : "unknown";
+      return NextResponse.json(
+        { error: "Falha na autorização Zoho", codigo_zoho: code, http_zoho: tokenResponse.status },
+        { status: 502, headers: { "Cache-Control": "private, no-store" } }
+      );
     }
 
     const query = new URL(request.url).searchParams;
