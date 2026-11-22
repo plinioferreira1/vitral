@@ -14,7 +14,8 @@ describe("navegação por acesso", () => {
   it("restringe a Central de Desenvolvimento aos diretores e oferece aprendizagem a todos", () => {
     expect(destinos(montarMenu({ ...gestor, ehDiretor: true }))).toContain("/desenvolvimento");
     expect(destinos(montarMenu({ ...gestor, ehDiretor: false }))).not.toContain("/desenvolvimento");
-    expect(destinos(montarMenu({ ...gestor, ehCorretor: true }))).toContain("/aprendizagem");
+    expect(destinos(montarMenu({ ...gestor, ehCorretor: true }))).toContain("/corretor");
+    expect(destinos(montarMenu(gestor))).not.toContain("/aprendizagem");
   });
   it("posiciona Resultados imediatamente abaixo de Calendário", () => {
     const menu = montarMenu(gestor);
@@ -42,7 +43,7 @@ describe("navegação por acesso", () => {
   });
   it("não oferece documentos ou administração ao social media", () => {
     expect(montarMenu({ ...gestor, ehSocialMedia: true }).map((i) => i.label))
-      .toEqual(["Início", "Demandas", "Ferramentas", "Aprendizagem", "Central de ajuda"]);
+      .toEqual(["Início", "Demandas", "Ferramentas", "Onboarding e Ajuda"]);
   });
   it("respeita categorias e não oferece multa sem acesso à locação", () => {
     const hrefs = destinos(montarMenu({ ...gestor, podeConfigurar: false, temVenda: false, temLocacao: false }));
