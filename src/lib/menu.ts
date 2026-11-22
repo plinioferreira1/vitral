@@ -108,7 +108,9 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       { href: "/dp/documentos", label: "Documentos" },
     ],
   });
+  itens.push({ href: "/aprendizagem", label: "Aprendizagem" });
   itens.push({ href: "/corretor", label: "Central de ajuda" });
+  if (p.ehDiretor) itens.push({ href: "/desenvolvimento", label: "Desenvolvimento" });
   if (operacional && p.podeConfigurar) itens.push({
     label: "Configurações",
     children: [
