@@ -15,7 +15,7 @@ export async function enviarResumoIndividualDemandas() {
   if (erroUsuarios) throw new Error("Falha ao consultar colaboradores");
   let enviados = 0, ignorados = 0, falhas = 0;
   for (const usuario of usuarios ?? []) {
-    if (!usuario.email?.trim()) { ignorados++; continue; }
+    if (!usuario.email?.trim() || !usuario.tenant_id) { ignorados++; continue; }
     const { data: demandas, error } = await db.from("demandas")
       .select("id,titulo,prazo,prioridade,status,responsavel_id,tenant_id")
       .eq("tenant_id", usuario.tenant_id).eq("responsavel_id", usuario.id)
