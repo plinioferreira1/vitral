@@ -41,6 +41,9 @@ export function CaixaEntradaLocacao() {
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const [mobileDetalhe, setMobileDetalhe] = useState(false);
   const [atualizacao, setAtualizacao] = useState("");
+  const [corpos, setCorpos] = useState<Record<string, string>>({});
+  const [abrindo, setAbrindo] = useState(false);
+  const [erroLeitura, setErroLeitura] = useState("");
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -75,6 +78,31 @@ export function CaixaEntradaLocacao() {
     });
   }, [mensagens, filtro, busca]);
   const mensagemAtiva = visiveis.find(m => m.messageId === selecionado) ?? visiveis[0] ?? null;
+
+  useEffect(() => {
+    if (!mensagemAtiva) return;
+    const id = mensagemAtiva.messageId;
+    if (corpos[id] !== undefined) return;
+    const controller = new AbortController();
+    const buscarCorpo = async () => {
+      setAbrindo(true);
+      setErroLeitura("");
+      try {
+        const response = await fetch("/api/integracoes/zoho/locacao?messageId=" + encodeURIComponent(id), {
+          credentials: "same-origin", cache: "no-store", signal: controller.signal
+        });
+        const data = await response.json() as { text?: string; error?: string };
+        if (!response.ok || typeof data.text !== "string") throw new Error(data.error || "Mensagem indisponível");
+        if (!controller.signal.aborted) setCorpos(prev => ({ ...prev, [id]: data.text! }));
+      } catch (e) {
+        if (!controller.signal.aborted) setErroLeitura(e instanceof Error ? e.message : "Falha ao carregar e-mail");
+      } finally {
+        if (!controller.signal.aborted) setAbrindo(false);
+      }
+    };
+    void buscarCorpo();
+    return () => controller.abort();
+  }, [mensagemAtiva?.messageId, corpos]);
 
   const pastas = [
     { id: "todas" as const, label: "Caixa de entrada", count: mensagens.length, icon: Inbox },
@@ -194,9 +222,10 @@ export function CaixaEntradaLocacao() {
                   </div>
                 </div>
                 <div className="whitespace-pre-wrap break-words text-sm leading-7 text-ink">
-                  {limpar(mensagemAtiva.summary) || "Sem prévia disponível."}
+                  {corpos[mensagemAtiva.messageId] ?? (abrindo ? "Carregando mensagem completa…" : limpar(mensagemAtiva.summary) || "Sem conteúdo disponível.")}
                 </div>
-                <p className="border-t border-border pt-4 text-xs text-ink-muted">Prévia da mensagem disponibilizada pela API do Zoho. O conteúdo integral e anexos ainda não são carregados nesta etapa.</p>
+                {erroLeitura && <p role="alert" className="border-t border-border pt-4 text-xs text-rose-700">Não foi possível abrir o conteúdo completo: {erroLeitura}. Exibindo a prévia.</p>}
+                <p className="border-t border-border pt-4 text-xs text-ink-muted">Leitura em texto seguro, sem carregar imagens ou scripts externos. Anexos permanecem disponíveis no Zoho.</p>
                 {codigoVitral(mensagemAtiva.subject) && (
                   <div className="rounded-lg bg-background p-3 text-xs text-ink-muted">
                     <p className="font-semibold text-ink">Referência de solicitação VITRAL</p>
