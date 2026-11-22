@@ -11,6 +11,11 @@ function destinos(itens: ItemMenu[]): string[] {
     item.children.flatMap((filho) => "href" in filho ? [filho.href] : filho.children.map((neto) => neto.href)));
 }
 describe("navegação por acesso", () => {
+  it("restringe a Central de Desenvolvimento aos diretores e oferece aprendizagem a todos", () => {
+    expect(destinos(montarMenu({ ...gestor, ehDiretor: true }))).toContain("/desenvolvimento");
+    expect(destinos(montarMenu({ ...gestor, ehDiretor: false }))).not.toContain("/desenvolvimento");
+    expect(destinos(montarMenu({ ...gestor, ehCorretor: true }))).toContain("/aprendizagem");
+  });
   it("posiciona Resultados imediatamente abaixo de Calendário", () => {
     const menu = montarMenu(gestor);
     const indice = menu.findIndex(item => "href" in item && item.href === "/calendario");
