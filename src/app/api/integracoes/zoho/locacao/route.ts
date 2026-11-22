@@ -121,6 +121,81 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Pasta de entrada não identificada na conta Zoho." }, { status: 503 });
       }
     }
+    const anexosMensagem = query.get("attachmentsFor");
+    const baixarMensagem = query.get("downloadMessage");
+    const baixarAnexo = query.get("attachmentId");
+    if (anexosMensagem !== null || baixarMensagem !== null) {
+      const id = anexosMensagem ?? baixarMensagem ?? "";
+      if (!/^\d{1,30}$/.test(id) || !/^\d{1,30}$/.test(folderId)) {
+        return NextResponse.json({ error: "Identificador inválido" }, { status: 400 });
+      }
+      if (baixarMensagem !== null && (!baixarAnexo || !/^\d{1,30}$/.test(baixarAnexo))) {
+        return NextResponse.json({ error: "Anexo inválido" }, { status: 400 });
+      }
+      const prefixo = "/api/accounts/" + encodeURIComponent(accountId!) +
+        "/folders/" + encodeURIComponent(folderId) +
+        "/messages/" + encodeURIComponent(id);
+      const respostaInfo = await fetch(new URL(prefixo + "/attachmentinfo", mailUrl), {
+        headers: { Authorization: "Zoho-oauthtoken " + tokenJson.access_token, Accept: "application/json" },
+        cache: "no-store", signal: AbortSignal.timeout(15000)
+      });
+      if (!respostaInfo.ok) return NextResponse.json({ error: "Não foi possível listar anexos" }, { status: 502 });
+      const info = await respostaInfo.json() as {
+        status?: { code?: number };
+        data?: { attachments?: Array<{ attachmentId?: string; attachmentName?: string; attachmentSize?: number }> }
+      };
+      if (info.status?.code !== 200 || !Array.isArray(info.data?.attachments))
+        return NextResponse.json({ error: "Lista de anexos indisponível" }, { status: 502 });
+      const anexos = info.data.attachments.filter(a => a.attachmentId && /^\d{1,30}$/.test(String(a.attachmentId)))
+        .map(a => ({
+          id: String(a.attachmentId),
+          nome: String(a.attachmentName || "anexo").slice(0, 180),
+          tamanho: Number(a.attachmentSize || 0)
+        }));
+      if (anexosMensagem !== null) {
+        return NextResponse.json({ attachments: anexos, readOnly: true }, { headers: { "Cache-Control": "private, no-store" } });
+      }
+      const escolhido = anexos.find(a => a.id === baixarAnexo);
+      if (!escolhido) return NextResponse.json({ error: "Anexo não encontrado" }, { status: 404 });
+      const MAX_ANEXO = 10 * 1024 * 1024;
+      if (escolhido.tamanho > MAX_ANEXO) return NextResponse.json({ error: "Anexo maior que 10 MB; acesse no Zoho" }, { status: 413 });
+      const arquivoResponse = await fetch(new URL(prefixo + "/attachments/" + escolhido.id, mailUrl), {
+        headers: { Authorization: "Zoho-oauthtoken " + tokenJson.access_token, Accept: "application/octet-stream" },
+        cache: "no-store", signal: AbortSignal.timeout(20000)
+      });
+      if (!arquivoResponse.ok || !arquivoResponse.body) return NextResponse.json({ error: "Download indisponível" }, { status: 502 });
+      const tamanhoRecebido = Number(arquivoResponse.headers.get("content-length") || 0);
+      if (tamanhoRecebido > MAX_ANEXO) {
+        await arquivoResponse.body.cancel();
+        return NextResponse.json({ error: "Arquivo maior que o limite de segurança" }, { status: 413 });
+      }
+      const leitor = arquivoResponse.body.getReader();
+      const partes: Uint8Array[] = [];
+      let bytes = 0;
+      while (true) {
+        const { done, value } = await leitor.read();
+        if (done) break;
+        bytes += value.byteLength;
+        if (bytes > MAX_ANEXO) {
+          await leitor.cancel();
+          return NextResponse.json({ error: "Arquivo excede 10 MB" }, { status: 413 });
+        }
+        partes.push(value);
+      }
+      const corpo = new Uint8Array(bytes);
+      let posicao = 0;
+      for (const parte of partes) { corpo.set(parte, posicao); posicao += parte.byteLength; }
+      const nomeSeguro = escolhido.nome.replace(/[\r\n"\\]/g, "_");
+      return new NextResponse(corpo, {
+        headers: {
+          "Content-Type": "application/octet-stream",
+          "Content-Disposition": "attachment; filename*=UTF-8''" + encodeURIComponent(nomeSeguro),
+          "Content-Length": String(corpo.byteLength),
+          "Cache-Control": "private, no-store",
+          "X-Content-Type-Options": "nosniff"
+        }
+      });
+    }
     const messageId = query.get("messageId");
     if (messageId !== null) {
       if (!/^\d{1,30}$/.test(messageId) || !/^\d{1,30}$/.test(folderId)) {
