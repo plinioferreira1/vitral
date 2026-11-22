@@ -147,7 +147,7 @@ export async function GET(request: Request) {
     // Solicitações para mais de uma unidade não recebem um imóvel arbitrário.
     const emails = result.data as Array<Record<string, unknown>>;
     const codigos = [...new Set(emails.flatMap((m) => {
-      const match = String(m.subject ?? "").match(/\\[VITRAL:([a-f0-9]{16})\\]/i);
+      const match = String(m.subject ?? "").match(/\[VITRAL:([a-f0-9]{16})\]/i);
       return match ? [match[1].toLowerCase()] : [];
     }))];
     const imoveisPorCodigo = new Map<string, { nome: string; contratoId: string }>();
@@ -175,7 +175,7 @@ export async function GET(request: Request) {
       }
     }
     const mensagens = emails.map(m => {
-      const codigo = String(m.subject ?? "").match(/\\[VITRAL:([a-f0-9]{16})\\]/i)?.[1]?.toLowerCase();
+      const codigo = String(m.subject ?? "").match(/\[VITRAL:([a-f0-9]{16})\]/i)?.[1]?.toLowerCase();
       const imovel = codigo ? imoveisPorCodigo.get(codigo) : undefined;
       return { ...m, ...(imovel ? { imovel: imovel.nome, contratoId: imovel.contratoId } : {}) };
     });
