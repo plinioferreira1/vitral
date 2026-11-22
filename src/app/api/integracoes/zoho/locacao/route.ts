@@ -157,7 +157,7 @@ export async function GET(request: Request) {
       const ids = (solicitacoes ?? []).map((s) => s.id);
       if (ids.length) {
         const { data: itens } = await supabase.from("debitos_solicitacao_itens")
-          .select("solicitacao_id,contrato_id").eq("tenant_id", actor.tenant_id).in("solicitacao_id", ids);
+          .select("solicitacao_id,contrato_id").in("solicitacao_id", ids);
         const contratosUnicos = [...new Set((itens ?? []).map(i => i.contrato_id).filter((id): id is string => Boolean(id)))];
         if (contratosUnicos.length) {
           const { data: contratos } = await supabase.from("contratos_locacao")
