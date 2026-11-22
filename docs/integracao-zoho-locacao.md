@@ -17,13 +17,7 @@
 Criar aplicação OAuth **Server-based Application** na [Zoho API Console](https://api-console.zoho.com/).
 Autorizar somente `ZohoMail.messages.READ` nesta primeira fase. Para descobrir a conta/pasta via API, adicionar `ZohoMail.accounts.READ` e `ZohoMail.folders.READ` durante a configuração, caso necessário.
 
-Configurar os seguintes *secrets* nos ambientes destinados ao teste:
-
-- `ZOHO_MAIL_CLIENT_ID`
-- `ZOHO_MAIL_CLIENT_SECRET`
-- `ZOHO_MAIL_REFRESH_TOKEN`
-- `ZOHO_MAIL_ACCOUNT_ID`
-- `ZOHO_MAIL_INBOX_FOLDER_ID`
+A caixa de correio destinada à integração é **locacao@sacraimoveis.com.br**. A Vercel de produção já possui (nomes identificados, valores não consultados) as variáveis:\n\n- `ZOHO_LOCACAO_CLIENT_ID`\n- `ZOHO_LOCACAO_CLIENT_SECRET`\n- `ZOHO_LOCACAO_REFRESH_TOKEN`\n- `ZOHO_LOCACAO_ACCOUNT_ID`\n\nA rota também aceita os nomes antigos `ZOHO_MAIL_*` como alternativa. O identificador da pasta de entrada pode ser configurado como `ZOHO_LOCACAO_INBOX_FOLDER_ID` ou `ZOHO_MAIL_INBOX_FOLDER_ID`; se não estiver presente, a rota busca a pasta Inbox pela API de pastas, que requer o escopo `ZohoMail.folders.READ`.\n\n**Importante:** essas variáveis existentes estão restritas ao ambiente de produção. Para testar em Preview, será necessário configurar a conexão no ambiente de Preview sem compartilhar os segredos. Não pressupor que o token já tenha os escopos necessários.
 - `ZOHO_ACCOUNTS_URL` (opcional; padrão: https://accounts.zoho.com)
 - `ZOHO_MAIL_API_URL` (opcional; padrão: https://mail.zoho.com)
 
