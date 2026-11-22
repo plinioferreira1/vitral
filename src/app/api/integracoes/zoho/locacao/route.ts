@@ -143,8 +143,44 @@ export async function GET(request: Request) {
     if (!Array.isArray(result.data)) {
       return NextResponse.json({ error: "Resposta inesperada da API Zoho" }, { status: 502 });
     }
+    // Anota somente as mensagens cujo código VITRAL pertence ao tenant do usuário.
+    // Solicitações para mais de uma unidade não recebem um imóvel arbitrário.
+    const emails = result.data as Array<Record<string, unknown>>;
+    const codigos = [...new Set(emails.flatMap((m) => {
+      const match = String(m.subject ?? "").match(/\\[VITRAL:([a-f0-9]{16})\\]/i);
+      return match ? [match[1].toLowerCase()] : [];
+    }))];
+    const imoveisPorCodigo = new Map<string, { nome: string; contratoId: string }>();
+    if (codigos.length && actor.tenant_id) {
+      const { data: solicitacoes } = await supabase.from("debitos_solicitacoes")
+        .select("id,codigo_resposta").eq("tenant_id", actor.tenant_id).in("codigo_resposta", codigos);
+      const ids = (solicitacoes ?? []).map((s) => s.id);
+      if (ids.length) {
+        const { data: itens } = await supabase.from("debitos_solicitacao_itens")
+          .select("solicitacao_id,contrato_id").eq("tenant_id", actor.tenant_id).in("solicitacao_id", ids);
+        const contratosUnicos = [...new Set((itens ?? []).map(i => i.contrato_id).filter((id): id is string => Boolean(id)))];
+        if (contratosUnicos.length) {
+          const { data: contratos } = await supabase.from("contratos_locacao")
+            .select("id,numero,imoveis(endereco)").eq("tenant_id", actor.tenant_id).in("id", contratosUnicos);
+          const nomes = new Map((contratos ?? []).map(c => [c.id, {
+            nome: (c.imoveis as { endereco: string } | null)?.endereco || "Contrato " + c.numero,
+            contratoId: c.id
+          }]));
+          for (const s of solicitacoes ?? []) {
+            const unidades = [...new Set((itens ?? []).filter(i => i.solicitacao_id === s.id).map(i => i.contrato_id).filter((id): id is string => Boolean(id)))];
+            if (unidades.length === 1 && s.codigo_resposta && nomes.has(unidades[0]))
+              imoveisPorCodigo.set(s.codigo_resposta.toLowerCase(), nomes.get(unidades[0])!);
+          }
+        }
+      }
+    }
+    const mensagens = emails.map(m => {
+      const codigo = String(m.subject ?? "").match(/\\[VITRAL:([a-f0-9]{16})\\]/i)?.[1]?.toLowerCase();
+      const imovel = codigo ? imoveisPorCodigo.get(codigo) : undefined;
+      return { ...m, ...(imovel ? { imovel: imovel.nome, contratoId: imovel.contratoId } : {}) };
+    });
     return NextResponse.json(
-      { messages: result.data, readOnly: true, receivedFrom: "zoho" },
+      { messages: mensagens, readOnly: true, receivedFrom: "zoho" },
       { headers: { "Cache-Control": "private, no-store" } }
     );
   } catch {
