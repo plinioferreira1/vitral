@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface PermissoesUsuario {
   ehCorretor: boolean;
+  ehDiretor?: boolean;
   ehSocialMedia: boolean;
   nivelComAcessoTotal: boolean;
   podeConfigurar: boolean;
@@ -31,6 +32,7 @@ export async function getPermissoesUsuario(
 
   return {
     ehCorretor,
+    ehDiretor: nivelAcesso === "diretor",
     ehSocialMedia,
     nivelComAcessoTotal,
     podeConfigurar,
