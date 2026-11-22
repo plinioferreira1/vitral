@@ -37,16 +37,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Sem permissão para a caixa de Locação" }, { status: 403 });
   }
 
-  const clientId = process.env.ZOHO_MAIL_CLIENT_ID;
-  const clientSecret = process.env.ZOHO_MAIL_CLIENT_SECRET;
-  const refreshToken = process.env.ZOHO_MAIL_REFRESH_TOKEN;
-  const accountId = process.env.ZOHO_MAIL_ACCOUNT_ID;
-  const folderId = process.env.ZOHO_MAIL_INBOX_FOLDER_ID;
+  const clientId = process.env.ZOHO_LOCACAO_CLIENT_ID || process.env.ZOHO_MAIL_CLIENT_ID;
+  const clientSecret = process.env.ZOHO_LOCACAO_CLIENT_SECRET || process.env.ZOHO_MAIL_CLIENT_SECRET;
+  const refreshToken = process.env.ZOHO_LOCACAO_REFRESH_TOKEN || process.env.ZOHO_MAIL_REFRESH_TOKEN;
+  const accountId = process.env.ZOHO_LOCACAO_ACCOUNT_ID || process.env.ZOHO_MAIL_ACCOUNT_ID;
+  const configuredFolderId = process.env.ZOHO_LOCACAO_INBOX_FOLDER_ID || process.env.ZOHO_MAIL_INBOX_FOLDER_ID;
   // Ajustar ambos para a região do datacenter da conta Zoho.
   const accountsUrl = process.env.ZOHO_ACCOUNTS_URL || "https://accounts.zoho.com";
   const mailUrl = process.env.ZOHO_MAIL_API_URL || "https://mail.zoho.com";
 
-  if (![clientId, clientSecret, refreshToken, accountId, folderId].every(Boolean)) {
+  if (![clientId, clientSecret, refreshToken, accountId].every(Boolean)) {
     return NextResponse.json(
       { error: "Integração Zoho ainda não configurada no servidor" },
       { status: 503 }
@@ -92,11 +92,11 @@ export async function GET(request: Request) {
     const query = new URL(request.url).searchParams;
     const requestedLimit = Number(query.get("limit") || "30");
     const limit = Number.isFinite(requestedLimit) ? Math.max(1, Math.min(100, Math.trunc(requestedLimit))) : 30;
-    const inboxUrl = new URL(
+    let folderId = configuredFolderId;\n    if (!folderId) {\n      // Discover the Inbox by name rather than accidentally fetching every folder.\n      // This requires a ZohoMail.folders.READ grant on the configured refresh token.\n      const foldersUrl = new URL(`/api/accounts/${encodeURIComponent(accountId!)}/folders`, mailUrl);\n      const foldersResponse = await fetch(foldersUrl, {\n        headers: { Authorization: `Zoho-oauthtoken ${tokenJson.access_token}` },\n        cache: "no-store",\n        signal: AbortSignal.timeout(10000),\n      });\n      if (!foldersResponse.ok) {\n        return NextResponse.json({ error: "Não foi possível identificar a pasta de entrada. Configure ZOHO_LOCACAO_INBOX_FOLDER_ID ou autorize ZohoMail.folders.READ." }, { status: 503 });\n      }\n      const foldersJson = await foldersResponse.json() as { data?: Array<{ folderId?: string; folderName?: string; folderType?: string }> };\n      const inbox = foldersJson.data?.find(folder =>\n        folder.folderName?.toLowerCase() === "inbox" ||\n        folder.folderType?.toLowerCase() === "inbox" ||\n        folder.folderName?.toLowerCase() === "entrada"\n      );\n      folderId = inbox?.folderId;\n      if (!folderId) {\n        return NextResponse.json({ error: "Pasta de entrada não identificada na conta Zoho." }, { status: 503 });\n      }\n    }\n    const inboxUrl = new URL(
       `/api/accounts/${encodeURIComponent(accountId!)}/messages/view`,
       mailUrl
     );
-    inboxUrl.searchParams.set("folderId", folderId!);
+    inboxUrl.searchParams.set("folderId", folderId);
     inboxUrl.searchParams.set("start", "1");
     inboxUrl.searchParams.set("limit", String(limit));
     inboxUrl.searchParams.set("sortBy", "date");
