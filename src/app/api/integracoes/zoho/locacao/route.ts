@@ -121,6 +121,42 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: "Pasta de entrada não identificada na conta Zoho." }, { status: 503 });
       }
     }
+    const messageId = query.get("messageId");
+    if (messageId !== null) {
+      if (!/^\d{1,30}$/.test(messageId) || !/^\d{1,30}$/.test(folderId)) {
+        return NextResponse.json({ error: "Identificador de e-mail inválido" }, { status: 400 });
+      }
+      const contentUrl = new URL(
+        "/api/accounts/" + encodeURIComponent(accountId!) +
+        "/folders/" + encodeURIComponent(folderId) +
+        "/messages/" + encodeURIComponent(messageId) + "/content", mailUrl
+      );
+      const detailResponse = await fetch(contentUrl, {
+        headers: { Authorization: "Zoho-oauthtoken " + tokenJson.access_token, Accept: "application/json" },
+        cache: "no-store", signal: AbortSignal.timeout(15000)
+      });
+      if (!detailResponse.ok) return NextResponse.json({ error: "Não foi possível abrir a mensagem" }, { status: 502 });
+      const detail = await detailResponse.json() as { data?: { content?: string }; status?: { code?: number } };
+      if (!detail.data || (detail.status?.code && detail.status.code !== 200)) {
+        return NextResponse.json({ error: "Mensagem não disponível" }, { status: 502 });
+      }
+      // O conteúdo remoto nunca é injetado como HTML no navegador.
+      const plainText = String(detail.data.content || "").slice(0, 400000)
+        .replace(/<!--[\s\S]*?-->/g, "")
+        .replace(/<(script|style|iframe|object|svg)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, "")
+        .replace(/<(br|hr)\s*\/?>/gi, "\n")
+        .replace(/<\/(?:div|p|li|tr|table|h[1-6]|blockquote)>/gi, "\n")
+        .replace(/<[^>]*>/g, "")
+        .replace(/&nbsp;|&#160;/gi, " ")
+        .replace(/&lt;/gi, "<").replace(/&gt;/gi, ">")
+        .replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'")
+        .replace(/&amp;/gi, "&")
+        .replace(/\n{3,}/g, "\n\n").trim().slice(0, 120000);
+      return NextResponse.json(
+        { messageId, text: plainText, readOnly: true },
+        { headers: { "Cache-Control": "private, no-store" } }
+      );
+    }
     const inboxUrl = new URL(
       `/api/accounts/${encodeURIComponent(accountId!)}/messages/view`,
       mailUrl
