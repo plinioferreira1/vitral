@@ -107,6 +107,7 @@ export default async function ControleDebitosPage({
       <div className="flex flex-wrap items-end justify-between gap-3">
         <CabecalhoPagina titulo="Inadimplências" descricao="Conferência mensal de condomínio, IPTU/TLP e acompanhamento das respostas das administradoras." />
         <div className="flex flex-wrap items-center gap-2">
+          <Link href="/locacao/emails" className="rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-ink-muted hover:text-ink">E-mails da Locação</Link>
           <Link href="/locacao?aba=inadimplencias" className="rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-ink-muted hover:text-ink">Consultar contas da locação</Link>
           <Link href="/locacao/debitos/relatorio-administradoras" className="rounded-lg border border-border bg-surface px-3 py-2 text-xs font-semibold text-ink-muted hover:text-ink">Exportar contratos, administradoras e telefones (CSV)</Link>
         </div>

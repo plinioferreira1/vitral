@@ -173,6 +173,7 @@ export default async function LocacaoPage({
       </div>
 
       <div className="flex flex-wrap gap-x-6 gap-y-2">
+        <Link href="/locacao/emails" className="inline-flex text-sm font-medium text-brand hover:underline">E-mails da Locação</Link>
         <Link href="/locacao/multa-juros" className="inline-flex text-sm font-medium text-brand hover:underline">
           Multa e juros por atraso
         </Link>
