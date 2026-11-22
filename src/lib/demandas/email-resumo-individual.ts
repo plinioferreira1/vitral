@@ -2,8 +2,14 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { enviarEmail } from "@/lib/email";
 import { layoutEmailSacra, botaoEmailSacra, escaparHtmlEmail, EMAIL_SACRA } from "@/lib/email-layout-sacra";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://usevitral.site";
-const diaBrasil = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://vitral.sacraimoveis.com.br";
+const diaBrasil = () => {
+  const partes = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
+  }).formatToParts(new Date());
+  const obter = (tipo: string) => partes.find(p => p.type === tipo)?.value ?? "";
+  return [obter("year"), obter("month"), obter("day")].join("-");
+};
 const dataBR = (d: string) => d.split("-").reverse().join("/");
 type Demanda = { id: string; titulo: string; prazo: string | null; prioridade: string; status: string; responsavel_id: string; tenant_id: string };
 
@@ -29,8 +35,16 @@ export async function enviarResumoIndividualDemandas() {
     // O resumo é útil inclusive quando não há demandas: confirma a agenda livre.
     const { error: reserva } = await db.from("demandas_resumos_individuais")
       .insert({ tenant_id: usuario.tenant_id, usuario_id: usuario.id, dia, situacao: "pendente" });
-    if (reserva?.code === "23505") { ignorados++; continue; }
-    if (reserva) { falhas++; continue; }
+    if (reserva?.code === "23505") {
+      // Só permite novo envio quando o SMTP falhou e o registro já está marcado como erro.
+      // Registros pendentes (envio em andamento) e enviados nunca são repetidos.
+      const { data: retomada, error: erroRetomada } = await db.from("demandas_resumos_individuais")
+        .update({ situacao: "pendente", erro: null })
+        .eq("tenant_id", usuario.tenant_id).eq("usuario_id", usuario.id).eq("dia", dia)
+        .eq("situacao", "erro").select("id").maybeSingle();
+      if (erroRetomada) { falhas++; continue; }
+      if (!retomada) { ignorados++; continue; }
+    } else if (reserva) { falhas++; continue; }
     const linha = (d: Demanda) => {
       const prioridade = d.prioridade?.toLowerCase() || "normal";
       const cor = prioridade === "urgente" ? "#A52828" : prioridade === "alta" ? "#A96215" : EMAIL_SACRA.vinho;
