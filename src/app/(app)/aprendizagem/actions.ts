@@ -18,4 +18,5 @@ export async function marcarEtapaAprendizagem(form:FormData){
  },{onConflict:"etapa_id,usuario_id"});
  if(error)throw new Error("Não foi possível salvar seu progresso.");
  revalidatePath("/aprendizagem");
+ revalidatePath("/corretor");
 }
