@@ -2,20 +2,17 @@ import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
-import { CartaoIndicador } from "@/components/cartao-indicador";
 import { baixasParaMovimento, movimentoPorConta as calcularMovimento } from "@/lib/saldos";
 import { GraficoFluxoCaixa } from "@/components/grafico-fluxo-caixa";
 import { LogoBanco } from "@/components/financeiro/logo-banco";
 import {
-  Wallet,
-  TrendingUp,
-  TrendingDown,
   AlertTriangle,
   CalendarClock,
-  Clock,
   Landmark,
   Layers,
   LineChart,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { hojeISO } from "@/lib/data-br";
 
@@ -30,15 +27,26 @@ function diaMes(iso: string): string {
   return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "");
 }
 
-const PERIODOS = { "7": "Últimos 7 dias", "30": "Últimos 30 dias", "90": "Últimos 90 dias" } as const;
 
 export default async function FinanceiroDashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ periodo?: string }>;
+  searchParams: Promise<{ mes?: string }>;
 }) {
-  const { periodo: periodoParam } = await searchParams;
-  const periodoDias = periodoParam && periodoParam in PERIODOS ? periodoParam : "30";
+  const { mes: mesParam } = await searchParams;
+  const hojeAtual = hojeISO();
+  const mesAtual = hojeAtual.slice(0, 7);
+  const mesSelecionado = mesParam && /^20\d{2}-(0[1-9]|1[0-2])$/.test(mesParam) ? mesParam : mesAtual;
+  const [anoMes, numeroMes] = mesSelecionado.split("-").map(Number);
+  const inicioMes = `${mesSelecionado}-01`;
+  const fimMes = new Date(Date.UTC(anoMes, numeroMes, 0)).toISOString().slice(0, 10);
+  const mudarMes = (delta: number) => {
+    const destino = new Date(Date.UTC(anoMes, numeroMes - 1 + delta, 1)).toISOString().slice(0, 7);
+    return destino === mesAtual ? "/financeiro" : `/financeiro?mes=${destino}`;
+  };
+  const rotuloMes = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" })
+    .format(new Date(Date.UTC(anoMes, numeroMes - 1, 1)))
+    .replace(/^./, primeira => primeira.toUpperCase()).replace(" de ", "/");
   const supabase = await createClient();
   const hoje = hojeISO();
   const em7dias = new Date();
@@ -47,11 +55,8 @@ export default async function FinanceiroDashboardPage({
   const em30dias = new Date();
   em30dias.setDate(em30dias.getDate() + 30);
   const em30diasStr = em30dias.toISOString().slice(0, 10);
-  const inicioPeriodo = new Date();
-  inicioPeriodo.setDate(inicioPeriodo.getDate() - Number(periodoDias));
-  const inicioPeriodoStr = inicioPeriodo.toISOString().slice(0, 10);
 
-  const [{ data: contas }, { data: baixasPeriodo }, { data: pendentes }, { data: todasBaixas }, { data: transferencias }] = await Promise.all([
+  const [{ data: contas }, { data: baixasPeriodo }, { data: pendentes }, { data: todasBaixas }, { data: transferencias }, { data: titulosMes }] = await Promise.all([
     supabase
       .from("financeiro_contas_bancarias")
       .select("id, nome, banco, tipo, saldo_inicial, ativa")
@@ -59,7 +64,8 @@ export default async function FinanceiroDashboardPage({
     supabase
       .from("financeiro_baixas")
       .select("valor, data, financeiro_lancamentos ( tipo )")
-      .gte("data", inicioPeriodoStr),
+      .gte("data", inicioMes)
+      .lte("data", fimMes),
     supabase
       .from("financeiro_lancamentos")
       .select("id, tipo, descricao, valor, vencimento, status, financeiro_pessoas ( nome )")
@@ -67,6 +73,8 @@ export default async function FinanceiroDashboardPage({
       .order("vencimento"),
     supabase.from("financeiro_baixas").select("conta_bancaria_id, valor, financeiro_lancamentos ( tipo )"),
     supabase.from("financeiro_transferencias").select("conta_origem_id, conta_destino_id, valor, data"),
+    supabase.from("financeiro_lancamentos").select("tipo, valor, vencimento, status")
+      .gte("vencimento", inicioMes).lte("vencimento", fimMes).neq("status", "cancelado"),
   ]);
 
   type ContaResumo = { id: string; nome: string; banco: string | null; tipo: string | null; saldo_inicial: number };
@@ -126,8 +134,12 @@ export default async function FinanceiroDashboardPage({
   const vencidos = listaPendentes.filter((l) => l.vencimento < hoje);
   const proximosVencimentos = listaPendentes.filter((l) => l.vencimento >= hoje && l.vencimento <= em7diasStr);
 
-  const totalAPagar = aPagar.reduce((s, l) => s + Number(l.valor), 0);
-  const totalAReceber = aReceber.reduce((s, l) => s + Number(l.valor), 0);
+  const pagarNoMes = aPagar.filter(l => l.vencimento >= inicioMes && l.vencimento <= fimMes);
+  const receberNoMes = aReceber.filter(l => l.vencimento >= inicioMes && l.vencimento <= fimMes);
+  const totalAPagar = pagarNoMes.reduce((s, l) => s + Number(l.valor), 0);
+  const totalAReceber = receberNoMes.reduce((s, l) => s + Number(l.valor), 0);
+  const totalDespesasMes = (titulosMes ?? []).filter(l => l.tipo === "despesa").reduce((s, l) => s + Number(l.valor), 0);
+  const totalReceitasMes = (titulosMes ?? []).filter(l => l.tipo === "receita").reduce((s, l) => s + Number(l.valor), 0);
 
   // Fluxo de caixa projetado (próximos 30 dias), a partir dos
   // lançamentos pendentes agrupados por dia de vencimento.
@@ -155,23 +167,15 @@ export default async function FinanceiroDashboardPage({
 
   return (
     <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5">
-      <CabecalhoPagina titulo="Visão geral do Financeiro" descricao="Saldos, compromissos e recebimentos. Comece pelos vencidos e pelo que vence hoje." acao={
-        <div className="flex gap-1 rounded-lg border border-border/60 bg-surface p-1 text-sm">
-          {Object.entries(PERIODOS).map(([valor, label]) => (
-            <Link
-              key={valor}
-              href={valor === "30" ? "/financeiro" : `/financeiro?periodo=${valor}`}
-              className={`rounded-md px-3 py-1.5 transition ${
-                periodoDias === valor ? "bg-brand text-white" : "text-ink-muted hover:bg-background"
-              }`}
-            >
-              {label}
-            </Link>
-          ))}
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <CabecalhoPagina titulo="Financeiro" descricao="Despesas, receitas e compromissos do mês, com uma visão rápida do que precisa de atenção." />
+        <div className="flex items-center gap-1 rounded-xl border border-border bg-surface p-1" aria-label="Selecionar mês financeiro">
+          <Link href={mudarMes(-1)} aria-label="Mês anterior" className="rounded-lg p-2 text-ink-muted hover:bg-background"><ChevronLeft size={16} /></Link>
+          <span className="min-w-[134px] text-center text-sm font-semibold text-ink">{rotuloMes}</span>
+          <Link href={mudarMes(1)} aria-label="Próximo mês" className="rounded-lg p-2 text-ink-muted hover:bg-background"><ChevronRight size={16} /></Link>
+          {mesSelecionado !== mesAtual && <Link href="/financeiro" className="rounded-lg px-2 py-1.5 text-xs font-medium text-brand hover:bg-background">Mês atual</Link>}
         </div>
-      } />
-
-
+      </div>
 
       <section aria-label="Ações rápidas do Financeiro" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {[
@@ -188,34 +192,25 @@ export default async function FinanceiroDashboardPage({
         ))}
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 financeiro-indicadores">
-        <CartaoIndicador
-          icon={Wallet}
-          valor={brl(saldoConsolidado)}
-          label="Saldo bancário consolidado"
-          href="/financeiro/contas-bancarias"
-        />
-        <CartaoIndicador icon={TrendingUp} valor={brl(recebidoNoPeriodo)} label={`Recebido — ${PERIODOS[periodoDias as keyof typeof PERIODOS].toLowerCase()}`} tom="sucesso" />
-        <CartaoIndicador icon={TrendingDown} valor={brl(pagoNoPeriodo)} label={`Pago — ${PERIODOS[periodoDias as keyof typeof PERIODOS].toLowerCase()}`} tom="perigo" />
-        <CartaoIndicador
-          icon={Clock}
-          valor={brl(totalAPagar)}
-          label={`Contas a pagar (${aPagar.length})`}
-          href="/financeiro/contas-a-pagar"
-        />
-        <CartaoIndicador
-          icon={Clock}
-          valor={brl(totalAReceber)}
-          label={`Contas a receber (${aReceber.length})`}
-          href="/financeiro/contas-a-receber"
-        />
-        <CartaoIndicador
-          icon={AlertTriangle}
-          valor={vencidos.length}
-          label="Lançamentos vencidos"
-          tom={vencidos.length > 0 ? "perigo" : "neutro"}
-        />
-      </div>
+      <section aria-label={"Indicadores de " + rotuloMes} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {[
+          { label: "Despesas do mês", value: brl(totalDespesasMes), detail: `${brl(totalAPagar)} em aberto no período`, href: `/financeiro/lancamentos?tipo=despesa&referencia=mes&mes=${mesSelecionado}` },
+          { label: "Receitas do mês", value: brl(totalReceitasMes), detail: `${brl(totalAReceber)} em aberto no período`, href: `/financeiro/lancamentos?tipo=receita&referencia=mes&mes=${mesSelecionado}` },
+          { label: "Pago no mês", value: brl(pagoNoPeriodo), detail: "Pagamentos realizados no período", href: `/financeiro/lancamentos?tipo=despesa&referencia=mes&mes=${mesSelecionado}` },
+          { label: "Recebido no mês", value: brl(recebidoNoPeriodo), detail: "Recebimentos realizados no período", href: `/financeiro/lancamentos?tipo=receita&referencia=mes&mes=${mesSelecionado}` },
+          { label: "Saldo bancário atual", value: brl(saldoConsolidado), detail: "Saldo consolidado de todas as contas", href: "/financeiro/contas-e-cartoes" },
+          { label: "Vencidos até hoje", value: String(vencidos.length), detail: "Pendências de todos os meses", href: "/financeiro/lancamentos?referencia=todos&status=vencido", alert: vencidos.length > 0 },
+        ].map(card => (
+          <Link key={card.label} href={card.href}
+            className="group flex min-h-[112px] flex-col justify-between rounded-xl border border-border bg-surface px-4 py-3.5 transition hover:border-brand/40 hover:bg-background">
+            <span className="text-xs font-medium text-ink-muted">{card.label}</span>
+            <div className="mt-2 min-w-0">
+              <p className={`num break-words text-xl font-semibold tracking-tight sm:text-2xl ${card.alert ? "text-rose-700" : "text-ink"}`}>{card.value}</p>
+              <p className="mt-1 text-xs text-ink-muted">{card.detail}</p>
+            </div>
+          </Link>
+        ))}
+      </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
         <div className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">

@@ -50,6 +50,7 @@ function brl(v: number): string {
 
 type Filtros = {
   tipo?: string;
+  mes?: string;
   q?: string;
   status?: string;
   referencia?: string;
@@ -70,7 +71,7 @@ type ReferenciaFiltro = "hoje" | "7dias" | "mes" | "todos";
 const REFERENCIAS: { value: ReferenciaFiltro; label: string }[] = [
   { value: "hoje", label: "Vencem hoje" },
   { value: "7dias", label: "Próximos 7 dias" },
-  { value: "mes", label: "Mês atual" },
+  { value: "mes", label: "Mês selecionado" },
   { value: "todos", label: "Todos os vencimentos" },
 ];
 
@@ -116,15 +117,16 @@ function renderCamposOcultos(campos: CampoOculto[], omitir: (keyof Filtros)[] = 
 export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita" | "despesa"; searchParams?: Filtros }) {
   const supabase = await createClient();
   const hoje = hojeISO();
-  const ano = Number(hoje.slice(0, 4));
-  const mes = Number(hoje.slice(5, 7));
-  const inicioMes = `${hoje.slice(0, 7)}-01`;
-  const fim = new Date(ano, mes, 0).toISOString().slice(0, 10);
+  const f = searchParams ?? {};
+  const competenciaMes = f.mes && /^20\d{2}-(0[1-9]|1[0-2])$/.test(f.mes) ? f.mes : hoje.slice(0, 7);
+  const ano = Number(competenciaMes.slice(0, 4));
+  const mes = Number(competenciaMes.slice(5, 7));
+  const inicioMes = `${competenciaMes}-01`;
+  const fim = new Date(Date.UTC(ano, mes, 0)).toISOString().slice(0, 10);
   const anoAnterior = mes === 1 ? ano - 1 : ano;
   const mesAnterior = mes === 1 ? 12 : mes - 1;
   const inicioMesAnterior = `${anoAnterior}-${String(mesAnterior).padStart(2, "0")}-01`;
-  const fimMesAnterior = new Date(anoAnterior, mesAnterior, 0).toISOString().slice(0, 10);
-  const f = searchParams ?? {};
+  const fimMesAnterior = new Date(Date.UTC(anoAnterior, mesAnterior, 0)).toISOString().slice(0, 10);
   const referencia = normalizarReferencia(f.referencia ?? (f.status === "vencido" ? "todos" : undefined));
   const fim7Dias = somarDias(hoje, 6);
 
@@ -282,6 +284,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     f.conta_bancaria ||
     f.unidade ||
     f.competencia ||
+    f.mes ||
     f.q ||
     referencia !== "hoje"
   );
@@ -312,6 +315,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
 
   const camposOcultos: CampoOculto[] = [
     ["tipo", unificado ? tipo : undefined],
+    ["mes", f.mes],
     ["q", f.q],
     ["status", f.status],
     ["referencia", referencia],
@@ -353,7 +357,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           tom="marca"
           label={`${tipo === "receita" ? "A receber" : "A pagar"} no mês`}
           valor={brl(totalNoMes)}
-          href={`${rotaConsulta}referencia=mes&status=em_aberto#lista`}
+          href={`${rotaConsulta}referencia=mes&status=em_aberto&mes=${competenciaMes}#lista`}
           rodape={linhaComparativo(variacao(comprometidoMes, comprometidoMesAnterior), false)}
         />
         <CartaoKpi
@@ -376,7 +380,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           tom="sucesso"
           label={`${tipo === "receita" ? "Recebidos" : "Pagos"} no mês`}
           valor={brl(totalBaixadoNoMes)}
-          href={`${rotaConsulta}referencia=mes&status=pago#lista`}
+          href={`${rotaConsulta}referencia=mes&status=pago&mes=${competenciaMes}#lista`}
           rodape={linhaComparativo(variacao(totalBaixadoNoMes, baixasMesAnterior), true)}
         />
       </div>
@@ -436,6 +440,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           className="grid grid-cols-1 gap-3 border-t border-border/70 px-4 py-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6"
         >
         <input type="hidden" name="tipo" value={unificado ? tipo : ""} />
+        {f.mes && <input type="hidden" name="mes" value={competenciaMes} />}
         <input type="hidden" name="q" value={f.q ?? ""} />
         <input type="hidden" name="referencia" value={referencia} />
         <div>
