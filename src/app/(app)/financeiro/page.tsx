@@ -200,7 +200,7 @@ export default async function FinanceiroDashboardPage({
           { label: "Recebido no mês", value: brl(recebidoNoPeriodo), detail: "Recebimentos realizados no período", href: `/financeiro/lancamentos?tipo=receita&referencia=mes&mes=${mesSelecionado}`, tone: "receita" },
           { label: "Saldo bancário atual", value: brl(saldoConsolidado), detail: "Saldo consolidado de todas as contas", href: "/financeiro/contas-e-cartoes", tone: "saldo" },
           { label: "Vencidos até hoje", value: String(vencidos.length), detail: "Pendências de todos os meses", href: "/financeiro/lancamentos?referencia=todos&status=vencido", tone: vencidos.length > 0 ? "vencido" : "neutro" },
-        ].map(card => {
+        ] as const).map(card => {
           const estilos = {
             despesa: { borda: "border-rose-200/80 bg-rose-50/60", faixa: "bg-rose-600", rotulo: "text-rose-800", valor: "text-rose-800" },
             receita: { borda: "border-emerald-200/80 bg-emerald-50/60", faixa: "bg-emerald-600", rotulo: "text-emerald-800", valor: "text-emerald-800" },
