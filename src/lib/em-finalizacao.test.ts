@@ -33,10 +33,11 @@ describe("telas em finalização", () => {
     expect(hrefs(false)).not.toContain("/locacao/debitos");
     expect(hrefs(false)).not.toContain("/vendas/termos-entrega");
     expect(hrefs(false)).not.toContain("/ferias");
-    expect(hrefs(true)).toContain('"/ferias"');
-    expect(hrefs(true)).toContain("Departamento pessoal");
-    for (const rota of ["/dp", "/dp/colaboradores", "/ferias", "/dp/ponto", "/dp/ausencias", "/dp/documentos", "/dp/configuracoes"]) expect(hrefs(true)).toContain(`"${rota}"`);
-    expect(hrefs(false)).not.toContain("Departamento pessoal");
+    // Departamento Pessoal permanece acessível via Configurações, sem poluir o menu principal.
+    expect(hrefs(true)).toContain('"/dp"');
+    expect(hrefs(true)).toContain("Departamento pessoal (interno)");
+    expect(hrefs(true)).not.toContain('"/ferias"');
+    expect(hrefs(false)).not.toContain('"/dp"');
     expect(hrefs(true)).toContain('"/vendas/termos-entrega"');
     expect(hrefs(true)).toContain("/vendas/termos-entrega/configuracao");
     expect(hrefs(true)).toContain('"/avaliacoes"');
