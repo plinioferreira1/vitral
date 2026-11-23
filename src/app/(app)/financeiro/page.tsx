@@ -56,7 +56,7 @@ export default async function FinanceiroDashboardPage({
   em30dias.setDate(em30dias.getDate() + 30);
   const em30diasStr = em30dias.toISOString().slice(0, 10);
 
-  const [{ data: contas }, { data: baixasPeriodo }, { data: pendentes }, { data: todasBaixas }, { data: transferencias }] = await Promise.all([
+  const [{ data: contas }, { data: baixasPeriodo }, { data: pendentes }, { data: todasBaixas }, { data: transferencias }, { data: titulosMes }] = await Promise.all([
     supabase
       .from("financeiro_contas_bancarias")
       .select("id, nome, banco, tipo, saldo_inicial, ativa")
@@ -73,6 +73,8 @@ export default async function FinanceiroDashboardPage({
       .order("vencimento"),
     supabase.from("financeiro_baixas").select("conta_bancaria_id, valor, financeiro_lancamentos ( tipo )"),
     supabase.from("financeiro_transferencias").select("conta_origem_id, conta_destino_id, valor, data"),
+    supabase.from("financeiro_lancamentos").select("tipo, valor, vencimento, status")
+      .gte("vencimento", inicioMes).lte("vencimento", fimMes).neq("status", "cancelado"),
   ]);
 
   type ContaResumo = { id: string; nome: string; banco: string | null; tipo: string | null; saldo_inicial: number };
@@ -136,6 +138,8 @@ export default async function FinanceiroDashboardPage({
   const receberNoMes = aReceber.filter(l => l.vencimento >= inicioMes && l.vencimento <= fimMes);
   const totalAPagar = pagarNoMes.reduce((s, l) => s + Number(l.valor), 0);
   const totalAReceber = receberNoMes.reduce((s, l) => s + Number(l.valor), 0);
+  const totalDespesasMes = (titulosMes ?? []).filter(l => l.tipo === "despesa").reduce((s, l) => s + Number(l.valor), 0);
+  const totalReceitasMes = (titulosMes ?? []).filter(l => l.tipo === "receita").reduce((s, l) => s + Number(l.valor), 0);
 
   // Fluxo de caixa projetado (próximos 30 dias), a partir dos
   // lançamentos pendentes agrupados por dia de vencimento.
@@ -190,10 +194,10 @@ export default async function FinanceiroDashboardPage({
 
       <section aria-label={"Indicadores de " + rotuloMes} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {[
-          { label: "Despesas do mês", value: brl(totalAPagar), detail: `${pagarNoMes.length} conta(s) em aberto`, href: `/financeiro/lancamentos?tipo=despesa&referencia=mes&mes=${mesSelecionado}` },
-          { label: "Receitas do mês", value: brl(totalAReceber), detail: `${receberNoMes.length} conta(s) em aberto`, href: `/financeiro/lancamentos?tipo=receita&referencia=mes&mes=${mesSelecionado}` },
-          { label: "Pago no mês", value: brl(pagoNoPeriodo), detail: "Pagamentos realizados no período", href: `/financeiro/lancamentos?tipo=despesa&referencia=mes&mes=${mesSelecionado}&status=pago` },
-          { label: "Recebido no mês", value: brl(recebidoNoPeriodo), detail: "Recebimentos realizados no período", href: `/financeiro/lancamentos?tipo=receita&referencia=mes&mes=${mesSelecionado}&status=pago` },
+          { label: "Despesas do mês", value: brl(totalDespesasMes), detail: `${brl(totalAPagar)} em aberto no período`, href: `/financeiro/lancamentos?tipo=despesa&referencia=mes&mes=${mesSelecionado}` },
+          { label: "Receitas do mês", value: brl(totalReceitasMes), detail: `${brl(totalAReceber)} em aberto no período`, href: `/financeiro/lancamentos?tipo=receita&referencia=mes&mes=${mesSelecionado}` },
+          { label: "Pago no mês", value: brl(pagoNoPeriodo), detail: "Pagamentos realizados no período", href: `/financeiro/lancamentos?tipo=despesa&referencia=mes&mes=${mesSelecionado}` },
+          { label: "Recebido no mês", value: brl(recebidoNoPeriodo), detail: "Recebimentos realizados no período", href: `/financeiro/lancamentos?tipo=receita&referencia=mes&mes=${mesSelecionado}` },
           { label: "Saldo bancário atual", value: brl(saldoConsolidado), detail: "Saldo consolidado de todas as contas", href: "/financeiro/contas-e-cartoes" },
           { label: "Vencidos até hoje", value: String(vencidos.length), detail: "Pendências de todos os meses", href: "/financeiro/lancamentos?referencia=todos&status=vencido", alert: vencidos.length > 0 },
         ].map(card => (
