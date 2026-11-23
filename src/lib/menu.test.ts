@@ -17,11 +17,10 @@ describe("navegação por acesso", () => {
     expect(destinos(montarMenu({ ...gestor, ehCorretor: true }))).toContain("/corretor");
     expect(destinos(montarMenu(gestor))).not.toContain("/aprendizagem");
   });
-  it("posiciona Resultados imediatamente abaixo de Calendário", () => {
+  it("concentra Resultados em Relatórios, sem entrada duplicada", () => {
     const menu = montarMenu(gestor);
-    const indice = menu.findIndex(item => "href" in item && item.href === "/calendario");
-    expect(menu[indice + 1]).toEqual({ href: "/painel-sacra", label: "Resultados" });
-    expect(destinos([menu.find(item => item.label === "Relatórios")!])).not.toContain("/painel-sacra");
+    expect(destinos([menu.find(item => item.label === "Relatórios")!])).toContain("/painel-sacra");
+    expect(menu.some(item => "href" in item && item.href === "/painel-sacra")).toBe(false);
   });
   it("mantém financeiro, relatórios e administração fora do menu do auxiliar", () => {
     const itens = montarMenu({ ...gestor, podeConfigurar: false });
@@ -64,7 +63,8 @@ describe("navegação por acesso", () => {
     const configuracoes = menu.find((i) => i.label === "Configurações")!;
     expect(destinos([configuracoes])).toContain("/configuracoes");
     expect(destinos([configuracoes])).toContain("/dp/configuracoes");
-    expect(destinos([menu.find((i) => i.label === "Departamento pessoal")!])).not.toContain("/dp/configuracoes");
+    expect(menu.some(i => i.label === "Departamento pessoal")).toBe(false);
+    expect(destinos([configuracoes])).toContain("/dp");
     expect(destinos(montarMenu({ ...gestor, podeConfigurar: false }))).not.toContain("/configuracoes");
   });
 });
@@ -77,9 +77,9 @@ describe("destino ativo", () => {
     ["/locacao", "", "/locacao?aba=resumo"],
     ["/financiamentos", "aba=custas", "/financiamentos?aba=custas"],
     ["/dp", "", "/dp"],
-    ["/dp/colaboradores/123", "aba=ponto", "/dp/colaboradores"],
-    ["/ferias/equipe", "aba=calendario", "/ferias"],
-    ["/dp/ponto", "colaborador=1", "/dp/ponto"],
+    ["/dp/colaboradores/123", "aba=ponto", "/dp"],
+    ["/ferias/equipe", "aba=calendario", "/dp"],
+    ["/dp/ponto", "colaborador=1", "/dp"],
     ["/financeiro/relatorios", "", "/financeiro/relatorios"],
     ["/financeiro/configuracoes-email", "", "/financeiro/configuracoes-email"],
     ["/avaliacoes/configuracao", "", "/avaliacoes/configuracao"],
@@ -87,7 +87,9 @@ describe("destino ativo", () => {
     ["/locacao/ficha-cadastral/123", "", "/locacao/ficha-cadastral"],
     ["/locacao", "aba=multa", "/locacao?aba=multa"],
     ["/locacao", "aba=contratos", "/locacao?aba=contratos"],
-    ["/financeiro/pessoas/123/editar", "", "/financeiro/pessoas"],
+    ["/financeiro/pessoas/123/editar", "", "/financeiro/contas-e-cartoes"],
+    ["/financeiro/contas-a-receber", "", "/financeiro/lancamentos"],
+    ["/financeiro/extratos", "", "/financeiro/contas-e-cartoes"],
   ])("marca apenas o destino específico em %s?%s", (pathname, query, esperado) => {
     expect(hrefAtivoMenu(menu, pathname, new URLSearchParams(query))).toBe(esperado);
   });
