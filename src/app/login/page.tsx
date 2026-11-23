@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { SacraLogo } from "@/components/sacra-logo";
 import { ArrowRight, Building2, CalendarCheck2, FileSignature, ShieldCheck, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { entrar, cadastrar, esqueciSenha } from "./actions";
@@ -69,14 +70,7 @@ export default async function LoginPage({
 
           <div className="relative flex min-h-full flex-col">
             <div className="flex items-center justify-between gap-4">
-              <Image
-                src="/brand/sacra-logo-dourado.png"
-                alt="Sacra Netimóveis"
-                width={646}
-                height={193}
-                priority
-                className="h-10 w-auto object-contain brightness-0 invert sm:h-12"
-              />
+              <SacraLogo variante="branco" className="w-[250px] max-w-[65vw] sm:w-[315px]" />
               <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-white/85">
                 Vitral
               </span>

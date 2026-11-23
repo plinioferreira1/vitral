@@ -193,23 +193,36 @@ export default async function FinanceiroDashboardPage({
       </section>
 
       <section aria-label={"Indicadores de " + rotuloMes} className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {[
-          { label: "Despesas do mês", value: brl(totalDespesasMes), detail: `${brl(totalAPagar)} em aberto no período`, href: `/financeiro/lancamentos?tipo=despesa&referencia=mes&mes=${mesSelecionado}` },
-          { label: "Receitas do mês", value: brl(totalReceitasMes), detail: `${brl(totalAReceber)} em aberto no período`, href: `/financeiro/lancamentos?tipo=receita&referencia=mes&mes=${mesSelecionado}` },
-          { label: "Pago no mês", value: brl(pagoNoPeriodo), detail: "Pagamentos realizados no período", href: `/financeiro/lancamentos?tipo=despesa&referencia=mes&mes=${mesSelecionado}` },
-          { label: "Recebido no mês", value: brl(recebidoNoPeriodo), detail: "Recebimentos realizados no período", href: `/financeiro/lancamentos?tipo=receita&referencia=mes&mes=${mesSelecionado}` },
-          { label: "Saldo bancário atual", value: brl(saldoConsolidado), detail: "Saldo consolidado de todas as contas", href: "/financeiro/contas-e-cartoes" },
-          { label: "Vencidos até hoje", value: String(vencidos.length), detail: "Pendências de todos os meses", href: "/financeiro/lancamentos?referencia=todos&status=vencido", alert: vencidos.length > 0 },
-        ].map(card => (
-          <Link key={card.label} href={card.href}
-            className="group flex min-h-[112px] flex-col justify-between rounded-xl border border-border bg-surface px-4 py-3.5 transition hover:border-brand/40 hover:bg-background">
-            <span className="text-xs font-medium text-ink-muted">{card.label}</span>
-            <div className="mt-2 min-w-0">
-              <p className={`num break-words text-xl font-semibold tracking-tight sm:text-2xl ${card.alert ? "text-rose-700" : "text-ink"}`}>{card.value}</p>
-              <p className="mt-1 text-xs text-ink-muted">{card.detail}</p>
-            </div>
-          </Link>
-        ))}
+        {([
+          { label: "Despesas do mês", value: brl(totalDespesasMes), detail: `${brl(totalAPagar)} em aberto no período`, href: `/financeiro/lancamentos?tipo=despesa&referencia=mes&mes=${mesSelecionado}`, tone: "despesa" },
+          { label: "Receitas do mês", value: brl(totalReceitasMes), detail: `${brl(totalAReceber)} em aberto no período`, href: `/financeiro/lancamentos?tipo=receita&referencia=mes&mes=${mesSelecionado}`, tone: "receita" },
+          { label: "Pago no mês", value: brl(pagoNoPeriodo), detail: "Pagamentos realizados no período", href: undefined, tone: "despesa" },
+          { label: "Recebido no mês", value: brl(recebidoNoPeriodo), detail: "Recebimentos realizados no período", href: undefined, tone: "receita" },
+          { label: "Saldo bancário atual", value: brl(saldoConsolidado), detail: "Saldo consolidado de todas as contas", href: "/financeiro/contas-e-cartoes", tone: "saldo" },
+          { label: "Vencidos até hoje", value: String(vencidos.length), detail: "Pendências de todos os meses", href: "/financeiro/lancamentos?referencia=todos&status=vencido", tone: vencidos.length > 0 ? "vencido" : "neutro" },
+        ] as const).map(card => {
+          const estilos = {
+            despesa: { borda: "border-rose-200/80 bg-rose-50/60", faixa: "bg-rose-600", rotulo: "text-rose-800", valor: "text-rose-800" },
+            receita: { borda: "border-emerald-200/80 bg-emerald-50/60", faixa: "bg-emerald-600", rotulo: "text-emerald-800", valor: "text-emerald-800" },
+            saldo: { borda: "border-brand/20 bg-brand/5", faixa: "bg-brand", rotulo: "text-brand", valor: "text-ink" },
+            vencido: { borda: "border-amber-200/90 bg-amber-50/70", faixa: "bg-amber-600", rotulo: "text-amber-900", valor: "text-amber-900" },
+            neutro: { borda: "border-border bg-surface", faixa: "bg-emerald-500", rotulo: "text-ink-muted", valor: "text-ink" },
+          }[card.tone];
+          const estilo = `group relative flex min-h-[112px] flex-col justify-between overflow-hidden rounded-xl border px-4 py-3.5 transition ${estilos.borda}`;
+          const conteudo = (
+            <>
+              <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${estilos.faixa}`} />
+              <span className={`text-xs font-semibold ${estilos.rotulo}`}>{card.label}</span>
+              <div className="mt-2 min-w-0">
+                <p className={`num break-words text-xl font-semibold tracking-tight sm:text-2xl ${estilos.valor}`}>{card.value}</p>
+                <p className="mt-1 text-xs text-ink-muted">{card.detail}</p>
+              </div>
+            </>
+          );
+          return card.href
+            ? <Link key={card.label} href={card.href} className={estilo + " hover:shadow-sm"}>{conteudo}</Link>
+            : <div key={card.label} className={estilo}>{conteudo}</div>;
+        })}
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">

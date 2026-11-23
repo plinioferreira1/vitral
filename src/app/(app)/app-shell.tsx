@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
+import { SacraLogo } from "@/components/sacra-logo";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   Home,
@@ -209,14 +209,7 @@ export function AppShell({
       className="flex w-full items-center justify-center rounded-md px-2 py-1 transition hover:bg-background"
       aria-label={tenantName}
     >
-      <Image
-        src="/brand/sacra-logo-bordo.png"
-        alt={tenantName}
-        width={121}
-        height={36}
-        priority
-        className="h-9 w-auto object-contain"
-      />
+      <SacraLogo variante="bordo" label={tenantName} className="w-[190px] max-w-full" />
     </a>
   );
 
