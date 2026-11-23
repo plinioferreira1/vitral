@@ -36,7 +36,7 @@ export default async function FinanceiroDashboardPage({
   const { mes: mesParam } = await searchParams;
   const hojeAtual = hojeISO();
   const mesAtual = hojeAtual.slice(0, 7);
-  const mesSelecionado = mesParam && /^20\\d{2}-(0[1-9]|1[0-2])$/.test(mesParam) ? mesParam : mesAtual;
+  const mesSelecionado = mesParam && /^20\d{2}-(0[1-9]|1[0-2])$/.test(mesParam) ? mesParam : mesAtual;
   const [anoMes, numeroMes] = mesSelecionado.split("-").map(Number);
   const inicioMes = `${mesSelecionado}-01`;
   const fimMes = new Date(Date.UTC(anoMes, numeroMes, 0)).toISOString().slice(0, 10);
