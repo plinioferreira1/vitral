@@ -26,8 +26,10 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
     label: "Ferramentas",
     children: [
       { href: "/calculadora", label: "Cálculo proporcional" },
-      { href: "/locacao/multa-juros", label: "Multa e juros da locação" },
-      { href: "/locacao?aba=multa", label: "Multa rescisória" },
+      ...(operacional && p.temLocacao ? [
+        { href: "/locacao/multa-juros", label: "Multa e juros da locação" },
+        { href: "/locacao?aba=multa", label: "Multa rescisória" },
+      ] : []),
       { href: "/calculadora-data", label: "Cálculo de datas" },
       { href: "/cartorio", label: "Simulação de custas" },
       ...(!p.ehSocialMedia && verAvaliacoes ? [{ href: "/avaliacoes", label: "Avaliações de imóveis" }] : []),
@@ -85,7 +87,6 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
     children: [
       { href: "/painel-sacra", label: "Resultados" },
       { href: "/relatorio-semanal", label: "Resumo semanal" },
-      { href: "/financeiro/relatorios", label: "Relatórios financeiros" },
     ],
   });
   itens.push({ href: "/corretor", label: "Onboarding e Ajuda" });
@@ -106,6 +107,16 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
 /** Escolhe o destino mais específico para não marcar dois grupos ao mesmo tempo. */
 export function hrefAtivoMenu(itens: ItemMenu[], pathname: string, query: URLSearchParams): string | undefined {
   const parametros = new URLSearchParams(query);
+  // Rotas internas permanecem acessíveis, mas destacam o grupo enxuto correspondente.
+  const aliases: Array<[RegExp, string]> = [
+    [/^\/financeiro\/(?:contas-a-pagar|contas-a-receber)(?:\/|$)/, "/financeiro/lancamentos"],
+    [/^\/financeiro\/(?:extratos|transferencias|cartao-corporativo|contas-bancarias|pessoas|documentos-pdf)(?:\/|$)/, "/financeiro/contas-e-cartoes"],
+    [/^\/(?:dp|ferias)(?:\/|$)/, "/dp"],
+  ];
+  const urls = itens.flatMap(item => "href" in item ? [item.href] : item.children.flatMap(filho => "href" in filho ? [filho.href] : filho.children.map(neto => neto.href)));
+  for (const [regex, destino] of aliases) {
+    if (regex.test(pathname) && urls.includes(destino)) return destino;
+  }
   if (["/vendas", "/financiamentos", "/locacao"].includes(pathname) && !parametros.has("aba")) {
     parametros.set("aba", "resumo");
   }

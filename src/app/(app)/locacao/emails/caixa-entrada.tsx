@@ -65,7 +65,10 @@ export function CaixaEntradaLocacao() {
       setCarregando(false);
     }
   }, []);
-  useEffect(() => { void carregar(); }, [carregar]);
+  useEffect(() => {
+    // Consulta assíncrona para não atualizar estado diretamente no corpo do efeito.
+    void Promise.resolve().then(carregar);
+  }, [carregar]);
 
   const vitral = useMemo(() => mensagens.filter(m => Boolean(codigoVitral(m.subject))), [mensagens]);
   const visiveis = useMemo(() => {

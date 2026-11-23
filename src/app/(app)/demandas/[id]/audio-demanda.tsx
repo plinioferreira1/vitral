@@ -29,10 +29,11 @@ export function AudioDemanda({demandaId}:{demandaId:string}){
   },[gravando]);
 
   useEffect(()=>{
-    if(!arquivo){setPrevia("");return;}
-    const url=URL.createObjectURL(arquivo);
-    setPrevia(url);
-    return ()=>URL.revokeObjectURL(url);
+    const url=arquivo ? URL.createObjectURL(arquivo) : "";
+    let ativo=true;
+    // Atualiza após o efeito para evitar uma atualização síncrona em cascata.
+    queueMicrotask(()=>{if(ativo)setPrevia(url);});
+    return ()=>{ativo=false;if(url)URL.revokeObjectURL(url);};
   },[arquivo]);
 
   useEffect(()=>()=>{if(gravador.current?.state==="recording")gravador.current.stop();fluxo.current?.getTracks().forEach(t=>t.stop());},[]);
