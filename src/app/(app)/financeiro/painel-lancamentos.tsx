@@ -118,7 +118,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const supabase = await createClient();
   const hoje = hojeISO();
   const f = searchParams ?? {};
-  const competenciaMes = f.mes && /^20\\d{2}-(0[1-9]|1[0-2])$/.test(f.mes) ? f.mes : hoje.slice(0, 7);
+  const competenciaMes = f.mes && /^20\d{2}-(0[1-9]|1[0-2])$/.test(f.mes) ? f.mes : hoje.slice(0, 7);
   const ano = Number(competenciaMes.slice(0, 4));
   const mes = Number(competenciaMes.slice(5, 7));
   const inicioMes = `${competenciaMes}-01`;
