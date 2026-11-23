@@ -14,7 +14,6 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   const ehSupervisor = operacional && !p.nivelComAcessoTotal;
   const verDebitos = !EM_FINALIZACAO.debitos || p.podeConfigurar || ehSupervisor;
   const verTermosEntrega = !EM_FINALIZACAO.termosEntrega || p.podeConfigurar;
-  const verFerias = !EM_FINALIZACAO.departamentoPessoal || p.podeConfigurar;
   const documentos: ItemMenu = {
     label: "Documentos",
     children: [
@@ -27,6 +26,8 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
     label: "Ferramentas",
     children: [
       { href: "/calculadora", label: "Cálculo proporcional" },
+      { href: "/locacao/multa-juros", label: "Multa e juros da locação" },
+      { href: "/locacao?aba=multa", label: "Multa rescisória" },
       { href: "/calculadora-data", label: "Cálculo de datas" },
       { href: "/cartorio", label: "Simulação de custas" },
       ...(!p.ehSocialMedia && verAvaliacoes ? [{ href: "/avaliacoes", label: "Avaliações de imóveis" }] : []),
@@ -36,7 +37,6 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   if (p.ehCorretor) itens.push({ href: "/minhas-vendas", label: "Minhas vendas" });
   if (operacional) {
     itens.push({ href: "/calendario", label: "Calendário" });
-    if (p.podeConfigurar) itens.push({ href: "/painel-sacra", label: "Resultados" });
     if (p.temVenda) itens.push({
       label: "Vendas",
       children: [
@@ -64,9 +64,8 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
         { href: "/locacao?aba=contratos", label: "Contratos" },
         ...(verDebitos ? [{ href: "/locacao/debitos", label: "Inadimplências" }] : []),
         { href: "/locacao/ficha-cadastral", label: "Fichas cadastrais" },
+        ...(p.podeConfigurar ? [{ href: "/locacao/emails", label: "E-mails da Locação" }] : []),
         ...(p.nivelComAcessoTotal ? [{ href: "/locacao/contratos", label: "Gerar contratos" }] : []),
-        { href: "/locacao/multa-juros", label: "Multa e juros por atraso" },
-        { href: "/locacao?aba=multa", label: "Cálculo de multa rescisória" },
       ],
     });
   }
@@ -75,45 +74,27 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
     label: "Financeiro",
     children: [
       { href: "/financeiro", label: "Visão geral" },
-      { href: "/financeiro/contas-a-pagar", label: "Contas a pagar" },
-      { href: "/financeiro/contas-a-receber", label: "Contas a receber" },
-      { href: "/financeiro/extratos", label: "Extratos e conciliação" },
-      { href: "/financeiro/transferencias", label: "Transferências" },
-      { href: "/financeiro/cartao-corporativo", label: "Cartões e faturas" },
-      {
-        label: "Cadastros financeiros",
-        children: [
-          { href: "/financeiro/contas-bancarias", label: "Contas bancárias" },
-          { href: "/financeiro/pessoas", label: "Pessoas e empresas" },
-        ],
-      },
+      { href: "/financeiro/lancamentos", label: "Lançamentos" },
+      { href: "/financeiro/contas-e-cartoes", label: "Contas e cartões" },
+      { href: "/financeiro/relatorios", label: "Relatórios" },
     ],
   });
   itens.push(ferramentas);
   if (operacional && p.podeConfigurar) itens.push({
     label: "Relatórios",
     children: [
+      { href: "/painel-sacra", label: "Resultados" },
       { href: "/relatorio-semanal", label: "Resumo semanal" },
       { href: "/financeiro/relatorios", label: "Relatórios financeiros" },
     ],
   });
-  if (operacional && verFerias) itens.push({
-    label: "Departamento pessoal",
-    children: [
-      { href: "/dp", label: "Resumo" },
-      { href: "/dp/colaboradores", label: "Colaboradores" },
-      { href: "/ferias", label: "Férias" },
-      { href: "/dp/ponto", label: "Controle de ponto" },
-      { href: "/dp/ausencias", label: "Ausências e afastamentos" },
-      { href: "/dp/documentos", label: "Documentos" },
-    ],
-  });
   itens.push({ href: "/corretor", label: "Onboarding e Ajuda" });
-  if (p.ehDiretor) itens.push({ href: "/desenvolvimento", label: "Desenvolvimento" });
   if (operacional && p.podeConfigurar) itens.push({
     label: "Configurações",
     children: [
       { href: "/configuracoes", label: "Visão geral" },
+      { href: "/dp", label: "Departamento pessoal (interno)" },
+      ...(p.ehDiretor ? [{ href: "/desenvolvimento", label: "Central de desenvolvimento" }] : []),
       ...GRUPOS_CONFIGURACOES.flatMap((grupo): SubItemMenu[] => grupo.links.length === 1
         ? grupo.links.map(({ href, label }) => ({ href, label }))
         : [{ label: grupo.titulo, children: grupo.links.map(({ href, label }) => ({ href, label })) }]),

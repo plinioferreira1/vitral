@@ -49,6 +49,7 @@ function brl(v: number): string {
 }
 
 type Filtros = {
+  tipo?: string;
   q?: string;
   status?: string;
   referencia?: string;
@@ -271,7 +272,9 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
 
   const titulo = tipo === "receita" ? "Contas a Receber" : "Contas a Pagar";
   const rotuloPessoa = tipo === "receita" ? "Cliente" : "Fornecedor";
-  const rota = tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
+  const unificado = f.tipo === "receita" || f.tipo === "despesa";
+  const rota = unificado ? "/financeiro/lancamentos" : tipo === "receita" ? "/financeiro/contas-a-receber" : "/financeiro/contas-a-pagar";
+  const rotaConsulta = unificado ? `${rota}?tipo=${tipo}&` : `${rota}?`;
   const temFiltro = !!(
     f.status ||
     f.categoria ||
@@ -308,6 +311,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   }
 
   const camposOcultos: CampoOculto[] = [
+    ["tipo", unificado ? tipo : undefined],
     ["q", f.q],
     ["status", f.status],
     ["referencia", referencia],
@@ -322,10 +326,10 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   ];
   return (
     <div className="financeiro-ui mx-auto w-full min-w-0 space-y-5">
-      <CabecalhoPagina titulo={titulo}
+      {!unificado && <CabecalhoPagina titulo={titulo}
         descricao={tipo === "receita" ? "Acompanhe os valores a receber e registre recebimentos completos ou parciais." : "Acompanhe vencimentos, consulte os boletos e registre pagamentos completos ou parciais."}
         acao={<Link href={`/financeiro/lancamentos/novo?tipo=${tipo}`} className={PRIMARY_BUTTON_CLASS}><Plus size={16} /> {tipo === "receita" ? "Nova receita" : "Nova despesa"}</Link>}
-      />
+      />}
 
       <div className="flex gap-2 overflow-x-auto overscroll-x-contain border-b border-border sm:flex-wrap">
           {abasSituacao.map(([valor, label, contagem]) => (
@@ -349,7 +353,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           tom="marca"
           label={`${tipo === "receita" ? "A receber" : "A pagar"} no mês`}
           valor={brl(totalNoMes)}
-          href={`${rota}?referencia=mes&status=em_aberto#lista`}
+          href={`${rotaConsulta}referencia=mes&status=em_aberto#lista`}
           rodape={linhaComparativo(variacao(comprometidoMes, comprometidoMesAnterior), false)}
         />
         <CartaoKpi
@@ -357,7 +361,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           tom="perigo"
           label={`Vencidos (${vencidos.length})`}
           valor={brl(totalVencidos)}
-          href={`${rota}?referencia=todos&status=vencido#lista`}
+          href={`${rotaConsulta}referencia=todos&status=vencido#lista`}
           rodape={linhaComparativo(variacao(totalVencidos, vencidosMesAnterior), false)}
         />
         <CartaoKpi
@@ -365,14 +369,14 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           tom="info"
           label="Recorrentes em aberto"
           valor={recorrentes.length}
-          href={`${rota}?referencia=todos&status=recorrente#lista`}
+          href={`${rotaConsulta}referencia=todos&status=recorrente#lista`}
         />
         <CartaoKpi
           icon={CheckCircle2}
           tom="sucesso"
           label={`${tipo === "receita" ? "Recebidos" : "Pagos"} no mês`}
           valor={brl(totalBaixadoNoMes)}
-          href={`${rota}?referencia=mes&status=pago#lista`}
+          href={`${rotaConsulta}referencia=mes&status=pago#lista`}
           rodape={linhaComparativo(variacao(totalBaixadoNoMes, baixasMesAnterior), true)}
         />
       </div>
@@ -431,6 +435,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           action={`${rota}#lista`}
           className="grid grid-cols-1 gap-3 border-t border-border/70 px-4 py-4 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6"
         >
+        <input type="hidden" name="tipo" value={unificado ? tipo : ""} />
         <input type="hidden" name="q" value={f.q ?? ""} />
         <input type="hidden" name="referencia" value={referencia} />
         <div>
@@ -462,7 +467,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           Filtrar
         </BotaoEnviar>
         {temFiltro && (
-          <a href={`${rota}#lista`} className="text-xs text-ink-muted hover:text-brand hover:underline">
+          <a href={unificado ? `${rota}?tipo=${tipo}#lista` : `${rota}#lista`} className="text-xs text-ink-muted hover:text-brand hover:underline">
             Limpar filtros
           </a>
         )}
