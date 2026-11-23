@@ -2,7 +2,7 @@ import { INPUT_CLASS } from "@/components/ui/styles";
 import { CampoAnexoDespesa } from "@/components/financeiro/campo-anexo-despesa";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import Link from "next/link";
-import { ArrowLeft, CalendarDays, FileText, Repeat, UserPlus, Wallet } from "lucide-react";
+import { ArrowLeft, FileText, Repeat, UserPlus, Wallet, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BuscaOpcaoFinanceira } from "@/components/financeiro/busca-opcao";
 import { CampoFormaPagamento } from "@/components/financeiro/campo-forma-pagamento";
@@ -66,7 +66,7 @@ export default async function NovoLancamentoFinanceiroPage({
       ? "Nova conta a receber"
       : "Nova despesa";
   const rotuloPessoa = tipo === "receita" ? "Cliente" : "Fornecedor";
-  const retorno = tipo === "receita" ? "/financeiro/contas-a-receber#lista" : "/financeiro/contas-a-pagar#lista";
+  const retorno = `/financeiro/lancamentos?tipo=${tipo}#lista`;
 
   return (
     <form action={criarLancamento} className="financeiro-ui mx-auto w-full min-w-0 space-y-5 pb-24">
@@ -83,7 +83,7 @@ export default async function NovoLancamentoFinanceiroPage({
           <p className="mt-1 text-sm text-ink-muted">
             {clone
               ? "Revise os dados clonados, ajuste vencimento/valor se necessário e salve como um novo lançamento."
-              : "Lance uma movimentação no modelo operacional do financeiro, com dados principais, condição de pagamento e recorrência."}
+              : "Preencha os dados essenciais. Abra as opções adicionais somente quando precisar."}
           </p>
         </div>
         <BotaoEnviar className="rounded-lg bg-brand px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:opacity-90">
@@ -97,7 +97,7 @@ export default async function NovoLancamentoFinanceiroPage({
           <h2 className="text-base font-bold text-ink">Informações do lançamento</h2>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[1.2fr_170px_1.8fr_170px]">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-[1.2fr_1.8fr_170px]">
           <BuscaOpcaoFinanceira
             name="pessoa_id"
             label={rotuloPessoa}
@@ -105,10 +105,6 @@ export default async function NovoLancamentoFinanceiroPage({
             initialId={clone?.pessoa_id ?? ""}
             emptyLabel={tipo === "receita" ? "Sem cliente vinculado" : "Sem fornecedor vinculado"}
           />
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Data de competência</label>
-            <input name="competencia" type="date" defaultValue={clone?.competencia ?? hoje} className={campoClasse} />
-          </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Descrição *</label>
             <input
@@ -168,21 +164,32 @@ export default async function NovoLancamentoFinanceiroPage({
           </details>
         )}
 
-        <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1.4fr_1.4fr_1fr]">
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
           <div>
             <label className="mb-1 block text-xs font-medium text-ink-muted">Empresa *</label>
-            <select name="unidade_id" required defaultValue={clone?.unidade_id ?? ""} className={campoClasse}>
+            <select name="unidade_id" required defaultValue={clone?.unidade_id ?? (unidades?.length === 1 ? unidades[0].id : "")} className={campoClasse}>
               <option value="" disabled>Escolha a empresa</option>
               {(unidades ?? []).map((u) => <option key={u.id} value={u.id}>{u.nome}</option>)}
             </select>
           </div>
           <BuscaOpcaoFinanceira name="categoria_id" label="Categoria" options={categorias ?? []} initialId={clone?.categoria_id ?? ""} />
-          <BuscaOpcaoFinanceira name="centro_custo_id" label="Centro de resultado" options={centros ?? []} initialId={clone?.centro_custo_id ?? ""} />
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Código de referência</label>
-            <input name="numero_documento" defaultValue={clone?.numero_documento ?? ""} placeholder="Opcional" className={campoClasse} />
-          </div>
         </div>
+        <details className="group mt-4 rounded-xl border border-border bg-background/40">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold text-ink">
+            Outras informações <ChevronDown size={16} className="text-ink-muted transition group-open:rotate-180" />
+          </summary>
+          <div className="grid gap-4 border-t border-border px-4 py-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ink-muted">Data de competência</label>
+              <input name="competencia" type="date" defaultValue={clone?.competencia ?? hoje} className={campoClasse} />
+            </div>
+            <BuscaOpcaoFinanceira name="centro_custo_id" label="Centro de resultado" options={centros ?? []} initialId={clone?.centro_custo_id ?? ""} />
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ink-muted">Código de referência</label>
+              <input name="numero_documento" defaultValue={clone?.numero_documento ?? ""} placeholder="Opcional" className={campoClasse} />
+            </div>
+          </div>
+        </details>
       </section>
 
       <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
@@ -191,45 +198,30 @@ export default async function NovoLancamentoFinanceiroPage({
           <h2 className="text-base font-bold text-ink">Condição de pagamento</h2>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-[150px_170px_1.2fr_1.2fr] lg:items-end">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Parcelamento</label>
-            <select className={campoClasse} defaultValue="avista">
-              <option value="avista">À vista</option>
-              <option value="parcelado">Parcelado</option>
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Vencimento *</label>
-            <input name="vencimento" type="date" defaultValue={clone?.vencimento ?? hoje} required className={campoClasse} />
-            {tipo === "despesa" && (
-              <p className="mt-1 text-xs text-ink-muted">
-                Se cair em fim de semana ou feriado, vai automaticamente para o próximo dia útil.
-              </p>
-            )}
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>
-            <CampoFormaPagamento defaultValue={clone?.forma_pagamento ?? ""} className={campoClasse} />
-          </div>
-          <BuscaOpcaoFinanceira name="conta_bancaria_id" label="Conta prevista" options={contas ?? []} initialId={clone?.conta_bancaria_id ?? ""} />
+        <div className="max-w-sm">
+          <label className="mb-1 block text-xs font-medium text-ink-muted">Vencimento *</label>
+          <input name="vencimento" type="date" defaultValue={clone?.vencimento ?? hoje} required className={campoClasse} />
+          {tipo === "despesa" && <p className="mt-1 text-xs text-ink-muted">O vencimento é ajustado para o próximo dia útil, quando necessário.</p>}
         </div>
-
-        <div className="mt-5 rounded-xl border border-brand/15 bg-brand-soft/60 p-4">
-          <p className="text-sm font-bold text-ink">Rotina da Sacra</p>
-          <div className="mt-2 grid gap-2 text-sm text-ink-muted md:grid-cols-3">
-            <span className="text-brand">✓ <span className="text-ink-muted">Vencimento entra em A Pagar ou A Receber</span></span>
-            <span className="text-brand">✓ <span className="text-ink-muted">Baixa pode ser total ou parcial</span></span>
-            <span className="text-brand">✓ <span className="text-ink-muted">Categoria ajuda nos relatórios</span></span>
+        <details className="group mt-4 rounded-xl border border-border bg-background/40">
+          <summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-semibold text-ink">
+            Conta e forma de pagamento <ChevronDown size={16} className="text-ink-muted transition group-open:rotate-180" />
+          </summary>
+          <div className="grid gap-4 border-t border-border px-4 py-4 md:grid-cols-2">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>
+              <CampoFormaPagamento defaultValue={clone?.forma_pagamento ?? ""} className={campoClasse} />
+            </div>
+            <BuscaOpcaoFinanceira name="conta_bancaria_id" label="Conta prevista" options={contas ?? []} initialId={clone?.conta_bancaria_id ?? ""} />
           </div>
-        </div>
+        </details>
       </section>
 
-      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
-        <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
-          <Repeat size={18} className="text-brand" />
-          <h2 className="text-base font-bold text-ink">Recorrência</h2>
-        </div>
+      <details className="group rounded-2xl border border-border bg-surface shadow-sm" >
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 text-sm font-semibold text-ink">
+          Recorrência (opcional) <ChevronDown size={17} className="text-ink-muted transition group-open:rotate-180" />
+        </summary>
+        <div className="border-t border-border p-5">
         <label className="mb-4 flex items-center gap-2 text-sm font-medium text-ink">
           <input type="checkbox" name="recorrente" className="accent-brand" />
           Repetir lançamento
@@ -279,13 +271,15 @@ export default async function NovoLancamentoFinanceiroPage({
           </div>
           <input name="dia_util" type="number" min={1} max={23} placeholder="Ex: 5" className={`${campoClasse} max-w-[120px]`} />
         </div>
-      </section>
 
-      <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
-        <div className="mb-4 flex items-center gap-2 border-b border-border pb-3">
-          <CalendarDays size={18} className="text-brand" />
-          <h2 className="text-base font-bold text-ink">Observações</h2>
         </div>
+      </details>
+
+      <details className="group rounded-2xl border border-border bg-surface shadow-sm" open={Boolean(clone?.observacoes)}>
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 p-5 text-sm font-semibold text-ink">
+          Observações <ChevronDown size={17} className="text-ink-muted transition group-open:rotate-180" />
+        </summary>
+        <div className="border-t border-border p-5">
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">Observações</label>
           <textarea
@@ -296,14 +290,20 @@ export default async function NovoLancamentoFinanceiroPage({
             className={campoClasse}
           />
         </div>
-      </section>
+
+        </div>
+      </details>
 
       {tipo === "despesa" && (
-        <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
-          <h2 className="mb-4 text-base font-bold text-ink">Anexo da despesa</h2>
-          <CampoAnexoDespesa />
-          <p className="mt-3 text-xs text-ink-muted">Se houver recorrência, o arquivo será anexado apenas à primeira ocorrência. Os próximos boletos podem ser anexados pelo menu de cada despesa.</p>
-        </section>
+        <details className="group rounded-2xl border border-border bg-surface shadow-sm">
+          <summary className="flex cursor-pointer list-none items-center justify-between p-5 text-sm font-semibold text-ink">
+            Anexar boleto ou comprovante (opcional) <ChevronDown size={17} className="text-ink-muted transition group-open:rotate-180" />
+          </summary>
+          <div className="border-t border-border p-5">
+            <CampoAnexoDespesa />
+            <p className="mt-3 text-xs text-ink-muted">Na recorrência, o anexo será incluído na primeira ocorrência.</p>
+          </div>
+        </details>
       )}
 
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-border bg-surface/95 px-6 py-3 backdrop-blur">
