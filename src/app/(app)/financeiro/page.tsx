@@ -176,6 +176,21 @@ export default async function FinanceiroDashboardPage({
 
 
 
+      <section aria-label="Ações rápidas do Financeiro" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        {[
+          { href: "/financeiro/lancamentos/novo?tipo=despesa", titulo: "Nova despesa", descricao: "Registrar conta a pagar" },
+          { href: "/financeiro/lancamentos/novo?tipo=receita", titulo: "Nova receita", descricao: "Registrar conta a receber" },
+          { href: "/financeiro/lancamentos?referencia=hoje", titulo: "Vencimentos de hoje", descricao: "Conferir lançamentos" },
+          { href: "/financeiro/contas-e-cartoes", titulo: "Contas e cartões", descricao: "Bancos, cartões e conciliação" },
+        ].map(acao => (
+          <Link href={acao.href} key={acao.href}
+            className="rounded-xl border border-border bg-surface px-4 py-3 shadow-sm transition hover:border-brand/50 hover:bg-background">
+            <span className="block text-sm font-semibold text-ink">{acao.titulo}</span>
+            <span className="mt-1 block text-xs text-ink-muted">{acao.descricao}</span>
+          </Link>
+        ))}
+      </section>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 financeiro-indicadores">
         <CartaoIndicador
           icon={Wallet}
