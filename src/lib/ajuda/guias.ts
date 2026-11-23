@@ -34,6 +34,253 @@ Desde já, agradeço a sua colaboração!
 Atenciosamente,
 [seu nome]`;
 
+
+const RELATORIO_PROPRIETARIOS = `Prezado [Nome do Proprietário],
+
+Gostaríamos de expressar nossa sincera gratidão pela confiança depositada na Sacra Imóveis Netimóveis para a venda do seu imóvel. É uma honra trabalhar ao seu lado e fazer parte deste importante processo.
+
+Reforçamos que, ao contar com a rede Netimoveis, composta por mais de 28 imobiliárias e mais de 200 corretores dedicados, estamos potencializando a visibilidade e as oportunidades de venda do seu imóvel, garantindo que ele alcance o maior número possível de interessados.
+
+O trabalho em rede e parceria é essencial para o sucesso de vendas no mercado imobiliário, e com a colaboração de todos esses profissionais, temos ainda mais confiança de que conseguiremos alcançar o resultado que você espera e com a segurança necessária para um bom negócio.
+
+Somos gestores do seu imóvel e de seus interesses. Também atendemos todos os profissionais do mercado imobiliário de modo a garantir uma venda rápida e segura.
+
+Estamos à disposição para quaisquer dúvidas ou necessidades que surjam ao longo deste processo.
+
+Atenciosamente,
+
+[NOME DO CORRETOR]
+Corretor de Imóveis
+SACRA Netimóveis`;
+
+const AVISO_ANUNCIO =
+  "(Os preços e informações poderão sofrer mudanças sem aviso prévio. Por este motivo, solicitamos a confirmação com nossos consultores.)";
+
+const ANUNCIO_MODELO_1 = `Apartamento 2 Quartos com suíte, Residencial Acqua Village, Águas Claras!
+
+Descrição do Imóvel:
+
+Na melhor localização de Águas Claras, com saída fácil, Imóvel com excelente planta baixa, área privativa bem aproveitada, arejado e com boa iluminação natural, conta detalhes em sanca no teto, cozinha no estilo americana com bancada. Além de armários em todos os cômodos.
+
+Imóvel composto por:
+- 60 m2 de área privativa
+- 02 quartos, sendo um suíte
+- Vaga de garagem
+
+(Condomínio com gás canalizado e água inclusos)
+
+ÁREA DE LAZER COMPLETA com:
+- Nº de torres: 4
+- Condomínio com 90.0000 m2 de área aberta
+- Redários
+- Espelhos d' água
+- Playground
+- Pergolado
+- Ofurô
+- 2 piscinas sendo uma infantil e outra para adultos
+
+${AVISO_ANUNCIO}`;
+
+const ANUNCIO_MODELO_2 = `Apartamento situado em quadra residencial, silenciosa e com praça arborizada.
+
+Composição do imóvel:
+- 3 quartos
+- 1 suíte com armário
+- Quartos com armários
+- Cozinha com bancadas, armários planejados
+- Varanda integrada na sala
+- Sala ampla e iluminada
+- Área de serviço com armários e lavanderia
+- 1 vagas de garagem
+
+Localização:
+Próximo a escolas, farmácias, mercados, restaurantes, shopping, metrô e serviços diversos. Com acesso fácil a EPTG.
+
+Condomínio com:
+- Portaria 24h
+- Piscina aquecida adulto e infantil
+- Vending Machines
+- Playground com piso emborrachado
+- Churrasqueira
+- Quadra poliesportiva
+- Academia
+- Salão de festas
+- Jardim
+
+Com excelente localização, imóvel fica na Quadra 208 sul de Águas Claras, próximo a comércio local e estação Águas Claras, além de padarias, farmácias, mercados, restaurantes e etc.
+
+AGENDE SUA VISITA!
+
+${AVISO_ANUNCIO}`;
+
+const INTRO_ANUNCIO = "Use as principais características do imóvel, pois os portais têm limite de caracteres.";
+
+const SAN_APARTAMENTO = `INFORMAÇÕES INTERNAS APARTAMENTO
+
+MODELO DE APARTAMENTO / SALA COMERCIAL / KITNET:
+
+OCUPADO ( ) PROPRIETÁRIO ( ) INQUILINO ( ) VAZIO
+
+PQ DA VENDA:
+
+TOPA TROCA?
+
+( ) NAS ( ) POE ( ) PERP:
+
+FACHADA:
+
+PILOTIS:
+
+POSIÇÃO DO BLOCO NA QD/RUA:
+
+VISTA PARA:
+
+TX EXTRA? ( ) S ( ) N – MOTIVO:
+
+SALDO DEVEDOR ( ) S ( ) N:
+
+VAZADO ( ) S ( ) N
+
+IPTU ( ) RES ( ) COM
+
+HABITE-SE ( ) S ( ) N –
+
+REFORMA RECENTE ( ) S ( ) N:
+
+ALGUMA OBS NA DOCUMENTAÇÃO?
+
+O QUE TORNA MINHA CAPTAÇÃO ATRATIVA?
+
+O QUE SERIA UMA PROPOSTA VIÁVEL PARA FECHAMENTO?`;
+
+const SAN_CASAS = `INFORMAÇÕES INTERNAS CASAS E SOBRADOS
+
+OCUPADO ( ) PROPRIETÁRIO ( ) INQUILINO ( ) VAZIO
+
+PQ DA VENDA:
+
+TOPA TROCA? ( ) S ( ) N INFORME:
+
+POSIÇÃO DA CASA NA QD/RUA –
+
+SALDO DEVEDOR ( ) S ( ) N:
+
+ESTADO DO TELHADO:
+
+NR CX D’ÁGUA / TAMANHO:
+
+AQUECIMENTO SOLAR ( ) S ( ) N:
+
+POÇO ARTESIANO ( ) S ( ) N:
+
+( ) LAJE ( ) FORRO:
+
+HABITE-SE ( ) S ( ) N
+
+ÁREA VERDE ( ) S ( ) N – TAMANHO: m² - Privativa ( ) S ( ) N
+
+LOTE – ( ) PLANO ( ) EM ACLIVE ( ) EM DECLIVE
+
+REFORMA RECENTE ( ) S ( ) N – DETALHAR:
+
+ALGUMA OBS NA DOCUMENTAÇÃO?
+
+O QUE TORNA MINHA CAPTAÇÃO ATRATIVA?
+
+O QUE SERIA UMA PROPOSTA VIÁVEL PARA FECHAMENTO?`;
+
+const SAN_LOTE = `INFORMAÇÕES LOTES E TERRENOS NO SAN
+
+PQ DA VENDA:
+
+TOPA TROCA? ( ) S ( ) N INFORME:
+
+POSIÇÃO DO LOTE NA QD/RUA/CONDOMÍNIO –
+
+LOTE COMERCIAL ( ) S ( ) N – POTENCIAL CONSTRUTIVO
+
+LOTE COMERCIAL – INFORME DESTINAÇÃO (NGB)
+
+TEVE ALTERAÇÃO DE ODIR ou ONALT ( ) S ( ) N
+
+SE EM CONDOMÍNIO:
+
+COND REGULAR ( ) S ( ) N - ( ) ÁREA PÚBL ( ) ÁREA PART
+
+SE IRREGULAR - STATUS DE REGULARIZAÇÃO:
+
+FORMADO ( ) S ( ) N – ESPECIFIQUE:
+
+QUANTOS LOTES ( ) QUANTAS CASAS ( )
+
+MATRÍCULA INDIVIDUAL ( ) S ( ) N
+
+TX EXTRA? ( ) S ( ) N – MOTIVO:
+
+VALOR TX -
+
+NR DE TXS?
+
+INFORME A INFRAESTRUTURA DISPONÍVEL:
+
+SALDO DEVEDOR ( ) S ( ) N
+
+VALOR
+
+BANCO
+
+POÇO ARTESIANO ( ) S ( ) N – REGULAR ( ) S ( ) N
+
+HÁ CAIXA D’ÁGUA COLETIVA
+
+ÁREA VERDE ( ) S ( ) N - TAMANHO m² - Privativa ( ) S ( ) N
+
+LOTE – ( ) PLANO ( ) EM ACLIVE ( ) EM DECLIVE
+
+ALGUMA OBS NA DOCUMENTAÇÃO?
+
+O QUE TORNA MINHA CAPTAÇÃO ATRATIVA?
+
+O QUE SERIA UMA PROPOSTA VIÁVEL PARA FECHAMENTO?`;
+
+const SAN_VAGA = `INFORMAÇÕES INTERNAS VAGA DE GARAGEM NO SAN
+
+VAGA DE GARAGEM – CONJUNTO DE VAGAS DE GARAGEM
+
+OCUPADO ( ) PROPRIETÁRIO ( ) INQUILINO ( ) VAZIO
+
+SE LOCADO? VALOR R$ INQUILINO FICA? ( ) S ( ) N
+
+PQ DA VENDA:
+
+TOPA TROCA? ( ) S ( ) N
+
+TROCA POR:
+
+FACHADA:
+( ) Nova ( ) Antiga ( ) Obras
+
+PILOTIS
+( ) Nova ( ) Antiga ( ) Obras
+
+POSIÇÃO DO BLOCO NA QD/RUA
+
+TX EXTRA? ( ) S ( ) N – MOTIVO:
+
+VALOR TX -
+
+NR DE TXS?
+
+HABITE-SE ( ) S ( ) N
+
+ALGUMA OBS NA DOCUMENTAÇÃO?
+
+O QUE TORNA MINHA CAPTAÇÃO ATRATIVA?
+
+O QUE SERIA UMA PROPOSTA VIÁVEL PARA FECHAMENTO?`;
+
+const INTRO_SAN = "Copie, cole no campo de informações internas do SAN e preencha.";
+
 export const GUIAS_FIXOS: Topico[] = [
   {
     slug: "passo-a-passo-de-captacao",
@@ -240,9 +487,63 @@ export const GUIAS_FIXOS: Topico[] = [
   {
     slug: "relatorio-para-proprietarios",
     assunto: "Modelos e documentos",
-    tipo: "documento",
+    tipo: "mensagem",
     titulo: "Relatório para Proprietários",
-    descricao: "Modelo em Word do retorno periódico ao proprietário.",
-    corpo: { tipo: "download", href: "/materiais/relatorio-para-proprietarios.docx", formato: ".docx" },
+    descricao: "Texto de agradecimento e retorno ao proprietário.",
+    corpo: { tipo: "mensagem", texto: RELATORIO_PROPRIETARIOS },
+  },
+  {
+    slug: "texto-de-anuncio-modelo-1",
+    assunto: "Modelos e documentos",
+    tipo: "mensagem",
+    titulo: "Texto de anúncio — modelo 1",
+    descricao: "Anúncio com título, descrição, composição e área de lazer.",
+    intro: INTRO_ANUNCIO,
+    corpo: { tipo: "mensagem", texto: ANUNCIO_MODELO_1 },
+  },
+  {
+    slug: "texto-de-anuncio-modelo-2",
+    assunto: "Modelos e documentos",
+    tipo: "mensagem",
+    titulo: "Texto de anúncio — modelo 2",
+    descricao: "Anúncio com composição, localização e itens do condomínio.",
+    intro: INTRO_ANUNCIO,
+    corpo: { tipo: "mensagem", texto: ANUNCIO_MODELO_2 },
+  },
+  {
+    slug: "informacoes-internas-san-apartamento",
+    assunto: "Modelos e documentos",
+    tipo: "mensagem",
+    titulo: "Informações internas no SAN — apartamento",
+    descricao: "Também para sala comercial e kitnet.",
+    intro: INTRO_SAN,
+    corpo: { tipo: "mensagem", texto: SAN_APARTAMENTO },
+  },
+  {
+    slug: "informacoes-internas-san-casas",
+    assunto: "Modelos e documentos",
+    tipo: "mensagem",
+    titulo: "Informações internas no SAN — casas e sobrados",
+    descricao: "Roteiro das perguntas internas para casas e sobrados.",
+    intro: INTRO_SAN,
+    corpo: { tipo: "mensagem", texto: SAN_CASAS },
+  },
+  {
+    slug: "informacoes-internas-san-lote-terreno",
+    assunto: "Modelos e documentos",
+    tipo: "mensagem",
+    titulo: "Informações internas no SAN — lote e terreno",
+    descricao: "Inclui condomínio, regularização e infraestrutura.",
+    intro: INTRO_SAN,
+    corpo: { tipo: "mensagem", texto: SAN_LOTE },
+  },
+  {
+    slug: "informacoes-internas-san-vaga-garagem",
+    assunto: "Modelos e documentos",
+    tipo: "mensagem",
+    titulo: "Informações internas no SAN — vaga de garagem",
+    descricao: "Vaga avulsa ou conjunto de vagas.",
+    intro: INTRO_SAN,
+    corpo: { tipo: "mensagem", texto: SAN_VAGA },
   },
 ];

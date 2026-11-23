@@ -100,7 +100,7 @@ function Corpo({ t }: { t: Topico }) {
       return (
         <div className="space-y-3">
           <p className="whitespace-pre-line rounded-lg bg-background p-3 text-ink-muted">{c.texto}</p>
-          <BotaoCopiarLink texto={c.texto} rotulo="Copiar mensagem" />
+          <BotaoCopiarLink texto={c.texto} rotulo="Copiar texto" />
         </div>
       );
     case "download":
