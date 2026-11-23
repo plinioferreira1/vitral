@@ -17,10 +17,12 @@ describe("navegação por acesso", () => {
     expect(destinos(montarMenu({ ...gestor, ehCorretor: true }))).toContain("/corretor");
     expect(destinos(montarMenu(gestor))).not.toContain("/aprendizagem");
   });
-  it("concentra Resultados em Relatórios, sem entrada duplicada", () => {
+  it("posiciona Resultados imediatamente depois de Calendário, sem duplicar", () => {
     const menu = montarMenu(gestor);
-    expect(destinos([menu.find(item => item.label === "Relatórios")!])).toContain("/painel-sacra");
-    expect(menu.some(item => "href" in item && item.href === "/painel-sacra")).toBe(false);
+    const indice = menu.findIndex(item => "href" in item && item.href === "/calendario");
+    expect(menu[indice + 1]).toEqual({ href: "/painel-sacra", label: "Resultados" });
+    expect(destinos([menu.find(item => item.label === "Relatórios")!])).not.toContain("/painel-sacra");
+    expect(destinos(menu).filter(href => href === "/painel-sacra")).toHaveLength(1);
   });
   it("mantém financeiro, relatórios e administração fora do menu do auxiliar", () => {
     const itens = montarMenu({ ...gestor, podeConfigurar: false });
