@@ -37,7 +37,6 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   if (p.ehCorretor) itens.push({ href: "/minhas-vendas", label: "Minhas vendas" });
   if (operacional) {
     itens.push({ href: "/calendario", label: "Calendário" });
-    if (p.podeConfigurar) itens.push({ href: "/painel-sacra", label: "Resultados" });
     if (p.temVenda) itens.push({
       label: "Vendas",
       children: [
@@ -84,17 +83,18 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
   if (operacional && p.podeConfigurar) itens.push({
     label: "Relatórios",
     children: [
+      { href: "/painel-sacra", label: "Resultados" },
       { href: "/relatorio-semanal", label: "Resumo semanal" },
       { href: "/financeiro/relatorios", label: "Relatórios financeiros" },
     ],
   });
   itens.push({ href: "/corretor", label: "Onboarding e Ajuda" });
-  if (p.ehDiretor) itens.push({ href: "/desenvolvimento", label: "Desenvolvimento" });
   if (operacional && p.podeConfigurar) itens.push({
     label: "Configurações",
     children: [
       { href: "/configuracoes", label: "Visão geral" },
       { href: "/dp", label: "Departamento pessoal (interno)" },
+      ...(p.ehDiretor ? [{ href: "/desenvolvimento", label: "Central de desenvolvimento" }] : []),
       ...GRUPOS_CONFIGURACOES.flatMap((grupo): SubItemMenu[] => grupo.links.length === 1
         ? grupo.links.map(({ href, label }) => ({ href, label }))
         : [{ label: grupo.titulo, children: grupo.links.map(({ href, label }) => ({ href, label })) }]),
