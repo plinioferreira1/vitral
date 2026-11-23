@@ -14,7 +14,7 @@ export default async function LancamentosPage({ searchParams }: { searchParams: 
   const params = await searchParams;
   const tipo = params.tipo === "receita" ? "receita" : "despesa";
   const mesAtual = hojeISO().slice(0, 7);
-  const mesSelecionado = params.mes && /^20\\d{2}-(0[1-9]|1[0-2])$/.test(params.mes) ? params.mes : mesAtual;
+  const mesSelecionado = params.mes && /^20\d{2}-(0[1-9]|1[0-2])$/.test(params.mes) ? params.mes : mesAtual;
   const [ano, numeroMes] = mesSelecionado.split("-").map(Number);
   const rotuloMes = new Intl.DateTimeFormat("pt-BR", { month: "long", year: "numeric", timeZone: "UTC" })
     .format(new Date(Date.UTC(ano, numeroMes - 1, 1))).replace(/^./, c => c.toUpperCase()).replace(" de ", "/");
