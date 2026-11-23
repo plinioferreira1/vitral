@@ -13,7 +13,7 @@ export default async function LancamentosPage({ searchParams }: { searchParams: 
   const params = await searchParams;
   const tipo = params.tipo === "receita" ? "receita" : "despesa";
   const filtros = { ...params };
-  delete filtros.tipo;
+  filtros.tipo = tipo;
   const tab = (nome: "receita" | "despesa") => {
     const q = new URLSearchParams();
     for (const [chave, valor] of Object.entries(filtros)) if (valor && chave !== "pagina") q.set(chave, valor);
