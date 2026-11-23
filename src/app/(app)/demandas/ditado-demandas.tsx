@@ -75,10 +75,10 @@ export function DitadoDemandas({equipe,iaAtiva,categorias}:{equipe:Colaborador[]
   const [processandoIA,setProcessandoIA]=useState(false);
   const [enviandoLote,setEnviandoLote]=useState(false);
   useEffect(()=>{
-    if(!audio){setUrlAudio("");return;}
-    const url=URL.createObjectURL(audio);
-    setUrlAudio(url);
-    return ()=>URL.revokeObjectURL(url);
+    const url=audio ? URL.createObjectURL(audio) : "";
+    let ativo=true;
+    queueMicrotask(()=>{if(ativo)setUrlAudio(url);});
+    return ()=>{ativo=false;if(url)URL.revokeObjectURL(url);};
   },[audio]);
   useEffect(()=>{
     if(!gravacaoAtiva)return;
