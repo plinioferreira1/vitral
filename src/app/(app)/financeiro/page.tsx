@@ -16,9 +16,6 @@ import {
   Landmark,
   Layers,
   LineChart,
-  FileText,
-  Users,
-  ListTree,
 } from "lucide-react";
 import { hojeISO } from "@/lib/data-br";
 
@@ -368,36 +365,7 @@ export default async function FinanceiroDashboardPage({
         )}
       </div>
 
-      <div className="financeiro-atalhos">
-        <p className="mb-2 text-sm font-semibold text-ink">Acessos rápidos</p>
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-          <Link href="/financeiro/contas-a-pagar" className="rounded-xl border border-border bg-surface p-4 text-sm hover:opacity-90">
-            <FileText size={18} className="mb-2 text-rose-700" />
-            <p className="font-medium text-ink">Contas a Pagar</p>
-            <p className="text-xs text-ink-muted">Cadastrar e gerenciar títulos</p>
-          </Link>
-          <Link href="/financeiro/contas-a-receber" className="rounded-xl border border-border bg-surface p-4 text-sm hover:opacity-90">
-            <TrendingUp size={18} className="mb-2 text-emerald-700" />
-            <p className="font-medium text-ink">Contas a Receber</p>
-            <p className="text-xs text-ink-muted">Acompanhar recebimentos</p>
-          </Link>
-          <Link href="/financeiro/contas-bancarias" className="rounded-xl border border-border/60 bg-background p-4 text-sm hover:opacity-90">
-            <Landmark size={18} className="mb-2 text-ink-muted" />
-            <p className="font-medium text-ink">Contas Bancárias</p>
-            <p className="text-xs text-ink-muted">Saldos e extratos</p>
-          </Link>
-          <Link href="/financeiro/pessoas" className="rounded-xl border border-border/60 bg-background p-4 text-sm hover:opacity-90">
-            <Users size={18} className="mb-2 text-ink-muted" />
-            <p className="font-medium text-ink">Clientes e Fornecedores</p>
-            <p className="text-xs text-ink-muted">Cadastros e relacionamento</p>
-          </Link>
-          <Link href="/financeiro/categorias" className="rounded-xl border border-border/60 bg-background p-4 text-sm hover:opacity-90">
-            <ListTree size={18} className="mb-2 text-ink-muted" />
-            <p className="font-medium text-ink">Categorias e Centros</p>
-            <p className="text-xs text-ink-muted">Estruturar e organizar</p>
-          </Link>
-        </div>
-      </div>
+
     </div>
   );
 }
