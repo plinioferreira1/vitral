@@ -56,58 +56,43 @@ SACRA Netimóveis`;
 const AVISO_ANUNCIO =
   "(Os preços e informações poderão sofrer mudanças sem aviso prévio. Por este motivo, solicitamos a confirmação com nossos consultores.)";
 
-const ANUNCIO_MODELO_1 = `Apartamento 2 Quartos com suíte, Residencial Acqua Village, Águas Claras!
+const ANUNCIO_MODELO_1 = `TÍTULO:
 
 Descrição do Imóvel:
 
-Na melhor localização de Águas Claras, com saída fácil, Imóvel com excelente planta baixa, área privativa bem aproveitada, arejado e com boa iluminação natural, conta detalhes em sanca no teto, cozinha no estilo americana com bancada. Além de armários em todos os cômodos.
-
 Imóvel composto por:
-- 60 m2 de área privativa
-- 02 quartos, sendo um suíte
-- Vaga de garagem
+-  m2 de área privativa
+-  quartos, sendo  suíte(s)
+-  vaga(s) de garagem
+- 
 
-(Condomínio com gás canalizado e água inclusos)
+(Condomínio com:  )
 
 ÁREA DE LAZER COMPLETA com:
-- Nº de torres: 4
-- Condomínio com 90.0000 m2 de área aberta
-- Redários
-- Espelhos d' água
-- Playground
-- Pergolado
-- Ofurô
-- 2 piscinas sendo uma infantil e outra para adultos
+- Nº de torres:
+- 
+- 
+- 
 
 ${AVISO_ANUNCIO}`;
 
-const ANUNCIO_MODELO_2 = `Apartamento situado em quadra residencial, silenciosa e com praça arborizada.
+const ANUNCIO_MODELO_2 = `DESCRIÇÃO:
 
 Composição do imóvel:
-- 3 quartos
-- 1 suíte com armário
-- Quartos com armários
-- Cozinha com bancadas, armários planejados
-- Varanda integrada na sala
-- Sala ampla e iluminada
-- Área de serviço com armários e lavanderia
-- 1 vagas de garagem
+-  quartos
+-  suíte(s)
+- Cozinha:
+- Sala:
+- Área de serviço:
+-  vaga(s) de garagem
+- 
 
 Localização:
-Próximo a escolas, farmácias, mercados, restaurantes, shopping, metrô e serviços diversos. Com acesso fácil a EPTG.
 
 Condomínio com:
-- Portaria 24h
-- Piscina aquecida adulto e infantil
-- Vending Machines
-- Playground com piso emborrachado
-- Churrasqueira
-- Quadra poliesportiva
-- Academia
-- Salão de festas
-- Jardim
-
-Com excelente localização, imóvel fica na Quadra 208 sul de Águas Claras, próximo a comércio local e estação Águas Claras, além de padarias, farmácias, mercados, restaurantes e etc.
+- 
+- 
+- 
 
 AGENDE SUA VISITA!
 
@@ -497,7 +482,7 @@ export const GUIAS_FIXOS: Topico[] = [
     assunto: "Modelos e documentos",
     tipo: "mensagem",
     titulo: "Texto de anúncio — modelo 1",
-    descricao: "Anúncio com título, descrição, composição e área de lazer.",
+    descricao: "Roteiro com título, descrição, composição e área de lazer.",
     intro: INTRO_ANUNCIO,
     corpo: { tipo: "mensagem", texto: ANUNCIO_MODELO_1 },
   },
@@ -506,7 +491,7 @@ export const GUIAS_FIXOS: Topico[] = [
     assunto: "Modelos e documentos",
     tipo: "mensagem",
     titulo: "Texto de anúncio — modelo 2",
-    descricao: "Anúncio com composição, localização e itens do condomínio.",
+    descricao: "Roteiro com composição, localização e itens do condomínio.",
     intro: INTRO_ANUNCIO,
     corpo: { tipo: "mensagem", texto: ANUNCIO_MODELO_2 },
   },

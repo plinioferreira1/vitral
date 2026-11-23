@@ -52,9 +52,11 @@ describe("central de ajuda", () => {
   it("modelos de copiar e colar vêm sem dados de clientes", () => {
     const san = GUIAS_FIXOS.filter((t) => t.slug.startsWith("informacoes-internas-san-"));
     expect(san).toHaveLength(4);
-    for (const t of san) {
+    const anuncios = GUIAS_FIXOS.filter((t) => t.slug.startsWith("texto-de-anuncio-"));
+    expect(anuncios).toHaveLength(2);
+    for (const t of [...san, ...anuncios]) {
       expect(t.corpo.tipo).toBe("mensagem");
-      if (t.corpo.tipo === "mensagem") expect(t.corpo.texto).not.toMatch(/\(\s*x\s*\)|R\$\s*\d/i);
+      if (t.corpo.tipo === "mensagem") expect(t.corpo.texto).not.toMatch(/\(\s*x\s*\)|R\$\s*\d|\d+\s*m2|Águas Claras/i);
     }
   });
 
