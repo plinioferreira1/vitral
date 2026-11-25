@@ -41,10 +41,13 @@ type Lancamento = {
 
 export default async function BaixarLancamentoFinanceiroPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ return_to?: string }>;
 }) {
   const { id } = await params;
+  const { return_to } = await searchParams;
   const supabase = await createClient();
   const hoje = hojeISO();
 
@@ -68,7 +71,9 @@ export default async function BaixarLancamentoFinanceiroPage({
   const lancamento = lancamentoRaw as unknown as Lancamento;
   const totalBaixado = (baixas ?? []).reduce((s, b) => s + Number(b.valor), 0);
   const saldoAberto = Math.max(0, Number(lancamento.valor) - totalBaixado);
-  const retorno = lancamento.tipo === "receita" ? "/financeiro/contas-a-receber#lista" : "/financeiro/contas-a-pagar#lista";
+  const retornoPadrao = lancamento.tipo === "receita" ? "/financeiro/lancamentos?tipo=receita#lista" : "/financeiro/lancamentos?tipo=despesa#lista";
+  const retorno = return_to?.startsWith("/financeiro") && !return_to.startsWith("//") && !return_to.includes("\\")
+    ? return_to : retornoPadrao;
   const acao = lancamento.tipo === "receita" ? "recebimento" : "pagamento";
   const titulo = lancamento.tipo === "receita" ? "Registrar recebimento" : "Registrar pagamento";
   const botaoConfirmarClasse = "rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-emerald-700";
