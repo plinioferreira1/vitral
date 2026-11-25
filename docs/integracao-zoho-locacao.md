@@ -41,3 +41,33 @@ A caixa de correio destinada à integração é **locacao@sacraimoveis.com.br**.
 - Não publicar na produção antes do teste funcional com autorização Zoho.
 
 Documentação oficial: https://www.zoho.com/mail/help/api/get-emails-list.html
+
+---
+
+# Situação em 25/11/2026 (Etapa 3 do plano)
+
+## O que já funciona
+
+| Objetivo | Situação | Onde |
+| --- | --- | --- |
+| Consultar mensagens recebidas e respostas | Pronto (leitura ao vivo, sem marcar como lida) | `/locacao/emails`, `GET /api/integracoes/zoho/locacao` |
+| Guardar respostas das administradoras | Pronto: o cron grava em `debitos_respostas_email` (remetente, assunto, resumo, data, anexo) | `api/cron/zoho-locacao-respostas`, `src/lib/debitos/zoho-respostas.ts` |
+| Associar conversa ao contrato | Pronto quando a resposta vem de uma solicitação do VITRAL: etiqueta `[VITRAL:código]` no assunto ou remetente = destinatário da solicitação; o contrato vem dos itens da solicitação | idem |
+| Histórico cronológico no contrato | **Novo nesta branch**: seção "E-mails com a administradora" no contrato (enviados + recebidos, mais recentes primeiro) | `src/components/locacao/emails-contrato.tsx`, regras em `src/lib/locacao/emails-contrato.ts` |
+| Indicar o que precisa de atendimento | **Novo**: resposta recebida depois do último registro de resposta da solicitação (ou sem registro) aparece em destaque, com contador | idem |
+| Responder pelo sistema | Não implementado (ver arquitetura abaixo) | — |
+
+Visibilidade: a seção só aparece para quem tem `debitos_pode_ver()` (mesma regra das tabelas `debitos_*`). Nada novo foi gravado no banco e nenhuma credencial chega ao navegador.
+
+## Lacunas conhecidas
+
+- E-mails que não respondem a uma solicitação do VITRAL (ex.: locatário escrevendo direto) não são gravados — o cron só guarda o que tem administradora/solicitação identificada, de propósito, para não copiar mensagens pessoais. Ligar esses e-mails a contratos exige revisão humana (sugestão por remetente cadastrado no locatário/locador + confirmação na tela), não associação automática.
+- O corpo completo e os anexos continuam só na leitura ao vivo (`/locacao/emails`); o histórico do contrato mostra o resumo.
+
+## Arquitetura proposta para responder pelo VITRAL (fase futura)
+
+1. **Escopo OAuth separado**: novo refresh token com `ZohoMail.messages.CREATE` (e só ele), em variável própria (`ZOHO_LOCACAO_SEND_REFRESH_TOKEN`), nunca reaproveitando o de leitura.
+2. **Rascunho antes de enviar**: tabela `locacao_emails_rascunhos` (tenant, contrato, mensagem respondida, para, assunto, corpo, criado_por, status `rascunho|enviado|falha`, enviado_em, id Zoho). O envio é uma ação explícita de quem tem `debitos_pode_operar()`, com a pré-visualização na tela e confirmação.
+3. **Envio só no servidor**: `POST` em `/api/accounts/{id}/messages/{messageId}` (reply) da API Zoho Mail, com o `In-Reply-To` original, mantendo a etiqueta `[VITRAL:…]` no assunto para o retorno ser reconhecido.
+4. **Auditoria**: cada envio registra evento em `debitos_eventos` (quem, quando, para quem; sem o corpo em log).
+5. **Testes antes de ligar**: conta de teste no Zoho, destinatário interno, sem envio real a administradoras até autorização expressa.

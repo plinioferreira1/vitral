@@ -38,6 +38,7 @@ import { CartaoIndicador } from "@/components/cartao-indicador";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { SecaoCondominio } from "../debitos/_componentes/secao-condominio";
 import { DocumentosContrato } from "@/components/locacao/documentos-contrato";
+import { EmailsContrato } from "@/components/locacao/emails-contrato";
 
 const MESES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez",
@@ -101,7 +102,7 @@ export default async function ContratoLocacaoPage({
 
   // Contrato, rescisão em andamento e contas do ano dependem só do id —
   // vão juntos ao banco, em vez de um esperar o outro.
-  const [{ data: contrato }, { data: rescisaoAtiva }, { data: contasRaw }] = await Promise.all([
+  const [{ data: contrato }, { data: rescisaoAtiva }, { data: contasRaw }, { data: veEmails }] = await Promise.all([
     supabase
       .from("contratos_locacao")
       .select(
@@ -123,6 +124,7 @@ export default async function ContratoLocacaoPage({
       .eq("contrato_id", id)
       .gte("competencia", inicioAno)
       .lte("competencia", fimAno),
+    supabase.rpc("debitos_pode_ver"),
   ]);
 
   if (!contrato) notFound();
@@ -176,7 +178,7 @@ export default async function ContratoLocacaoPage({
     <div className="mx-auto w-full min-w-0 space-y-6">
       <NavegacaoSecoes secoes={[
         { id: "resumo-contrato", label: "Resumo" }, { id: "contas-contrato", label: "Contas" },
-        { id: "condominio-contrato", label: "Condomínio" }, { id: "documentos-contrato", label: "Documentos" }, { id: "dados-contrato", label: "Dados e responsáveis" },
+        { id: "condominio-contrato", label: "Condomínio" }, { id: "documentos-contrato", label: "Documentos" }, ...(veEmails === true ? [{ id: "emails-contrato", label: "E-mails" }] : []), { id: "dados-contrato", label: "Dados e responsáveis" },
         { id: "rescisao-contrato", label: "Rescisão" }, { id: "gestao-contrato", label: "Gestão do contrato" },
       ]} />
       <div id="resumo-contrato" className="scroll-mt-20 rounded-2xl border border-border/70 bg-surface p-6 shadow-sm">
@@ -463,6 +465,8 @@ export default async function ContratoLocacaoPage({
       <section id="condominio-contrato" className="scroll-mt-20"><SecaoCondominio contratoId={id} /></section>
 
       <section id="documentos-contrato" className="scroll-mt-20"><DocumentosContrato contratoId={id} /></section>
+
+      {veEmails === true && <section id="emails-contrato" className="scroll-mt-20"><EmailsContrato contratoId={id} /></section>}
 
       {/* Dados do contrato */}
       <section id="dados-contrato" className="scroll-mt-20">
