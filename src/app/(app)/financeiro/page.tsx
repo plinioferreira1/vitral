@@ -74,7 +74,7 @@ export default async function FinanceiroDashboardPage({
       .lte("data", fimMes),
     supabase
       .from("financeiro_lancamentos")
-      .select("id, tipo, descricao, valor, vencimento, status, financeiro_pessoas ( nome )")
+      .select("id, tipo, descricao, valor, vencimento, status, conta_bancaria_id, forma_pagamento, financeiro_pessoas ( nome )")
       .in("status", ["pendente", "pago_parcial"])
       .order("vencimento"),
     supabase.from("financeiro_baixas").select("lancamento_id, conta_bancaria_id, valor, financeiro_lancamentos ( tipo )"),
@@ -265,14 +265,14 @@ export default async function FinanceiroDashboardPage({
                           <p className="mt-1 text-[11px] text-ink-muted">Para pagamento parcial, informe um valor menor.</p>
                         </div>
                         <label className="block text-xs font-medium text-ink-muted">Conta bancária
-                          <select name="conta_bancaria_id" className="mt-1 w-full rounded-md border border-border bg-surface p-2 text-sm text-ink">
+                          <select name="conta_bancaria_id" defaultValue={l.conta_bancaria_id ?? ""} className="mt-1 w-full rounded-md border border-border bg-surface p-2 text-sm text-ink">
                             <option value="">Não selecionada</option>
                             {(contas ?? []).map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
                           </select>
                         </label>
                         <div>
                           <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>
-                          <CampoFormaPagamento className="w-full rounded-md border border-border bg-surface p-2 text-sm text-ink" />
+                          <CampoFormaPagamento defaultValue={l.forma_pagamento ?? ""} className="w-full rounded-md border border-border bg-surface p-2 text-sm text-ink" />
                         </div>
                         <label className="block text-xs font-medium text-ink-muted sm:col-span-2">Observação (opcional)
                           <input name="observacoes" placeholder="Ex.: transferência realizada" className="mt-1 w-full rounded-md border border-border bg-surface p-2 text-sm text-ink" />
