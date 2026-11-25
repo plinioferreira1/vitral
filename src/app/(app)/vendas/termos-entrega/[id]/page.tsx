@@ -3,6 +3,9 @@ import { notFound, redirect } from "next/navigation";
 import { CheckCircle2, Clock, Copy, Download, ExternalLink, FileSignature, History, Mail, Paperclip, PencilLine, Send } from "lucide-react";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
+import { GerenciarLinkAssinatura } from "@/components/gerenciar-link-assinatura";
+import { SeloSituacaoLink } from "@/components/selo-situacao-link";
+import { EXPLICACAO_SITUACAO, situacaoLink } from "@/lib/assinaturas/link";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { CARD_CLASS, INPUT_CLASS, PRIMARY_BUTTON_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { VoltarLink } from "@/components/voltar-link";
@@ -19,7 +22,7 @@ import {
   vendedores,
 } from "@/lib/termo-entrega/conteudo";
 import { formatarCentavos } from "@/lib/termo-entrega/extenso";
-import { getUsuarioAtual } from "@/lib/usuario-atual";
+import { getUsuarioAtual, GESTORES } from "@/lib/usuario-atual";
 import { FormularioAcaoTermo } from "../formulario-acao";
 import { carregarPermissoes, carregarTermo } from "../dados";
 import { BOTAO_MINI, ROTULO, SeloStatusTermo } from "../ui";
@@ -58,6 +61,8 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
   const status = termo.status;
   const emRascunho = status === "rascunho";
   const editando = emRascunho && perms.operar && !previa;
+  const podeGerenciarLinks = !!usuario.ativo && GESTORES.includes(usuario.nivel_acesso);
+  const aceitaAssinatura = status === "aguardando_assinatura" || status === "parcialmente_assinado";
   const { acerto } = calcularDocumento(doc);
   const pendencias = emRascunho ? pendenciasParaGerar(doc) : [];
   const assinaturasAtuais = t.signatarios.filter((s) => s.versao === termo.versao);
@@ -189,7 +194,14 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
             {assinaturasAtuais.length > 0 && (
               <Painel id="assinaturas" titulo={`Assinaturas (${assinadas} de ${assinaturasAtuais.length})`} icone={<FileSignature size={15} className="text-brand" />}>
                 <ul className="space-y-3">
-                  {assinaturasAtuais.map((s) => (
+                  {assinaturasAtuais.map((s) => {
+                    const situacao = situacaoLink({
+                      assinadoEm: s.assinado_em,
+                      expiraEm: s.link_expira_em,
+                      revogadoEm: s.link_revogado_em,
+                      documentoAberto: aceitaAssinatura,
+                    });
+                    return (
                     <li key={s.id} className="rounded-xl border border-border/70 p-3">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
@@ -203,10 +215,12 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
                           <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-emerald-700">
                             <CheckCircle2 size={14} /> Assinado
                           </span>
-                        ) : (
+                        ) : situacao === "valido" ? (
                           <span className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-amber-700">
                             <Clock size={14} /> Aguardando
                           </span>
+                        ) : (
+                          <SeloSituacaoLink situacao={situacao} />
                         )}
                       </div>
                       {s.assinado_em ? (
@@ -214,9 +228,26 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
                           {s.nome_digitado} · {formatarDataHoraBR(s.assinado_em)}
                           {s.ip_assinatura ? ` · IP ${s.ip_assinatura}` : ""}
                         </p>
+                      ) : situacao !== "valido" ? (
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <p className="w-full text-[11px] text-ink-muted">{EXPLICACAO_SITUACAO[situacao]}</p>
+                          {podeGerenciarLinks && (
+                            <GerenciarLinkAssinatura
+                              tipo="termo_entrega"
+                              documentoId={id}
+                              signatarioId={s.id}
+                              nome={s.nome_esperado}
+                              assinadoEm={s.assinado_em}
+                              expiraEm={s.link_expira_em}
+                              revogadoEm={s.link_revogado_em}
+                              documentoAberto={aceitaAssinatura}
+                            />
+                          )}
+                        </div>
                       ) : (
-                        perms.operar && (
+                        (perms.operar || podeGerenciarLinks) && (
                           <div className="mt-2 flex flex-wrap items-center gap-2">
+                            {perms.operar && <>
                             <BotaoCopiarLink url={`${site}/assinar-termo/${s.token}`} rotulo="Copiar link" />
                             {s.email && (
                               <FormularioAcaoTermo acao="enviarLinkPorEmail">
@@ -228,11 +259,25 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
                               </FormularioAcaoTermo>
                             )}
                             {s.email_enviado_em && <span className="text-[11px] text-ink-muted">E-mail enviado em {formatarDataHoraBR(s.email_enviado_em)}</span>}
+                            </>}
+                            {podeGerenciarLinks && (
+                              <GerenciarLinkAssinatura
+                                tipo="termo_entrega"
+                                documentoId={id}
+                                signatarioId={s.id}
+                                nome={s.nome_esperado}
+                                assinadoEm={s.assinado_em}
+                                expiraEm={s.link_expira_em}
+                                revogadoEm={s.link_revogado_em}
+                                documentoAberto={aceitaAssinatura}
+                              />
+                            )}
                           </div>
                         )
                       )}
                     </li>
-                  ))}
+                    );
+                  })}
                 </ul>
                 {status === "assinado" && <p className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs text-emerald-800">Documento assinado por todos e bloqueado. Para alterar algo, crie uma nova versão.</p>}
               </Painel>
