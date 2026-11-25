@@ -7,6 +7,8 @@ import { GraficoFluxoCaixa } from "@/components/grafico-fluxo-caixa";
 import { LogoBanco } from "@/components/financeiro/logo-banco";
 import {
   AlertTriangle,
+  ArrowUpRight,
+  CalendarDays,
   CalendarClock,
   Landmark,
   Layers,
@@ -71,7 +73,7 @@ export default async function FinanceiroDashboardPage({
       .select("id, tipo, descricao, valor, vencimento, status, financeiro_pessoas ( nome )")
       .in("status", ["pendente", "pago_parcial"])
       .order("vencimento"),
-    supabase.from("financeiro_baixas").select("conta_bancaria_id, valor, financeiro_lancamentos ( tipo )"),
+    supabase.from("financeiro_baixas").select("lancamento_id, conta_bancaria_id, valor, financeiro_lancamentos ( tipo )"),
     supabase.from("financeiro_transferencias").select("conta_origem_id, conta_destino_id, valor, data"),
     supabase.from("financeiro_lancamentos").select("tipo, valor, vencimento, status")
       .gte("vencimento", inicioMes).lte("vencimento", fimMes).neq("status", "cancelado"),
@@ -134,6 +136,23 @@ export default async function FinanceiroDashboardPage({
   const vencidos = listaPendentes.filter((l) => l.vencimento < hoje);
   const proximosVencimentos = listaPendentes.filter((l) => l.vencimento >= hoje && l.vencimento <= em7diasStr);
 
+  // Valor efetivamente aberto: subtrai baixas, inclusive pagamentos parciais.
+  const baixadoPorLancamento = new Map<string, number>();
+  for (const baixa of todasBaixas ?? []) {
+    if (!baixa.lancamento_id) continue;
+    baixadoPorLancamento.set(baixa.lancamento_id,
+      (baixadoPorLancamento.get(baixa.lancamento_id) ?? 0) + Number(baixa.valor));
+  }
+  const saldoAberto = (l: (typeof listaPendentes)[number]) =>
+    Math.max(0, Number(l.valor) - (baixadoPorLancamento.get(l.id) ?? 0));
+  const contasParaPagarHoje = aPagar.filter(l => l.vencimento === hoje && saldoAberto(l) > 0);
+  const despesasVencidas = aPagar.filter(l => l.vencimento < hoje && saldoAberto(l) > 0);
+  const contasParaPagar7Dias = aPagar.filter(l => l.vencimento > hoje && l.vencimento <= em7diasStr && saldoAberto(l) > 0);
+  const totalPagarHoje = contasParaPagarHoje.reduce((s, l) => s + saldoAberto(l), 0);
+  const totalVencidoPagar = despesasVencidas.reduce((s, l) => s + saldoAberto(l), 0);
+  const totalPagar7Dias = contasParaPagar7Dias.reduce((s, l) => s + saldoAberto(l), 0);
+
+
   const pagarNoMes = aPagar.filter(l => l.vencimento >= inicioMes && l.vencimento <= fimMes);
   const receberNoMes = aReceber.filter(l => l.vencimento >= inicioMes && l.vencimento <= fimMes);
   const totalAPagar = pagarNoMes.reduce((s, l) => s + Number(l.valor), 0);
@@ -177,11 +196,83 @@ export default async function FinanceiroDashboardPage({
         </div>
       </div>
 
+      <section aria-label="Prioridades financeiras" className="space-y-3">
+        <div className="grid gap-3 lg:grid-cols-[1.7fr_1fr_1fr]">
+          <Link
+            href="/financeiro/lancamentos?tipo=despesa&referencia=hoje&status=em_aberto#lista"
+            className={`group relative flex min-h-[174px] flex-col justify-between overflow-hidden rounded-2xl border p-5 transition hover:shadow-md ${contasParaPagarHoje.length > 0 ? "border-rose-900 bg-rose-950 text-white" : "border-emerald-200 bg-emerald-50 text-emerald-950"}`}
+          >
+            <div className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-2 text-sm font-semibold"><CalendarClock size={19} /> A pagar hoje</span>
+              <ArrowUpRight size={18} className="opacity-75 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+            </div>
+            <div>
+              <p className="num break-all text-3xl font-bold tracking-tight sm:text-4xl">{brl(totalPagarHoje)}</p>
+              <p className={`mt-2 text-sm ${contasParaPagarHoje.length > 0 ? "text-rose-100" : "text-emerald-900"}`}>
+                {contasParaPagarHoje.length > 0 ? `${contasParaPagarHoje.length} conta(s) aguardando pagamento · Abrir contas a pagar` : "Nenhuma conta pendente hoje"}
+              </p>
+            </div>
+          </Link>
+          <Link href="/financeiro/lancamentos?tipo=despesa&referencia=todos&status=vencido#lista"
+            className="group flex min-h-[148px] flex-col justify-between rounded-2xl border border-amber-200 bg-amber-50 p-5 transition hover:border-amber-400 hover:shadow-sm">
+            <div className="flex items-center justify-between text-sm font-semibold text-amber-900">
+              <span className="flex items-center gap-2"><AlertTriangle size={18} /> A pagar vencido</span><ArrowUpRight size={17} />
+            </div>
+            <div><p className="num break-all text-2xl font-bold text-amber-950">{brl(totalVencidoPagar)}</p>
+              <p className="mt-2 text-xs text-amber-900">{despesasVencidas.length} pendência(s) de dias anteriores</p></div>
+          </Link>
+          <Link href="/financeiro/lancamentos?tipo=despesa&referencia=7dias&status=em_aberto#lista"
+            className="group flex min-h-[148px] flex-col justify-between rounded-2xl border border-border bg-surface p-5 transition hover:border-brand/40 hover:shadow-sm">
+            <div className="flex items-center justify-between text-sm font-semibold text-ink">
+              <span className="flex items-center gap-2"><CalendarDays size={18} className="text-brand" /> Próximos 7 dias</span><ArrowUpRight size={17} className="text-ink-muted" />
+            </div>
+            <div><p className="num break-all text-2xl font-bold text-ink">{brl(totalPagar7Dias)}</p>
+              <p className="mt-2 text-xs text-ink-muted">{contasParaPagar7Dias.length} conta(s) após hoje, até {dataBR(em7diasStr)}</p></div>
+          </Link>
+        </div>
+        {contasParaPagarHoje.length > 0 && (
+          <div className="rounded-xl border border-rose-200 bg-surface p-4">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-sm font-semibold text-ink">Vencimentos de hoje</p>
+              <Link href="/financeiro/lancamentos?tipo=despesa&referencia=hoje&status=em_aberto#lista"
+                className="text-xs font-semibold text-brand hover:underline">Ver todos em Contas a pagar</Link>
+            </div>
+            <ul className="divide-y divide-border">
+              {contasParaPagarHoje.slice(0, 4).map(l => (
+                <li key={l.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <span className="min-w-0 truncate text-ink">{l.descricao}</span>
+                  <span className="num shrink-0 font-semibold text-rose-800">{brl(saldoAberto(l))}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </section>
+
+      <section aria-label="Períodos para consulta" className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-surface p-3">
+        <span className="mr-1 text-xs font-semibold text-ink-muted">Consultar contas a pagar:</span>
+        <Link href="/financeiro/lancamentos?tipo=despesa&referencia=hoje&status=em_aberto#lista"
+          className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-ink hover:bg-background">Hoje</Link>
+        <Link href="/financeiro/lancamentos?tipo=despesa&referencia=7dias&status=em_aberto#lista"
+          className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-ink hover:bg-background">Próximos 7 dias</Link>
+        <Link href={`/financeiro/lancamentos?tipo=despesa&referencia=mes&mes=${mesSelecionado}&status=em_aberto#lista`}
+          className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-ink hover:bg-background">Mês completo</Link>
+        <form method="get" action="/financeiro/lancamentos" className="flex flex-wrap items-center gap-2">
+          <input type="hidden" name="tipo" value="despesa" />
+          <input type="hidden" name="referencia" value="dia" />
+          <input type="hidden" name="status" value="em_aberto" />
+          <label htmlFor="financeiro-dia" className="text-xs text-ink-muted">Dia específico</label>
+          <input id="financeiro-dia" name="data" type="date" defaultValue={hoje}
+            className="min-h-9 rounded-lg border border-border bg-background px-2 text-xs text-ink" />
+          <button type="submit" className="min-h-9 rounded-lg bg-brand px-3 text-xs font-semibold text-white hover:opacity-90">Filtrar</button>
+        </form>
+      </section>
+
       <section aria-label="Ações rápidas do Financeiro" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {[
           { href: "/financeiro/lancamentos/novo?tipo=despesa", titulo: "Nova despesa", descricao: "Registrar conta a pagar" },
           { href: "/financeiro/lancamentos/novo?tipo=receita", titulo: "Nova receita", descricao: "Registrar conta a receber" },
-          { href: "/financeiro/lancamentos?referencia=hoje", titulo: "Vencimentos de hoje", descricao: "Conferir lançamentos" },
+          { href: `/financeiro/lancamentos?tipo=despesa&referencia=mes&mes=${mesSelecionado}`, titulo: "Despesas do mês", descricao: "Ver contas e vencimentos do período" },
           { href: "/financeiro/contas-e-cartoes", titulo: "Contas e cartões", descricao: "Bancos, cartões e conciliação" },
         ].map(acao => (
           <Link href={acao.href} key={acao.href}
