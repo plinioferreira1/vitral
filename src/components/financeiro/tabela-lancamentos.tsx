@@ -64,7 +64,7 @@ function dataBR(iso: string): string {
 }
 
 /** Uma linha/checkbox por lançamento: a mesma tabela vira cartões no celular. */
-export function TabelaLancamentos({ linhas, tipo, rotuloPessoa, categorias, centros, linkOrdenar, iconeOrdenacao }: {
+export function TabelaLancamentos({ linhas, tipo, rotuloPessoa, categorias, centros, linkOrdenar, iconeOrdenacao, retorno }: {
   linhas: (LancamentoLinha & { estado: EstadoExibicao })[];
   tipo: "receita" | "despesa";
   rotuloPessoa: string;
@@ -72,6 +72,7 @@ export function TabelaLancamentos({ linhas, tipo, rotuloPessoa, categorias, cent
   centros: { id: string; nome: string }[];
   linkOrdenar: (campo: CampoOrdenacao) => string;
   iconeOrdenacao: (campo: CampoOrdenacao) => ReactNode;
+  retorno?: string;
 }) {
   return (
     <div className="financeiro-lancamentos overflow-x-auto">
@@ -116,7 +117,7 @@ export function TabelaLancamentos({ linhas, tipo, rotuloPessoa, categorias, cent
             </Link>
           </th>
           <th className="hidden min-w-[150px] px-4 py-2.5 font-medium xl:table-cell">Conta</th>
-          <th className="sticky right-0 w-28 bg-background px-4 py-2.5 font-medium text-right">Ações</th>
+          <th className="sticky right-0 min-w-[170px] bg-background px-4 py-2.5 font-medium text-right">Ações</th>
         </tr>
       </thead>
       <tbody className="divide-y divide-border">
@@ -157,6 +158,15 @@ export function TabelaLancamentos({ linhas, tipo, rotuloPessoa, categorias, cent
               </td>
               <td className="hidden max-w-[220px] break-words px-4 py-2.5 text-ink-muted xl:table-cell" title={conta?.nome ?? ""}>{conta?.nome ?? "—"}</td>
               <td className="lancamento-acoes sticky right-0 bg-surface px-4 py-2.5 text-right">
+                <div className="flex items-center justify-end gap-2">
+                  {editavel && (
+                    <Link
+                      href={`/financeiro/lancamentos/${l.id}/baixar${retorno ? `?return_to=${encodeURIComponent(retorno)}` : ""}`}
+                      className="rounded-md bg-emerald-700 px-2.5 py-2 text-xs font-semibold text-white hover:bg-emerald-800"
+                    >
+                      {tipo === "despesa" ? "Dar baixa" : "Receber"}
+                    </Link>
+                  )}
                 <MenuAcoesLancamento
                   id={l.id}
                   descricao={l.descricao}
@@ -168,6 +178,7 @@ export function TabelaLancamentos({ linhas, tipo, rotuloPessoa, categorias, cent
                   categorias={categorias ?? []}
                   centros={centros ?? []}
                 />
+                </div>
               </td>
             </tr>
           );
