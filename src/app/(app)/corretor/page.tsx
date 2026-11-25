@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getUsuarioAtual } from "@/lib/usuario-atual";
 import { CentralAjuda } from "@/components/central-ajuda";
 import { GUIAS_FIXOS } from "@/lib/ajuda/guias";
-import { tutorialParaTopico } from "@/lib/ajuda/topicos";
+import { assuntoDe, tutorialParaTopico } from "@/lib/ajuda/topicos";
 import { marcarEtapaAprendizagem } from "../aprendizagem/actions";
 
 const trilhas: Record<string, { nome: string; links: { titulo: string; href: string; descricao: string }[] }> = {
@@ -31,7 +31,10 @@ const trilhaGeral = { nome: "Operação e gestão", links: [
   { titulo: "Calendário", href: "/calendario", descricao: "Compromissos e prazos" },
 ] };
 
-export default async function OnboardingAjudaPage() {
+export default async function OnboardingAjudaPage({ searchParams }: { searchParams: Promise<{ assunto?: string }> }) {
+  const { assunto: assuntoParam } = await searchParams;
+  const assuntoEscolhido = assuntoParam ? assuntoDe(assuntoParam) : null;
+  const assuntoInicial = assuntoEscolhido && assuntoEscolhido !== "Outros" ? assuntoEscolhido : null;
   const { user, usuario } = await getUsuarioAtual();
   if (!user || !usuario?.ativo || !usuario.tenant_id) redirect("/login");
   const db = await createClient();
@@ -107,7 +110,7 @@ export default async function OnboardingAjudaPage() {
     <section id="biblioteca" className="scroll-mt-24 space-y-4" aria-labelledby="titulo-biblioteca">
       <div className="flex items-center gap-2"><PlayCircle size={20} className="text-brand"/><h2 id="titulo-biblioteca" className="text-lg font-semibold text-ink">Tutoriais, guias e materiais</h2></div>
       <p className="text-sm text-ink-muted">Busque vídeos, passo a passo, modelos de mensagem, documentos e links úteis. Todos os conteúdos da antiga Central de Ajuda continuam disponíveis.</p>
-      <CentralAjuda topicos={topicos}/>
+      <CentralAjuda topicos={topicos} assuntoInicial={assuntoInicial}/>
     </section>
 
     {gestor && <section id="gestao" className="scroll-mt-24 rounded-2xl border border-border bg-surface p-5 shadow-sm">

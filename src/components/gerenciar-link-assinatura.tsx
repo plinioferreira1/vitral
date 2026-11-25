@@ -10,6 +10,7 @@ import {
   type TipoLink,
 } from "@/lib/assinaturas/link";
 import { SeloSituacaoLink } from "@/components/selo-situacao-link";
+import { LinkAjuda } from "@/components/link-ajuda";
 
 type Props = {
   tipo: TipoLink;
@@ -222,6 +223,8 @@ function ConteudoLink(props: Props & Envio) {
           )}
         </div>
       )}
+
+      <LinkAjuda slug="gerenciar-link-de-assinatura" rotulo="Como funciona" />
 
       {!valido && (
         <button type="button" onClick={props.fechar} className="min-h-11 rounded-lg border border-border bg-surface px-4 text-sm font-medium text-ink">

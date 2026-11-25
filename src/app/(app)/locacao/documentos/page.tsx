@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
+import { LinkAjuda } from "@/components/link-ajuda";
 import { INPUT_CLASS, PRIMARY_BUTTON_CLASS } from "@/components/ui/styles";
 import {
   filtrarDocumentos,
@@ -89,7 +90,7 @@ export default async function DocumentosLocacaoPage({ searchParams }: { searchPa
 
   return (
     <div className="w-full min-w-0 space-y-5">
-      <CabecalhoPagina titulo="Documentos da Locação" descricao="Contratos, aditivos, vistorias, termos e seguros de todos os contratos. Para anexar, abra o contrato." />
+      <CabecalhoPagina titulo="Documentos da Locação" descricao="Contratos, aditivos, vistorias, termos e seguros de todos os contratos. Para anexar, abra o contrato." acao={<LinkAjuda slug="documentos-dos-contratos-de-locacao" />} />
 
       <form className="flex flex-wrap items-end gap-3 rounded-2xl border border-border/70 bg-surface p-4 shadow-sm">
         <label className="min-w-0 flex-1 basis-64 text-xs font-medium text-ink-muted">

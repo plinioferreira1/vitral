@@ -160,9 +160,9 @@ function CartaoTopico({ t, aberto, alternar }: { t: Topico; aberto: boolean; alt
   );
 }
 
-export function CentralAjuda({ topicos }: { topicos: Topico[] }) {
+export function CentralAjuda({ topicos, assuntoInicial = null }: { topicos: Topico[]; assuntoInicial?: Assunto | null }) {
   const [busca, setBusca] = useState("");
-  const [assunto, setAssunto] = useState<Assunto | null>(null);
+  const [assunto, setAssunto] = useState<Assunto | null>(assuntoInicial);
   const [aberto, setAberto] = useState<string | null>(null);
 
   const assuntos = useMemo(() => assuntosComTopicos(topicos), [topicos]);

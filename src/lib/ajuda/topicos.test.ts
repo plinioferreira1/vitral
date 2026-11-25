@@ -46,7 +46,7 @@ describe("central de ajuda", () => {
 
   it("filtra por assunto e lista só assuntos com conteúdo", () => {
     expect(buscarTopicos(GUIAS_FIXOS, "", "Captação")).toHaveLength(2);
-    expect(assuntosComTopicos(GUIAS_FIXOS)).toEqual(["Vendas", "Captação", "Modelos e documentos", "Links úteis"]);
+    expect(assuntosComTopicos(GUIAS_FIXOS)).toEqual(["Vendas", "Captação", "Locação", "Modelos e documentos", "Links úteis"]);
   });
 
   it("modelos de copiar e colar vêm sem dados de clientes", () => {
