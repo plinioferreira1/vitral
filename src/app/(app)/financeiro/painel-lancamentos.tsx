@@ -570,7 +570,8 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
           <>
             <TabelaLancamentos linhas={lancamentosPagina.map((l) => ({ ...l, estado: estadoExibicao(l, hoje) }))}
               tipo={tipo} rotuloPessoa={rotuloPessoa} categorias={categorias ?? []} centros={centros ?? []}
-              linkOrdenar={linkOrdenar} iconeOrdenacao={iconeOrdenacao} />
+              linkOrdenar={linkOrdenar} iconeOrdenacao={iconeOrdenacao}
+              retorno={construirUrl(rota, { ...f, tipo: unificado ? tipo : undefined, pagina: String(paginaAtual) })} />
 
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-4 py-3 text-xs text-ink-muted">
               <span>

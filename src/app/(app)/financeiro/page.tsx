@@ -5,6 +5,10 @@ import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { baixasParaMovimento, movimentoPorConta as calcularMovimento } from "@/lib/saldos";
 import { GraficoFluxoCaixa } from "@/components/grafico-fluxo-caixa";
 import { LogoBanco } from "@/components/financeiro/logo-banco";
+import { CampoMoeda } from "@/components/financeiro/campo-moeda";
+import { CampoFormaPagamento } from "@/components/financeiro/campo-forma-pagamento";
+import { BotaoEnviar } from "@/components/botao-enviar";
+import { registrarBaixa } from "./lancamentos-actions";
 import {
   AlertTriangle,
   ArrowUpRight,
@@ -70,7 +74,7 @@ export default async function FinanceiroDashboardPage({
       .lte("data", fimMes),
     supabase
       .from("financeiro_lancamentos")
-      .select("id, tipo, descricao, valor, vencimento, status, financeiro_pessoas ( nome )")
+      .select("id, tipo, descricao, valor, vencimento, status, conta_bancaria_id, forma_pagamento, financeiro_pessoas ( nome )")
       .in("status", ["pendente", "pago_parcial"])
       .order("vencimento"),
     supabase.from("financeiro_baixas").select("lancamento_id, conta_bancaria_id, valor, financeiro_lancamentos ( tipo )"),
@@ -200,7 +204,7 @@ export default async function FinanceiroDashboardPage({
         <div className="grid gap-3 lg:grid-cols-[1.7fr_1fr_1fr]">
           <Link
             href="/financeiro/lancamentos?tipo=despesa&referencia=hoje&status=em_aberto#lista"
-            className={`group relative flex min-h-[174px] flex-col justify-between overflow-hidden rounded-2xl border p-5 transition hover:shadow-md ${contasParaPagarHoje.length > 0 ? "border-rose-900 bg-rose-950 text-white" : "border-emerald-200 bg-emerald-50 text-emerald-950"}`}
+            className="group relative flex min-h-[174px] flex-col justify-between overflow-hidden rounded-2xl border border-rose-900 bg-rose-950 p-5 text-white transition hover:bg-rose-900 hover:shadow-md"
           >
             <div className="flex items-center justify-between gap-3">
               <span className="flex items-center gap-2 text-sm font-semibold"><CalendarClock size={19} /> A pagar hoje</span>
@@ -208,7 +212,7 @@ export default async function FinanceiroDashboardPage({
             </div>
             <div>
               <p className="num break-all text-3xl font-bold tracking-tight sm:text-4xl">{brl(totalPagarHoje)}</p>
-              <p className={`mt-2 text-sm ${contasParaPagarHoje.length > 0 ? "text-rose-100" : "text-emerald-900"}`}>
+              <p className="mt-2 text-sm text-rose-100">
                 {contasParaPagarHoje.length > 0 ? `${contasParaPagarHoje.length} conta(s) aguardando pagamento · Abrir contas a pagar` : "Nenhuma conta pendente hoje"}
               </p>
             </div>
@@ -239,9 +243,48 @@ export default async function FinanceiroDashboardPage({
             </div>
             <ul className="divide-y divide-border">
               {contasParaPagarHoje.slice(0, 4).map(l => (
-                <li key={l.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                  <span className="min-w-0 truncate text-ink">{l.descricao}</span>
-                  <span className="num shrink-0 font-semibold text-rose-800">{brl(saldoAberto(l))}</span>
+                <li key={l.id} className="py-3 text-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <span className="min-w-0 flex-1 truncate font-medium text-ink">{l.descricao}</span>
+                    <span className="num font-semibold text-rose-800">{brl(saldoAberto(l))}</span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+                    <details className="group w-full rounded-lg border border-border bg-background/60 sm:w-auto sm:min-w-[320px]">
+                      <summary className="cursor-pointer px-3 py-2 font-semibold text-emerald-800 hover:text-emerald-950">
+                        Dar baixa / pagamento parcial
+                      </summary>
+                      <form action={registrarBaixa} className="grid gap-3 border-t border-border p-3 sm:grid-cols-2">
+                        <input type="hidden" name="lancamento_id" value={l.id} />
+                        <input type="hidden" name="return_to" value={`/financeiro?mes=${mesSelecionado}`} />
+                        <label className="block text-xs font-medium text-ink-muted">Data do pagamento *
+                          <input name="data" type="date" required defaultValue={hoje} className="mt-1 w-full rounded-md border border-border bg-surface p-2 text-sm text-ink" />
+                        </label>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-ink-muted">Valor a pagar *</label>
+                          <CampoMoeda name="valor" defaultValue={Number(saldoAberto(l).toFixed(2))} required className="w-full rounded-md border border-border bg-surface py-2 pr-2 text-sm text-ink" />
+                          <p className="mt-1 text-[11px] text-ink-muted">Para pagamento parcial, informe um valor menor.</p>
+                        </div>
+                        <label className="block text-xs font-medium text-ink-muted">Conta bancária
+                          <select name="conta_bancaria_id" defaultValue={l.conta_bancaria_id ?? ""} className="mt-1 w-full rounded-md border border-border bg-surface p-2 text-sm text-ink">
+                            <option value="">Não selecionada</option>
+                            {(contas ?? []).map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+                          </select>
+                        </label>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-ink-muted">Forma de pagamento</label>
+                          <CampoFormaPagamento defaultValue={l.forma_pagamento ?? ""} className="w-full rounded-md border border-border bg-surface p-2 text-sm text-ink" />
+                        </div>
+                        <label className="block text-xs font-medium text-ink-muted sm:col-span-2">Observação (opcional)
+                          <input name="observacoes" placeholder="Ex.: transferência realizada" className="mt-1 w-full rounded-md border border-border bg-surface p-2 text-sm text-ink" />
+                        </label>
+                        <BotaoEnviar textoEnviando="Registrando..." className="rounded-md bg-emerald-700 px-4 py-2.5 text-xs font-semibold text-white hover:bg-emerald-800 sm:col-span-2">
+                          Confirmar pagamento
+                        </BotaoEnviar>
+                      </form>
+                    </details>
+                    <Link href={`/financeiro/lancamentos/${l.id}/anexos`} className="font-medium text-brand hover:underline">Boleto / anexo</Link>
+                    <Link href={`/financeiro/lancamentos/${l.id}/baixar?return_to=${encodeURIComponent(`/financeiro?mes=${mesSelecionado}`)}`} className="font-medium text-brand hover:underline">Detalhes e histórico</Link>
+                  </div>
                 </li>
               ))}
             </ul>
