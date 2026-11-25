@@ -5,6 +5,10 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { VoltarLink } from "@/components/voltar-link";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
+import { GerenciarLinkAssinatura } from "@/components/gerenciar-link-assinatura";
+import { SeloSituacaoLink } from "@/components/selo-situacao-link";
+import { EXPLICACAO_SITUACAO, situacaoLink } from "@/lib/assinaturas/link";
+import { getUsuarioAtual, GESTORES } from "@/lib/usuario-atual";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { obterSiteUrl } from "@/lib/site-url";
 import { cancelarCartaProposta, salvarResponsavelCartaProposta } from "../actions";
@@ -59,7 +63,7 @@ export default async function PropostaDetalhePage({
     responsavel: { id: string; nome: string } | null;
   };
 
-  const [{ data: membros }, { data: condicoes }, { data: signatarios }, siteUrl] = await Promise.all([
+  const [{ data: membros }, { data: condicoes }, { data: signatarios }, siteUrl, { usuario: logado }] = await Promise.all([
     supabase.from("usuarios").select("id, nome").eq("ativo", true).order("nome"),
     supabase
       .from("carta_proposta_condicoes")
@@ -72,7 +76,9 @@ export default async function PropostaDetalhePage({
       .eq("carta_proposta_id", id)
       .order("ordem", { ascending: true }),
     obterSiteUrl(),
+    getUsuarioAtual(),
   ]);
+  const podeGerenciarLinks = !!logado?.ativo && GESTORES.includes(logado.nivel_acesso);
 
   return (
     <div className="mx-auto w-full min-w-0 max-w-4xl space-y-6">
@@ -173,18 +179,23 @@ export default async function PropostaDetalhePage({
       <div className={`${CARD_CLASS} p-5 sm:p-7`}>
         <h2 className="mb-3 text-sm font-semibold text-ink">Assinaturas</h2>
         <ul className="space-y-3">
-          {(signatarios ?? []).map((s) => (
+          {(signatarios ?? []).map((s) => {
+            const situacao = situacaoLink({
+              assinadoEm: s.assinado_em,
+              expiraEm: s.link_expira_em,
+              revogadoEm: s.link_revogado_em,
+              documentoAberto: p.status === "pendente",
+            });
+            return (
             <li key={s.id} className="rounded-lg border border-border/60 bg-background p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm font-medium text-ink">{s.nome_esperado}</p>
-                {s.assinado_em ? (
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                    Assinado
-                  </span>
-                ) : (
+                {situacao === "valido" ? (
                   <span className="rounded-full border border-border-strong bg-surface px-2 py-0.5 text-xs font-medium text-ink-muted">
                     Pendente
                   </span>
+                ) : (
+                  <SeloSituacaoLink situacao={situacao} />
                 )}
               </div>
 
@@ -208,19 +219,38 @@ export default async function PropostaDetalhePage({
                 </div>
               ) : (
                 <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <BotaoCopiarLink url={`${siteUrl}/assinar-proposta/${s.token}`} />
-                  <a
-                    href={`/assinar-proposta/${s.token}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex min-h-11 items-center text-sm font-medium text-brand hover:underline"
-                  >
-                    Abrir pra assinar agora →
-                  </a>
+                  {situacao === "valido" ? (
+                    <>
+                      <BotaoCopiarLink url={`${siteUrl}/assinar-proposta/${s.token}`} />
+                      <a
+                        href={`/assinar-proposta/${s.token}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex min-h-11 items-center text-sm font-medium text-brand hover:underline"
+                      >
+                        Abrir pra assinar agora →
+                      </a>
+                    </>
+                  ) : (
+                    <p className="w-full text-xs text-ink-muted">{EXPLICACAO_SITUACAO[situacao]}</p>
+                  )}
+                  {podeGerenciarLinks && (
+                    <GerenciarLinkAssinatura
+                      tipo="carta_proposta"
+                      documentoId={p.id}
+                      signatarioId={s.id}
+                      nome={s.nome_esperado}
+                      assinadoEm={s.assinado_em}
+                      expiraEm={s.link_expira_em}
+                      revogadoEm={s.link_revogado_em}
+                      documentoAberto={p.status === "pendente"}
+                    />
+                  )}
                 </div>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       </div>
 

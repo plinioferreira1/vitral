@@ -698,7 +698,7 @@ export async function registrarPagamentoComissao(formData: FormData) {
   if (!comissao) { await avisar("erro", "Parcela não encontrada nesta venda."); return; }
 
   const { error } = await supabase.rpc("registrar_recebimento_comissao", {
-    p_comissao_id: comissaoId, p_valor: valor, p_data: data, p_observacao: observacao || null,
+    p_comissao_id: comissaoId, p_valor: valor, p_data: data, p_observacao: observacao || undefined,
   });
   if (error) {
     // Não expor detalhes internos do SQL além das validações conhecidas.

@@ -1,6 +1,7 @@
 "use server";
 
 import { createHash, randomUUID } from "node:crypto";
+import { situacaoLink } from "@/lib/assinaturas/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { avisar, checar } from "@/lib/aviso";
@@ -387,6 +388,11 @@ export async function enviarLinkPorEmail(formData: FormData) {
   if (!s || !termo) return;
   if (s.assinado_em || s.versao !== termo.versao || !["aguardando_assinatura", "parcialmente_assinado"].includes(termo.status)) {
     await avisar("erro", "Este link não está mais aguardando assinatura.");
+    return;
+  }
+  const situacao = situacaoLink({ assinadoEm: s.assinado_em, expiraEm: s.link_expira_em, revogadoEm: s.link_revogado_em, documentoAberto: true });
+  if (situacao !== "valido") {
+    await avisar("erro", situacao === "revogado" ? "Este link foi revogado e não pode ser enviado." : "Este link venceu e não pode ser enviado.");
     return;
   }
   if (!s.email) {

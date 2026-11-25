@@ -11,6 +11,10 @@ import { obterSiteUrl } from "@/lib/site-url";
 import { cancelarAutorizacao, salvarResponsavelAutorizacao } from "../actions";
 import { apagarAutorizacao } from "../bulk-actions";
 import { BotaoEnviar } from "@/components/botao-enviar";
+import { GerenciarLinkAssinatura } from "@/components/gerenciar-link-assinatura";
+import { SeloSituacaoLink } from "@/components/selo-situacao-link";
+import { EXPLICACAO_SITUACAO, situacaoLink } from "@/lib/assinaturas/link";
+import { getUsuarioAtual, GESTORES } from "@/lib/usuario-atual";
 
 const STATUS_COR: Record<string, string> = {
   pendente: "bg-amber-50 text-amber-700 border-amber-100",
@@ -62,7 +66,7 @@ export default async function AutorizacaoDetalhePage({
     responsavel: { id: string; nome: string } | null;
   };
 
-  const [{ data: membros }, { data: signatarios }, siteUrl] = await Promise.all([
+  const [{ data: membros }, { data: signatarios }, siteUrl, { usuario: logado }] = await Promise.all([
     supabase.from("usuarios").select("id, nome").eq("ativo", true).order("nome"),
     supabase
       .from("autorizacao_signatarios")
@@ -70,7 +74,9 @@ export default async function AutorizacaoDetalhePage({
       .eq("autorizacao_id", id)
       .order("ordem", { ascending: true }),
     obterSiteUrl(),
+    getUsuarioAtual(),
   ]);
+  const podeGerenciarLinks = !!logado?.ativo && GESTORES.includes(logado.nivel_acesso);
 
   return (
     <div className="mx-auto w-full min-w-0 space-y-6">
@@ -151,18 +157,23 @@ export default async function AutorizacaoDetalhePage({
       <div className={`${CARD_CLASS} p-5 sm:p-6`}>
         <h2 className="mb-3 text-sm font-semibold text-ink">Assinaturas</h2>
         <ul className="space-y-3">
-          {(signatarios ?? []).map((s) => (
+          {(signatarios ?? []).map((s) => {
+            const situacao = situacaoLink({
+              assinadoEm: s.assinado_em,
+              expiraEm: s.link_expira_em,
+              revogadoEm: s.link_revogado_em,
+              documentoAberto: a.status === "pendente",
+            });
+            return (
             <li key={s.id} className="rounded-lg border border-border/60 bg-background p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-sm font-medium text-ink">{s.nome_esperado}</p>
-                {s.assinado_em ? (
-                  <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
-                    Assinado
-                  </span>
-                ) : (
+                {situacao === "valido" ? (
                   <span className="rounded-full border border-border-strong bg-surface px-2 py-0.5 text-xs font-medium text-ink-muted">
                     Pendente
                   </span>
+                ) : (
+                  <SeloSituacaoLink situacao={situacao} />
                 )}
               </div>
 
@@ -186,19 +197,38 @@ export default async function AutorizacaoDetalhePage({
                 </div>
               ) : (
                 <div className="mt-3 flex flex-wrap items-center gap-3">
-                  <BotaoCopiarLink url={`${siteUrl}/assinar/${s.token}`} />
-                  <a
-                    href={`/assinar/${s.token}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`${SECONDARY_BUTTON_CLASS} min-h-11`}
-                  >
-                    Abrir pra assinar agora →
-                  </a>
+                  {situacao === "valido" ? (
+                    <>
+                      <BotaoCopiarLink url={`${siteUrl}/assinar/${s.token}`} />
+                      <a
+                        href={`/assinar/${s.token}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${SECONDARY_BUTTON_CLASS} min-h-11`}
+                      >
+                        Abrir pra assinar agora →
+                      </a>
+                    </>
+                  ) : (
+                    <p className="w-full text-xs text-ink-muted">{EXPLICACAO_SITUACAO[situacao]}</p>
+                  )}
+                  {podeGerenciarLinks && (
+                    <GerenciarLinkAssinatura
+                      tipo="autorizacao_venda"
+                      documentoId={a.id}
+                      signatarioId={s.id}
+                      nome={s.nome_esperado}
+                      assinadoEm={s.assinado_em}
+                      expiraEm={s.link_expira_em}
+                      revogadoEm={s.link_revogado_em}
+                      documentoAberto={a.status === "pendente"}
+                    />
+                  )}
                 </div>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       </div>
 

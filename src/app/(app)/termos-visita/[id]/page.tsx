@@ -4,6 +4,10 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { VoltarLink } from "@/components/voltar-link";
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
+import { GerenciarLinkAssinatura } from "@/components/gerenciar-link-assinatura";
+import { SeloSituacaoLink } from "@/components/selo-situacao-link";
+import { EXPLICACAO_SITUACAO, situacaoLink } from "@/lib/assinaturas/link";
+import { getUsuarioAtual, GESTORES } from "@/lib/usuario-atual";
 import { BotaoCertificadoVisita } from "@/components/botao-certificado-visita";
 import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { obterSiteUrl } from "@/lib/site-url";
@@ -74,12 +78,21 @@ export default async function TermoVisitaDetalhePage({
     assinatura_imagem: string | null;
     assinado_em: string | null;
     ip_assinatura: string | null;
+    link_expira_em: string | null;
+    link_revogado_em: string | null;
     imoveis: { endereco: string } | null;
     clientes: { nome: string; telefone: string | null; email: string | null } | null;
     corretores: { nome: string } | null;
   };
 
-  const siteUrl = await obterSiteUrl();
+  const [siteUrl, { usuario: logado }] = await Promise.all([obterSiteUrl(), getUsuarioAtual()]);
+  const podeGerenciarLinks = !!logado?.ativo && GESTORES.includes(logado.nivel_acesso);
+  const situacao = situacaoLink({
+    assinadoEm: t.assinado_em,
+    expiraEm: t.link_expira_em,
+    revogadoEm: t.link_revogado_em,
+    documentoAberto: t.status === "pendente",
+  });
 
   return (
     <div className="mx-auto w-full min-w-0 space-y-6">
@@ -166,15 +179,36 @@ export default async function TermoVisitaDetalhePage({
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-3">
-            <BotaoCopiarLink url={`${siteUrl}/visita/${t.token}`} />
-            <a
-              href={`/visita/${t.token}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`${SECONDARY_BUTTON_CLASS} min-h-11`}
-            >
-              Abrir pra assinar agora →
-            </a>
+            {situacao === "valido" ? (
+              <>
+                <BotaoCopiarLink url={`${siteUrl}/visita/${t.token}`} />
+                <a
+                  href={`/visita/${t.token}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`${SECONDARY_BUTTON_CLASS} min-h-11`}
+                >
+                  Abrir pra assinar agora →
+                </a>
+              </>
+            ) : (
+              <div className="w-full space-y-1">
+                <SeloSituacaoLink situacao={situacao} />
+                <p className="text-xs text-ink-muted">{EXPLICACAO_SITUACAO[situacao]}</p>
+              </div>
+            )}
+            {podeGerenciarLinks && (
+              <GerenciarLinkAssinatura
+                tipo="termo_visita"
+                documentoId={t.id}
+                signatarioId={t.id}
+                nome={t.clientes?.nome ?? "Cliente"}
+                assinadoEm={t.assinado_em}
+                expiraEm={t.link_expira_em}
+                revogadoEm={t.link_revogado_em}
+                documentoAberto={t.status === "pendente"}
+              />
+            )}
           </div>
         )}
       </div>
