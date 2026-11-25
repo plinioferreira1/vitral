@@ -5519,6 +5519,76 @@ export type Database = {
         }
         Relationships: []
       }
+      locacao_documentos: {
+        Row: {
+          arquivo_caminho: string
+          arquivo_nome_original: string
+          contrato_id: string
+          criado_em: string
+          criado_por: string | null
+          data_documento: string | null
+          id: string
+          mime: string
+          nome: string
+          observacao: string | null
+          tamanho: number
+          tenant_id: string
+          tipo: string
+        }
+        Insert: {
+          arquivo_caminho: string
+          arquivo_nome_original: string
+          contrato_id: string
+          criado_em?: string
+          criado_por?: string | null
+          data_documento?: string | null
+          id?: string
+          mime: string
+          nome: string
+          observacao?: string | null
+          tamanho: number
+          tenant_id: string
+          tipo: string
+        }
+        Update: {
+          arquivo_caminho?: string
+          arquivo_nome_original?: string
+          contrato_id?: string
+          criado_em?: string
+          criado_por?: string | null
+          data_documento?: string | null
+          id?: string
+          mime?: string
+          nome?: string
+          observacao?: string | null
+          tamanho?: number
+          tenant_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locacao_documentos_contrato_id_fkey"
+            columns: ["contrato_id"]
+            isOneToOne: false
+            referencedRelation: "contratos_locacao"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locacao_documentos_criado_por_fkey"
+            columns: ["criado_por"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "locacao_documentos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modelos_checklist_item: {
         Row: {
           descricao: string
