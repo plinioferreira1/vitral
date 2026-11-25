@@ -37,6 +37,7 @@ import { INPUT_CLASS } from "@/components/ui/styles";
 import { CartaoIndicador } from "@/components/cartao-indicador";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { SecaoCondominio } from "../debitos/_componentes/secao-condominio";
+import { DocumentosContrato } from "@/components/locacao/documentos-contrato";
 
 const MESES = [
   "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez",
@@ -175,7 +176,7 @@ export default async function ContratoLocacaoPage({
     <div className="mx-auto w-full min-w-0 space-y-6">
       <NavegacaoSecoes secoes={[
         { id: "resumo-contrato", label: "Resumo" }, { id: "contas-contrato", label: "Contas" },
-        { id: "condominio-contrato", label: "Condomínio" }, { id: "dados-contrato", label: "Dados e responsáveis" },
+        { id: "condominio-contrato", label: "Condomínio" }, { id: "documentos-contrato", label: "Documentos" }, { id: "dados-contrato", label: "Dados e responsáveis" },
         { id: "rescisao-contrato", label: "Rescisão" }, { id: "gestao-contrato", label: "Gestão do contrato" },
       ]} />
       <div id="resumo-contrato" className="scroll-mt-20 rounded-2xl border border-border/70 bg-surface p-6 shadow-sm">
@@ -460,6 +461,8 @@ export default async function ContratoLocacaoPage({
       )}
 
       <section id="condominio-contrato" className="scroll-mt-20"><SecaoCondominio contratoId={id} /></section>
+
+      <section id="documentos-contrato" className="scroll-mt-20"><DocumentosContrato contratoId={id} /></section>
 
       {/* Dados do contrato */}
       <section id="dados-contrato" className="scroll-mt-20">
