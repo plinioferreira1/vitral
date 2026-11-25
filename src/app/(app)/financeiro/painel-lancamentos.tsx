@@ -51,6 +51,7 @@ function brl(v: number): string {
 type Filtros = {
   tipo?: string;
   mes?: string;
+  data?: string;
   q?: string;
   status?: string;
   referencia?: string;
@@ -66,17 +67,18 @@ type Filtros = {
 };
 
 type CampoOculto = [keyof Filtros, string | undefined];
-type ReferenciaFiltro = "hoje" | "7dias" | "mes" | "todos";
+type ReferenciaFiltro = "hoje" | "dia" | "7dias" | "mes" | "todos";
 
 const REFERENCIAS: { value: ReferenciaFiltro; label: string }[] = [
   { value: "hoje", label: "Vencem hoje" },
+  { value: "dia", label: "Dia específico" },
   { value: "7dias", label: "Próximos 7 dias" },
   { value: "mes", label: "Mês selecionado" },
   { value: "todos", label: "Todos os vencimentos" },
 ];
 
 function normalizarReferencia(valor?: string): ReferenciaFiltro {
-  return valor === "7dias" || valor === "mes" || valor === "todos" ? valor : "hoje";
+  return valor === "dia" || valor === "7dias" || valor === "mes" || valor === "todos" ? valor : "hoje";
 }
 
 function construirUrl(base: string, params: Filtros): string {
@@ -128,7 +130,8 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const inicioMesAnterior = `${anoAnterior}-${String(mesAnterior).padStart(2, "0")}-01`;
   const fimMesAnterior = new Date(Date.UTC(anoAnterior, mesAnterior, 0)).toISOString().slice(0, 10);
   const referencia = normalizarReferencia(f.referencia ?? (f.status === "vencido" ? "todos" : undefined));
-  const fim7Dias = somarDias(hoje, 6);
+  const fim7Dias = somarDias(hoje, 7);
+  const diaSelecionado = f.data && /^20\d{2}-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/.test(f.data) ? f.data : hoje;
 
   // Consultas independentes em uma rodada, preservando a otimização da branch principal.
   const [
@@ -186,7 +189,8 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const todosNaReferencia = todos.filter((l) => {
     if (referencia === "todos") return true;
     if (referencia === "hoje") return l.vencimento === hoje;
-    if (referencia === "7dias") return l.vencimento >= hoje && l.vencimento <= fim7Dias;
+    if (referencia === "dia") return l.vencimento === diaSelecionado;
+    if (referencia === "7dias") return l.vencimento > hoje && l.vencimento <= fim7Dias;
     return l.vencimento >= inicioMes && l.vencimento <= fim;
   });
 
@@ -285,6 +289,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
     f.unidade ||
     f.competencia ||
     f.mes ||
+    f.data ||
     f.q ||
     referencia !== "hoje"
   );
@@ -316,6 +321,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
   const camposOcultos: CampoOculto[] = [
     ["tipo", unificado ? tipo : undefined],
     ["mes", f.mes],
+    ["data", referencia === "dia" ? diaSelecionado : undefined],
     ["q", f.q],
     ["status", f.status],
     ["referencia", referencia],
@@ -415,6 +421,16 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
             />
           </div>
         </form>
+        {referencia === "dia" && (
+          <form method="get" action={`${rota}#lista`} className="flex flex-wrap items-end gap-2">
+            {renderCamposOcultos(camposOcultos, ["data"])}
+            <label className="text-xs font-semibold text-ink-muted">Dia do vencimento
+              <input type="date" name="data" defaultValue={diaSelecionado} required
+                className={`${campoClasse} mt-1 min-w-[158px]`} />
+            </label>
+            <BotaoEnviar className="min-h-10 rounded-lg bg-brand px-4 py-2 text-xs font-semibold text-white">Aplicar dia</BotaoEnviar>
+          </form>
+        )}
 
       </div>
 
@@ -443,6 +459,7 @@ export async function PainelLancamentos({ tipo, searchParams }: { tipo: "receita
         {f.mes && <input type="hidden" name="mes" value={competenciaMes} />}
         <input type="hidden" name="q" value={f.q ?? ""} />
         <input type="hidden" name="referencia" value={referencia} />
+        {referencia === "dia" && <input type="hidden" name="data" value={diaSelecionado} />}
         <div>
           <label className="mb-1 block text-xs font-medium text-ink-muted">Status</label>
           <select name="status" defaultValue={f.status ?? ""} className={campoClasse}>
