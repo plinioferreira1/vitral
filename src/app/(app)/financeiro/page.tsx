@@ -311,17 +311,42 @@ export default async function FinanceiroDashboardPage({
         </form>
       </section>
 
-      <section aria-label="Ações rápidas do Financeiro" className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { href: "/financeiro/lancamentos/novo?tipo=despesa", titulo: "Nova despesa", descricao: "Registrar conta a pagar" },
-          { href: "/financeiro/lancamentos/novo?tipo=receita", titulo: "Nova receita", descricao: "Registrar conta a receber" },
-          { href: `/financeiro/lancamentos?tipo=despesa&referencia=mes&mes=${mesSelecionado}`, titulo: "Despesas do mês", descricao: "Ver contas e vencimentos do período" },
-          { href: "/financeiro/contas-e-cartoes", titulo: "Contas e cartões", descricao: "Bancos, cartões e conciliação" },
-        ].map(acao => (
+      <section aria-label="Ações rápidas do Financeiro" className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {([
+          {
+            href: "/financeiro/lancamentos/novo?tipo=despesa",
+            titulo: "Nova despesa",
+            descricao: "Registrar conta a pagar",
+            estilo: "border-rose-200 bg-rose-50/80 hover:border-rose-400 hover:bg-rose-100/80",
+            barra: "bg-rose-600", tituloCor: "text-rose-900", descricaoCor: "text-rose-800/80",
+          },
+          {
+            href: "/financeiro/lancamentos/novo?tipo=receita",
+            titulo: "Nova receita",
+            descricao: "Registrar conta a receber",
+            estilo: "border-emerald-200 bg-emerald-50/80 hover:border-emerald-400 hover:bg-emerald-100/80",
+            barra: "bg-emerald-600", tituloCor: "text-emerald-900", descricaoCor: "text-emerald-800/80",
+          },
+          {
+            href: `/financeiro/lancamentos?tipo=despesa&referencia=mes&mes=${mesSelecionado}`,
+            titulo: "Despesas do mês",
+            descricao: "Ver contas e vencimentos do período",
+            estilo: "border-amber-200 bg-amber-50/80 hover:border-amber-400 hover:bg-amber-100/80",
+            barra: "bg-amber-600", tituloCor: "text-amber-950", descricaoCor: "text-amber-900/80",
+          },
+          {
+            href: "/financeiro/contas-e-cartoes",
+            titulo: "Contas e cartões",
+            descricao: "Bancos, cartões e conciliação",
+            estilo: "border-sky-200 bg-sky-50/80 hover:border-sky-400 hover:bg-sky-100/80",
+            barra: "bg-sky-700", tituloCor: "text-sky-950", descricaoCor: "text-sky-900/80",
+          },
+        ] as const).map(acao => (
           <Link href={acao.href} key={acao.href}
-            className="rounded-xl border border-border bg-surface px-4 py-3 shadow-sm transition hover:border-brand/50 hover:bg-background">
-            <span className="block text-sm font-semibold text-ink">{acao.titulo}</span>
-            <span className="mt-1 block text-xs text-ink-muted">{acao.descricao}</span>
+            className={`group relative flex min-h-[76px] flex-col justify-center overflow-hidden rounded-xl border px-4 py-3 pl-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand ${acao.estilo}`}>
+            <span aria-hidden="true" className={`absolute inset-y-0 left-0 w-1 ${acao.barra}`} />
+            <span className={`block text-sm font-semibold ${acao.tituloCor}`}>{acao.titulo}</span>
+            <span className={`mt-1 block text-xs ${acao.descricaoCor}`}>{acao.descricao}</span>
           </Link>
         ))}
       </section>
