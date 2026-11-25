@@ -5,7 +5,7 @@ import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { hojeISO } from "@/lib/data-br";
 
 type Params = {
-  tipo?: string; mes?: string; status?: string; referencia?: string; categoria?: string;
+  tipo?: string; mes?: string; data?: string; status?: string; referencia?: string; categoria?: string;
   pessoa?: string; conta_bancaria?: string; unidade?: string; competencia?: string;
   q?: string; ordenar?: string; direcao?: string; pagina?: string; por_pagina?: string;
 };
