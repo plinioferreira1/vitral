@@ -32,6 +32,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
       ] : []),
       { href: "/calculadora-data", label: "Cálculo de datas" },
       { href: "/cartorio", label: "Simulação de custas" },
+      ...(!p.ehSocialMedia ? [{ href: "/selecao-imoveis", label: "Seleção de imóveis para cliente" }] : []),
       ...(!p.ehSocialMedia && verAvaliacoes ? [{ href: "/avaliacoes", label: "Avaliações de imóveis" }] : []),
     ],
   };

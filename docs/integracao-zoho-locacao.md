@@ -64,7 +64,11 @@ Visibilidade: a seção só aparece para quem tem `debitos_pode_ver()` (mesma re
 - E-mails que não respondem a uma solicitação do VITRAL (ex.: locatário escrevendo direto) não são gravados — o cron só guarda o que tem administradora/solicitação identificada, de propósito, para não copiar mensagens pessoais. Ligar esses e-mails a contratos exige revisão humana (sugestão por remetente cadastrado no locatário/locador + confirmação na tela), não associação automática.
 - O corpo completo e os anexos continuam só na leitura ao vivo (`/locacao/emails`); o histórico do contrato mostra o resumo.
 
-## Arquitetura proposta para responder pelo VITRAL (fase futura)
+## Respostas pelo VITRAL — descartado
+
+Decisão da direção em 26/11/2026: o VITRAL só consulta e baixa anexos; não haverá envio de respostas. O texto abaixo fica apenas como registro.
+
+### Arquitetura que tinha sido proposta
 
 1. **Escopo OAuth separado**: novo refresh token com `ZohoMail.messages.CREATE` (e só ele), em variável própria (`ZOHO_LOCACAO_SEND_REFRESH_TOKEN`), nunca reaproveitando o de leitura.
 2. **Rascunho antes de enviar**: tabela `locacao_emails_rascunhos` (tenant, contrato, mensagem respondida, para, assunto, corpo, criado_por, status `rascunho|enviado|falha`, enviado_em, id Zoho). O envio é uma ação explícita de quem tem `debitos_pode_operar()`, com a pré-visualização na tela e confirmação.
