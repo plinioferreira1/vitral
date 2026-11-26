@@ -24,7 +24,7 @@ export async function carregarResumoMatutino(tenantId: string, usuarioId: string
   const dia = hojeISO();
   const [
     contas, baixas, transferencias, pendentes,
-    tarefas, vendas, processos, etapas
+    tarefas, vendas, processos
   ] = await Promise.all([
     db.from("financeiro_contas_bancarias").select("id,saldo_inicial,ativa").eq("tenant_id",tenantId).eq("ativa",true),
     db.from("financeiro_baixas").select("lancamento_id,valor,conta_bancaria_id,data,financeiro_lancamentos!inner(tipo,tenant_id)").eq("tenant_id",tenantId),
@@ -38,11 +38,14 @@ export async function carregarResumoMatutino(tenantId: string, usuarioId: string
       .eq("tenant_id",tenantId).eq("usuario_id",usuarioId).gte("criado_em",dia+"T03:00:00Z")
       .order("criado_em",{ascending:false}).limit(30),
     db.from("processos").select("id,numero_processo,categoria,data_final_contrato,imoveis(endereco)")
-      .eq("tenant_id",tenantId).eq("status","ativo").limit(500),
-    db.from("etapas").select("id,nome,data_prevista,processo_id,usuarios(nome)")
-      .eq("status","pendente").not("data_prevista","is",null)
-      .lte("data_prevista",somarDias(dia,7)).limit(1000)
+      .eq("tenant_id",tenantId).eq("status","ativo").limit(500)
   ]);
+  const idsProcessos=(processos.data??[]).map(p=>p.id);
+  const etapas=idsProcessos.length
+    ? await db.from("etapas").select("id,nome,data_prevista,processo_id,usuarios(nome)")
+      .in("processo_id",idsProcessos).in("status",["pendente","em_andamento"])
+      .not("data_prevista","is",null).lte("data_prevista",somarDias(dia,7)).limit(1000)
+    : {data:[],error:null};
   const erro = [contas,baixas,transferencias,pendentes,tarefas,vendas,processos,etapas].find(r=>r.error)?.error;
   if(erro) throw new Error("Não foi possível montar o resumo diário.");
   if((pendentes.data?.length ?? 0)>=500 || (tarefas.data?.length ?? 0)>=500 || (processos.data?.length ?? 0)>=500 || (etapas.data?.length ?? 0)>=1000)
