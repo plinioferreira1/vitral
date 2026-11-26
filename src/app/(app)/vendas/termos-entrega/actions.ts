@@ -8,6 +8,7 @@ import { avisar, checar } from "@/lib/aviso";
 import { hojeISO } from "@/lib/data-br";
 import type { Json, TablesInsert } from "@/lib/database.types";
 import { enviarEmail } from "@/lib/email";
+import { emailAssinaturaTermo } from "@/lib/termo-entrega/email-assinatura";
 import { obterSiteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 import { REGRA_CALCULO, dataBR } from "@/lib/termo-entrega/calculo";
@@ -400,14 +401,13 @@ export async function enviarLinkPorEmail(formData: FormData) {
     return;
   }
   const link = `${await obterSiteUrl()}/assinar-termo/${s.token}`;
-  const primeiroNome = s.nome_esperado.split(" ")[0];
-  const texto = `Olá, ${primeiroNome}.\n\nSegue o link para conferir e assinar eletronicamente o Termo de Entrega de Chaves e Proporcionalidade${termo.imovel_endereco ? ` do imóvel ${termo.imovel_endereco}` : ""}:\n\n${link}\n\nO link é pessoal. Em caso de dúvida, fale com a Sacra Imóveis.\n\nSacra Imóveis`;
+  const email = emailAssinaturaTermo({ nome: s.nome_esperado, papel: s.papel, endereco: termo.imovel_endereco, codigo: termo.codigo, link });
   try {
     await enviarEmail({
       destinatarios: [s.email],
-      assunto: `Termo de Entrega de Chaves para assinatura – ${termo.codigo}`,
-      texto,
-      html: `<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.55;color:#1c1917;white-space:pre-wrap;">${texto.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</div>`,
+      assunto: email.assunto,
+      texto: email.texto,
+      html: email.html,
       nomeRemetente: "Sacra Imóveis",
       responderPara: ctx.email,
     });
