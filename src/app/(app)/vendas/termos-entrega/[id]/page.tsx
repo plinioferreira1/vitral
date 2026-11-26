@@ -179,11 +179,11 @@ export default async function TermoEntregaPage({ params, searchParams }: { param
 
             {status === "gerado" && perms.operar && (
               <Painel titulo="Próximo passo" icone={<Send size={15} className="text-brand" />}>
-                <p className="text-xs text-ink-muted">Documento gerado. Envie para assinatura: cada vendedor e comprador recebe um link próprio.</p>
+                <p className="text-xs text-ink-muted">Documento gerado. Ao enviar, cada vendedor e comprador recebe na hora, por e-mail, o seu link de assinatura. Quem não tem e-mail no termo recebe o link pelo botão “Copiar link”.</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   <FormularioAcaoTermo acao="enviarParaAssinatura" className="flex-1">
                     <input type="hidden" name="id" value={id} />
-                    <BotaoEnviar className={`${PRIMARY_BUTTON_CLASS} w-full`} textoEnviando="Criando links…">
+                    <BotaoEnviar className={`${PRIMARY_BUTTON_CLASS} w-full`} textoEnviando="Enviando…">
                       <FileSignature size={15} /> Enviar para assinatura
                     </BotaoEnviar>
                   </FormularioAcaoTermo>

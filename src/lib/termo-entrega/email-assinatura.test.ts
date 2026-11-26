@@ -28,3 +28,16 @@ describe("e-mail de assinatura do termo de entrega", () => {
     expect(e.texto.startsWith("Olá, Mark.")).toBe(true);
   });
 });
+
+describe("aviso depois de enviar para assinatura", async () => {
+  const { avisoEnvioAssinatura } = await import("./email-assinatura");
+  it("resume enviados, sem e-mail e falhas", () => {
+    expect(avisoEnvioAssinatura({ enviados: ["Mark", "Ana"], semEmail: [], falhas: [] })).toEqual({ tipo: "sucesso", texto: "E-mail com o link enviado para Mark, Ana." });
+    const misto = avisoEnvioAssinatura({ enviados: ["Mark"], semEmail: ["João"], falhas: ["Ana"] });
+    expect(misto.tipo).toBe("sucesso");
+    expect(misto.texto).toContain("Sem e-mail no termo: João");
+    expect(misto.texto).toContain("Não foi possível enviar para Ana");
+    expect(avisoEnvioAssinatura({ enviados: [], semEmail: [], falhas: ["Ana"] }).tipo).toBe("erro");
+    expect(avisoEnvioAssinatura({ enviados: [], semEmail: [], falhas: [] }).texto).toBe("Links de assinatura criados.");
+  });
+});

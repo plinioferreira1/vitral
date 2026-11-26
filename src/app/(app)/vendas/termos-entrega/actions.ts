@@ -8,7 +8,7 @@ import { avisar, checar } from "@/lib/aviso";
 import { hojeISO } from "@/lib/data-br";
 import type { Json, TablesInsert } from "@/lib/database.types";
 import { enviarEmail } from "@/lib/email";
-import { emailAssinaturaTermo } from "@/lib/termo-entrega/email-assinatura";
+import { avisoEnvioAssinatura, emailAssinaturaTermo } from "@/lib/termo-entrega/email-assinatura";
 import { obterSiteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 import { REGRA_CALCULO, dataBR } from "@/lib/termo-entrega/calculo";
@@ -348,6 +348,24 @@ export async function voltarParaEdicao(formData: FormData) {
 // assinatura
 // ---------------------------------------------------------------
 
+type SignatarioEnvio = { id: string; termo_id: string; versao: number; token: string; nome_esperado: string; papel: string; email: string | null };
+
+/** Manda o e-mail com o link pessoal de assinatura e registra no histórico. */
+async function mandarEmailAssinatura(ctx: Contexto, s: SignatarioEnvio, termo: { codigo: string; imovel_endereco: string | null }): Promise<boolean> {
+  if (!s.email) return false;
+  const link = `${await obterSiteUrl()}/assinar-termo/${s.token}`;
+  const email = emailAssinaturaTermo({ nome: s.nome_esperado, papel: s.papel, endereco: termo.imovel_endereco, codigo: termo.codigo, link });
+  try {
+    await enviarEmail({ destinatarios: [s.email], assunto: email.assunto, texto: email.texto, html: email.html, nomeRemetente: "Sacra Imóveis", responderPara: ctx.email });
+  } catch (erro) {
+    console.error("termo-entrega: falha ao enviar e-mail de assinatura", erro instanceof Error ? erro.message : erro);
+    return false;
+  }
+  await ctx.supabase.from("termo_entrega_signatarios").update({ email_enviado_em: new Date().toISOString() }).eq("id", s.id);
+  await registrar(ctx, s.termo_id, s.versao, [{ acao: "link_enviado_por_email", descricao: `Link de assinatura enviado por e-mail para ${s.nome_esperado} (${s.email}).` }]);
+  return true;
+}
+
 export async function enviarParaAssinatura(formData: FormData) {
   const ctx = await contexto();
   if (!ctx) return;
@@ -366,9 +384,9 @@ export async function enviarParaAssinatura(formData: FormData) {
   // quem assina é quem está no retrato da versão (não no rascunho)
   const partes = [...vendedores(versao.retrato.documento), ...compradores(versao.retrato.documento)];
   await ctx.supabase.from("termo_entrega_signatarios").delete().eq("termo_id", id).eq("versao", atual.termo.versao).is("assinado_em", null);
-  const { error } = await ctx.supabase.from("termo_entrega_signatarios").insert(
+  const { data: criados, error } = await ctx.supabase.from("termo_entrega_signatarios").insert(
     partes.map((p, ordem) => ({ tenant_id: ctx.tenantId, termo_id: id, versao: atual.termo.versao, parte_id: p.id, papel: p.papel, nome_esperado: p.nome, email: p.email || null, ordem }))
-  );
+  ).select("id, termo_id, versao, token, nome_esperado, papel, email, ordem");
   if (error) {
     await avisar("erro", `Não foi possível criar os links de assinatura: ${error.message}`);
     return;
@@ -376,8 +394,17 @@ export async function enviarParaAssinatura(formData: FormData) {
   const agora = new Date().toISOString();
   if (!(await checar(ctx.supabase.from("termos_entrega").update({ status: "aguardando_assinatura", enviado_em: agora, atualizado_por: ctx.autor.id }).eq("id", id), "enviar para assinatura"))) return;
   await registrar(ctx, id, atual.termo.versao, [{ acao: "enviado_para_assinatura", descricao: `Links de assinatura criados para ${partes.length} pessoa(s).`, novo: { signatarios: partes.map((p) => p.nome) } }]);
+
+  // já manda o link por e-mail para quem tem e-mail no termo
+  const resultado = { enviados: [] as string[], semEmail: [] as string[], falhas: [] as string[] };
+  for (const sig of [...(criados ?? [])].sort((x, y) => x.ordem - y.ordem)) {
+    if (!sig.email) { resultado.semEmail.push(sig.nome_esperado); continue; }
+    const ok = await mandarEmailAssinatura(ctx, sig, { codigo: atual.termo.codigo, imovel_endereco: atual.termo.imovel_endereco });
+    (ok ? resultado.enviados : resultado.falhas).push(sig.nome_esperado);
+  }
   atualizar(id);
-  await avisar("sucesso", "Links de assinatura criados. Copie ou envie por e-mail para cada pessoa.");
+  const aviso = avisoEnvioAssinatura(resultado);
+  await avisar(aviso.tipo, aviso.texto);
 }
 
 export async function enviarLinkPorEmail(formData: FormData) {
@@ -400,23 +427,10 @@ export async function enviarLinkPorEmail(formData: FormData) {
     await avisar("erro", `${s.nome_esperado} não tem e-mail no termo. Copie o link e envie por outro meio.`);
     return;
   }
-  const link = `${await obterSiteUrl()}/assinar-termo/${s.token}`;
-  const email = emailAssinaturaTermo({ nome: s.nome_esperado, papel: s.papel, endereco: termo.imovel_endereco, codigo: termo.codigo, link });
-  try {
-    await enviarEmail({
-      destinatarios: [s.email],
-      assunto: email.assunto,
-      texto: email.texto,
-      html: email.html,
-      nomeRemetente: "Sacra Imóveis",
-      responderPara: ctx.email,
-    });
-  } catch (erro) {
-    await avisar("erro", `Não foi possível enviar o e-mail: ${erro instanceof Error ? erro.message : String(erro)}`);
+  if (!(await mandarEmailAssinatura(ctx, s, termo))) {
+    await avisar("erro", "Não foi possível enviar o e-mail. Tente novamente.");
     return;
   }
-  await ctx.supabase.from("termo_entrega_signatarios").update({ email_enviado_em: new Date().toISOString() }).eq("id", s.id);
-  await registrar(ctx, s.termo_id, s.versao, [{ acao: "link_enviado_por_email", descricao: `Link de assinatura enviado por e-mail para ${s.nome_esperado} (${s.email}).` }]);
   atualizar(s.termo_id);
   await avisar("sucesso", `Link enviado para ${s.email}.`);
 }
