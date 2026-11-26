@@ -50,3 +50,13 @@ export function emailAssinaturaTermo(d: { nome: string; papel: "vendedor" | "com
   const html = layoutEmailSacra("Assinatura eletrônica", "Termo de Entrega de Chaves", conteudo, "", 640, true);
   return { assunto, texto, html };
 }
+
+/** Aviso depois de enviar para assinatura: quantos e-mails saíram e quem precisa do link por outro meio. */
+export function avisoEnvioAssinatura(r: { enviados: string[]; semEmail: string[]; falhas: string[] }): { tipo: "sucesso" | "erro"; texto: string } {
+  const partes: string[] = [];
+  if (r.enviados.length) partes.push(`E-mail com o link enviado para ${r.enviados.join(", ")}.`);
+  if (r.semEmail.length) partes.push(`Sem e-mail no termo: ${r.semEmail.join(", ")} — copie o link e envie por outro meio.`);
+  if (r.falhas.length) partes.push(`Não foi possível enviar para ${r.falhas.join(", ")} — tente "Enviar por e-mail" de novo.`);
+  if (!partes.length) partes.push("Links de assinatura criados.");
+  return { tipo: r.falhas.length && !r.enviados.length ? "erro" : "sucesso", texto: partes.join(" ") };
+}
