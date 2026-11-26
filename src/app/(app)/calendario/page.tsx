@@ -125,9 +125,12 @@ export default async function CalendarioPage({
       <div className="grid grid-cols-1 items-start gap-5 xl:grid-cols-[minmax(0,1fr)_280px]">
         <section className="min-w-0 rounded-xl border border-border/60 bg-surface p-3 shadow-sm sm:p-5">
           <CabecalhoSecao icon={CalendarDays} titulo="Agenda do mês" descricao={`${eventosDoMes.length} compromissos no período`} />
-          <div className="overflow-x-auto"><div className="min-w-[640px]">
+          <div className="md:hidden">
+            <CalendarioGrid eventos={eventosFiltrados} referencia={referencia} compacto maxPorDia={1} />
+          </div>
+          <div className="hidden md:block">
             <CalendarioGrid eventos={eventosFiltrados} referencia={referencia} />
-          </div></div>
+          </div>
         </section>
 
         <aside className="space-y-3 rounded-xl border border-border/60 bg-surface p-4 shadow-sm">
