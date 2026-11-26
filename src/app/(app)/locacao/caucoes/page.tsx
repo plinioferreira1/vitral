@@ -33,7 +33,7 @@ function Lista({ itens, vazio }: { itens: LinhaCaucao[]; vazio: string }) {
   );
 }
 
-/** Cauções em dinheiro dos contratos de locação: quanto manter em caixa. */
+/** Cauções contratuais previstas nos contratos de locação. O recebimento deve ser conferido no extrato. */
 export default async function CaucoesPage() {
   const { user, usuario } = await getUsuarioAtual();
   if (!user || !usuario?.tenant_id) redirect("/login");
@@ -47,7 +47,7 @@ export default async function CaucoesPage() {
     <div className="w-full min-w-0 space-y-5">
       <CabecalhoPagina
         titulo="Cauções da Locação"
-        descricao="Contratos com garantia em caução e o valor que precisa ficar em caixa para devolução."
+        descricao="Contratos com garantia em caução e valores contratualmente previstos. Conferir depósitos e rendimentos bancários."
         acao={
           <a href="/locacao/caucoes/csv" download className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-border bg-surface px-3 text-sm font-semibold text-ink hover:bg-background">
             <Download size={15} aria-hidden="true" /> Baixar planilha
@@ -56,23 +56,23 @@ export default async function CaucoesPage() {
       />
 
       <section className="rounded-2xl border border-border/70 bg-surface p-5 shadow-sm">
-        <p className="text-sm text-ink-muted">Total a manter em caixa</p>
+        <p className="text-sm text-ink-muted">Total contratual de cauções ativas</p>
         <p className="mt-1 text-3xl font-bold tabular-nums text-ink">{moeda(r.totalCentavos)}</p>
         <p className="mt-1 text-xs text-ink-muted">
-          {r.ativos.length} contrato(s) ativo(s) com caução
+          {r.ativos.length} contrato(s) ativo(s) com caução · depósito e saldo precisam de conciliação bancária
           {r.semValor.length > 0 && <span className="font-semibold text-amber-800"> · {r.semValor.length} sem valor informado (fora do total)</span>}
         </p>
       </section>
 
       <section className="rounded-2xl border border-border/70 bg-surface p-4 shadow-sm sm:p-5" aria-labelledby="ativos">
-        <h2 id="ativos" className="mb-2 text-sm font-semibold text-ink">Contratos ativos</h2>
+        <h2 id="ativos" className="mb-2 text-sm font-semibold text-ink">Contratos ativos · valores previstos</h2>
         <Lista itens={r.ativos} vazio="Nenhum contrato ativo com caução. Para marcar, abra o contrato, edite os dados e escolha “Caução” na garantia." />
       </section>
 
       {r.encerrados.length > 0 && (
         <details className="rounded-2xl border border-border/70 bg-surface p-4 shadow-sm sm:p-5">
           <summary className="cursor-pointer text-sm font-semibold text-ink">Contratos encerrados com caução ({r.encerrados.length})</summary>
-          <p className="mt-2 text-xs text-ink-muted">Fora do total. Confira se a caução já foi devolvida.</p>
+          <p className="mt-2 text-xs text-ink-muted">Fora do total dos contratos ativos. Confira os depósitos, os rendimentos e as devoluções.</p>
           <div className="mt-2"><Lista itens={r.encerrados} vazio="" /></div>
         </details>
       )}
