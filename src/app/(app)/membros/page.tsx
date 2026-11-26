@@ -18,7 +18,7 @@ export default async function MembrosPage({
   if (!user || !usuario?.tenant_id) redirect("/login");
   if (!GESTORES.includes(usuario.nivel_acesso)) redirect("/");
   const supabase = await createClient();
-  const [sp, membros, categorias, convites, colaboradores, siteUrl] =
+  const [sp, membros, categorias, convites, colaboradores, corretores, siteUrl] =
     await Promise.all([
       searchParams,
       supabase
@@ -40,9 +40,10 @@ export default async function MembrosPage({
         .select("id, nome, usuario_id, gestor_id, cargo, departamento")
         .eq("tenant_id", usuario.tenant_id)
         .order("nome"),
+      supabase.from("corretores").select("id,nome,usuario_id").eq("tenant_id",usuario.tenant_id).order("nome"),
       obterSiteUrl(),
     ]);
-  const erroConsulta = [membros, categorias, convites, colaboradores].some(
+  const erroConsulta = [membros, categorias, convites, colaboradores, corretores].some(
     (r) => r.error,
   );
   if (erroConsulta)
@@ -75,6 +76,7 @@ export default async function MembrosPage({
         </p>
       )}
       <UsuariosAcessos
+        corretores={corretores.data ?? []}
         meuId={user.id}
         membros={(membros.data ?? []).map((m) => ({
           ...m,
