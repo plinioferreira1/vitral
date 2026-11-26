@@ -16,7 +16,7 @@ export type LinhaCaucao = {
   locador: string;
 };
 
-/** Contratos com caução (RLS: só quem vê a Locação) e o resumo do que manter em caixa. */
+/** Contratos com caução (RLS) e soma dos valores contratuais, não dos depósitos comprovados. */
 export async function carregarCaucoes(supabase: SupabaseClient<Database>, tenantId: string) {
   const { data } = await supabase
     .from("contratos_locacao")
@@ -58,7 +58,7 @@ export function csvCaucoes(r: ReturnType<typeof resumoCaucoes<LinhaCaucao>>): st
       valor(c.caucao_valor_centavos),
     ]),
     [],
-    ["Total em caixa (contratos ativos)", "", "", "", "", "", "", valor(r.totalCentavos)],
+    ["Total contratual previsto (contratos ativos)", "", "", "", "", "", "", valor(r.totalCentavos)],
   ];
   return "﻿" + linhas.map((l) => l.map((v) => esc(String(v))).join(";")).join("\r\n");
 }
