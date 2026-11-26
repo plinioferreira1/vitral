@@ -18,6 +18,26 @@ export function filtroNegociacoes(valor: unknown): FiltroNegociacoes {
     ? valor
     : "em_andamento";
 }
+export type FiltroAcompanhamento = "todos" | "vencidas" | "hoje" | "sem_data";
+export function filtroAcompanhamento(valor: unknown): FiltroAcompanhamento {
+  return valor === "vencidas" || valor === "hoje" || valor === "sem_data" ? valor : "todos";
+}
+/** Classificação operacional baseada em datas ISO locais, sem interpretação UTC. */
+export function classificarAcompanhamento(
+  n: Pick<Negociacao, "situacao" | "data_acompanhamento">,
+  hoje: string,
+): FiltroAcompanhamento {
+  if (n.situacao !== "em_andamento") return "todos";
+  if (!n.data_acompanhamento) return "sem_data";
+  if (n.data_acompanhamento < hoje) return "vencidas";
+  if (n.data_acompanhamento === hoje) return "hoje";
+  return "todos";
+}
+export function filtrarAcompanhamento(
+  lista: Negociacao[], filtro: FiltroAcompanhamento, hoje: string,
+) {
+  return filtro === "todos" ? lista : lista.filter(n => classificarAcompanhamento(n, hoje) === filtro);
+}
 export function mesValido(valor: unknown, padrao: string): string {
   return typeof valor === "string" &&
     /^\d{4}-(0[1-9]|1[0-2])$/.test(valor) &&
