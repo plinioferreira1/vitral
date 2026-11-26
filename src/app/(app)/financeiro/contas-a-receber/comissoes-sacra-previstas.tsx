@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { BotaoEnviar } from "@/components/botao-enviar";
-import { publicarComissaoSacra } from "./comissoes-actions";
+import { publicarComissaoSacra, vincularComissaoSacraRecebida } from "./comissoes-actions";
 
 const moeda = (valor: number) => Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const formatarData = (data: string) => data.split("-").reverse().join("/");
@@ -110,6 +110,21 @@ export async function ComissoesSacraPrevistas() {
                         Conferir esse recebimento
                       </Link>.
                       Não foi vinculado automaticamente.
+                      <form action={vincularComissaoSacraRecebida}
+                        className="mt-2 flex flex-wrap items-end gap-2 border-t border-amber-200 pt-2">
+                        <input type="hidden" name="comissao_id" value={p.id} />
+                        <input type="hidden" name="lancamento_id" value={credito.id} />
+                        <label className="inline-flex items-start gap-2 text-xs">
+                          <input type="checkbox" name="confirmo_identidade" value="sim" required
+                            className="mt-1 h-4 w-4" />
+                          Confirmo, após conferir comprovante e pagador, que este crédito corresponde a esta parcela específica.
+                        </label>
+                        <BotaoEnviar
+                          className="min-h-11 rounded-lg border border-amber-700 px-3 py-2 text-xs font-semibold text-amber-950 hover:bg-amber-100"
+                          textoEnviando="Vinculando…">
+                          Vincular crédito já recebido (sem nova baixa)
+                        </BotaoEnviar>
+                      </form>
                     </p>
                   ))}
                   {p.lancamento_id ? (
