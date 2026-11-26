@@ -68,11 +68,11 @@ export function DiaCelula({
   return (
     <div
       ref={ref}
-      className={`relative border-b border-r border-border p-2 transition last:border-r-0 hover:bg-background/70 ${
-        compacto ? "min-h-[72px]" : "min-h-[104px]"
+      className={`relative border-b border-r border-border p-1 transition last:border-r-0 hover:bg-background/70 sm:p-2 ${
+        compacto ? "min-h-[64px] sm:min-h-[72px]" : "min-h-[104px]"
       } ${foraDoMes ? "bg-background/40" : "bg-surface"}`}
     >
-      <div className="mb-1.5 flex items-center justify-between gap-2">
+      <div className="mb-1 flex items-center justify-between gap-1 sm:mb-1.5">
         <p
           className={`text-xs ${
             isToday
@@ -88,7 +88,7 @@ export function DiaCelula({
           <button
             type="button"
             onClick={() => setAberto(true)}
-            className="rounded-full bg-background px-1.5 py-0.5 text-[10px] font-semibold text-ink-muted hover:text-ink"
+            className={`rounded-full bg-background px-1.5 py-0.5 text-[10px] font-semibold text-ink-muted hover:text-ink ${compacto ? "hidden sm:block" : ""}`}
             aria-label={`Abrir ${eventos.length} evento${eventos.length > 1 ? "s" : ""} desse dia`}
           >
             {eventos.length}
@@ -101,12 +101,12 @@ export function DiaCelula({
           type="button"
           onClick={() => setAberto((v) => !v)}
           aria-label={`${eventos.length} evento${eventos.length > 1 ? "s" : ""} nesse dia`}
-          className="w-full space-y-1 text-left"
+          className={`w-full space-y-1 text-left ${compacto ? "flex min-h-11 items-center justify-center sm:block" : ""}`}
         >
           {eventosVisiveis.map((e) => (
             <span
               key={e.id}
-              className={`flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] leading-none ${
+              className={`flex items-center gap-1.5 rounded-md px-1.5 py-1 text-[11px] leading-none ${compacto ? "justify-center px-0 sm:justify-start sm:px-1.5" : ""} ${
                 e.concluida
                   ? "bg-stone-100 text-stone-500"
                   : e.recorrente
@@ -119,11 +119,11 @@ export function DiaCelula({
                   e.recorrente ? "bg-violet-400" : CATEGORIA_PONTO[e.categoria]
                 }`}
               />
-              <span className="truncate">{tituloCurto(e.titulo)}</span>
+              <span className={`${compacto ? "hidden sm:inline" : ""} truncate`}>{tituloCurto(e.titulo)}</span>
             </span>
           ))}
           {eventosOcultos > 0 && (
-            <span className="inline-flex rounded-md bg-background px-1.5 py-1 text-[10px] font-medium text-ink-muted">
+            <span className={`rounded-md bg-background px-1.5 py-1 text-[10px] font-medium text-ink-muted ${compacto ? "hidden sm:inline-flex" : "inline-flex"}`}>
               +{eventosOcultos} mais
             </span>
           )}
@@ -139,7 +139,7 @@ export function DiaCelula({
             aria-hidden="true"
           />
           {/* cartão centralizado na tela */}
-          <div className="fixed inset-x-4 top-1/2 z-30 mx-auto max-h-[76vh] w-full max-w-lg -translate-y-1/2 overflow-hidden rounded-xl border border-border/60 bg-surface p-4 shadow-xl">
+          <div className="fixed inset-x-4 top-1/2 z-30 mx-auto max-h-[76vh] w-auto max-w-lg -translate-y-1/2 overflow-hidden rounded-xl border border-border/60 bg-surface p-4 shadow-xl">
             <div className="mb-3 flex items-start justify-between gap-3 px-1">
               <div>
                 <p className="text-sm font-semibold text-ink">
@@ -152,7 +152,7 @@ export function DiaCelula({
               <button
                 type="button"
                 onClick={() => setAberto(false)}
-                className="rounded-md px-2 py-1 text-ink-muted hover:bg-background hover:text-ink"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md px-2 py-1 text-ink-muted hover:bg-background hover:text-ink"
                 aria-label="Fechar"
               >
                 ✕

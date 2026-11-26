@@ -42,11 +42,11 @@ export default async function PropostasPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
         <CabecalhoPagina titulo="Propostas de compra" descricao="Proposta de compra — envie um link ou assine na hora, durante a visita." />
         <Link
           href="/propostas/nova"
-          className="rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+          className="inline-flex min-h-11 items-center justify-center rounded-md bg-brand px-4 py-2 text-sm font-medium text-white hover:opacity-90"
         >
           + Nova proposta
         </Link>
@@ -57,7 +57,7 @@ export default async function PropostasPage() {
           <div className="flex justify-end">
             <BotaoComConfirmacao
               mensagem="Apagar as propostas selecionadas? Essa ação não pode ser desfeita."
-              className="rounded-md border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
+              className="min-h-11 rounded-md border border-rose-200 px-4 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50"
             >
               Apagar selecionadas
             </BotaoComConfirmacao>
@@ -73,10 +73,40 @@ export default async function PropostasPage() {
               .
             </p>
           ) : (
-            <table className="w-full text-sm">
+            <>
+            <ul className="divide-y divide-border md:hidden" aria-label="Propostas de compra">
+              {rows.map((p) => (
+                <li key={p.id} className="space-y-3 p-4">
+                  <div className="flex items-start gap-3">
+                    <label className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border" title="Selecionar para exclusão">
+                      <input type="checkbox" name="ids" value={p.id} aria-label={`Selecionar proposta de ${p.clientes?.nome ?? "cliente não informado"}`} className="h-5 w-5 accent-brand"/>
+                    </label>
+                    <div className="min-w-0 flex-1">
+                      <Link href={`/propostas/${p.id}`} className="block break-words text-base font-semibold leading-snug text-brand hover:underline">
+                        {p.imoveis?.endereco ?? "Imóvel não informado"}
+                      </Link>
+                      <p className="mt-1 break-words text-sm text-ink-muted">{p.clientes?.nome ?? "Proponente não informado"}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-base font-semibold tabular-nums text-ink">{brl(p.valor_total)}</span>
+                    <span className={`rounded-full border px-2.5 py-1 text-xs font-medium ${STATUS_COR[p.status] ?? "border-border text-ink-muted"}`}>
+                      {STATUS_LABEL[p.status] ?? p.status}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/60 pt-2">
+                    <p className="min-w-0 break-words text-xs text-ink-muted">Criado por {p.usuarios?.nome ?? "—"}</p>
+                    {p.status === "pendente" && (
+                      <Link href={`/propostas/${p.id}/editar`} className="inline-flex min-h-11 items-center rounded-md px-3 text-sm font-semibold text-brand hover:bg-background">Editar proposta</Link>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <table className="hidden w-full text-sm md:table">
               <thead>
                 <tr className="border-b border-border bg-background text-left text-xs text-ink-muted">
-                  <th className="w-8 px-5 py-3"></th>
+                  <th className="w-8 px-5 py-3"><span className="sr-only">Selecionar</span></th>
                   <th className="px-5 py-3 font-medium">Imóvel</th>
                   <th className="px-5 py-3 font-medium">Proponente</th>
                   <th className="px-5 py-3 font-medium">Valor</th>
@@ -88,7 +118,7 @@ export default async function PropostasPage() {
                 {rows.map((p) => (
                   <tr key={p.id} className="transition hover:bg-background">
                     <td className="px-5 py-3">
-                      <input type="checkbox" name="ids" value={p.id} className="accent-brand" />
+                      <input type="checkbox" name="ids" value={p.id} aria-label={`Selecionar proposta de ${p.clientes?.nome ?? "cliente não informado"}`} className="h-5 w-5 accent-brand" />
                     </td>
                     <td className="px-5 py-3">
                       <Link href={`/propostas/${p.id}`} className="font-medium text-ink hover:underline">
@@ -119,6 +149,7 @@ export default async function PropostasPage() {
                 ))}
               </tbody>
             </table>
+            </>
           )}
         </div>
       </form>
