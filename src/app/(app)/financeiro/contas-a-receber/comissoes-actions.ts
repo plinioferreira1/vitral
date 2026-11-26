@@ -14,9 +14,9 @@ import { createClient } from "@/lib/supabase/server";
 export async function publicarComissaoSacra(formData: FormData) {
   const id = String(formData.get("comissao_id") ?? "").trim();
   const vencimento = String(formData.get("vencimento") ?? "").trim();
-  const data = new Date(vencimento + "T12:00:00Z");
+  const dataVencimento = new Date(vencimento + "T12:00:00Z");
   const dataValida = /^\d{4}-\d{2}-\d{2}$/.test(vencimento) &&
-    !Number.isNaN(data.getTime()) && data.toISOString().slice(0, 10) === vencimento;
+    !Number.isNaN(dataVencimento.getTime()) && dataVencimento.toISOString().slice(0, 10) === vencimento;
 
   if (!/^[0-9a-f]{8}-[0-9a-f-]{27}$/i.test(id) || !dataValida) {
     await avisar("erro", "Informe uma data válida para a parcela da comissão.");
