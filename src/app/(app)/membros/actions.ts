@@ -481,8 +481,15 @@ export async function vincularCorretor(formData: FormData) {
  const { data: corretor } = await supabase.from("corretores").select("id,usuario_id").eq("id",corretorId).eq("tenant_id",tenantId).maybeSingle();
  if (!corretor || corretor.usuario_id !== anterior) { await avisar("erro", "O vínculo foi alterado ou o corretor não foi encontrado. Atualize a página."); return; }
  if (usuarioId) {
-  const { data: alvo } = await supabase.from("usuarios").select("id").eq("id",usuarioId).eq("tenant_id",tenantId).eq("nivel_acesso","corretor").eq("ativo",true).maybeSingle();
-  if (!alvo) { await avisar("erro","Escolha uma conta ativa de corretor da mesma empresa."); return; }
+  // Corretagem pode ser função acumulada com diretor, gerente ou supervisor:
+  // o nível principal de acesso administrativo permanece inalterado.
+  const { data: alvo } = await supabase.from("usuarios")
+    .select("id,nivel_acesso").eq("id",usuarioId).eq("tenant_id",tenantId)
+    .eq("ativo",true).maybeSingle();
+  if (!alvo || alvo.nivel_acesso === "social_media") {
+    await avisar("erro","Escolha uma conta ativa e habilitada para a operação imobiliária.");
+    return;
+  }
  }
  let operacao = supabase.from("corretores").update({ usuario_id: usuarioId }).eq("id",corretorId).eq("tenant_id",tenantId);
  operacao = anterior ? operacao.eq("usuario_id",anterior) : operacao.is("usuario_id",null);
