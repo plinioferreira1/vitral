@@ -6,7 +6,7 @@ import { entrar, cadastrar, esqueciSenha } from "./actions";
 import { BotaoEnviar } from "@/components/botao-enviar";
 
 const inputClasse =
-  "w-full rounded-lg border border-border bg-surface px-3.5 py-3 text-sm text-ink outline-none transition placeholder:text-ink-muted/70 focus:border-brand focus:ring-2 focus:ring-brand/15";
+  "min-h-11 w-full rounded-lg border border-border bg-surface px-3.5 py-3 text-base sm:text-sm text-ink outline-none transition placeholder:text-ink-muted/70 focus:border-brand focus:ring-2 focus:ring-brand/15";
 
 const recursos = [
   {
@@ -62,7 +62,7 @@ export default async function LoginPage({
   return (
     <main className="min-h-screen bg-[#f6f1ea] text-ink">
       <div className="mx-auto grid min-h-screen w-full max-w-[1440px] lg:grid-cols-[1.06fr_0.94fr]">
-        <section className="relative overflow-hidden bg-[#4a0b10] px-6 py-8 text-white sm:px-10 lg:px-14">
+        <section className="relative hidden overflow-hidden bg-[#4a0b10] px-6 py-8 text-white lg:block lg:px-14">
           <div className="absolute inset-0 opacity-25 [background-image:linear-gradient(rgba(255,255,255,.09)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.09)_1px,transparent_1px)] [background-size:72px_72px]" />
           <div className="absolute -right-36 top-[16%] h-[30rem] w-[30rem] rounded-full border border-[#d7aa64]/10" />
           <div className="absolute -right-20 top-[22%] h-[22rem] w-[22rem] rounded-full border border-[#d7aa64]/10" />
@@ -114,7 +114,7 @@ export default async function LoginPage({
           </div>
         </section>
 
-        <section className="flex items-center justify-center px-5 py-10 sm:px-8 lg:px-12">
+        <section className="flex min-h-screen items-center justify-center px-4 py-6 sm:px-8 lg:px-12">
           <div className="w-full max-w-md">
             <div className="mb-7 flex items-center gap-3 lg:hidden">
               <Image src="/brand/vitral-icone-bordo-dourado.svg" alt="" width={44} height={44} className="h-11 w-11" />
@@ -150,8 +150,8 @@ export default async function LoginPage({
 
                   <form action={esqueciSenha} className="space-y-4">
                     <div>
-                      <label className="mb-1.5 block text-xs font-semibold text-ink-muted">E-mail</label>
-                      <input type="email" name="email" required className={inputClasse} placeholder="voce@empresa.com" />
+                      <label htmlFor="email-recuperacao" className="mb-1.5 block text-xs font-semibold text-ink-muted">E-mail</label>
+                      <input id="email-recuperacao" type="email" name="email" autoComplete="email" required className={inputClasse} placeholder="voce@empresa.com" />
                     </div>
                     <BotaoEnviar
                       className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-4 py-3 text-sm font-bold text-white shadow-sm transition hover:opacity-90"
@@ -199,13 +199,15 @@ export default async function LoginPage({
                       {modoCadastro && <input type="hidden" name="convite" value={params.convite} />}
                       {modoCadastro && (
                         <div>
-                          <label className="mb-1.5 block text-xs font-semibold text-ink-muted">Nome</label>
-                          <input name="nome" required className={inputClasse} placeholder="Seu nome" />
+                          <label htmlFor="nome-cadastro" className="mb-1.5 block text-xs font-semibold text-ink-muted">Nome</label>
+                          <input id="nome-cadastro" name="nome" autoComplete="name" required className={inputClasse} placeholder="Seu nome" />
                         </div>
                       )}
                       <div>
-                        <label className="mb-1.5 block text-xs font-semibold text-ink-muted">E-mail</label>
+                        <label htmlFor="email-acesso" className="mb-1.5 block text-xs font-semibold text-ink-muted">E-mail</label>
                         <input
+                          id="email-acesso"
+                          autoComplete="email"
                           type="email"
                           name="email"
                           required
@@ -217,7 +219,7 @@ export default async function LoginPage({
                       </div>
                       <div>
                         <div className="mb-1.5 flex items-center justify-between gap-3">
-                          <label className="block text-xs font-semibold text-ink-muted">Senha</label>
+                          <label htmlFor="senha-acesso" className="block text-xs font-semibold text-ink-muted">Senha</label>
                           {!modoCadastro && (
                             <a href="/login?modo=esqueci" className="text-xs font-semibold text-brand hover:underline">
                               Esqueci minha senha
@@ -225,6 +227,8 @@ export default async function LoginPage({
                           )}
                         </div>
                         <input
+                          id="senha-acesso"
+                          autoComplete={modoCadastro ? "new-password" : "current-password"}
                           type="password"
                           name="senha"
                           required
