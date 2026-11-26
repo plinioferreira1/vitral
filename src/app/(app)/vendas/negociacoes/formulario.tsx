@@ -113,6 +113,9 @@ export function FormularioNegociacao({
             className={INPUT_CLASS}
           >
             <option value="">A definir</option>
+            {n?.corretor_id && !corretores.some(c => c.id === n.corretor_id) && (
+              <option value={n.corretor_id}>Corretor do histórico (cadastro anterior)</option>
+            )}
             {corretores.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.nome}
