@@ -26,7 +26,10 @@ function Lista({ itens, vazio }: { itens: LinhaCaucao[]; vazio: string }) {
               {[c.locatario && `Locatário: ${c.locatario}`, c.numero && `Contrato ${c.numero}`, c.ativo ? `desde ${dataBR(c.vigencia_inicio)}` : `encerrado ${dataBR(c.data_encerramento ?? c.vigencia_fim)}`].filter(Boolean).join(" · ")}
             </p>
           </div>
-          <p className="text-sm font-semibold tabular-nums text-ink">{c.caucao_valor_centavos ? moeda(c.caucao_valor_centavos) : "Valor não informado"}</p>
+          <div className="flex flex-col items-end gap-1">
+            <p className="text-sm font-semibold tabular-nums text-ink">{c.caucao_valor_centavos ? moeda(c.caucao_valor_centavos) : "Valor não informado"}</p>
+            <Link href={`/locacao/caucoes/${c.id}`} className="text-xs font-semibold text-brand hover:underline">Histórico de movimentações</Link>
+          </div>
         </li>
       ))}
     </ul>
