@@ -25,7 +25,7 @@ describe("resumo matutino unificado",()=>{
     const html=montarHtmlResumoMatutino(dados);
     for (const secao of ["Financeiro","Minhas demandas","Processos e prazos","Lembretes de vendas"])
       expect(html).toContain(secao);
-    expect(html.replace(/\\u00a0/g, " ")).toContain("R$ 1.500,50");
+    expect(html.replace(/\u00a0/g, " ")).toContain("R$ 1.500,50");
     expect(html).toContain("Condomínio");
     expect(html).toContain("Casa Exemplo");
   });
