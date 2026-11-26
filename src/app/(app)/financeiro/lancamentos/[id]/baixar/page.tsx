@@ -62,7 +62,7 @@ export default async function BaixarLancamentoFinanceiroPage({
     supabase.from("financeiro_contas_bancarias").select("id, nome").eq("ativa", true).order("nome"),
     supabase
       .from("financeiro_baixas")
-      .select("id, valor, data, forma_pagamento, gerar_recibo, financeiro_contas_bancarias ( nome )")
+      .select("id, valor, data, forma_pagamento, gerar_recibo, extrato_linha_id, financeiro_contas_bancarias ( nome )")
       .eq("lancamento_id", id)
       .order("data"),
   ]);
@@ -84,6 +84,7 @@ export default async function BaixarLancamentoFinanceiroPage({
     data: string;
     forma_pagamento: string | null;
     gerar_recibo: boolean;
+    extrato_linha_id: string | null;
     financeiro_contas_bancarias: { nome: string } | null;
   }[];
   const quitado = lancamento.status === "pago";
@@ -119,15 +120,25 @@ export default async function BaixarLancamentoFinanceiroPage({
                     </Link>
                   )}
                 </div>
-                <form action={estornarBaixa}>
-                  <input type="hidden" name="baixa_id" value={b.id} />
-                  <BotaoComConfirmacao
-                    mensagem={`Estornar este ${acao} de ${brl(b.valor)}? O valor volta para o saldo da conta.`}
-                    className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+                {b.extrato_linha_id ? (
+                  <Link
+                    href="/financeiro/extratos"
+                    className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:border-brand hover:text-brand"
+                    title="Pagamento vinculado ao extrato. Desfaça a conciliação antes de estornar."
                   >
-                    Estornar
-                  </BotaoComConfirmacao>
-                </form>
+                    Ver conciliação
+                  </Link>
+                ) : (
+                  <form action={estornarBaixa}>
+                    <input type="hidden" name="baixa_id" value={b.id} />
+                    <BotaoComConfirmacao
+                      mensagem={`Estornar este ${acao} de ${brl(b.valor)}? O valor volta para o saldo da conta.`}
+                      className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-ink-muted hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+                    >
+                      Estornar
+                    </BotaoComConfirmacao>
+                  </form>
+                )}
               </div>
             ))}
           </div>

@@ -243,16 +243,31 @@ export async function estornarBaixa(formData: FormData) {
   const supabase = await createClient();
   const { data: baixa } = await supabase
     .from("financeiro_baixas")
-    .select("lancamento_id")
+    .select("lancamento_id, extrato_linha_id")
     .eq("id", baixaId)
     .single();
   if (!baixa) {
     await avisar("erro", "Pagamento não encontrado — talvez já tenha sido estornado.");
     return;
   }
+  // A baixa de um lançamento conciliado integra o histórico bancário.
+  // Apagá-la diretamente deixaria uma linha do OFX conciliada sem o pagamento.
+  if (baixa.extrato_linha_id) {
+    await avisar("erro", "Este pagamento está vinculado ao extrato bancário. Desfaça primeiro a conciliação na tela de extratos para estornar com segurança.");
+    return;
+  }
 
-  const apagou = await checar(supabase.from("financeiro_baixas").delete().eq("id", baixaId), "estornar o pagamento");
-  if (!apagou) return;
+  const { data: excluida, error: erroExclusao } = await supabase
+    .from("financeiro_baixas")
+    .delete()
+    .eq("id", baixaId)
+    .is("extrato_linha_id", null)
+    .select("id")
+    .maybeSingle();
+  if (erroExclusao || !excluida) {
+    await avisar("erro", "Não foi possível estornar. Confira se o pagamento ainda existe e se está desvinculado do extrato bancário.");
+    return;
+  }
 
   await recalcularStatusLancamento(supabase, baixa.lancamento_id);
   await avisar("sucesso", "Pagamento estornado. O lançamento voltou a ficar em aberto.");
