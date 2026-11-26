@@ -55,6 +55,6 @@ describe("planilha das cauções", () => {
     const linhas = csv.replace("﻿", "").split("\r\n");
     expect(linhas[1]).toBe('Ativo;1;"QE 13; Casa 1";Locatário;Locador;10/01/2026;09/01/2028;7400,00');
     expect(linhas[2].startsWith("Encerrado;2;")).toBe(true);
-    expect(linhas.at(-1)).toBe("Total em caixa (contratos ativos);;;;;;;7400,00");
+    expect(linhas.at(-1)).toBe("Total contratual previsto (contratos ativos);;;;;;;7400,00");
   });
 });
