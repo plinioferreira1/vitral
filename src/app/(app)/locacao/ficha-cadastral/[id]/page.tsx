@@ -10,7 +10,6 @@ import { BotaoComConfirmacao } from "@/components/botao-com-confirmacao";
 import { ROTULO_TIPO, pendencias, secoesVisiveis, tipoLocatario, valorExibido, type DadosFicha } from "@/lib/ficha-locacao/campos";
 import { checklistDocumentos } from "@/lib/ficha-locacao/documentos";
 import { createClient } from "@/lib/supabase/server";
-import { obterSiteUrl } from "@/lib/site-url";
 import { cancelarFichaLocacao, vincularFichaAoTitular } from "../actions";
 import { getUsuarioAtual, GESTORES } from "@/lib/usuario-atual";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -27,11 +26,11 @@ type Vinculada = { id: string; proponente_nome: string | null; tipo_locatario: s
 export default async function DetalheFichaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient() as unknown as SupabaseClient;
-  const [{ data: ficha }, { data: documentos }, siteUrl] = await Promise.all([
+  const [{ data: ficha }, { data: documentos }] = await Promise.all([
     supabase.from("fichas_cadastrais_locacao").select("*").eq("id", id).single(),
     supabase.from("ficha_locacao_documentos").select("*").eq("ficha_id", id).order("criado_em"),
-    obterSiteUrl(),
   ]);
+  const siteUrl = "https://usevitral.site";
   if (!ficha) notFound();
   const { usuario } = await getUsuarioAtual();
   const podeVincular = !!usuario && GESTORES.includes(usuario.nivel_acesso);
