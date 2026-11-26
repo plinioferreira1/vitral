@@ -17,11 +17,11 @@ export function escaparHtmlEmail(valor: unknown): string {
 }
 
 /** Cabeçalho com a marca oficial hospedada no próprio VITRAL; também funciona sem carregar imagens. */
-export function cabecalhoEmailSacra(area: string, titulo: string, subtitulo = ""): string {
+export function cabecalhoEmailSacra(area: string, titulo: string, subtitulo = "", marcaSistema = true): string {
   return `<tr><td style="background:#ffffff;padding:20px 26px;border-bottom:3px solid ${EMAIL_SACRA.dourado};">
     <table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr>
     <td align="left" style="vertical-align:middle;"><img src="${LOGO}" width="154" alt="Sacra Netimóveis" style="width:154px;max-width:100%;height:auto;display:block;border:0;color:${EMAIL_SACRA.vinho};font-size:14px;font-weight:700;" /></td>
-    <td align="right" style="vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:13px;letter-spacing:1px;font-weight:700;color:${EMAIL_SACRA.vinho};">VITRAL</td>
+    ${marcaSistema ? `<td align="right" style="vertical-align:middle;font-family:Arial,Helvetica,sans-serif;font-size:13px;letter-spacing:1px;font-weight:700;color:${EMAIL_SACRA.vinho};">VITRAL</td>` : ""}
     </tr></table></td></tr>
     <tr><td style="background:${EMAIL_SACRA.vinho};padding:24px 26px;">
     <div style="font-size:11px;line-height:16px;letter-spacing:1.2px;color:#F2D5A4;font-weight:700;text-transform:uppercase;">${escaparHtmlEmail(area)}</div>
@@ -30,9 +30,9 @@ export function cabecalhoEmailSacra(area: string, titulo: string, subtitulo = ""
     </td></tr>`;
 }
 
-export function rodapeEmailSacra(): string {
+export function rodapeEmailSacra(texto?: string): string {
   return `<tr><td style="padding:19px 26px;background:#ffffff;border-top:1px solid ${EMAIL_SACRA.borda};text-align:center;font-family:Arial,Helvetica,sans-serif;color:${EMAIL_SACRA.secundario};font-size:11px;line-height:18px;">
-    VITRAL · Gestão de Processos Inteligente<br/>Sacra Netimóveis · Mensagem automática
+    ${texto ?? "VITRAL · Gestão de Processos Inteligente<br/>Sacra Netimóveis · Mensagem automática"}
   </td></tr>`;
 }
 
@@ -42,14 +42,17 @@ export function botaoEmailSacra(texto: string, url: string): string {
   </td></tr></table>`;
 }
 
-/** Tabelas de apresentação e CSS inline são compatíveis com Gmail e Outlook. */
-export function layoutEmailSacra(area: string, titulo: string, conteudo: string, subtitulo = "", largura = 720): string {
+/**
+ * Tabelas de apresentação e CSS inline são compatíveis com Gmail e Outlook.
+ * `paraCliente`: e-mail que sai para clientes — sem a marca VITRAL e com rodapé da Sacra.
+ */
+export function layoutEmailSacra(area: string, titulo: string, conteudo: string, subtitulo = "", largura = 720, paraCliente = false): string {
   return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
   <body style="margin:0;padding:0;background:${EMAIL_SACRA.fundo};">
   <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${EMAIL_SACRA.fundo};font-family:Arial,Helvetica,sans-serif;color:${EMAIL_SACRA.texto};">
   <tr><td align="center" style="padding:24px 12px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:${largura}px;background:#ffffff;border:1px solid ${EMAIL_SACRA.borda};border-radius:12px;overflow:hidden;">
-  ${cabecalhoEmailSacra(area,titulo,subtitulo)}
+  ${cabecalhoEmailSacra(area,titulo,subtitulo,!paraCliente)}
   <tr><td style="padding:24px 26px;font-size:14px;line-height:22px;">${conteudo}</td></tr>
-  ${rodapeEmailSacra()}
+  ${rodapeEmailSacra(paraCliente ? "Sacra Netimóveis · Brasília/DF" : undefined)}
   </table></td></tr></table></body></html>`;
 }
