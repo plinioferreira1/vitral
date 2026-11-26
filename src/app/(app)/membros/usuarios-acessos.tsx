@@ -662,6 +662,7 @@ export function UsuariosAcessos({
                   nivelInicial={m.nivel_acesso}
                   categoriasIniciais={m.categorias}
                   corretores={corretores}
+                  nomeUsuario={m.nome}
                   aoSalvar={() => detalheRef.current?.close()}
                 />
                 {m.id === meuId && (
