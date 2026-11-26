@@ -174,6 +174,26 @@ export async function atualizarCategoriasMembro(formData: FormData) {
     redirect(`/membros?erro=${encodeURIComponent(error.message)}`);
   }
 
+  // Associação profissional opcional, separada do nível administrativo.
+  // Só aceita um cadastro ainda sem usuário e pertencente à mesma empresa.
+  const corretorAdicionalId = String(formData.get("corretor_adicional_id") ?? "").trim();
+  if (corretorAdicionalId) {
+    const admin = createAdminClient();
+    const { data: vinculo, error: erroVinculo } = await admin
+      .from("corretores")
+      .update({ usuario_id: usuarioId })
+      .eq("id", corretorAdicionalId)
+      .eq("tenant_id", tenantId)
+      .is("usuario_id", null)
+      .select("id")
+      .maybeSingle();
+    if (erroVinculo || !vinculo) {
+      revalidatePath("/membros");
+      await avisar("erro", "O perfil foi atualizado, mas o vínculo de corretor não foi salvo. Confira se o cadastro já foi vinculado a outra conta.");
+      return false;
+    }
+    revalidatePath("/minhas-vendas");
+  }
   revalidatePath("/membros");
   revalidatePath("/", "layout");
   await avisar("sucesso", "Acesso atualizado.");
@@ -481,8 +501,15 @@ export async function vincularCorretor(formData: FormData) {
  const { data: corretor } = await supabase.from("corretores").select("id,usuario_id").eq("id",corretorId).eq("tenant_id",tenantId).maybeSingle();
  if (!corretor || corretor.usuario_id !== anterior) { await avisar("erro", "O vínculo foi alterado ou o corretor não foi encontrado. Atualize a página."); return; }
  if (usuarioId) {
-  const { data: alvo } = await supabase.from("usuarios").select("id").eq("id",usuarioId).eq("tenant_id",tenantId).eq("nivel_acesso","corretor").eq("ativo",true).maybeSingle();
-  if (!alvo) { await avisar("erro","Escolha uma conta ativa de corretor da mesma empresa."); return; }
+  // Corretagem pode ser função acumulada com diretor, gerente ou supervisor:
+  // o nível principal de acesso administrativo permanece inalterado.
+  const { data: alvo } = await supabase.from("usuarios")
+    .select("id,nivel_acesso").eq("id",usuarioId).eq("tenant_id",tenantId)
+    .eq("ativo",true).maybeSingle();
+  if (!alvo || alvo.nivel_acesso === "social_media") {
+    await avisar("erro","Escolha uma conta ativa e habilitada para a operação imobiliária.");
+    return;
+  }
  }
  let operacao = supabase.from("corretores").update({ usuario_id: usuarioId }).eq("id",corretorId).eq("tenant_id",tenantId);
  operacao = anterior ? operacao.eq("usuario_id",anterior) : operacao.is("usuario_id",null);

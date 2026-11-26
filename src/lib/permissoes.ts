@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 export interface PermissoesUsuario {
   ehCorretor: boolean;
+  temPapelCorretor?: boolean;
   ehDiretor?: boolean;
   ehSocialMedia: boolean;
   nivelComAcessoTotal: boolean;
@@ -17,6 +18,14 @@ export async function getPermissoesUsuario(
   nivelAcesso: string
 ): Promise<PermissoesUsuario> {
   const ehCorretor = nivelAcesso === "corretor";
+  // Vínculo profissional é independente do nível administrativo.
+  // Corretores com nível principal "corretor" já têm essa função.
+  let temPapelCorretor = ehCorretor;
+  if (!ehCorretor) {
+    const { data: vinculo } = await supabase
+      .from("corretores").select("id").eq("usuario_id", userId).limit(1);
+    temPapelCorretor = !!vinculo?.length;
+  }
   const ehSocialMedia = nivelAcesso === "social_media";
   const nivelComAcessoTotal = ["diretor", "gerente", "auxiliar"].includes(nivelAcesso);
   const podeConfigurar = ["diretor", "gerente"].includes(nivelAcesso);
@@ -32,6 +41,7 @@ export async function getPermissoesUsuario(
 
   return {
     ehCorretor,
+    temPapelCorretor,
     ehDiretor: nivelAcesso === "diretor",
     ehSocialMedia,
     nivelComAcessoTotal,
