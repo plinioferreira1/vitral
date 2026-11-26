@@ -38,6 +38,7 @@ import { CartaoIndicador } from "@/components/cartao-indicador";
 import { BotaoEnviar } from "@/components/botao-enviar";
 import { SecaoCondominio } from "../debitos/_componentes/secao-condominio";
 import { DocumentosContrato } from "@/components/locacao/documentos-contrato";
+import { CampoGarantia } from "@/components/locacao/campo-garantia";
 import { EmailsContrato } from "@/components/locacao/emails-contrato";
 
 const MESES = [
@@ -83,6 +84,8 @@ function calcularEstadoVisual(
   const hoje = hojeISO();
   return vencimento < hoje ? "vencido" : "em_dia";
 }
+
+const formatarCentavosBR = (c: number) => (c / 100).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 export default async function ContratoLocacaoPage({
   params,
@@ -261,12 +264,12 @@ export default async function ContratoLocacaoPage({
             <p className="text-xs font-medium text-ink-muted">Inscrição IPTU/TLP</p>
             <p className="mt-1 text-sm text-ink">{c.iptu_inscricao??"—"}</p>
           </div>
-          {(c.vigencia_inicio||c.vigencia_fim||c.aluguel_valor!==null)&&
+          {(c.vigencia_inicio||c.vigencia_fim||c.aluguel_valor!==null||c.garantia_locaticia)&&
             <div className="sm:col-span-2 grid gap-3 rounded-xl bg-background p-3 sm:grid-cols-3">
               <div><p className="text-xs text-ink-muted">Vigência</p><p className="mt-1 text-sm font-medium text-ink">{dataContratoBR(c.vigencia_inicio)} até {dataContratoBR(c.vigencia_fim)}</p></div>
               <div><p className="text-xs text-ink-muted">Aluguel mensal</p><p className="mt-1 text-sm font-medium text-ink">{valorContratoBR(c.aluguel_valor)}</p></div>
               <div><p className="text-xs text-ink-muted">Vencimento</p><p className="mt-1 text-sm font-medium text-ink">{c.aluguel_dia_vencimento?`Dia ${c.aluguel_dia_vencimento}`:"—"}</p></div>
-              <div><p className="text-xs text-ink-muted">Garantia</p><p className="mt-1 text-sm font-medium text-ink">{c.garantia_locaticia||"Não cadastrada"}</p></div>
+              <div><p className="text-xs text-ink-muted">Garantia</p><p className="mt-1 text-sm font-medium text-ink">{c.garantia_locaticia||"Não cadastrada"}{c.garantia_locaticia==="Caução"&&` · ${c.caucao_valor_centavos?formatarCentavosBR(c.caucao_valor_centavos):"valor não informado"}`}</p></div>
               <div><p className="text-xs text-ink-muted">Desconto de pontualidade</p><p className="mt-1 text-sm font-medium text-ink">{valorContratoBR(c.desconto_pontualidade)}</p></div>
               <div><p className="text-xs text-ink-muted">Primeiro vencimento</p><p className="mt-1 text-sm font-medium text-ink">{dataContratoBR(c.primeiro_aluguel_vencimento)}</p></div>
             </div>}
@@ -556,11 +559,7 @@ export default async function ContratoLocacaoPage({
                 <input type="number" min="0" step="0.01" name="desconto_pontualidade"
                   defaultValue={c.desconto_pontualidade??""} className={`${INPUT_CLASS} mt-1`}/>
               </label>
-              <label className="sm:col-span-2 text-xs font-medium text-ink-muted">Garantia locatícia
-                <input name="garantia_locaticia" defaultValue={c.garantia_locaticia??""}
-                  placeholder="Ex.: Fiador, Seguro Fiança, Título de Capitalização"
-                  className={`${INPUT_CLASS} mt-1`}/>
-              </label>
+              <CampoGarantia garantia={c.garantia_locaticia} caucaoCentavos={c.caucao_valor_centavos}/>
               <label className="sm:col-span-3 text-xs font-medium text-ink-muted">Link do contrato no Google Drive
                 <input type="url" name="documento_origem_url" defaultValue={c.documento_origem_url??""}
                   placeholder="https://drive.google.com/..." className={`${INPUT_CLASS} mt-1`}/>

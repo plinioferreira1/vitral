@@ -1435,6 +1435,7 @@ export type Database = {
           aluguel_dia_vencimento: number | null
           aluguel_valor: number | null
           ativo: boolean
+          caucao_valor_centavos: number | null
           condominio_administradora: string | null
           condominio_bloco: string | null
           condominio_codigo_unidade: string | null
@@ -1491,6 +1492,7 @@ export type Database = {
           aluguel_dia_vencimento?: number | null
           aluguel_valor?: number | null
           ativo?: boolean
+          caucao_valor_centavos?: number | null
           condominio_administradora?: string | null
           condominio_bloco?: string | null
           condominio_codigo_unidade?: string | null
@@ -1547,6 +1549,7 @@ export type Database = {
           aluguel_dia_vencimento?: number | null
           aluguel_valor?: number | null
           ativo?: boolean
+          caucao_valor_centavos?: number | null
           condominio_administradora?: string | null
           condominio_bloco?: string | null
           condominio_codigo_unidade?: string | null
