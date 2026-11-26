@@ -20,27 +20,27 @@ export function AvisosDeEntrada({usuarioId,notificacoes,demandas}:{
 }){
  const [aberto,setAberto]=useState(false);
  const dia=hojeBR();
- const chave="vitral-avisos-inicio:"+usuarioId+":"+dia;
- const assinatura=notificacoes.map(n=>n.id).sort().join("|")+"#"+demandas.map(d=>d.id).sort().join("|");
+ // Uma vez por dia por pessoa (neste navegador): na primeira tela aberta do dia.
+ // Fica marcado assim que aparece, para não voltar em outra aba, ao recarregar
+ // ou quando chega um aviso novo — esses ficam no sino.
+ const chave="vitral-avisos-inicio:"+usuarioId;
  useEffect(()=>{
   if(!notificacoes.length&&!demandas.length)return;
+  let jaViuHoje=false;
+  try{jaViuHoje=localStorage.getItem(chave)===dia;}catch{jaViuHoje=false;}
+  if(jaViuHoje)return;
   const t=window.setTimeout(()=>{
-   try{if(sessionStorage.getItem(chave)!==assinatura)setAberto(true);}
-   catch{setAberto(true);}
+   setAberto(true);
+   try{localStorage.setItem(chave,dia);}catch{}
   },400);
   return ()=>window.clearTimeout(t);
- },[chave,assinatura,notificacoes.length,demandas.length]);
- const fechar=()=>{
-  setAberto(false);
-  try{sessionStorage.setItem(chave,assinatura);}catch{}
- };
+ },[chave,dia,notificacoes.length,demandas.length]);
+ const fechar=()=>setAberto(false);
  useEffect(()=>{
   if(!aberto)return;
   const esc=(e:KeyboardEvent)=>{if(e.key==="Escape")fechar();};
   document.addEventListener("keydown",esc);
   return ()=>document.removeEventListener("keydown",esc);
- // fechar usa somente os valores desta renderização.
- // eslint-disable-next-line react-hooks/exhaustive-deps
  },[aberto]);
  if(!aberto)return null;
  const vencidas=demandas.filter(d=>d.prazo&&d.prazo<dia);
