@@ -1,4 +1,5 @@
 import { PainelLancamentos } from "../painel-lancamentos";
+import { ComissoesSacraPrevistas } from "./comissoes-sacra-previstas";
 
 export default async function ContasAReceberPage({
   searchParams,
@@ -19,5 +20,10 @@ export default async function ContasAReceberPage({
   }>;
 }) {
   const params = await searchParams;
-  return <PainelLancamentos tipo="receita" searchParams={params} />;
+  return (
+    <div className="space-y-6">
+      <ComissoesSacraPrevistas />
+      <PainelLancamentos tipo="receita" searchParams={params} />
+    </div>
+  );
 }
