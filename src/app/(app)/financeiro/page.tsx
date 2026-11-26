@@ -200,6 +200,23 @@ export default async function FinanceiroDashboardPage({
         </div>
       </div>
 
+      <nav aria-label="Áreas do financeiro" className="grid gap-3 sm:grid-cols-2">
+        <Link href="/financeiro/contas-a-pagar?referencia=todos&status=em_aberto#lista"
+          className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm font-bold text-rose-900 transition hover:bg-rose-100">
+          <span>Contas a pagar</span><ArrowUpRight size={18} />
+        </Link>
+        <Link href="/financeiro/contas-a-receber?referencia=todos&status=em_aberto#lista"
+          className="flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm font-bold text-emerald-900 transition hover:bg-emerald-100">
+          <span>Contas a receber</span><ArrowUpRight size={18} />
+        </Link>
+      </nav>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-surface px-4 py-3">
+        <p className="text-sm text-ink"><strong>Comissões da Sacra:</strong> parcelas lançadas individualmente para conciliação e baixa.</p>
+        <Link href="/financeiro/contas-a-receber#comissoes-sacra" className="text-sm font-semibold text-emerald-700 hover:underline">
+          Conferir comissões e dar baixa
+        </Link>
+      </div>
+
       <section aria-label="Prioridades financeiras" className="space-y-3">
         <div className="grid gap-3 lg:grid-cols-[1.7fr_1fr_1fr]">
           <Link
