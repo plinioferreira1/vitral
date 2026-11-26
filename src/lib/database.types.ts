@@ -8052,6 +8052,10 @@ export type Database = {
         Args: { p_id: string; p_vencimento: string }
         Returns: string
       }
+      financeiro_vincular_comissao_recebida: {
+        Args: { p_id: string; p_lancamento_id: string }
+        Returns: string
+      }
       add_member: {
         Args: {
           p_categorias: Database["public"]["Enums"]["categoria_processo"][]
