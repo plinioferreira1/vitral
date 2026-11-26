@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      financeiro_comissoes_previstas: {
+        Row: {
+          id: string
+          tenant_id: string
+          processo_id: string | null
+          codigo_referencia: string
+          imovel_nome: string
+          parcela_numero: number
+          parcelas_total: number
+          valor: number
+          competencia: string | null
+          condicao_pagamento: string
+          documento_url: string
+          observacoes: string | null
+          vencimento: string | null
+          lancamento_id: string | null
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          processo_id?: string | null
+          codigo_referencia: string
+          imovel_nome: string
+          parcela_numero: number
+          parcelas_total: number
+          valor: number
+          competencia?: string | null
+          condicao_pagamento: string
+          documento_url: string
+          observacoes?: string | null
+          vencimento?: string | null
+          lancamento_id?: string | null
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          processo_id?: string | null
+          codigo_referencia?: string
+          imovel_nome?: string
+          parcela_numero?: number
+          parcelas_total?: number
+          valor?: number
+          competencia?: string | null
+          condicao_pagamento?: string
+          documento_url?: string
+          observacoes?: string | null
+          vencimento?: string | null
+          lancamento_id?: string | null
+          criado_em?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financeiro_comissoes_previstas_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financeiro_comissoes_previstas_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: true
+            referencedRelation: "financeiro_lancamentos"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       caucao_movimentacoes: {
         Row: {
           id: string
@@ -7979,6 +8048,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      financeiro_publicar_comissao_prevista: {
+        Args: { p_id: string; p_vencimento: string }
+        Returns: string
+      }
       add_member: {
         Args: {
           p_categorias: Database["public"]["Enums"]["categoria_processo"][]
