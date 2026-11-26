@@ -58,8 +58,9 @@ export async function opcoesNegociacoes(
       .order("nome"),
     supabase
       .from("corretores")
-      .select("id,nome")
+      .select("id,nome,usuario_id")
       .eq("tenant_id", tenantId)
+      .not("usuario_id", "is", null)
       .order("nome"),
     supabase
       .from("modelos_processo")
@@ -76,6 +77,18 @@ export async function opcoesNegociacoes(
   if ([responsaveis, corretores, modelos, categorias].some((r) => r.error))
     throw new Error("Não foi possível carregar os cadastros de Vendas.");
   const usuariosVenda = new Set(categorias.data?.map((c) => c.usuario_id));
+  // Somente cadastros profissionais vinculados a uma conta ATIVA.
+  // Isto remove duplicidades e registros de teste, preservando os
+  // históricos existentes no banco de dados.
+  const ativos = new Set((responsaveis.data ?? []).map(u => u.id));
+  const corretoresUnicos = new Map<string, { id: string; nome: string }>();
+  for (const corretor of corretores.data ?? []) {
+    if (!corretor.usuario_id || !ativos.has(corretor.usuario_id)) continue;
+    const anterior = corretoresUnicos.get(corretor.usuario_id);
+    if (!anterior || corretor.nome.length > anterior.nome.length) {
+      corretoresUnicos.set(corretor.usuario_id, { id: corretor.id, nome: corretor.nome });
+    }
+  }
   return {
     responsaveis: (responsaveis.data ?? []).filter(
       (u) =>
@@ -83,7 +96,7 @@ export async function opcoesNegociacoes(
         (["supervisor", "gerente_locacao"].includes(u.nivel_acesso) &&
           usuariosVenda.has(u.id)),
     ),
-    corretores: corretores.data ?? [],
+    corretores: [...corretoresUnicos.values()].sort((a,b) => a.nome.localeCompare(b.nome, "pt-BR")),
     modelos: modelos.data ?? [],
   };
 }
