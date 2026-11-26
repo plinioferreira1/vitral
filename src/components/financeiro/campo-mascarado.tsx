@@ -4,6 +4,7 @@ import { useState } from "react";
 import { formatarCpfCnpj, formatarTelefone } from "@/lib/mascaras";
 
 type CampoMascaradoProps = {
+  id?: string;
   name: string;
   className: string;
   mask: "cpf_cnpj" | "telefone";
@@ -17,6 +18,7 @@ function aplicarMascara(mask: CampoMascaradoProps["mask"], valor: string) {
 }
 
 export function CampoMascarado({
+  id,
   name,
   className,
   mask,
@@ -28,11 +30,12 @@ export function CampoMascarado({
 
   return (
     <input
+      id={id}
       name={name}
       value={valor}
       onChange={(event) => setValor(aplicarMascara(mask, event.target.value))}
-      inputMode="numeric"
-      autoComplete="off"
+      inputMode={mask === "telefone" ? "tel" : "numeric"}
+      autoComplete={mask === "telefone" ? "tel" : "off"}
       placeholder={placeholder}
       required={required}
       className={className}

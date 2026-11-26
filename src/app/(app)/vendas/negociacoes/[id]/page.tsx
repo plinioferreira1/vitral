@@ -77,6 +77,9 @@ export default async function NegociacaoPage({
             <strong>Vendedor:</strong> {n.vendedor_nome || "Não informado"}
           </p>
           <p>
+            <strong>Código SAN:</strong> {n.codigo_san || "Não informado"}
+          </p>
+          <p>
             <strong>Responsável:</strong>{" "}
             {opcoes.responsaveis.find((r) => r.id === n.responsavel_id)?.nome ??
               "Responsável indisponível"}
