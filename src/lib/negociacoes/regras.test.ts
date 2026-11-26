@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   filtrarNegociacoes,
+  filtrarAcompanhamento,
+  classificarAcompanhamento,
+  filtroAcompanhamento,
   metricasNegociacoes,
   mesValido,
   podeEditarNegociacoes,
@@ -31,6 +34,27 @@ const n = (dados: Partial<Negociacao>): Negociacao => ({
   criado_em: "",
   atualizado_em: "",
   ...dados,
+});
+describe("acompanhamento operacional", () => {
+  it("separa vencidas, hoje, sem data e futuras sem afetar encerradas", () => {
+    const hoje = "2026-11-26";
+    const lista = [
+      n({ id: "v", data_acompanhamento: "2026-11-25" }),
+      n({ id: "h", data_acompanhamento: hoje }),
+      n({ id: "s", data_acompanhamento: null }),
+      n({ id: "f", data_acompanhamento: "2026-12-01" }),
+      n({ id: "p", situacao: "perdida", data_acompanhamento: "2026-11-01" }),
+    ];
+    expect(filtrarAcompanhamento(lista, "vencidas", hoje).map(n => n.id)).toEqual(["v"]);
+    expect(filtrarAcompanhamento(lista, "hoje", hoje).map(n => n.id)).toEqual(["h"]);
+    expect(filtrarAcompanhamento(lista, "sem_data", hoje).map(n => n.id)).toEqual(["s"]);
+    expect(filtrarAcompanhamento(lista, "todos", hoje)).toHaveLength(5);
+    expect(classificarAcompanhamento(lista[4], hoje)).toBe("todos");
+  });
+  it("não aceita filtro desconhecido", () => {
+    expect(filtroAcompanhamento("vencidas")).toBe("vencidas");
+    expect(filtroAcompanhamento("qualquer")).toBe("todos");
+  });
 });
 describe("métricas comerciais", () => {
   it("usa o encerramento no fuso brasileiro e mantém abertas fora do denominador", () => {
