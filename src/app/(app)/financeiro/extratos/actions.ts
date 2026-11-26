@@ -336,8 +336,33 @@ export async function desfazerLinha(fd: FormData) {
     .update({ status: "pendente", nota: null, tratado_por: null, tratado_em: null, lancamento_criado_id: null })
     .eq("id", linha.id);
   if (criado) {
-    const { data: restantes } = await supabase.from("financeiro_baixas").select("id").eq("lancamento_id", criado).limit(1);
-    if (!restantes?.length) await supabase.from("financeiro_lancamentos").delete().eq("id", criado);
+    const { data: restantes, error: erroLeitura } = await supabase
+      .from("financeiro_baixas").select("id").eq("lancamento_id", criado).limit(1);
+    if (erroLeitura) {
+      await avisar("erro", "O extrato foi reaberto, mas não foi possível conferir o lançamento gerado. Revise antes de continuar.");
+      revalidarFinanceiro();
+      return;
+    }
+    if (!restantes?.length) {
+      // A trigger proíbe excluir títulos quitados. Só o lançamento criado
+      // automaticamente pelo OFX (agora sem baixas e desvinculado) é reaberto
+      // antes de sua exclusão.
+      const { error: erroReabrir } = await supabase
+        .from("financeiro_lancamentos").update({ status: "pendente" })
+        .eq("id", criado).eq("tenant_id", sessao.tenantId);
+      if (erroReabrir) {
+        await avisar("erro", "O extrato foi reaberto, mas o lançamento gerado precisa de revisão manual.");
+        revalidarFinanceiro();
+        return;
+      }
+      const { error: erroExcluir } = await supabase.from("financeiro_lancamentos")
+        .delete().eq("id", criado).eq("tenant_id", sessao.tenantId);
+      if (erroExcluir) {
+        await avisar("erro", "O extrato foi reaberto, mas não foi possível excluir o lançamento gerado. Revise a conciliação.");
+        revalidarFinanceiro();
+        return;
+      }
+    }
   }
   await recalcularStatus(supabase, afetados.filter((id) => id !== criado));
   await avisar("sucesso", "Linha voltou para pendente.");

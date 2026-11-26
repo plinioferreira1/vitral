@@ -1,0 +1,35 @@
+name: Auditoria de integridade VITRAL
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: auditoria-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validacao:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Código
+        uses: actions/checkout@v4
+      - name: Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Dependências
+        run: npm ci
+      - name: Testes automatizados
+        run: npm test
+      - name: Tipos
+        run: npm run typecheck
+      - name: ESLint
+        run: npm run lint

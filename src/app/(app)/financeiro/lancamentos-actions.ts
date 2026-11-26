@@ -724,11 +724,19 @@ export async function excluirLancamento(formData: FormData) {
   const supabase = await createClient();
   const { data: atual } = await supabase
     .from("financeiro_lancamentos")
-    .select("id, recorrencia_id")
+    .select("id, recorrencia_id, status, financeiro_baixas(id)")
     .eq("id", id)
     .single();
   if (!atual) {
     await avisar("erro", "Lançamento não encontrado.");
+    return;
+  }
+
+  // Títulos quitados ou com baixas jamais podem ser excluídos por
+  // cascata. O estorno manual/OFX deve preceder a exclusão.
+  if (atual.status === "pago" || atual.status === "pago_parcial" ||
+      (atual.financeiro_baixas ?? []).length > 0) {
+    await avisar("erro", "Este lançamento tem histórico de pagamento. Estorne as baixas ou desfaça a conciliação antes de excluí-lo.");
     return;
   }
 
@@ -759,6 +767,19 @@ export async function excluirLancamento(formData: FormData) {
     );
   }
 
+  // Não depender apenas da seleção de recorrências: conferir TODOS
+  // os alvos imediatamente antes do DELETE. A trigger reforça contra
+  // concorrência entre conferência e exclusão.
+  const { data: conferidos, error: erroConferencia } = await supabase
+    .from("financeiro_lancamentos")
+    .select("id,status,financeiro_baixas(id)")
+    .in("id", ids);
+  if (erroConferencia || !conferidos || conferidos.length !== ids.length ||
+      conferidos.some(l => l.status === "pago" || l.status === "pago_parcial" ||
+        (l.financeiro_baixas ?? []).length > 0)) {
+    await avisar("erro", "A série contém lançamento pago ou com baixa. Nenhum registro foi excluído.");
+    return;
+  }
   const apagou = await checar(supabase.from("financeiro_lancamentos").delete().in("id", ids), "excluir");
 
   if (apagou) {
