@@ -7,7 +7,6 @@ export const GARANTIAS_LOCACAO = [
   "Caução",
   "Fiador",
   "Seguro Fiança (Loft)",
-  "CredPago",
   "CredAluga",
   "Garantia Investe (Loft)",
   "Título de Capitalização (Brasilcap)",
