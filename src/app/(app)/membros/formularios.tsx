@@ -22,14 +22,25 @@ export function FormularioAcesso({
   usuarioId,
   nivelInicial = "supervisor",
   categoriasIniciais = [],
+  corretores = [],
+  nomeUsuario = "",
   aoSalvar,
 }: {
   usuarioId?: string;
   nivelInicial?: NivelAcesso;
   categoriasIniciais?: CategoriaProcesso[];
+  corretores?: { id: string; nome: string; usuario_id: string | null }[];
+  nomeUsuario?: string;
   aoSalvar?: () => void;
 }) {
   const id = useId();
+  const primeiroNome = nomeUsuario.trim().split(/\s+/)[0]
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  const vinculosAtuais = usuarioId ? corretores.filter(c => c.usuario_id === usuarioId) : [];
+  const vinculosSugeridos = corretores.filter(c =>
+    !c.usuario_id && !!primeiroNome &&
+    c.nome.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().split(/\s+/)[0] === primeiroNome
+  );
   const [nivel, setNivel] = useState(nivelInicial);
   const [categorias, setCategorias] = useState(categoriasIniciais);
   const privilegiado = nivel === "diretor" || nivel === "gerente";
@@ -137,7 +148,7 @@ export function FormularioAcesso({
                   }
                   className="h-4 w-4 accent-brand"
                 />
-                {CATEGORIA_LABEL[c]}
+                {c === "financiamento" ? "Correspondente bancário / Financiamentos" : CATEGORIA_LABEL[c]}
               </label>
             ))}
           </div>
@@ -150,6 +161,40 @@ export function FormularioAcesso({
         categorias.map((c) => (
           <input key={c} type="hidden" name="categorias" value={c} />
         ))
+      )}
+      {usuarioId && (
+        <section className="space-y-3 rounded-xl border border-border p-4">
+          <h3 className="text-sm font-semibold text-ink">Funções adicionais</h3>
+          <p className="text-xs leading-5 text-ink-muted">
+            O cargo principal permanece acima. É possível acumular a função de corretor,
+            preservando as permissões administrativas e o acesso às próprias vendas e comissões.
+          </p>
+          <p className="text-sm text-ink">
+            Corretor: {vinculosAtuais.length
+              ? vinculosAtuais.map(c => c.nome).join(" · ")
+              : "Sem vínculo profissional"}
+          </p>
+          {vinculosSugeridos.length > 0 && (
+            <label className="block text-sm font-medium text-ink">
+              Vincular também ao cadastro de corretor
+              <select name="corretor_adicional_id" defaultValue="" className={`${INPUT_CLASS} mt-2`}>
+                <option value="">Não alterar</option>
+                {vinculosSugeridos.map(c => (
+                  <option key={c.id} value={c.id}>{c.nome}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          <p className="text-xs text-ink-muted">
+            Para vincular outros cadastros ou retirar vínculos, use
+            a seção “Função adicional: corretor” ao final de Usuários e Acessos.
+          </p>
+          {nivel === "supervisor" && (
+            <p className="text-xs text-ink-muted">
+              Para acumular a atuação de correspondente bancário, selecione Financiamentos nas áreas operacionais.
+            </p>
+          )}
+        </section>
       )}
       {!usuarioId && (
         <details className="rounded-lg border border-border px-3 py-3">
