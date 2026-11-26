@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { hojeISO } from "@/lib/data-br";
 import { formatarMoedaBR } from "@/lib/moeda";
-import { metricasNegociacoes } from "@/lib/negociacoes/regras";
+import { metricasNegociacoes, classificarAcompanhamento } from "@/lib/negociacoes/regras";
 import { CARD_CLASS, SECONDARY_BUTTON_CLASS } from "@/components/ui/styles";
 import { carregarNegociacoes } from "./dados";
 
@@ -29,6 +29,12 @@ export async function ResumoNegociacoes({
     );
   const mes = hojeISO().slice(0, 7);
   const m = metricasNegociacoes(lista, mes);
+  const hoje = hojeISO();
+  const pendencias = {
+    vencidas: lista.filter(n => classificarAcompanhamento(n, hoje) === "vencidas").length,
+    hoje: lista.filter(n => classificarAcompanhamento(n, hoje) === "hoje").length,
+    sem_data: lista.filter(n => classificarAcompanhamento(n, hoje) === "sem_data").length,
+  };
   const proximas = lista
     .filter((n) => n.situacao === "em_andamento")
     .sort((a, b) =>
@@ -102,6 +108,23 @@ export async function ResumoNegociacoes({
               ? "Sem encerramentos no mês"
               : "Convertidas ÷ encerradas no mês"}
           </p>
+        </Link>
+      </div>
+      <div className="grid gap-2 sm:grid-cols-3" aria-label="Acompanhamentos das negociações">
+        <Link href={`/vendas/negociacoes?mes=${mes}&situacao=em_andamento&acompanhamento=vencidas`}
+          className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-900 hover:border-rose-400">
+          <span className="block text-xs font-medium">Atrasadas</span>
+          <strong className="mt-1 block text-xl">{pendencias.vencidas}</strong>
+        </Link>
+        <Link href={`/vendas/negociacoes?mes=${mes}&situacao=em_andamento&acompanhamento=hoje`}
+          className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 hover:border-amber-400">
+          <span className="block text-xs font-medium">Para hoje</span>
+          <strong className="mt-1 block text-xl">{pendencias.hoje}</strong>
+        </Link>
+        <Link href={`/vendas/negociacoes?mes=${mes}&situacao=em_andamento&acompanhamento=sem_data`}
+          className="rounded-lg border border-border px-4 py-3 text-sm text-ink hover:border-brand">
+          <span className="block text-xs font-medium">Sem próximo contato</span>
+          <strong className="mt-1 block text-xl">{pendencias.sem_data}</strong>
         </Link>
       </div>
       {proximas.length > 0 ? (
