@@ -11,6 +11,7 @@ create table if not exists public.caucao_movimentacoes (
   data_movimento date not null,
   valor_centavos bigint not null check (valor_centavos > 0 and valor_centavos <= 100000000000),
   descricao text not null check (char_length(trim(descricao)) between 5 and 1000),
+  conta_referencia text check (conta_referencia is null or char_length(conta_referencia) <= 200),
   comprovante_url text check (comprovante_url is null or (char_length(comprovante_url) <= 2048 and comprovante_url ~ '^https://')),
   situacao text not null default 'pendente_conferencia' check (situacao = 'pendente_conferencia'),
   criado_por uuid not null references auth.users(id),
