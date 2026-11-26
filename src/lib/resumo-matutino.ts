@@ -72,7 +72,7 @@ export function montarHtmlResumoMatutino(r: ResumoMatutino): string {
     `<p>Bom dia, <strong>${esc(r.nome.split(/\s+/)[0] || "colaborador")}</strong>! Esta é a prévia de seu resumo de ${dataBR(r.dia)}.</p>
      <p style="background:#fff7ed;border:1px solid #fed7aa;padding:12px;border-radius:10px;font-size:12px">Versão de teste — os e-mails atuais permanecem ativos até a homologação.</p>
      ${financeiro}${demandas}${processos}${vendas}
-     <p style="margin-top:18px">${botaoEmailSacra("Abrir VITRAL", SITE)}</p>
+     <div style="margin-top:18px">${botaoEmailSacra("Abrir VITRAL", SITE)}</div>
      <p style="color:#746d68;font-size:12px">Demandas e lembretes são individuais; informações de gestão só aparecem para usuários com permissão. Notificações urgentes seguem independentes.</p>`,
     dataBR(r.dia) + " · Sacra Netimóveis");
 }
