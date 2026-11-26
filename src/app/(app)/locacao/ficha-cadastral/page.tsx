@@ -1,5 +1,4 @@
 import { BotaoCopiarLink } from "@/components/botao-copiar-link";
-import { obterSiteUrl } from "@/lib/site-url";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { createClient } from "@/lib/supabase/server";
 import { GESTORES, getUsuarioAtual } from "@/lib/usuario-atual";
@@ -8,7 +7,7 @@ import { ListaFichas, type FichaLista } from "./lista";
 
 export default async function FichasCadastraisLocacaoPage() {
   const supabase = await createClient() as unknown as SupabaseClient;
-  const siteUrl = await obterSiteUrl();
+  const siteUrl = "https://usevitral.site";
   const [{ data, error }, { usuario }] = await Promise.all([
     supabase.from("fichas_cadastrais_locacao")
       .select("id, proponente_nome, proponente_email, imovel_referencia, status, criado_em, tipo_locatario, numero_fiador, ficha_principal_id")
