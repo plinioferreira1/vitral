@@ -1,5 +1,8 @@
 -- Histórico operacional das cauções. NÃO representa extrato bancário conciliado.
 -- Não migra valores contratuais para depósitos nem gera entradas financeiras.
+alter table public.contratos_locacao
+  add constraint contratos_locacao_tenant_id_id_unique unique (tenant_id,id);
+
 create table if not exists public.caucao_movimentacoes (
   id uuid primary key default gen_random_uuid(),
   tenant_id uuid not null,
