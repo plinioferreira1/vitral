@@ -44,7 +44,11 @@ export default async function CaucoesPage() {
   const perms = await getPermissoesUsuario(supabase, user.id, usuario.nivel_acesso);
   if (!perms.temLocacao || perms.ehCorretor || perms.ehSocialMedia) redirect("/");
 
-  const r = await carregarCaucoes(supabase, usuario.tenant_id);
+  const [r, { count: pendentes }] = await Promise.all([
+    carregarCaucoes(supabase, usuario.tenant_id),
+    supabase.from("caucao_movimentacoes").select("id",{ count:"exact", head:true })
+      .eq("tenant_id", usuario.tenant_id).eq("situacao", "pendente_conferencia"),
+  ]);
 
   return (
     <div className="w-full min-w-0 space-y-5">
@@ -65,6 +69,17 @@ export default async function CaucoesPage() {
           {r.ativos.length} contrato(s) ativo(s) com caução · depósito e saldo precisam de conciliação bancária
           {r.semValor.length > 0 && <span className="font-semibold text-amber-800"> · {r.semValor.length} sem valor informado (fora do total)</span>}
         </p>
+      </section>
+
+      <section className="rounded-2xl border border-border/70 bg-surface p-4 shadow-sm sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <p className="font-semibold text-ink">Conferência dos depósitos</p>
+            <p className="mt-1 text-sm text-ink-muted">{pendentes ?? 0} movimentação(ões) declarada(s) e aguardando conferência bancária.</p>
+          </div>
+          <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">Saldo bancário confirmado: não apurado</span>
+        </div>
+        <p className="mt-3 text-xs text-ink-muted">Abra o histórico de cada contrato para registrar depósitos, complementos, rendimentos, utilizações e devoluções. Nenhuma movimentação é criada automaticamente a partir da garantia contratual.</p>
       </section>
 
       <section className="rounded-2xl border border-border/70 bg-surface p-4 shadow-sm sm:p-5" aria-labelledby="ativos">
