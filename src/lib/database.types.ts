@@ -23,6 +23,7 @@ export type Database = {
           data_movimento: string
           valor_centavos: number
           descricao: string
+          conta_referencia: string | null
           comprovante_url: string | null
           situacao: string
           criado_por: string
@@ -36,6 +37,7 @@ export type Database = {
           data_movimento: string
           valor_centavos: number
           descricao: string
+          conta_referencia?: string | null
           comprovante_url?: string | null
           situacao?: string
           criado_por: string
@@ -49,6 +51,7 @@ export type Database = {
           data_movimento?: string
           valor_centavos?: number
           descricao?: string
+          conta_referencia?: string | null
           comprovante_url?: string | null
           situacao?: string
           criado_por?: string
