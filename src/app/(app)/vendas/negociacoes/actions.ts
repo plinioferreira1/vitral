@@ -52,6 +52,7 @@ export async function salvarNegociacao(f: FormData) {
     cliente_nome: texto(f, "cliente_nome"),
     telefone: texto(f, "telefone"),
     vendedor_nome: texto(f, "vendedor_nome"),
+    codigo_san: texto(f, "codigo_san").slice(0, 60),
     imovel_endereco: texto(f, "imovel_endereco"),
     corretor_id: texto(f, "corretor_id"),
     responsavel_id: texto(f, "responsavel_id"),

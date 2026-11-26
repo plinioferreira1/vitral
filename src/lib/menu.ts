@@ -68,6 +68,7 @@ export function montarMenu(p: PermissoesUsuario): ItemMenu[] {
         { href: "/locacao?aba=contratos", label: "Contratos" },
         ...(verDebitos ? [{ href: "/locacao/debitos", label: "Inadimplências" }] : []),
         { href: "/locacao/documentos", label: "Documentos" },
+        { href: "/locacao/caucoes", label: "Cauções" },
         { href: "/locacao/ficha-cadastral", label: "Fichas cadastrais" },
         ...(p.podeConfigurar ? [{ href: "/locacao/emails", label: "E-mails da Locação" }] : []),
         ...(p.nivelComAcessoTotal ? [{ href: "/locacao/contratos", label: "Gerar contratos" }] : []),

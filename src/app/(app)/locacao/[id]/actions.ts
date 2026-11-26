@@ -1,6 +1,7 @@
 "use server";
 
 import { exigirUsuario } from "@/lib/usuario-atual";
+import { dadosGarantia } from "@/lib/locacao/garantias";
 
 import { checar } from "@/lib/aviso";
 
@@ -142,7 +143,7 @@ export async function atualizarContrato(formData: FormData) {
     aluguel_dia_vencimento: formData.get("aluguel_dia_vencimento") ? Number(formData.get("aluguel_dia_vencimento")) : null,
     primeiro_aluguel_vencimento: String(formData.get("primeiro_aluguel_vencimento") ?? "") || null,
     desconto_pontualidade: formData.get("desconto_pontualidade") ? Number(formData.get("desconto_pontualidade")) : null,
-    garantia_locaticia: String(formData.get("garantia_locaticia") ?? "").trim() || null,
+    ...dadosGarantia(formData.get("garantia_locaticia"), formData.get("caucao_valor")),
     documento_origem_url: String(formData.get("documento_origem_url") ?? "").trim() || null,
     condominio_nome: String(formData.get("condominio_nome") ?? "").trim() || null,
     condominio_unidade: String(formData.get("condominio_unidade") ?? "").trim() || null,

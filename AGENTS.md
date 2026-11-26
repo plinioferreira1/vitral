@@ -59,3 +59,7 @@ This version has breaking changes — APIs, conventions, and file structure may 
 - **Senhas de portal**: nunca no Vitral. As 7 que existiam foram apagadas em 26/11/2026 e a restrição `contratos_locacao_sem_senha_portal` impede novas. Só URL e login do portal.
 
 - **E-mails da Locação**: só consulta e download de anexos (decisão da direção em 26/11/2026 — não haverá resposta pelo Vitral). Anexos também pelo histórico do contrato (`AnexosEmail`, só gestão, mesma rota `/api/integracoes/zoho/locacao`).
+
+- **Garantia e cauções da Locação**: `contratos_locacao.garantia_locaticia` só aceita a lista `GARANTIAS_LOCACAO` (`src/lib/locacao/garantias.ts`, com teste; restrição `contratos_locacao_garantia_lista`), escolhida em lista suspensa (`CampoGarantia`). Caução em dinheiro guarda `caucao_valor_centavos` (centavos inteiros, só quando a garantia é "Caução" — restrição no banco; `dadosGarantia()` zera nos demais casos). Relatório `/locacao/caucoes` (menu Locação; quem tem Locação, menos corretor/social media): total a manter em caixa = soma das cauções dos contratos **ativos**; ativos sem valor ficam fora do total e são apontados; encerrados aparecem à parte para conferir devolução. Planilha em `/locacao/caucoes/csv` (`;`, BOM, para Excel).
+
+- **Negociações de venda**: campo `codigo_san` (levado a `processos.codigo_san` na conversão por `vendas_negociacao_encerrar`), valor com `CampoMoeda` e telefone com `CampoMascarado`.
