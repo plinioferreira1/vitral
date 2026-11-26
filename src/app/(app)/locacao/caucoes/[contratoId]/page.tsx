@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
 import { CabecalhoPagina } from "@/components/cabecalho-pagina";
 import { getPermissoesUsuario } from "@/lib/permissoes";
@@ -27,7 +28,7 @@ export default async function DetalheCaucao({params}:{params:Promise<{contratoId
 
   const [{data:contrato},{data:movimentos,error}] = await Promise.all([
     supabase.from("contratos_locacao").select("id,numero,ativo,caucao_valor_centavos").eq("id",contratoId).eq("tenant_id",usuario.tenant_id).eq("garantia_locaticia","Caução").maybeSingle(),
-    supabase.from("caucao_movimentacoes").select("id,tipo,data_movimento,valor_centavos,descricao,comprovante_url,situacao,criado_em").eq("contrato_id",contratoId).eq("tenant_id",usuario.tenant_id).order("data_movimento",{ascending:false}).order("criado_em",{ascending:false}),
+    supabase.from("caucao_movimentacoes").select("id,tipo,data_movimento,valor_centavos,descricao,conta_referencia,comprovante_url,situacao,criado_em").eq("contrato_id",contratoId).eq("tenant_id",usuario.tenant_id).order("data_movimento",{ascending:false}).order("criado_em",{ascending:false}),
   ]);
   if (!contrato) notFound();
   const lista = movimentos ?? [];
@@ -64,7 +65,7 @@ export default async function DetalheCaucao({params}:{params:Promise<{contratoId
             <tbody>{lista.map(m=><tr className="border-b border-border/60" key={m.id}>
               <td className="py-3 whitespace-nowrap">{dataBR(m.data_movimento)}</td>
               <td>{tipos[m.tipo]??m.tipo}</td><td className="tabular-nums font-medium">{moeda(m.valor_centavos)}</td>
-              <td className="max-w-72 break-words">{m.descricao}</td>
+              <td className="max-w-72 break-words">{m.descricao}{m.conta_referencia && <span className="block text-xs text-ink-muted">Conta: {m.conta_referencia}</span>}</td>
               <td className="text-amber-800">Pendente</td>
               <td>{m.comprovante_url?<a className="text-brand underline" href={m.comprovante_url} target="_blank" rel="noreferrer">Abrir</a>:"—"}</td>
             </tr>)}</tbody>
@@ -76,6 +77,7 @@ export default async function DetalheCaucao({params}:{params:Promise<{contratoId
         <p className="text-xs text-ink-muted">Preencha somente movimentações verificadas em documento. O lançamento ficará pendente de conciliação; nenhum lançamento bancário será criado ou baixado automaticamente.</p>
         <form action={registrarMovimentoCaucao} className="grid gap-4 sm:grid-cols-2">
           <input type="hidden" name="contrato_id" value={contrato.id}/>
+          <input type="hidden" name="registro_id" value={randomUUID()}/>
           <label className="text-xs font-medium text-ink-muted">Tipo
             <select required name="tipo" defaultValue="deposito" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-ink">
               {Object.entries(tipos).map(([v,l])=><option value={v} key={v}>{l}</option>)}
@@ -86,6 +88,9 @@ export default async function DetalheCaucao({params}:{params:Promise<{contratoId
           </label>
           <label className="text-xs font-medium text-ink-muted">Valor (R$)
             <input required type="text" inputMode="decimal" name="valor" placeholder="Ex.: 3.000,00" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-ink"/>
+          </label>
+          <label className="text-xs font-medium text-ink-muted">Conta bancária / referência (opcional)
+            <input type="text" name="conta_referencia" maxLength={200} placeholder="Ex.: Inter · cauções" className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-ink"/>
           </label>
           <label className="text-xs font-medium text-ink-muted">URL HTTPS do comprovante (opcional)
             <input type="url" name="comprovante_url" placeholder="https://..." className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-ink"/>
