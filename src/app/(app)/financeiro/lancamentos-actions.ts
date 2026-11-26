@@ -257,11 +257,17 @@ export async function estornarBaixa(formData: FormData) {
     return;
   }
 
-  const apagou = await checar(
-    supabase.from("financeiro_baixas").delete().eq("id", baixaId).is("extrato_linha_id", null),
-    "estornar o pagamento"
-  );
-  if (!apagou) return;
+  const { data: excluida, error: erroExclusao } = await supabase
+    .from("financeiro_baixas")
+    .delete()
+    .eq("id", baixaId)
+    .is("extrato_linha_id", null)
+    .select("id")
+    .maybeSingle();
+  if (erroExclusao || !excluida) {
+    await avisar("erro", "Não foi possível estornar. Confira se o pagamento ainda existe e se está desvinculado do extrato bancário.");
+    return;
+  }
 
   await recalcularStatusLancamento(supabase, baixa.lancamento_id);
   await avisar("sucesso", "Pagamento estornado. O lançamento voltou a ficar em aberto.");
