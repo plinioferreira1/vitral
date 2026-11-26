@@ -32,6 +32,15 @@ describe("navegação por acesso", () => {
     expect(destinos(itens)).not.toContain("/painel-sacra");
     expect(destinos(itens)).toContain("/locacao?aba=multa");
   });
+  it("acumula corretagem com cargo administrativo sem remover os módulos de gestão", () => {
+    const menu = montarMenu({ ...gestor, temPapelCorretor: true });
+    const hrefs = destinos(menu);
+    expect(hrefs).toContain("/minhas-vendas");
+    expect(hrefs).toContain("/financeiro");
+    expect(hrefs).toContain("/vendas?aba=andamento");
+    expect(hrefs).toContain("/financiamentos?aba=andamento");
+    expect(hrefs).toContain("/configuracoes");
+  });
   it("não oferece calendário operacional ou multa ao corretor", () => {
     const hrefs = destinos(montarMenu({ ...gestor, ehCorretor: true }));
     expect(hrefs).toContain("/avaliacoes");
