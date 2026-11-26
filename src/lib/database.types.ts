@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      caucao_movimentacoes: {
+        Row: {
+          id: string
+          tenant_id: string
+          contrato_id: string
+          tipo: string
+          data_movimento: string
+          valor_centavos: number
+          descricao: string
+          conta_referencia: string | null
+          comprovante_url: string | null
+          situacao: string
+          criado_por: string
+          criado_em: string
+        }
+        Insert: {
+          id?: string
+          tenant_id: string
+          contrato_id: string
+          tipo: string
+          data_movimento: string
+          valor_centavos: number
+          descricao: string
+          conta_referencia?: string | null
+          comprovante_url?: string | null
+          situacao?: string
+          criado_por: string
+          criado_em?: string
+        }
+        Update: {
+          id?: string
+          tenant_id?: string
+          contrato_id?: string
+          tipo?: string
+          data_movimento?: string
+          valor_centavos?: number
+          descricao?: string
+          conta_referencia?: string | null
+          comprovante_url?: string | null
+          situacao?: string
+          criado_por?: string
+          criado_em?: string
+        }
+        Relationships: []
+      }
       autorizacao_signatarios: {
         Row: {
           assinado_em: string | null
