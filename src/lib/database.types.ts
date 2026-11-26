@@ -7749,6 +7749,7 @@ export type Database = {
         Row: {
           atualizado_em: string
           cliente_nome: string
+          codigo_san: string
           corretor_id: string | null
           criado_em: string
           criado_por: string
@@ -7772,6 +7773,7 @@ export type Database = {
         Insert: {
           atualizado_em?: string
           cliente_nome: string
+          codigo_san?: string
           corretor_id?: string | null
           criado_em?: string
           criado_por: string
@@ -7795,6 +7797,7 @@ export type Database = {
         Update: {
           atualizado_em?: string
           cliente_nome?: string
+          codigo_san?: string
           corretor_id?: string | null
           criado_em?: string
           criado_por?: string

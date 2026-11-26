@@ -1,6 +1,8 @@
 import type { Negociacao } from "@/lib/negociacoes/regras";
 import { hojeISO } from "@/lib/data-br";
 import { BotaoEnviar } from "@/components/botao-enviar";
+import { CampoMoeda } from "@/components/campo-moeda";
+import { CampoMascarado } from "@/components/financeiro/campo-mascarado";
 import {
   INPUT_CLASS,
   PRIMARY_BUTTON_CLASS,
@@ -63,11 +65,11 @@ export function FormularioNegociacao({
           />
         </Campo>
         <Campo nome="telefone" titulo="Telefone">
-          <input
+          <CampoMascarado
             id="telefone"
             name="telefone"
-            type="tel"
-            maxLength={40}
+            mask="telefone"
+            placeholder="(61) 99999-9999"
             defaultValue={n?.telefone}
             className={INPUT_CLASS}
           />
@@ -78,6 +80,18 @@ export function FormularioNegociacao({
             name="vendedor_nome"
             maxLength={200}
             defaultValue={n?.vendedor_nome}
+            className={INPUT_CLASS}
+          />
+        </Campo>
+        <Campo nome="codigo_san" titulo="Código SAN">
+          <input
+            id="codigo_san"
+            name="codigo_san"
+            maxLength={60}
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="Ex.: 1094321"
+            defaultValue={n?.codigo_san ?? ""}
             className={INPUT_CLASS}
           />
         </Campo>
@@ -93,17 +107,8 @@ export function FormularioNegociacao({
             />
           </Campo>
         </div>
-        <Campo nome="valor" titulo="Valor da negociação (R$)">
-          <input
-            id="valor"
-            name="valor"
-            type="number"
-            min="0"
-            max="999999999999.99"
-            step="0.01"
-            defaultValue={n?.valor ?? 0}
-            className={INPUT_CLASS}
-          />
+        <Campo nome="valor" titulo="Valor da negociação">
+          <CampoMoeda id="valor" name="valor" defaultValue={n?.valor || null} className={`${INPUT_CLASS} w-full`} />
         </Campo>
         <Campo nome="corretor_id" titulo="Corretor">
           <select

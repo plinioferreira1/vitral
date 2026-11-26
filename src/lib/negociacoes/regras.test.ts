@@ -13,6 +13,7 @@ const n = (dados: Partial<Negociacao>): Negociacao => ({
   cliente_nome: "Cliente",
   telefone: "",
   vendedor_nome: "",
+  codigo_san: "",
   imovel_endereco: "Imóvel",
   corretor_id: null,
   responsavel_id: "u",
