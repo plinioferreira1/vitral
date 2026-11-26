@@ -19,6 +19,25 @@ export async function ComissoesSacraPrevistas() {
 
   if (error || !data?.length) return null;
 
+  // Créditos bancários já registrados podem coincidir exatamente com uma
+  // parcela. Apenas sinalizar para conferência; valor igual NÃO comprova
+  // identidade nem autoriza vincular/baixar automaticamente.
+  const { data: creditosExistentes } = await supabase
+    .from("financeiro_lancamentos")
+    .select("id,descricao,valor,vencimento")
+    .eq("tipo", "receita")
+    .eq("status", "pago")
+    .gte("vencimento", "2026-08-26")
+    .lte("vencimento", "2026-11-26");
+  const valoresDeCredito = new Map<number, { id: string; descricao: string; vencimento: string }[]>();
+  for (const credito of creditosExistentes ?? []) {
+    const centavos = Math.round(Number(credito.valor) * 100);
+    valoresDeCredito.set(centavos, [
+      ...(valoresDeCredito.get(centavos) ?? []),
+      { id: credito.id, descricao: credito.descricao, vencimento: credito.vencimento },
+    ]);
+  }
+
   const abertos = data.filter(p => !p.lancamento_id);
   const totalEmConferencia = abertos.reduce((s,p) => s+Number(p.valor),0);
   const grupos = new Map<string, typeof data>();
@@ -81,6 +100,18 @@ export async function ComissoesSacraPrevistas() {
                     {p.processo_id && <Link className="font-medium text-brand hover:underline" href={`/processos/${p.processo_id}`}>Ver venda no VITRAL</Link>}
                     {p.observacoes && <span className="text-ink-muted">{p.observacoes}</span>}
                   </div>
+                  {!p.lancamento_id && (valoresDeCredito.get(Math.round(Number(p.valor) * 100)) ?? []).map(credito => (
+                    <p key={credito.id} className="rounded-md border border-amber-300 bg-amber-50 p-2 text-xs leading-5 text-amber-950">
+                      <strong>Possível crédito já recebido — confira antes de lançar.</strong>{" "}
+                      Foi encontrado um recebimento com valor idêntico no Financeiro em {formatarData(credito.vencimento)}:
+                      {" "}{credito.descricao}.{" "}
+                      <Link className="font-semibold underline"
+                        href={`/financeiro/lancamentos/${credito.id}/baixar?return_to=%2Ffinanceiro%2Fcontas-a-receber%23comissoes-sacra`}>
+                        Conferir esse recebimento
+                      </Link>.
+                      Não foi vinculado automaticamente.
+                    </p>
+                  ))}
                   {p.lancamento_id ? (
                     <p className="text-xs text-emerald-700">Transferida ao Financeiro · vencimento {p.vencimento ? formatarData(p.vencimento) : "—"}. A baixa é registrada separadamente.</p>
                   ) : (
