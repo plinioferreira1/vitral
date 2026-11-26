@@ -13,6 +13,9 @@ import { formatarMoedaBR } from "@/lib/moeda";
 import {
   filtroNegociacoes,
   filtrarNegociacoes,
+  filtroAcompanhamento,
+  filtrarAcompanhamento,
+  classificarAcompanhamento,
   mesValido,
   metricasNegociacoes,
   SITUACAO_LABEL,
@@ -31,6 +34,7 @@ export default async function NegociacoesPage({
     mes?: string;
     responsavel?: string;
     situacao?: string;
+    acompanhamento?: string;
     nova?: string;
   }>;
 }) {
@@ -38,6 +42,8 @@ export default async function NegociacoesPage({
   const params = await searchParams;
   const mes = mesValido(params.mes, hojeISO().slice(0, 7));
   const filtro = filtroNegociacoes(params.situacao);
+  const atencao = filtroAcompanhamento(params.acompanhamento);
+  const hoje = hojeISO();
   const [todas, opcoes] = await Promise.all([
     carregarNegociacoes(s.supabase, s.tenantId),
     opcoesNegociacoes(s.supabase, s.tenantId),
@@ -62,9 +68,16 @@ export default async function NegociacoesPage({
     ? todas.filter((n) => n.responsavel_id === responsavel)
     : todas;
   const m = metricasNegociacoes(base, mes);
-  const lista = filtrarNegociacoes(base, filtro, mes);
-  const href = (situacao: string) =>
-    `/vendas/negociacoes?${new URLSearchParams({ mes, responsavel, situacao })}`;
+  const abertos = base.filter(n => n.situacao === "em_andamento");
+  const pendencias = {
+    vencidas: abertos.filter(n => classificarAcompanhamento(n, hoje) === "vencidas").length,
+    hoje: abertos.filter(n => classificarAcompanhamento(n, hoje) === "hoje").length,
+    sem_data: abertos.filter(n => classificarAcompanhamento(n, hoje) === "sem_data").length,
+  };
+  const lista = filtrarAcompanhamento(filtrarNegociacoes(base, atencao === "todos" ? filtro : "em_andamento", mes), atencao, hoje)
+    .sort((a,b) => (a.data_acompanhamento ?? "9999-12-31").localeCompare(b.data_acompanhamento ?? "9999-12-31"));
+  const href = (situacao: string, acompanhamento = "todos") =>
+    `/vendas/negociacoes?${new URLSearchParams({ mes, responsavel, situacao, acompanhamento })}`;
   const motivos = new Map<string, number>();
   for (const n of filtrarNegociacoes(base, "perdida", mes))
     motivos.set(
@@ -131,6 +144,7 @@ export default async function NegociacoesPage({
           </select>
         </div>
         <input type="hidden" name="situacao" value={filtro} />
+        <input type="hidden" name="acompanhamento" value={atencao} />
         <button className={SECONDARY_BUTTON_CLASS}>Aplicar filtros</button>
       </form>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
@@ -184,6 +198,25 @@ export default async function NegociacoesPage({
           </p>
         </div>
       </div>
+      <section className="space-y-3" aria-label="Acompanhamentos prioritários">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 className="font-semibold text-ink">Acompanhamentos que precisam de atenção</h2>
+          {atencao !== "todos" && <Link className="text-sm font-medium text-brand hover:underline" href={href("em_andamento")}>Limpar filtro</Link>}
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          {([
+            { chave: "vencidas", titulo: "Atrasadas", numero: pendencias.vencidas, cor: "border-rose-300 bg-rose-50/70 text-rose-900" },
+            { chave: "hoje", titulo: "Para acompanhar hoje", numero: pendencias.hoje, cor: "border-amber-300 bg-amber-50/70 text-amber-900" },
+            { chave: "sem_data", titulo: "Sem próximo contato", numero: pendencias.sem_data, cor: "border-border bg-surface text-ink" },
+          ] as const).map(item => (
+            <Link key={item.chave} href={href("em_andamento",item.chave)} className={`rounded-xl border p-4 transition hover:shadow-sm ${item.cor} ${atencao === item.chave ? "ring-2 ring-current/20" : ""}`}>
+              <p className="text-sm font-medium">{item.titulo}</p>
+              <p className="mt-1 text-3xl font-bold">{item.numero}</p>
+              <p className="mt-1 text-xs opacity-80">Abrir negociações</p>
+            </Link>
+          ))}
+        </div>
+      </section>
       <p className="text-sm text-ink-muted">
         Convertidas e perdidas usam a data do encerramento, mesmo quando abertas
         em outro mês. O saldo em andamento é atual. Os valores representam
@@ -203,7 +236,10 @@ export default async function NegociacoesPage({
       <section className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <h2 className="text-lg font-semibold">
-            {filtro === "em_andamento"
+            {atencao === "vencidas" ? "Acompanhamentos atrasados"
+              : atencao === "hoje" ? "Acompanhamentos de hoje"
+              : atencao === "sem_data" ? "Negociações sem próximo contato"
+              : filtro === "em_andamento"
               ? "Negociações em andamento"
               : filtro === "todas"
                 ? "Todas as negociações"
@@ -242,7 +278,7 @@ export default async function NegociacoesPage({
                 </span>
               </div>
               {n.situacao === "em_andamento" && (
-                <p className="text-sm text-ink-muted">
+                <p className={`text-sm ${classificarAcompanhamento(n, hoje) === "vencidas" ? "font-semibold text-rose-800" : classificarAcompanhamento(n, hoje) === "hoje" ? "font-semibold text-amber-800" : "text-ink-muted"}`}>
                   {n.proxima_acao || "Próxima ação a definir"}
                   {n.data_acompanhamento
                     ? ` · ${n.data_acompanhamento.split("-").reverse().join("/")}`
