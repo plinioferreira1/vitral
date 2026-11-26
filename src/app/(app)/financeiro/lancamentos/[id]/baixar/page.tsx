@@ -138,7 +138,7 @@ export default async function BaixarLancamentoFinanceiroPage({
                       Estornar
                     </BotaoComConfirmacao>
                   </form>
-                )>
+                )}
               </div>
             ))}
           </div>
