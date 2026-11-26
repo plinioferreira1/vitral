@@ -24,18 +24,20 @@ export async function registrarMovimentoCaucao(formData: FormData) {
   }
 
   const contratoId = String(formData.get("contrato_id") ?? "").trim();
+  const registroId = String(formData.get("registro_id") ?? "").trim();
   const tipo = String(formData.get("tipo") ?? "").trim();
   const dia = String(formData.get("data_movimento") ?? "").trim();
   const descricao = String(formData.get("descricao") ?? "").trim();
   const url = String(formData.get("comprovante_url") ?? "").trim();
+  const contaReferencia = String(formData.get("conta_referencia") ?? "").trim();
   const centavos = reaisParaCentavos(formData.get("valor"));
   const dataValida = /^\d{4}-\d{2}-\d{2}$/.test(dia) &&
     !Number.isNaN(Date.parse(dia)) &&
     new Date(dia + "T12:00:00Z").toISOString().slice(0, 10) === dia;
 
-  if (!/^[0-9a-f-]{36}$/i.test(contratoId) || !TIPOS.has(tipo) ||
+  if (!/^[0-9a-f-]{36}$/i.test(contratoId) || !/^[0-9a-f-]{36}$/i.test(registroId) || !TIPOS.has(tipo) ||
       !dataValida || !centavos || centavos > 100_000_000 ||
-      descricao.length < 5 || descricao.length > 1000 ||
+      descricao.length < 5 || descricao.length > 1000 || contaReferencia.length > 200 ||
       (url && (!url.startsWith("https://") || url.length > 2048))) {
     await avisar("erro", "Confira tipo, data, valor positivo, descrição (5 a 1000 caracteres) e URL HTTPS do comprovante.");
     return;
@@ -50,11 +52,13 @@ export async function registrarMovimentoCaucao(formData: FormData) {
   }
 
   const { error } = await supabase.from("caucao_movimentacoes").insert({
+    id: registroId,
     tenant_id: sessao.tenantId,
     contrato_id: contratoId,
     tipo, data_movimento: dia,
     valor_centavos: centavos,
     descricao,
+    conta_referencia: contaReferencia || null,
     comprovante_url: url || null,
     criado_por: sessao.userId,
   });
