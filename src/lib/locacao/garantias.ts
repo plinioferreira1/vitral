@@ -1,12 +1,14 @@
 /**
  * Garantia locatícia de cada contrato e controle das cauções em dinheiro
- * (quanto a Sacra precisa ter em caixa para devolver). Funções puras.
+ * (valor contratual previsto, até conferência dos depósitos). Funções puras.
  */
 
 export const GARANTIAS_LOCACAO = [
   "Caução",
   "Fiador",
   "Seguro Fiança (Loft)",
+  "CredPago",
+  "CredAluga",
   "Garantia Investe (Loft)",
   "Título de Capitalização (Brasilcap)",
   "Seguro Fiança (outra seguradora)",
@@ -45,7 +47,7 @@ export type ContratoCaucao = {
   caucao_valor_centavos: number | null;
 };
 
-/** Total a manter em caixa: soma das cauções dos contratos ativos. Sem valor informado fica em pendência. */
+/** Total de cauções contratuais ativas; não comprova que cada valor foi depositado. Sem valor informado fica em pendência. */
 export function resumoCaucoes<T extends ContratoCaucao>(contratos: T[]) {
   const comCaucao = contratos.filter((c) => c.garantia_locaticia === CAUCAO);
   const ativos = comCaucao.filter((c) => c.ativo);
