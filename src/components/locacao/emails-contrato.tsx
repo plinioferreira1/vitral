@@ -3,6 +3,8 @@ import { Inbox, Paperclip, Send } from "lucide-react";
 import { CabecalhoSecao } from "@/components/cabecalho-secao";
 import { assuntoVisivel, linhaDoTempo, totalPendentes, type RespostaEmail, type SolicitacaoEmail } from "@/lib/locacao/emails-contrato";
 import { createClient } from "@/lib/supabase/server";
+import { getUsuarioAtual, GESTORES } from "@/lib/usuario-atual";
+import { AnexosEmail } from "@/components/locacao/anexos-email";
 
 const quando = (iso: string) =>
   new Date(iso).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -14,15 +16,17 @@ const quando = (iso: string) =>
  */
 export async function EmailsContrato({ contratoId }: { contratoId: string }) {
   const supabase = await createClient();
-  const { data: podeVer } = await supabase.rpc("debitos_pode_ver");
+  const [{ data: podeVer }, { usuario }] = await Promise.all([supabase.rpc("debitos_pode_ver"), getUsuarioAtual()]);
   if (podeVer !== true) return null;
+  // A leitura de anexos no Zoho é restrita à gestão (mesma regra da caixa de e-mails).
+  const podeAnexos = !!usuario?.ativo && GESTORES.includes(usuario.nivel_acesso);
 
   const { data: itens } = await supabase.from("debitos_solicitacao_itens").select("solicitacao_id").eq("contrato_id", contratoId);
   const ids = [...new Set((itens ?? []).map((i) => i.solicitacao_id))];
   const [{ data: solicitacoes }, { data: respostas }] = ids.length
     ? await Promise.all([
         supabase.from("debitos_solicitacoes").select("id, assunto, administradora_nome, destinatario, enviado_em, status, respondido_em").in("id", ids),
-        supabase.from("debitos_respostas_email").select("id, solicitacao_id, remetente, assunto, resumo, recebido_em, tem_anexo").in("solicitacao_id", ids),
+        supabase.from("debitos_respostas_email").select("id, mensagem_id, solicitacao_id, remetente, assunto, resumo, recebido_em, tem_anexo").in("solicitacao_id", ids),
       ])
     : [{ data: [] }, { data: [] }];
 
@@ -64,6 +68,7 @@ export async function EmailsContrato({ contratoId }: { contratoId: string }) {
                     </p>
                     <p className="break-words text-xs text-ink-muted">{quando(e.quando)} · {assuntoVisivel(e.resposta.assunto)}</p>
                     {e.resposta.resumo && <p className="mt-0.5 line-clamp-2 break-words text-xs text-ink-muted">{e.resposta.resumo}</p>}
+                    {e.resposta.tem_anexo && podeAnexos && e.resposta.mensagem_id && <AnexosEmail mensagemId={e.resposta.mensagem_id} />}
                   </div>
                 </li>
               ),

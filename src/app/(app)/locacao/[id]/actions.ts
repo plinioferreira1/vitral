@@ -153,7 +153,6 @@ export async function atualizarContrato(formData: FormData) {
     condominio_contato: String(formData.get("condominio_contato") ?? "").trim() || null,
     portal_administradora_url: String(formData.get("portal_administradora_url") ?? "").trim() || null,
     portal_administradora_login: String(formData.get("portal_administradora_login") ?? "").trim() || null,
-    portal_administradora_senha: String(formData.get("portal_administradora_senha") ?? "").trim() || null,
     agua_inscricao: String(formData.get("agua_inscricao") ?? "").trim() || null,
     luz_codigo_cliente: String(formData.get("luz_codigo_cliente") ?? "").trim() || null,
     responsavel_iptu: valorDaLista("responsavel_pagamento_locacao", formData.get("responsavel_iptu")),

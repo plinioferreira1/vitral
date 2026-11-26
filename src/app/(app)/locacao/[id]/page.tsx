@@ -645,15 +645,8 @@ export default async function ContratoLocacaoPage({
                   className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
                 />
               </div>
-              <div>
-                <label className="mb-1 block text-xs font-medium text-ink-muted">Senha</label>
-                <input
-                  name="portal_administradora_senha"
-                  defaultValue={c.portal_administradora_senha ?? ""}
-                  className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand"
-                />
-              </div>
             </div>
+            <p className="mt-2 text-[11px] text-ink-muted">Por segurança, o Vitral não guarda senhas de portal. Use o gerenciador de senhas da equipe.</p>
             {c.portal_administradora_url && (
               <a
                 href={c.portal_administradora_url}

@@ -389,6 +389,26 @@ export const GUIAS_FIXOS: Topico[] = [
     },
   },
   {
+    slug: "selecao-de-imoveis-para-cliente",
+    assunto: "Vendas",
+    tipo: "passo-a-passo",
+    titulo: "Seleção de imóveis para o cliente (PDF)",
+    descricao: "Pesquisar nos portais, juntar os anúncios escolhidos e enviar uma apresentação no papel da Sacra.",
+    corpo: {
+      tipo: "lista",
+      ordenada: true,
+      itens: [
+        "Abra Ferramentas → Seleção de imóveis para cliente.",
+        "Preencha o perfil: nome do cliente, comprar ou alugar, tipo, região, valor máximo, área, quartos, vagas e se vai financiar.",
+        "Clique no portal desejado: abre uma pesquisa com esse perfil em outra aba.",
+        "Para cada imóvel escolhido, clique em \"Adicionar anúncio\", cole o link e confira título, endereço, preço, área, quartos e vagas.",
+        "Se o mesmo imóvel aparecer duas vezes (mesmo link, ou mesmo endereço com preço e área parecidos), ele fica em amarelo e sai do PDF. Anúncios fora do perfil recebem um aviso.",
+        "Escreva uma mensagem de abertura, se quiser, e clique em \"Gerar PDF\". Cada imóvel sai com o link \"Ver anúncio\".",
+        "A seleção fica guardada só no seu navegador até você começar outra.",
+      ],
+    },
+  },
+  {
     slug: "glossario-tipos-de-propriedade",
     assunto: "Vendas",
     tipo: "guia",

@@ -16,6 +16,8 @@ export type SolicitacaoEmail = {
 
 export type RespostaEmail = {
   id: string;
+  /** Id da mensagem no Zoho (para consultar anexos). */
+  mensagem_id?: string | null;
   solicitacao_id: string | null;
   remetente: string;
   assunto: string;
