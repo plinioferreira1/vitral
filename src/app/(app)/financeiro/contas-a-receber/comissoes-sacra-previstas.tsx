@@ -101,7 +101,7 @@ export async function ComissoesSacraPrevistas() {
                     {p.observacoes && <span className="text-ink-muted">{p.observacoes}</span>}
                   </div>
                   {!p.lancamento_id && (valoresDeCredito.get(Math.round(Number(p.valor) * 100)) ?? []).map(credito => (
-                    <p key={credito.id} className="rounded-md border border-amber-300 bg-amber-50 p-2 text-xs leading-5 text-amber-950">
+                    <div key={credito.id} className="rounded-md border border-amber-300 bg-amber-50 p-2 text-xs leading-5 text-amber-950">
                       <strong>Possível crédito já recebido — confira antes de lançar.</strong>{" "}
                       Foi encontrado um recebimento com valor idêntico no Financeiro em {formatarData(credito.vencimento)}:
                       {" "}{credito.descricao}.{" "}
@@ -125,7 +125,7 @@ export async function ComissoesSacraPrevistas() {
                           Vincular crédito já recebido (sem nova baixa)
                         </BotaoEnviar>
                       </form>
-                    </p>
+                    </div>
                   ))}
                   {p.lancamento_id ? (
                     <p className="text-xs text-emerald-700">Transferida ao Financeiro · vencimento {p.vencimento ? formatarData(p.vencimento) : "—"}. A baixa é registrada separadamente.</p>
