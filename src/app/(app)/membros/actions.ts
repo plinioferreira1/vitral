@@ -174,6 +174,26 @@ export async function atualizarCategoriasMembro(formData: FormData) {
     redirect(`/membros?erro=${encodeURIComponent(error.message)}`);
   }
 
+  // Associação profissional opcional, separada do nível administrativo.
+  // Só aceita um cadastro ainda sem usuário e pertencente à mesma empresa.
+  const corretorAdicionalId = String(formData.get("corretor_adicional_id") ?? "").trim();
+  if (corretorAdicionalId) {
+    const admin = createAdminClient();
+    const { data: vinculo, error: erroVinculo } = await admin
+      .from("corretores")
+      .update({ usuario_id: usuarioId })
+      .eq("id", corretorAdicionalId)
+      .eq("tenant_id", tenantId)
+      .is("usuario_id", null)
+      .select("id")
+      .maybeSingle();
+    if (erroVinculo || !vinculo) {
+      revalidatePath("/membros");
+      await avisar("erro", "O perfil foi atualizado, mas o vínculo de corretor não foi salvo. Confira se o cadastro já foi vinculado a outra conta.");
+      return false;
+    }
+    revalidatePath("/minhas-vendas");
+  }
   revalidatePath("/membros");
   revalidatePath("/", "layout");
   await avisar("sucesso", "Acesso atualizado.");
