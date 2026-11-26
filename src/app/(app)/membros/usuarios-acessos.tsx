@@ -42,6 +42,7 @@ import {
 import { vincularUsuarioColaborador } from "../dp/actions";
 import { FormularioAcesso } from "./formularios";
 
+type CadastroCorretor = { id: string; nome: string; usuario_id: string | null };
 type Membro = {
   id: string;
   nome: string;
@@ -153,12 +154,14 @@ function Status({ ativo }: { ativo: boolean }) {
 export function UsuariosAcessos({
   membros,
   colaboradores,
+  corretores,
   convites,
   meuId,
   agora,
 }: {
   membros: Membro[];
   colaboradores: Colaborador[];
+  corretores: CadastroCorretor[];
   convites: Convite[];
   meuId: string;
   agora: string;
@@ -477,6 +480,12 @@ export function UsuariosAcessos({
                       <p className="mb-1 text-sm text-ink">
                         {rotuloNivel(p.nivel_acesso)}
                       </p>
+                      {corretores.some(c => c.usuario_id === p.id) && (
+                        <p className="mb-1 text-xs font-medium text-brand">+ Corretor</p>
+                      )}
+                      {p.nivel_acesso === "supervisor" && p.categorias.includes("financiamento") && (
+                        <p className="mb-1 text-xs font-medium text-brand">+ Correspondente bancário</p>
+                      )}
                       {resumoAreas(p)}
                     </td>
                     <td className="px-3 py-4">
@@ -652,6 +661,7 @@ export function UsuariosAcessos({
                   usuarioId={m.id}
                   nivelInicial={m.nivel_acesso}
                   categoriasIniciais={m.categorias}
+                  corretores={corretores}
                   aoSalvar={() => detalheRef.current?.close()}
                 />
                 {m.id === meuId && (
