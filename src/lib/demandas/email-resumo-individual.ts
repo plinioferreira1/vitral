@@ -1,8 +1,10 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { carregarResumoMatutino } from "@/lib/resumo-matutino-servidor";
+import { montarHtmlResumoMatutino } from "@/lib/resumo-matutino";
 import { enviarEmail } from "@/lib/email";
 import { layoutEmailSacra, botaoEmailSacra, escaparHtmlEmail, EMAIL_SACRA } from "@/lib/email-layout-sacra";
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL || "https://vitral.sacraimoveis.com.br";
+const SITE = "https://usevitral.site";
 const diaBrasil = () => {
   const partes = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit",
@@ -17,7 +19,7 @@ export async function enviarResumoIndividualDemandas() {
   const db = createAdminClient();
   const dia = diaBrasil();
   const { data: usuarios, error: erroUsuarios } = await db.from("usuarios")
-    .select("id,nome,email,tenant_id").eq("ativo", true).not("email", "is", null);
+    .select("id,nome,email,tenant_id,nivel_acesso").eq("ativo", true).not("email", "is", null);
   if (erroUsuarios) throw new Error("Falha ao consultar colaboradores");
   let enviados = 0, ignorados = 0, falhas = 0;
   for (const usuario of usuarios ?? []) {
@@ -72,7 +74,17 @@ export async function enviarResumoIndividualDemandas() {
       botaoEmailSacra("Abrir minhas demandas no VITRAL", SITE + "/demandas"),
       dataBR(dia) + " · Sacra Netimóveis");
     try {
-      await enviarEmail({ destinatarios: [usuario.email.trim()], assunto: "Suas demandas do dia — " + dataBR(dia), html });
+      // Gestores recebem um único resumo: Financeiro, Processos, Demandas e Vendas.
+      // Colaboradores recebem somente as demandas atribuídas a eles.
+      const gestor = ["diretor", "gerente"].includes(usuario.nivel_acesso);
+      const resumo = gestor
+        ? await carregarResumoMatutino(usuario.tenant_id, usuario.id, usuario.nome ?? "Gestor")
+        : null;
+      await enviarEmail({
+        destinatarios: [usuario.email.trim()],
+        assunto: gestor ? "VITRAL — Resumo unificado — " + dataBR(dia) : "Suas demandas do dia — " + dataBR(dia),
+        html: resumo ? montarHtmlResumoMatutino(resumo) : html
+      });
       await db.from("demandas_resumos_individuais").update({
         situacao: "enviado", enviado_em: new Date().toISOString(), erro: null
       }).eq("tenant_id", usuario.tenant_id).eq("usuario_id", usuario.id).eq("dia", dia);
