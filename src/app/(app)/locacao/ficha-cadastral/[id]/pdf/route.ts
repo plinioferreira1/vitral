@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { tipoLocatario, type DadosFicha } from "@/lib/ficha-locacao/campos";
 import { gerarPdfFicha } from "@/lib/ficha-locacao/pdf";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getUsuarioAtual, GESTORES } from "@/lib/usuario-atual";
 
 let logoEmCache: Uint8Array | null = null;
 async function carregarLogo(origem: string): Promise<Uint8Array | null> {
@@ -19,13 +20,19 @@ async function carregarLogo(origem: string): Promise<Uint8Array | null> {
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const provisorio = new URL(req.url).searchParams.get("provisorio") === "1";
+  if (provisorio) {
+    const { user, usuario } = await getUsuarioAtual();
+    if (!user || !usuario?.ativo || !GESTORES.includes(usuario.nivel_acesso)) {
+      return new Response("Acesso restrito a gestores", { status: 403 });
+    }
+  }
   const supabase = await createClient() as unknown as SupabaseClient;
   const [{ data: ficha }, { data: documentos }] = await Promise.all([
     supabase.from("fichas_cadastrais_locacao").select("*").eq("id", id).single(),
     supabase.from("ficha_locacao_documentos").select("nome_arquivo, tipo").eq("ficha_id", id).order("criado_em"),
   ]);
   if (!ficha) return new Response("Ficha não encontrada", { status: 404 });
-  const provisorio = new URL(req.url).searchParams.get("provisorio") === "1";
   if (ficha.status === "cancelada") return new Response("Ficha cancelada", { status: 400 });
   if (!provisorio && ficha.status !== "concluida") return new Response("A ficha ainda não foi concluída", { status: 400 });
   if (provisorio && ficha.status === "concluida") return new Response("Utilize o PDF assinado da ficha concluída", { status: 400 });
