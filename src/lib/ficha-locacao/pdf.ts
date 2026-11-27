@@ -12,6 +12,9 @@ export type EntradaPdfFicha = {
   /** só para fiador e corresponsável: a proposta a que a ficha está ligada */
   titular: { nome: string; garantia: string } | null;
   documentos: { nome_arquivo: string; tipo: string }[];
+  /** Modo prévia: não confere aceite nem assinatura. */
+  provisorio?: boolean;
+  geradoEm?: string;
   /** imagem PNG em data URL */
   assinatura: string | null;
   concluidoEm: string;
@@ -67,11 +70,15 @@ export async function gerarPdfFicha(entrada: EntradaPdfFicha): Promise<Uint8Arra
     page.drawText("SACRA", { x: M, y, size: 21, font: bold, color: vinho });
     page.drawText("NETIMÓVEIS", { x: M, y: y - 13, size: 7.5, font: bold, color: dourado });
   }
-  const tituloPdf = "FICHA CADASTRAL DE LOCAÇÃO";
+  const tituloPdf = entrada.provisorio ? "FICHA CADASTRAL - PROVISÓRIA" : "FICHA CADASTRAL DE LOCAÇÃO";
   page.drawText(tituloPdf, { x: W - M - bold.widthOfTextAtSize(tituloPdf, 11), y: y - 8, size: 11, font: bold, color: vinho });
   y -= 48;
   const tipo = entrada.tipo;
   const dados = entrada.dados;
+  if (entrada.provisorio) {
+    textoPdf("DOCUMENTO PROVISÓRIO - Cadastro ainda não concluído. Não substitui ficha assinada.", { font: bold, size: 9, color: vinho, gap: 8 });
+    textoPdf(`Gerado em ${new Date(entrada.geradoEm ?? new Date().toISOString()).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}. Contém apenas os dados salvos até este momento.`, { size: 8, color: cinza, gap: 10 });
+  }
   campo("Proponente", entrada.proponente); campo("Tipo de locatário", ROTULO_TIPO[tipo]); campo("Imóvel", entrada.imovel);
   if (entrada.titular) { campo("Titular da locação", entrada.titular.nome); campo("Garantia da proposta", entrada.titular.garantia); }
   for (const s of secoesVisiveis(dados, tipo)) {
@@ -81,6 +88,7 @@ export async function gerarPdfFicha(entrada: EntradaPdfFicha): Promise<Uint8Arra
     grade(preenchidos.map((c) => ({ rotulo: c.rotulo, valor: valorExibido(c, dados), larga: !!c.larga })));
   }
   titulo("Documentos apresentados"); if (!documentos.length) textoPdf("Nenhum documento anexado.", { color: cinza }); else for (const d of documentos) textoPdf(`• ${d.nome_arquivo} — ${d.tipo}`, { size: 8.5 });
+  if (!entrada.provisorio) {
   for (const bloco of DECLARACAO) {
     titulo(bloco.titulo);
     for (const p of bloco.paragrafos) textoPdf(p.destaque ? `${p.destaque} ${p.texto}` : p.texto, { size: 8.5, gap: 5 });
@@ -90,5 +98,16 @@ export async function gerarPdfFicha(entrada: EntradaPdfFicha): Promise<Uint8Arra
   if (entrada.assinatura) { try { nova(125); const bytes = Uint8Array.from(Buffer.from(String(entrada.assinatura).split(",")[1] ?? "", "base64")); const img = await pdf.embedPng(bytes); const w = 180, h = Math.min(90, img.height / img.width * w); page.drawImage(img, { x: M, y: y - h, width: w, height: h }); y -= h + 4; } catch {} }
   nova(45); page.drawLine({ start: { x: M, y }, end: { x: M + 230, y }, thickness: 0.7, color: cinza }); y -= 14; textoPdf(String(dados.nome_completo ?? entrada.proponente ?? "Proponente"), { font: bold, size: 9, gap: 1 });
   textoPdf(`Assinado eletronicamente em ${new Date(entrada.concluidoEm).toLocaleString("pt-BR", { timeZone: "America/Sao_Paulo" })}${entrada.ip ? ` · IP ${entrada.ip}` : ""}`, { size: 7.5, color: cinza });
+  } else {
+    titulo("Situação do cadastro");
+    textoPdf("Pendente de conclusão, aceite LGPD e assinatura eletrônica. Este PDF é apenas uma cópia dos dados informados até a geração.", { color: vinho, size: 9 });
+  }
+  if (entrada.provisorio) {
+    const paginas = pdf.getPages();
+    paginas.forEach((pagina, index) => {
+      pagina.drawRectangle({ x: 0, y: 0, width: W, height: 31, color: rgb(0.97, 0.94, 0.93) });
+      pagina.drawText(`PROVISÓRIO - NÃO ASSINADO  |  Página ${index + 1}/${paginas.length}`, { x: M, y: 12, font: bold, size: 8, color: vinho });
+    });
+  }
   return pdf.save();
 }
