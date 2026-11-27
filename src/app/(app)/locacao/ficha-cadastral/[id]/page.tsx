@@ -30,7 +30,7 @@ export default async function DetalheFichaPage({ params }: { params: Promise<{ i
     supabase.from("fichas_cadastrais_locacao").select("*").eq("id", id).single(),
     supabase.from("ficha_locacao_documentos").select("*").eq("ficha_id", id).order("criado_em"),
   ]);
-  const siteUrl = "https://usevitral.site";
+  const siteUrl = "https://vitral.sacraimoveis.com.br";
   if (!ficha) notFound();
   const { usuario } = await getUsuarioAtual();
   const podeVincular = !!usuario && GESTORES.includes(usuario.nivel_acesso);
@@ -44,7 +44,7 @@ export default async function DetalheFichaPage({ params }: { params: Promise<{ i
     ? await supabase.from("fichas_cadastrais_locacao").select("id, proponente_nome")
       .eq("tipo_locatario", "titular").neq("status", "cancelada").order("criado_em", { ascending: false }).limit(300)
     : { data: [] as { id: string; proponente_nome: string | null }[] };
-  const basePublica = process.env.NEXT_PUBLIC_CADASTRO_URL?.replace(/\/$/, "") || `${siteUrl}/cadastro`;
+  const basePublica = `${siteUrl}/cadastro`;
   const link = `${basePublica}/locacao/${ficha.token}`;
   const dados = (ficha.dados ?? {}) as DadosFicha;
   const garantia = tipo === "titular" ? String(dados.garantia ?? "") : pessoas.find((p) => p.id === principalId)?.garantia ?? "";
