@@ -25,7 +25,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     supabase.from("ficha_locacao_documentos").select("nome_arquivo, tipo").eq("ficha_id", id).order("criado_em"),
   ]);
   if (!ficha) return new Response("Ficha não encontrada", { status: 404 });
-  if (ficha.status !== "concluida") return new Response("A ficha ainda não foi concluída", { status: 400 });
+  const provisorio = new URL(req.url).searchParams.get("provisorio") === "1";
+  if (ficha.status === "cancelada") return new Response("Ficha cancelada", { status: 400 });
+  if (!provisorio && ficha.status !== "concluida") return new Response("A ficha ainda não foi concluída", { status: 400 });
+  if (provisorio && ficha.status === "concluida") return new Response("Utilize o PDF assinado da ficha concluída", { status: 400 });
   const { data: principal } = ficha.ficha_principal_id
     ? await supabase.from("fichas_cadastrais_locacao").select("proponente_nome, dados").eq("id", ficha.ficha_principal_id).maybeSingle()
     : { data: null };
@@ -34,8 +37,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     proponente: ficha.proponente_nome, imovel: ficha.imovel_referencia, tipo: tipoLocatario(ficha.tipo_locatario),
     dados: (ficha.dados ?? {}) as DadosFicha,
     titular: principal ? { nome: String(dadosPrincipal.nome_completo ?? principal.proponente_nome ?? ""), garantia: String(dadosPrincipal.garantia ?? "") } : null,
-    documentos: documentos ?? [], assinatura: ficha.assinatura_imagem, concluidoEm: ficha.concluido_em, ip: ficha.ip_conclusao,
+    documentos: documentos ?? [], provisorio, geradoEm: new Date().toISOString(),
+    assinatura: provisorio ? null : ficha.assinatura_imagem,
+    concluidoEm: ficha.concluido_em, ip: provisorio ? null : ficha.ip_conclusao,
     logo: await carregarLogo(req.url),
   });
-  return new Response(new Uint8Array(bytes), { headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="ficha-locacao-${id}.pdf"`, "Cache-Control": "private, no-store" } });
+  return new Response(new Uint8Array(bytes), { headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="ficha-locacao-${provisorio ? "provisoria-" : ""}${id}.pdf"`, "Cache-Control": "private, no-store" } });
 }
