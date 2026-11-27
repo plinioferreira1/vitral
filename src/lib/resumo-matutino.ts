@@ -12,7 +12,7 @@ export type ResumoMatutino = {
   vendas: ItemVendaMatutina[];
 };
 
-const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "https://vitral.sacraimoveis.com.br").replace(/\/$/, "");
+const SITE = "https://usevitral.site";
 const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dataBR = (iso: string) => iso.split("-").reverse().join("/");
 const esc = (s: unknown) => escaparHtmlEmail(s);
@@ -69,8 +69,7 @@ export function montarHtmlResumoMatutino(r: ResumoMatutino): string {
     lista(r.vendas, linhaVenda, "Nenhum lembrete de venda registrado hoje."));
 
   return layoutEmailSacra("Resumo unificado", "Seu dia no VITRAL",
-    `<p>Bom dia, <strong>${esc(r.nome.split(/\s+/)[0] || "colaborador")}</strong>! Esta é a prévia de seu resumo de ${dataBR(r.dia)}.</p>
-     <p style="background:#fff7ed;border:1px solid #fed7aa;padding:12px;border-radius:10px;font-size:12px">Versão de teste — os e-mails atuais permanecem ativos até a homologação.</p>
+    `<p>Bom dia, <strong>${esc(r.nome.split(/\s+/)[0] || "colaborador")}</strong>! Este é seu resumo de ${dataBR(r.dia)}.</p>
      ${financeiro}${demandas}${processos}${vendas}
      <div style="margin-top:18px">${botaoEmailSacra("Abrir VITRAL", SITE)}</div>
      <p style="color:#746d68;font-size:12px">Demandas e lembretes são individuais; informações de gestão só aparecem para usuários com permissão. Notificações urgentes seguem independentes.</p>`,
